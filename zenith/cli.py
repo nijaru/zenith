@@ -25,16 +25,16 @@ def main():
 def server(host: str, port: int, reload: bool, env: str):
     """Start the development server."""
     click.echo("🚀 Starting Zenith development server...")
-    
+
     # Load configuration
     env_file = Path(env) if Path(env).exists() else None
     config = Config.from_env(env_file)
     config.host = host
     config.port = port
-    
+
     # Create application
     app = Application(config)
-    
+
     # Run application
     try:
         asyncio.run(app.run_until_complete())
@@ -48,7 +48,7 @@ def test():
     click.echo("🧪 Running tests...")
     import subprocess
     import sys
-    
+
     result = subprocess.run([sys.executable, "-m", "pytest"], cwd=".")
     sys.exit(result.returncode)
 
@@ -59,13 +59,13 @@ def format():
     click.echo("🎨 Formatting code...")
     import subprocess
     import sys
-    
+
     # Run black
     subprocess.run([sys.executable, "-m", "black", "zenith/", "tests/"])
-    
+
     # Run isort
     subprocess.run([sys.executable, "-m", "isort", "zenith/", "tests/"])
-    
+
     click.echo("✅ Code formatted")
 
 
@@ -75,13 +75,13 @@ def lint():
     click.echo("🔍 Running linting...")
     import subprocess
     import sys
-    
+
     # Run ruff
     result1 = subprocess.run([sys.executable, "-m", "ruff", "check", "zenith/"])
-    
+
     # Run mypy
     result2 = subprocess.run([sys.executable, "-m", "mypy", "zenith/"])
-    
+
     if result1.returncode == 0 and result2.returncode == 0:
         click.echo("✅ Code quality checks passed")
     else:
@@ -96,11 +96,11 @@ def test(coverage: bool):
     click.echo("🧪 Running test suite...")
     import subprocess
     import sys
-    
+
     cmd = [sys.executable, "-m", "pytest"]
     if coverage:
         cmd.extend(["--cov=zenith", "--cov-report=term-missing"])
-    
+
     result = subprocess.run(cmd)
     sys.exit(result.returncode)
 

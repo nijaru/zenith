@@ -15,11 +15,11 @@ from zenith.core.container import DIContainer
 
 class EventBus:
     """Simple event bus for context communication."""
-    
+
     def __init__(self):
         self._listeners: Dict[str, List[Callable]] = {}
         self._async_listeners: Dict[str, List[Callable]] = {}
-    
+
     def subscribe(self, event: str, callback: Callable) -> None:
         """Subscribe to an event."""
         if asyncio.iscoroutinefunction(callback):
@@ -30,7 +30,7 @@ class EventBus:
             if event not in self._listeners:
                 self._listeners[event] = []
             self._listeners[event].append(callback)
-    
+
     def unsubscribe(self, event: str, callback: Callable) -> None:
         """Unsubscribe from an event."""
         if asyncio.iscoroutinefunction(callback):
@@ -39,14 +39,14 @@ class EventBus:
         else:
             if event in self._listeners:
                 self._listeners[event].remove(callback)
-    
+
     async def emit(self, event: str, data: Any = None) -> None:
         """Emit an event to all subscribers."""
         # Call sync listeners
         if event in self._listeners:
             for callback in self._listeners[event]:
                 callback(data)
-        
+
         # Call async listeners
         if event in self._async_listeners:
             tasks = []
@@ -58,71 +58,71 @@ class EventBus:
 
 class Context(ABC):
     """Base class for business contexts."""
-    
+
     def __init__(self, container: DIContainer):
         self.container = container
         self.events: EventBus = container.get("events")
         self._initialized = False
-    
+
     async def initialize(self) -> None:
         """Initialize the context. Override for custom initialization."""
         if self._initialized:
             return
         self._initialized = True
-    
+
     async def shutdown(self) -> None:
         """Cleanup context resources. Override for custom cleanup."""
         pass
-    
+
     async def emit(self, event: str, data: Any = None) -> None:
         """Emit a domain event."""
         await self.events.emit(event, data)
-    
+
     def subscribe(self, event: str, callback: Callable) -> None:
         """Subscribe to a domain event."""
         self.events.subscribe(event, callback)
-    
+
     @asynccontextmanager
     async def transaction(self):
         """Context manager for database transactions. Override in subclasses."""
         # Default implementation - no transaction support
         yield
-    
+
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
 
 class ContextRegistry:
     """Registry for managing application contexts."""
-    
+
     def __init__(self, container: DIContainer):
         self.container = container
         self._contexts: Dict[str, Context] = {}
         self._context_classes: Dict[str, type] = {}
-    
+
     def register(self, name: str, context_class: type) -> None:
         """Register a context class."""
         self._context_classes[name] = context_class
-    
+
     async def get(self, name: str) -> Context:
         """Get or create a context instance."""
         if name not in self._contexts:
             if name not in self._context_classes:
                 raise KeyError(f"Context not registered: {name}")
-            
+
             context_class = self._context_classes[name]
             context = context_class(self.container)
             await context.initialize()
             self._contexts[name] = context
-        
+
         return self._contexts[name]
-    
+
     async def shutdown_all(self) -> None:
         """Shutdown all contexts."""
         for context in self._contexts.values():
             await context.shutdown()
         self._contexts.clear()
-    
+
     def list_contexts(self) -> List[str]:
         """List all registered context names."""
         return list(self._context_classes.keys())

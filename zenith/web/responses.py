@@ -9,36 +9,32 @@ from typing import Any, Dict, Optional, Union
 from pathlib import Path
 
 from starlette.responses import (
-    Response, 
-    JSONResponse, 
-    FileResponse, 
+    Response,
+    JSONResponse,
+    FileResponse,
     StreamingResponse,
     RedirectResponse as StarletteRedirect,
-    HTMLResponse
+    HTMLResponse,
 )
 
 
 # Convenient response functions
 
+
 def json_response(
     content: Any,
     status_code: int = 200,
     headers: Optional[Dict[str, str]] = None,
-    media_type: str = "application/json"
+    media_type: str = "application/json",
 ) -> JSONResponse:
     """Create a JSON response with optional headers."""
     return JSONResponse(
-        content=content,
-        status_code=status_code,
-        headers=headers,
-        media_type=media_type
+        content=content, status_code=status_code, headers=headers, media_type=media_type
     )
 
 
 def success_response(
-    data: Any = None,
-    message: str = "Success",
-    status_code: int = 200
+    data: Any = None, message: str = "Success", status_code: int = 200
 ) -> JSONResponse:
     """Create a standardized success response."""
     response_data = {"success": True, "message": message}
@@ -51,13 +47,13 @@ def error_response(
     message: str,
     status_code: int = 400,
     error_code: Optional[str] = None,
-    details: Any = None
+    details: Any = None,
 ) -> JSONResponse:
     """Create a standardized error response."""
     response_data = {
         "success": False,
         "error": error_code or "error",
-        "message": message
+        "message": message,
     }
     if details is not None:
         response_data["details"] = details
@@ -65,16 +61,10 @@ def error_response(
 
 
 def redirect_response(
-    url: str,
-    status_code: int = 302,
-    headers: Optional[Dict[str, str]] = None
+    url: str, status_code: int = 302, headers: Optional[Dict[str, str]] = None
 ) -> StarletteRedirect:
     """Create a redirect response."""
-    return StarletteRedirect(
-        url=url,
-        status_code=status_code,
-        headers=headers
-    )
+    return StarletteRedirect(url=url, status_code=status_code, headers=headers)
 
 
 def permanent_redirect(url: str) -> StarletteRedirect:
@@ -86,48 +76,48 @@ def file_download_response(
     file_path: Union[str, Path],
     filename: Optional[str] = None,
     media_type: Optional[str] = None,
-    headers: Optional[Dict[str, str]] = None
+    headers: Optional[Dict[str, str]] = None,
 ) -> FileResponse:
     """Create a file download response with proper headers."""
     file_path = Path(file_path)
-    
+
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
-    
+
     # Determine filename for download
     download_filename = filename or file_path.name
-    
+
     # Set up headers
     download_headers = headers or {}
-    download_headers["content-disposition"] = f'attachment; filename="{download_filename}"'
-    
+    download_headers["content-disposition"] = (
+        f'attachment; filename="{download_filename}"'
+    )
+
     return FileResponse(
         path=str(file_path),
         filename=download_filename,
         media_type=media_type,
-        headers=download_headers
+        headers=download_headers,
     )
 
 
 def inline_file_response(
     file_path: Union[str, Path],
     media_type: Optional[str] = None,
-    headers: Optional[Dict[str, str]] = None
+    headers: Optional[Dict[str, str]] = None,
 ) -> FileResponse:
     """Create an inline file response (display in browser)."""
     file_path = Path(file_path)
-    
+
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
-    
+
     # Set up headers for inline display
     inline_headers = headers or {}
     inline_headers["content-disposition"] = "inline"
-    
+
     return FileResponse(
-        path=str(file_path),
-        media_type=media_type,
-        headers=inline_headers
+        path=str(file_path), media_type=media_type, headers=inline_headers
     )
 
 
@@ -135,64 +125,38 @@ def streaming_response(
     generator,
     media_type: str = "text/plain",
     headers: Optional[Dict[str, str]] = None,
-    status_code: int = 200
+    status_code: int = 200,
 ) -> StreamingResponse:
     """Create a streaming response."""
     return StreamingResponse(
-        generator,
-        media_type=media_type,
-        headers=headers,
-        status_code=status_code
+        generator, media_type=media_type, headers=headers, status_code=status_code
     )
 
 
 def html_response(
-    content: str,
-    status_code: int = 200,
-    headers: Optional[Dict[str, str]] = None
+    content: str, status_code: int = 200, headers: Optional[Dict[str, str]] = None
 ) -> HTMLResponse:
     """Create an HTML response."""
-    return HTMLResponse(
-        content=content,
-        status_code=status_code,
-        headers=headers
-    )
+    return HTMLResponse(content=content, status_code=status_code, headers=headers)
 
 
-def no_content_response(
-    headers: Optional[Dict[str, str]] = None
-) -> Response:
+def no_content_response(headers: Optional[Dict[str, str]] = None) -> Response:
     """Create a 204 No Content response."""
-    return Response(
-        status_code=204,
-        headers=headers
-    )
+    return Response(status_code=204, headers=headers)
 
 
-def created_response(
-    data: Any = None,
-    location: Optional[str] = None
-) -> JSONResponse:
+def created_response(data: Any = None, location: Optional[str] = None) -> JSONResponse:
     """Create a 201 Created response with optional location header."""
     headers = {}
     if location:
         headers["location"] = location
-    
-    return success_response(
-        data=data,
-        message="Created",
-        status_code=201
-    )
+
+    return success_response(data=data, message="Created", status_code=201)
 
 
-def accepted_response(
-    message: str = "Request accepted for processing"
-) -> JSONResponse:
+def accepted_response(message: str = "Request accepted for processing") -> JSONResponse:
     """Create a 202 Accepted response."""
-    return success_response(
-        message=message,
-        status_code=202
-    )
+    return success_response(message=message, status_code=202)
 
 
 # Pagination helper
@@ -202,11 +166,11 @@ def paginated_response(
     page_size: int,
     total_count: int,
     next_page: Optional[str] = None,
-    prev_page: Optional[str] = None
+    prev_page: Optional[str] = None,
 ) -> JSONResponse:
     """Create a paginated response with metadata."""
     total_pages = (total_count + page_size - 1) // page_size
-    
+
     response_data = {
         "success": True,
         "data": data,
@@ -218,10 +182,10 @@ def paginated_response(
             "has_next": page < total_pages,
             "has_prev": page > 1,
             "next_page": next_page,
-            "prev_page": prev_page
-        }
+            "prev_page": prev_page,
+        },
     }
-    
+
     return json_response(response_data)
 
 
@@ -236,7 +200,7 @@ def set_cookie_response(
     domain: Optional[str] = None,
     secure: bool = False,
     httponly: bool = False,
-    samesite: Optional[str] = "lax"
+    samesite: Optional[str] = "lax",
 ) -> Response:
     """Add a cookie to a response."""
     response.set_cookie(
@@ -248,16 +212,13 @@ def set_cookie_response(
         domain=domain,
         secure=secure,
         httponly=httponly,
-        samesite=samesite
+        samesite=samesite,
     )
     return response
 
 
 def delete_cookie_response(
-    response: Response,
-    key: str,
-    path: str = "/",
-    domain: Optional[str] = None
+    response: Response, key: str, path: str = "/", domain: Optional[str] = None
 ) -> Response:
     """Delete a cookie from a response."""
     response.delete_cookie(key=key, path=path, domain=domain)
@@ -265,13 +226,10 @@ def delete_cookie_response(
 
 
 # Content negotiation helper
-def negotiate_response(
-    data: Any,
-    accept_header: str = "application/json"
-) -> Response:
+def negotiate_response(data: Any, accept_header: str = "application/json") -> Response:
     """Create a response based on Accept header."""
     accept_header = accept_header.lower()
-    
+
     if "application/json" in accept_header:
         return json_response(data)
     elif "text/html" in accept_header:

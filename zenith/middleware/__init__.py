@@ -16,7 +16,7 @@ from .auth import AuthenticationMiddleware
 
 __all__ = [
     "CORSMiddleware",
-    "ExceptionHandlerMiddleware", 
+    "ExceptionHandlerMiddleware",
     "RateLimitMiddleware",
     "AuthenticationMiddleware",
 ]

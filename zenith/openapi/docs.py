@@ -19,65 +19,63 @@ def setup_docs_routes(
     docs_url: str = "/docs",
     redoc_url: str = "/redoc",
     openapi_url: str = "/openapi.json",
-    servers: Optional[List[Dict[str, str]]] = None
+    servers: Optional[List[Dict[str, str]]] = None,
 ) -> Router:
     """
     Setup documentation routes for OpenAPI spec and interactive docs.
-    
+
     Args:
         routers: List of application routers to document
         title: API title
-        version: API version  
+        version: API version
         description: API description
         docs_url: URL for Swagger UI (set to None to disable)
         redoc_url: URL for ReDoc (set to None to disable)
         openapi_url: URL for OpenAPI JSON spec
         servers: Server configurations
-    
+
     Returns:
         Router with documentation routes
     """
-    
+
     docs_router = Router()
-    
+
     # Generate OpenAPI spec
     spec = generate_openapi_spec(
         routers=routers,
         title=title,
         version=version,
         description=description,
-        servers=servers
+        servers=servers,
     )
-    
+
     @docs_router.get(openapi_url)
     async def get_openapi_spec():
         """Get the OpenAPI specification."""
         return JSONResponse(spec)
-    
+
     if docs_url:
+
         @docs_router.get(docs_url)
         async def swagger_ui():
             """Serve Swagger UI for API documentation."""
-            return HTMLResponse(_get_swagger_ui_html(
-                title=title,
-                openapi_url=openapi_url
-            ))
-    
+            return HTMLResponse(
+                _get_swagger_ui_html(title=title, openapi_url=openapi_url)
+            )
+
     if redoc_url:
+
         @docs_router.get(redoc_url)
         async def redoc():
             """Serve ReDoc for API documentation."""
-            return HTMLResponse(_get_redoc_html(
-                title=title,
-                openapi_url=openapi_url
-            ))
-    
+            return HTMLResponse(_get_redoc_html(title=title, openapi_url=openapi_url))
+
     return docs_router
 
 
 def _get_swagger_ui_html(title: str, openapi_url: str) -> str:
     """Generate Swagger UI HTML page."""
-    
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -117,7 +115,7 @@ def _get_swagger_ui_html(title: str, openapi_url: str) -> str:
 
 def _get_redoc_html(title: str, openapi_url: str) -> str:
     """Generate ReDoc HTML page."""
-    
+
     return f"""
     <!DOCTYPE html>
     <html>

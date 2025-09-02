@@ -3,7 +3,7 @@ Example Zenith application: Blog API
 
 Demonstrates:
 - FastAPI-style routing with type-based dependency injection
-- Pydantic models for request/response validation  
+- Pydantic models for request/response validation
 - Phoenix-style contexts for business logic
 - Authentication and authorization
 
@@ -49,14 +49,14 @@ class User(BaseModel):
 # Application-specific database model
 class UserTable(Base):
     __tablename__ = "users"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     name: Mapped[str] = mapped_column(String(100))
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[UserRole] = mapped_column(
         SQLEnum(UserRole, values_callable=lambda obj: [e.value for e in obj]),
-        default=UserRole.USER
+        default=UserRole.USER,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -66,10 +66,10 @@ class UserTable(Base):
 class Users(BaseContext):
     async def get_user(self, user_id: int) -> Optional[User]:
         pass  # Implementation would use database
-    
+
     async def create_user(self, user_data: UserCreate) -> User:
         pass  # Implementation would use database
-    
+
     async def list_users(self, page: int = 1, per_page: int = 20) -> List[User]:
         pass  # Implementation would use database
 
@@ -78,10 +78,7 @@ class Users(BaseContext):
 app = Zenith(debug=True)
 
 # Configure authentication
-configure_auth(
-    app,
-    secret_key="your-secret-key-here-use-env-var-in-production"
-)
+configure_auth(app, secret_key="your-secret-key-here-use-env-var-in-production")
 
 # Register application context
 app.register_context("users", Users)
@@ -93,13 +90,12 @@ api_router = Router(prefix="/api")
 # Routes
 @api_router.get("/users/{user_id}")
 async def get_user(
-    user_id: int,
-    users: Users = Context(),
-    current_user = Auth(required=True)
+    user_id: int, users: Users = Context(), current_user=Auth(required=True)
 ) -> User:
     user = await users.get_user(user_id)
     if not user:
         from starlette.responses import JSONResponse
+
         return JSONResponse({"error": "User not found"}, status_code=404)
     return user
 
@@ -108,16 +104,14 @@ async def get_user(
 async def create_user(
     user_data: UserCreate,
     users: Users = Context(),
-    current_user = Auth(required=True, scopes=["admin"])
+    current_user=Auth(required=True, scopes=["admin"]),
 ) -> User:
     return await users.create_user(user_data)
 
 
 @api_router.get("/users")
 async def list_users(
-    page: int = 1,
-    per_page: int = 20,
-    users: Users = Context()
+    page: int = 1, per_page: int = 20, users: Users = Context()
 ) -> List[User]:
     return await users.list_users(page=page, per_page=per_page)
 
@@ -133,8 +127,7 @@ app.include_router(api_router)
 
 # Add documentation
 app.add_docs(
-    title="Blog API",
-    description="Example blog API built with Zenith framework"
+    title="Blog API", description="Example blog API built with Zenith framework"
 )
 
 

@@ -10,7 +10,7 @@ from zenith.core.container import DIContainer
 
 __all__ = [
     "Application",
-    "Config", 
+    "Config",
     "Context",
     "Supervisor",
     "DIContainer",

@@ -27,86 +27,86 @@ def setup_test_env():
 
 class TestZenithApplication:
     """Test suite for the main Zenith application class."""
-    
+
     def test_application_creation(self):
         """Test basic application creation with default settings."""
         app = Zenith()
-        
-        assert hasattr(app, 'config')
-        assert hasattr(app, 'app')  # Core application
-        assert hasattr(app, 'routers')
+
+        assert hasattr(app, "config")
+        assert hasattr(app, "app")  # Core application
+        assert hasattr(app, "routers")
         assert len(app.middleware) == 0
         assert len(app.routers) >= 1  # Has global router
-    
+
     def test_application_with_custom_config(self):
         """Test application creation with custom configuration."""
         app = Zenith(debug=True)
-        
+
         assert app.config.debug == True
-    
+
     def test_context_registration(self):
         """Test context registration and dependency injection setup."""
         app = Zenith()
-        
+
         class UserContext(Context):
             async def get_user(self, id: int):
                 return {"id": id, "name": "Test User"}
-        
+
         # Register context
         app.register_context(UserContext)
-        
+
         # Should be able to retrieve context from container
         container = app.dependency_container
         assert UserContext in container._services
-    
+
     def test_middleware_registration(self):
         """Test middleware registration and ordering."""
         app = Zenith()
-        
+
         # Mock middleware
         middleware1 = Mock()
         middleware2 = Mock()
-        
+
         app.add_middleware(middleware1, arg1="test")
         app.add_middleware(middleware2, arg2="test2")
-        
+
         assert len(app.middleware) == 2
         assert app.middleware[0] == (middleware1, (), {"arg1": "test"})
         assert app.middleware[1] == (middleware2, (), {"arg2": "test2"})
-    
+
     def test_cors_middleware_integration(self):
         """Test CORS middleware integration."""
         app = Zenith()
-        
+
         app.add_cors(
             allow_origins=["http://localhost:3000"],
             allow_methods=["GET", "POST"],
-            allow_credentials=True
+            allow_credentials=True,
         )
-        
+
         # Should have added CORS middleware
         assert len(app.middleware) == 1
         middleware_class = app.middleware[0][0]
         assert "CORS" in middleware_class.__name__
-    
+
     def test_security_headers_integration(self):
         """Test security headers middleware integration."""
         app = Zenith()
-        
+
         # Test development config
         app.add_security_headers(strict=False)
         assert len(app.middleware) == 1
-        
+
         # Test strict config
         app.add_security_headers(strict=True)
         assert len(app.middleware) == 2
-    
+
     def test_exception_handling_integration(self):
         """Test exception handling middleware integration."""
         app = Zenith()
-        
+
         app.add_exception_handling(debug=True)
-        
+
         # Should have added exception middleware
         assert len(app.middleware) == 1
         middleware_class = app.middleware[0][0]
@@ -116,57 +116,57 @@ class TestZenithApplication:
 @pytest.mark.asyncio
 class TestApplicationLifecycle:
     """Test application startup and shutdown lifecycle."""
-    
+
     async def test_startup_and_shutdown(self):
         """Test application startup and shutdown hooks."""
         app = Zenith()
-        
+
         startup_called = []
         shutdown_called = []
-        
+
         @app.on_event("startup")
         async def startup_handler():
             startup_called.append(True)
-        
-        @app.on_event("shutdown") 
+
+        @app.on_event("shutdown")
         async def shutdown_handler():
             shutdown_called.append(True)
-        
+
         # Test startup
         await app.startup()
         assert len(startup_called) == 1
-        
+
         # Test shutdown
         await app.shutdown()
         assert len(shutdown_called) == 1
-    
+
     async def test_database_integration(self):
         """Test database integration during startup."""
         app = Zenith()
-        
+
         # Mock database setup
-        with patch('zenith.data.setup_database') as mock_setup:
+        with patch("zenith.data.setup_database") as mock_setup:
             mock_setup.return_value = AsyncMock()
-            
+
             app.setup_database("sqlite:///:memory:")
             await app.startup()
-            
+
             # Should have called database setup
             mock_setup.assert_called_once()
-    
+
     async def test_authentication_integration(self):
         """Test authentication system integration."""
         app = Zenith()
         configure_auth(app, secret_key="test-secret-key-that-is-long-enough-for-jwt")
-        
+
         @app.get("/test")
         async def test_endpoint():
             return {"test": True}
-        
+
         async with TestClient(app) as client:
             response = await client.get("/test")
             assert response.status_code == 200
-            
+
             # Should have authentication middleware
             middleware_classes = [m[0].__name__ for m in app.middleware]
             assert any("Auth" in name for name in middleware_classes)
@@ -175,65 +175,65 @@ class TestApplicationLifecycle:
 @pytest.mark.asyncio
 class TestRoutingIntegration:
     """Test routing integration with the main application."""
-    
+
     async def test_basic_route_registration(self):
         """Test basic HTTP method route registration."""
         app = Zenith()
-        
+
         @app.get("/users")
         async def get_users():
             return {"users": []}
-        
+
         @app.post("/users")
         async def create_user():
             return {"created": True}
-        
+
         async with TestClient(app) as client:
             # Test GET
             response = await client.get("/users")
             assert response.status_code == 200
             data = response.json()
             assert data["users"] == []
-            
+
             # Test POST
             response = await client.post("/users")
             assert response.status_code == 200
             data = response.json()
             assert data["created"] == True
-    
+
     async def test_route_with_context_dependency(self):
         """Test routes using context dependency injection."""
         app = Zenith()
-        
+
         class TestContext(Context):
             def get_data(self):
                 return {"context": "data"}
-        
+
         app.register_context(TestContext)
-        
+
         @app.get("/context-test")
         async def context_endpoint(ctx: TestContext = Context()):
             return ctx.get_data()
-        
+
         async with TestClient(app) as client:
             response = await client.get("/context-test")
             assert response.status_code == 200
             data = response.json()
             assert data["context"] == "data"
-    
+
     async def test_subrouter_integration(self):
         """Test subrouter integration."""
         from zenith.core.routing import Router
-        
+
         app = Zenith()
         api_router = Router(prefix="/api/v1")
-        
+
         @api_router.get("/status")
         async def api_status():
             return {"status": "ok", "version": "v1"}
-        
+
         app.include_router(api_router)
-        
+
         async with TestClient(app) as client:
             response = await client.get("/api/v1/status")
             assert response.status_code == 200
@@ -244,48 +244,48 @@ class TestRoutingIntegration:
 
 class TestApplicationConfiguration:
     """Test application configuration and settings."""
-    
+
     def test_debug_mode_configuration(self):
         """Test debug mode affects middleware and error handling."""
         # Debug mode
         debug_app = Zenith(debug=True)
         debug_app.add_exception_handling()
-        
+
         # Should add debug exception handler
         assert len(debug_app.middleware) == 1
-        
+
         # Production mode
         prod_app = Zenith(debug=False)
         prod_app.add_exception_handling()
-        
+
         assert len(prod_app.middleware) == 1
-    
+
     def test_openapi_schema_generation(self):
         """Test OpenAPI schema generation."""
         app = Zenith()
-        
+
         @app.get("/test")
         async def test_endpoint():
             """Test endpoint documentation."""
             return {"test": True}
-        
+
         # Should be able to generate some form of API schema
         # (Implementation depends on how openapi is handled)
-        assert hasattr(app, 'get') # Has route decorators
+        assert hasattr(app, "get")  # Has route decorators
         assert len(app.routers) >= 1
-    
+
     def test_static_file_configuration(self):
         """Test static file serving configuration."""
         app = Zenith()
-        
+
         # Mock static directory
-        with patch('pathlib.Path.exists', return_value=True):
-            with patch('pathlib.Path.is_dir', return_value=True):
+        with patch("pathlib.Path.exists", return_value=True):
+            with patch("pathlib.Path.is_dir", return_value=True):
                 app.mount_static("/static", "/tmp/static")
-                
+
                 # Should have mounted static files
                 # Note: Implementation depends on how static mounting works
-                assert hasattr(app, '_static_mounts') or len(app.routes) > 0
+                assert hasattr(app, "_static_mounts") or len(app.routes) > 0
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ Zenith Framework - Modern Python web framework with real-time features.
 
 The perfect blend of:
 - FastAPI's modern Python patterns and type safety
-- Rails' developer experience and conventions  
+- Rails' developer experience and conventions
 - Phoenix's real-time features and architecture
 
 Build server-rendered interactive UIs with minimal JavaScript.
@@ -25,19 +25,16 @@ from zenith.core.context import Context as BaseContext
 
 __all__ = [
     # Main entry points
-    "Zenith", 
+    "Zenith",
     "create_app",
-    
     # Core classes
     "Application",
     "Config",
-    
     # Routing
     "Router",
-    "Context", 
+    "Context",
     "Auth",
     "File",
-    
     # Base classes
     "BaseContext",
 ]

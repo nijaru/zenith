@@ -13,72 +13,86 @@ from dataclasses import dataclass, field
 @dataclass
 class Config:
     """Application configuration with environment variable support."""
-    
+
     # Core settings
-    debug: bool = field(default_factory=lambda: os.getenv("DEBUG", "false").lower() == "true")
-    secret_key: str = field(default_factory=lambda: os.getenv("SECRET_KEY", "dev-secret-change-in-prod"))
-    
-    # Server settings  
+    debug: bool = field(
+        default_factory=lambda: os.getenv("DEBUG", "false").lower() == "true"
+    )
+    secret_key: str = field(
+        default_factory=lambda: os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
+    )
+
+    # Server settings
     host: str = field(default_factory=lambda: os.getenv("HOST", "127.0.0.1"))
     port: int = field(default_factory=lambda: int(os.getenv("PORT", "8000")))
-    
+
     # Database
-    database_url: str = field(default_factory=lambda: os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./zenith.db"))
-    
+    database_url: str = field(
+        default_factory=lambda: os.getenv(
+            "DATABASE_URL", "sqlite+aiosqlite:///./zenith.db"
+        )
+    )
+
     # Redis
-    redis_url: str = field(default_factory=lambda: os.getenv("REDIS_URL", "redis://localhost:6379"))
-    
+    redis_url: str = field(
+        default_factory=lambda: os.getenv("REDIS_URL", "redis://localhost:6379")
+    )
+
     # Logging
     log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO"))
-    
+
     # Performance
-    worker_count: int = field(default_factory=lambda: int(os.getenv("WORKER_COUNT", "1")))
-    max_connections: int = field(default_factory=lambda: int(os.getenv("MAX_CONNECTIONS", "1000")))
-    
+    worker_count: int = field(
+        default_factory=lambda: int(os.getenv("WORKER_COUNT", "1"))
+    )
+    max_connections: int = field(
+        default_factory=lambda: int(os.getenv("MAX_CONNECTIONS", "1000"))
+    )
+
     # Custom settings
     custom: Dict[str, Any] = field(default_factory=dict)
-    
+
     @classmethod
     def from_env(cls, env_file: Optional[Union[str, Path]] = None) -> "Config":
         """Create config from environment variables and optional .env file."""
         if env_file:
             cls._load_env_file(env_file)
         return cls()
-    
+
     @classmethod
     def _load_env_file(cls, env_file: Union[str, Path]) -> None:
         """Load environment variables from .env file."""
         env_path = Path(env_file)
         if not env_path.exists():
             return
-            
+
         with env_path.open() as f:
             for line in f:
                 line = line.strip()
-                if line and not line.startswith('#'):
-                    key, _, value = line.partition('=')
+                if line and not line.startswith("#"):
+                    key, _, value = line.partition("=")
                     if key and value:
                         os.environ.setdefault(key.strip(), value.strip())
-    
+
     def get(self, key: str, default: Any = None) -> Any:
         """Get custom configuration value."""
         return self.custom.get(key, default)
-    
+
     def set(self, key: str, value: Any) -> None:
-        """Set custom configuration value.""" 
+        """Set custom configuration value."""
         self.custom[key] = value
-    
+
     def validate(self) -> None:
         """Validate configuration settings."""
         if not self.secret_key or self.secret_key == "dev-secret-change-in-prod":
             if not self.debug:
                 raise ValueError("SECRET_KEY must be set in production")
-        
+
         if self.port < 1 or self.port > 65535:
             raise ValueError(f"Invalid port: {self.port}")
-        
+
         if self.worker_count < 1:
             raise ValueError(f"Invalid worker_count: {self.worker_count}")
-            
+
         if self.max_connections < 1:
             raise ValueError(f"Invalid max_connections: {self.max_connections}")

@@ -8,18 +8,19 @@ from pathlib import Path
 
 import httpx
 
+
 async def benchmark_framework(name: str, file: str, port: int):
     """Run a quick benchmark on a framework."""
     print(f"\nBenchmarking {name}...")
-    
+
     # Start server
     process = subprocess.Popen(
         ["python", file],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        cwd=Path(__file__).parent
+        cwd=Path(__file__).parent,
     )
-    
+
     # Wait for server
     url = f"http://127.0.0.1:{port}/"
     async with httpx.AsyncClient() as client:
@@ -29,12 +30,12 @@ async def benchmark_framework(name: str, file: str, port: int):
                 break
             except:
                 await asyncio.sleep(0.5)
-    
+
     # Benchmark
     start = time.time()
     count = 0
     errors = 0
-    
+
     async with httpx.AsyncClient() as client:
         while time.time() - start < 5:  # 5 second test
             try:
@@ -45,48 +46,52 @@ async def benchmark_framework(name: str, file: str, port: int):
                     errors += 1
             except:
                 errors += 1
-    
+
     elapsed = time.time() - start
     rps = count / elapsed
-    
+
     # Stop server
     process.terminate()
     try:
         process.wait(timeout=2)
     except:
         process.kill()
-    
+
     print(f"  Requests/sec: {rps:.1f}")
     print(f"  Total requests: {count}")
     print(f"  Errors: {errors}")
-    
+
     return rps
+
 
 async def main():
     print("=" * 50)
     print("Quick Performance Test - Hello World Endpoint")
     print("=" * 50)
-    
+
     results = {}
-    
+
     # Test each framework
     results["zenith"] = await benchmark_framework("Zenith", "zenith_minimal.py", 8000)
     results["fastapi"] = await benchmark_framework("FastAPI", "fastapi_app.py", 8001)
     results["flask"] = await benchmark_framework("Flask", "flask_app.py", 8002)
-    
+
     # Summary
     print("\n" + "=" * 50)
     print("SUMMARY (Requests/Second)")
     print("=" * 50)
-    
+
     sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
     for i, (name, rps) in enumerate(sorted_results, 1):
         print(f"{i}. {name:<10} {rps:>8.1f} req/s")
-    
+
     # Performance comparison
     if results["zenith"] > 0:
-        print(f"\nZenith vs FastAPI: {results['zenith']/results['fastapi']*100:.1f}%")
-        print(f"Zenith vs Flask: {results['zenith']/results['flask']*100:.1f}%")
+        print(
+            f"\nZenith vs FastAPI: {results['zenith'] / results['fastapi'] * 100:.1f}%"
+        )
+        print(f"Zenith vs Flask: {results['zenith'] / results['flask'] * 100:.1f}%")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

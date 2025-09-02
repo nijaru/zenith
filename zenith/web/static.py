@@ -20,7 +20,7 @@ from starlette.routing import Mount, Route
 
 class StaticFileConfig:
     """Configuration for static file serving."""
-    
+
     def __init__(
         self,
         directory: str,
@@ -34,7 +34,7 @@ class StaticFileConfig:
         last_modified: bool = True,
         # Security settings
         allow_hidden: bool = False,
-        allowed_extensions: Optional[list] = None  # None = allow all
+        allowed_extensions: Optional[list] = None,  # None = allow all
     ):
         self.directory = directory
         self.packages = packages
@@ -50,92 +50,90 @@ class StaticFileConfig:
 
 class ZenithStaticFiles(StarletteStaticFiles):
     """Enhanced static files handler with additional features."""
-    
+
     def __init__(self, config: StaticFileConfig):
         super().__init__(
             directory=config.directory,
             packages=config.packages,
             html=config.html,
             check_dir=config.check_dir,
-            follow_symlink=config.follow_symlink
+            follow_symlink=config.follow_symlink,
         )
         self.config = config
-    
+
     def file_response(
         self,
         full_path: str,
         stat_result: os.stat_result,
         scope: dict,
-        status_code: int = 200
+        status_code: int = 200,
     ) -> Response:
         """Create response for a static file with enhanced headers."""
         # Security check: don't serve hidden files unless allowed
-        if not self.config.allow_hidden and Path(full_path).name.startswith('.'):
+        if not self.config.allow_hidden and Path(full_path).name.startswith("."):
             return Response(status_code=404)
-        
+
         # Extension check
         if self.config.allowed_extensions:
             ext = Path(full_path).suffix.lower()
-            if ext not in [e.lower() if e.startswith('.') else f'.{e.lower()}' 
-                          for e in self.config.allowed_extensions]:
+            if ext not in [
+                e.lower() if e.startswith(".") else f".{e.lower()}"
+                for e in self.config.allowed_extensions
+            ]:
                 return Response(status_code=404)
-        
+
         # Get basic file response
         response = FileResponse(
-            full_path,
-            stat_result=stat_result,
-            status_code=status_code,
-            headers={}
+            full_path, stat_result=stat_result, status_code=status_code, headers={}
         )
-        
+
         # Add caching headers
         if self.config.max_age > 0:
             response.headers["cache-control"] = f"public, max-age={self.config.max_age}"
-        
+
         # Add ETag if enabled
         if self.config.etag:
             # Simple ETag based on file mtime and size
             etag_data = f"{stat_result.st_mtime}-{stat_result.st_size}"
             etag = hashlib.md5(etag_data.encode()).hexdigest()
             response.headers["etag"] = f'"{etag}"'
-        
+
         # Add Last-Modified if enabled
         if self.config.last_modified:
             mtime = datetime.fromtimestamp(stat_result.st_mtime, tz=timezone.utc)
-            response.headers["last-modified"] = mtime.strftime("%a, %d %b %Y %H:%M:%S GMT")
-        
+            response.headers["last-modified"] = mtime.strftime(
+                "%a, %d %b %Y %H:%M:%S GMT"
+            )
+
         # Add security headers
         response.headers["x-content-type-options"] = "nosniff"
-        
+
         # Set appropriate Content-Type
         content_type, _ = mimetypes.guess_type(full_path)
         if content_type:
             response.headers["content-type"] = content_type
-        
+
         return response
 
 
 def create_static_route(
-    path: str,
-    directory: str,
-    name: str = "static",
-    **config_kwargs
+    path: str, directory: str, name: str = "static", **config_kwargs
 ) -> Mount:
     """
     Create a static file serving route.
-    
+
     Args:
         path: URL path prefix (e.g., "/static")
         directory: Local directory to serve files from
         name: Route name for URL generation
         **config_kwargs: Additional configuration options
-        
+
     Returns:
         Mount route for static files
-        
+
     Example:
         app.mount("/static", create_static_route(
-            "/static", 
+            "/static",
             "public",
             max_age=86400,  # 1 day
             allowed_extensions=[".css", ".js", ".png", ".jpg", ".ico"]
@@ -143,26 +141,24 @@ def create_static_route(
     """
     config = StaticFileConfig(directory=directory, **config_kwargs)
     static_files = ZenithStaticFiles(config)
-    
+
     return Mount(path, app=static_files, name=name)
 
 
 def serve_spa_files(
-    directory: str,
-    fallback: str = "index.html",
-    **config_kwargs
+    directory: str, fallback: str = "index.html", **config_kwargs
 ) -> ZenithStaticFiles:
     """
     Serve Single Page Application files with fallback support.
-    
+
     Args:
         directory: Directory containing SPA files
         fallback: Fallback file for client-side routing
         **config_kwargs: Additional configuration options
-        
+
     Returns:
         StaticFiles app configured for SPA
-        
+
     Example:
         app.mount("/", serve_spa_files(
             "dist",
@@ -173,13 +169,14 @@ def serve_spa_files(
     config = StaticFileConfig(
         directory=directory,
         html=True,  # Enable HTML file serving
-        **config_kwargs
+        **config_kwargs,
     )
-    
+
     return ZenithStaticFiles(config)
 
 
 # Convenience functions for common static file patterns
+
 
 def serve_css_js(directory: str = "assets", path: str = "/assets") -> Mount:
     """Serve CSS and JavaScript files with long caching."""
@@ -190,7 +187,7 @@ def serve_css_js(directory: str = "assets", path: str = "/assets") -> Mount:
         max_age=86400 * 30,  # 30 days
         allowed_extensions=[".css", ".js", ".map"],
         etag=True,
-        last_modified=True
+        last_modified=True,
     )
 
 
@@ -203,7 +200,7 @@ def serve_images(directory: str = "images", path: str = "/images") -> Mount:
         max_age=86400 * 7,  # 7 days
         allowed_extensions=[".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".ico"],
         etag=True,
-        last_modified=True
+        last_modified=True,
     )
 
 
@@ -216,5 +213,5 @@ def serve_uploads(directory: str = "uploads", path: str = "/uploads") -> Mount:
         max_age=3600,  # 1 hour
         etag=True,
         last_modified=True,
-        allow_hidden=False  # Security: don't serve hidden files
+        allow_hidden=False,  # Security: don't serve hidden files
     )
