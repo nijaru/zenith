@@ -9,7 +9,8 @@ The perfect blend of:
 Build server-rendered interactive UIs with minimal JavaScript.
 """
 
-__version__ = "0.0.1-dev"
+from zenith.__version__ import __version__
+
 __author__ = "Nick"
 
 # Main framework classes

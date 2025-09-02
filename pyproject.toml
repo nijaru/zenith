@@ -5,9 +5,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["zenith"]
 
+[tool.hatch.version]
+path = "zenith/__version__.py"
+
 [project]
 name = "zenith-framework"
-version = "0.0.1"
+dynamic = ["version"]
 description = "Modern Python web framework with clean architecture and type-safe dependency injection"
 readme = "README.md"
 license = {text = "MIT"}
@@ -17,7 +20,7 @@ authors = [
 ]
 keywords = ["web", "framework", "realtime", "liveview", "websockets"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers", 
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -70,8 +73,10 @@ zen = "zenith.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/nijaru/zenith"
-Repository = "https://github.com/nijaru/zenith"
+Documentation = "https://nijaru.github.io/zenith"
+Repository = "https://github.com/nijaru/zenith.git"
 Issues = "https://github.com/nijaru/zenith/issues"
+Discussions = "https://github.com/nijaru/zenith/discussions"
 
 [tool.ruff]
 target-version = "py311"
