@@ -4,14 +4,13 @@ Unit tests for the Context system and dependency injection.
 Tests context creation, registration, dependency resolution, and lifecycle.
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from typing import List, Optional
+from unittest.mock import AsyncMock, Mock
 
-from zenith.core.context import Context, ContextRegistry, EventBus
-from zenith.core.container import DIContainer
-from zenith.testing import TestContext
+import pytest
+
 from zenith import Zenith
+from zenith.core.container import DIContainer
+from zenith.core.context import Context, EventBus
 
 
 class UserService:
@@ -116,8 +115,8 @@ class TestContextBasics:
         assert callable(ctx.validate_email)
 
         # Test sync method
-        assert ctx.validate_email("test@example.com") == True
-        assert ctx.validate_email("invalid-email") == False
+        assert ctx.validate_email("test@example.com")
+        assert not ctx.validate_email("invalid-email")
 
 
 @pytest.mark.asyncio
@@ -178,12 +177,12 @@ class TestContextExecution:
 
         # Send welcome email to existing user
         result = await notif_ctx.send_welcome_email(1)
-        assert result["sent"] == True
+        assert result["sent"]
         assert result["to"] == "john@test.com"
 
         # Try with non-existent user
         result = await notif_ctx.send_welcome_email(999)
-        assert result["sent"] == False
+        assert not result["sent"]
 
 
 class TestDependencyContainer:
@@ -344,7 +343,7 @@ class TestContextTesting:
         container1.register("events", EventBus())
         ctx1 = UserContext(container1)
         await ctx1.create_user("User1", "user1@test.com")
-        users1 = await ctx1.list_users()
+        await ctx1.list_users()
 
         # Second context should be isolated
         container2 = DIContainer()

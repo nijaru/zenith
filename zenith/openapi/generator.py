@@ -8,17 +8,13 @@ generate comprehensive API documentation.
 import inspect
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-    get_type_hints,
     get_origin,
-    get_args,
+    get_type_hints,
 )
+
 from pydantic import BaseModel
-from zenith.core.routing import Router, RouteSpec, ContextDependency, AuthDependency
+
+from zenith.core.routing import AuthDependency, ContextDependency, Router, RouteSpec
 
 
 class OpenAPIGenerator:
@@ -38,7 +34,7 @@ class OpenAPIGenerator:
         title: str = "Zenith API",
         version: str = "1.0.0",
         description: str = "API built with Zenith framework",
-        servers: Optional[List[Dict[str, str]]] = None,
+        servers: list[dict[str, str]] | None = None,
     ):
         self.title = title
         self.version = version
@@ -46,10 +42,10 @@ class OpenAPIGenerator:
         self.servers = servers or [{"url": "/", "description": "Development server"}]
 
         # Store schemas for reuse
-        self.schemas: Dict[str, Dict] = {}
-        self.components: Dict[str, Any] = {"schemas": self.schemas}
+        self.schemas: dict[str, dict] = {}
+        self.components: dict[str, Any] = {"schemas": self.schemas}
 
-    def generate_spec(self, routers: List[Router]) -> Dict[str, Any]:
+    def generate_spec(self, routers: list[Router]) -> dict[str, Any]:
         """Generate complete OpenAPI 3.0 specification."""
 
         spec = {
@@ -71,7 +67,7 @@ class OpenAPIGenerator:
 
         return spec
 
-    def _process_route(self, spec: Dict, route_spec: RouteSpec) -> None:
+    def _process_route(self, spec: dict, route_spec: RouteSpec) -> None:
         """Process a single route and add to spec."""
 
         path = route_spec.path
@@ -109,7 +105,7 @@ class OpenAPIGenerator:
                     continue
 
                 # Handle dependency injection markers
-                if isinstance(param.default, (ContextDependency, AuthDependency)):
+                if isinstance(param.default, ContextDependency | AuthDependency):
                     if isinstance(param.default, AuthDependency):
                         # Add security requirement
                         if "security" not in operation:
@@ -195,14 +191,14 @@ class OpenAPIGenerator:
 
         return f"Handler: {handler.__name__}"
 
-    def _extract_path_params(self, path: str) -> List[str]:
+    def _extract_path_params(self, path: str) -> list[str]:
         """Extract parameter names from path template."""
 
         import re
 
         return re.findall(r"\{(\w+)\}", path)
 
-    def _get_responses(self, return_type: Optional[Type]) -> Dict[str, Any]:
+    def _get_responses(self, return_type: type | None) -> dict[str, Any]:
         """Generate response specifications from return type."""
 
         responses = {}
@@ -221,12 +217,12 @@ class OpenAPIGenerator:
                         }
                     },
                 }
-            elif return_type == dict or self._is_dict_type(return_type):
+            elif return_type is dict or self._is_dict_type(return_type):
                 responses["200"] = {
                     "description": "Successful response",
                     "content": {"application/json": {"schema": {"type": "object"}}},
                 }
-            elif return_type == list or self._is_list_type(return_type):
+            elif return_type is list or self._is_list_type(return_type):
                 responses["200"] = {
                     "description": "Successful response",
                     "content": {
@@ -259,36 +255,36 @@ class OpenAPIGenerator:
 
         return responses
 
-    def _is_dict_type(self, type_hint: Type) -> bool:
+    def _is_dict_type(self, type_hint: type) -> bool:
         """Check if type hint represents a dict."""
         origin = get_origin(type_hint)
         return origin is dict
 
-    def _is_list_type(self, type_hint: Type) -> bool:
+    def _is_list_type(self, type_hint: type) -> bool:
         """Check if type hint represents a list."""
         origin = get_origin(type_hint)
         return origin is list
 
-    def _get_type_schema(self, type_hint: Type) -> Dict[str, Any]:
+    def _get_type_schema(self, type_hint: type) -> dict[str, Any]:
         """Convert Python type to OpenAPI schema."""
 
-        if type_hint == str:
+        if type_hint is str:
             return {"type": "string"}
-        elif type_hint == int:
+        elif type_hint is int:
             return {"type": "integer"}
-        elif type_hint == float:
+        elif type_hint is float:
             return {"type": "number"}
-        elif type_hint == bool:
+        elif type_hint is bool:
             return {"type": "boolean"}
-        elif type_hint == list:
+        elif type_hint is list:
             return {"type": "array", "items": {"type": "object"}}
-        elif type_hint == dict:
+        elif type_hint is dict:
             return {"type": "object"}
         else:
             # For complex types, return generic object
             return {"type": "object"}
 
-    def _add_schema(self, model_class: Type[BaseModel]) -> None:
+    def _add_schema(self, model_class: type[BaseModel]) -> None:
         """Add Pydantic model schema to components."""
 
         schema_name = model_class.__name__
@@ -306,12 +302,12 @@ class OpenAPIGenerator:
 
 
 def generate_openapi_spec(
-    routers: List[Router],
+    routers: list[Router],
     title: str = "Zenith API",
     version: str = "1.0.0",
     description: str = "API built with Zenith framework",
-    servers: Optional[List[Dict[str, str]]] = None,
-) -> Dict[str, Any]:
+    servers: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
     """
     Generate OpenAPI specification from Zenith routers.
 

@@ -13,28 +13,28 @@ __version__ = "0.0.1-dev"
 __author__ = "Nick"
 
 # Main framework classes
-from zenith.zenith import Zenith, create_app
 from zenith.core.application import Application
 from zenith.core.config import Config
-
-# Routing and dependency injection
-from zenith.core.routing import Router, Context, Auth, File
 
 # Contexts
 from zenith.core.context import Context as BaseContext
 
+# Routing and dependency injection
+from zenith.core.routing import Auth, Context, File, Router
+from zenith.zenith import Zenith, create_app
+
 __all__ = [
+    # Core classes
+    "Application",
+    "Auth",
+    # Base classes
+    "BaseContext",
+    "Config",
+    "Context",
+    "File",
+    # Routing
+    "Router",
     # Main entry points
     "Zenith",
     "create_app",
-    # Core classes
-    "Application",
-    "Config",
-    # Routing
-    "Router",
-    "Context",
-    "Auth",
-    "File",
-    # Base classes
-    "BaseContext",
 ]

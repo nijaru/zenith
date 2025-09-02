@@ -5,18 +5,19 @@ Provides convenient response helpers for common web application needs.
 """
 
 import json
-from typing import Any, Dict, Optional, Union
 from pathlib import Path
+from typing import Any
 
 from starlette.responses import (
-    Response,
-    JSONResponse,
     FileResponse,
-    StreamingResponse,
-    RedirectResponse as StarletteRedirect,
     HTMLResponse,
+    JSONResponse,
+    Response,
+    StreamingResponse,
 )
-
+from starlette.responses import (
+    RedirectResponse as StarletteRedirect,
+)
 
 # Convenient response functions
 
@@ -24,7 +25,7 @@ from starlette.responses import (
 def json_response(
     content: Any,
     status_code: int = 200,
-    headers: Optional[Dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
     media_type: str = "application/json",
 ) -> JSONResponse:
     """Create a JSON response with optional headers."""
@@ -46,7 +47,7 @@ def success_response(
 def error_response(
     message: str,
     status_code: int = 400,
-    error_code: Optional[str] = None,
+    error_code: str | None = None,
     details: Any = None,
 ) -> JSONResponse:
     """Create a standardized error response."""
@@ -61,7 +62,7 @@ def error_response(
 
 
 def redirect_response(
-    url: str, status_code: int = 302, headers: Optional[Dict[str, str]] = None
+    url: str, status_code: int = 302, headers: dict[str, str] | None = None
 ) -> StarletteRedirect:
     """Create a redirect response."""
     return StarletteRedirect(url=url, status_code=status_code, headers=headers)
@@ -73,10 +74,10 @@ def permanent_redirect(url: str) -> StarletteRedirect:
 
 
 def file_download_response(
-    file_path: Union[str, Path],
-    filename: Optional[str] = None,
-    media_type: Optional[str] = None,
-    headers: Optional[Dict[str, str]] = None,
+    file_path: str | Path,
+    filename: str | None = None,
+    media_type: str | None = None,
+    headers: dict[str, str] | None = None,
 ) -> FileResponse:
     """Create a file download response with proper headers."""
     file_path = Path(file_path)
@@ -102,9 +103,9 @@ def file_download_response(
 
 
 def inline_file_response(
-    file_path: Union[str, Path],
-    media_type: Optional[str] = None,
-    headers: Optional[Dict[str, str]] = None,
+    file_path: str | Path,
+    media_type: str | None = None,
+    headers: dict[str, str] | None = None,
 ) -> FileResponse:
     """Create an inline file response (display in browser)."""
     file_path = Path(file_path)
@@ -124,7 +125,7 @@ def inline_file_response(
 def streaming_response(
     generator,
     media_type: str = "text/plain",
-    headers: Optional[Dict[str, str]] = None,
+    headers: dict[str, str] | None = None,
     status_code: int = 200,
 ) -> StreamingResponse:
     """Create a streaming response."""
@@ -134,18 +135,18 @@ def streaming_response(
 
 
 def html_response(
-    content: str, status_code: int = 200, headers: Optional[Dict[str, str]] = None
+    content: str, status_code: int = 200, headers: dict[str, str] | None = None
 ) -> HTMLResponse:
     """Create an HTML response."""
     return HTMLResponse(content=content, status_code=status_code, headers=headers)
 
 
-def no_content_response(headers: Optional[Dict[str, str]] = None) -> Response:
+def no_content_response(headers: dict[str, str] | None = None) -> Response:
     """Create a 204 No Content response."""
     return Response(status_code=204, headers=headers)
 
 
-def created_response(data: Any = None, location: Optional[str] = None) -> JSONResponse:
+def created_response(data: Any = None, location: str | None = None) -> JSONResponse:
     """Create a 201 Created response with optional location header."""
     headers = {}
     if location:
@@ -165,8 +166,8 @@ def paginated_response(
     page: int,
     page_size: int,
     total_count: int,
-    next_page: Optional[str] = None,
-    prev_page: Optional[str] = None,
+    next_page: str | None = None,
+    prev_page: str | None = None,
 ) -> JSONResponse:
     """Create a paginated response with metadata."""
     total_pages = (total_count + page_size - 1) // page_size
@@ -194,13 +195,13 @@ def set_cookie_response(
     response: Response,
     key: str,
     value: str,
-    max_age: Optional[int] = None,
-    expires: Optional[str] = None,
+    max_age: int | None = None,
+    expires: str | None = None,
     path: str = "/",
-    domain: Optional[str] = None,
+    domain: str | None = None,
     secure: bool = False,
     httponly: bool = False,
-    samesite: Optional[str] = "lax",
+    samesite: str | None = "lax",
 ) -> Response:
     """Add a cookie to a response."""
     response.set_cookie(
@@ -218,7 +219,7 @@ def set_cookie_response(
 
 
 def delete_cookie_response(
-    response: Response, key: str, path: str = "/", domain: Optional[str] = None
+    response: Response, key: str, path: str = "/", domain: str | None = None
 ) -> Response:
     """Delete a cookie from a response."""
     response.delete_cookie(key=key, path=path, domain=domain)
@@ -237,10 +238,10 @@ def negotiate_response(data: Any, accept_header: str = "application/json") -> Re
         if isinstance(data, dict):
             content = "<pre>" + json.dumps(data, indent=2) + "</pre>"
         else:
-            content = f"<pre>{str(data)}</pre>"
+            content = f"<pre>{data!s}</pre>"
         return html_response(content)
     elif "text/plain" in accept_header:
-        if isinstance(data, (dict, list)):
+        if isinstance(data, dict | list):
             content = json.dumps(data, indent=2)
         else:
             content = str(data)

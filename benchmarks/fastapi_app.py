@@ -1,15 +1,14 @@
 """FastAPI benchmark application."""
 
 from datetime import datetime
-from typing import List, Optional
 
+import jwt
 from fastapi import Depends, FastAPI, HTTPException, UploadFile
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
-import jwt
 
 
 # Models
@@ -58,7 +57,7 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
         payload = jwt.decode(token, "benchmark-secret-key-123", algorithms=["HS256"])
         return payload
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid token") from None
 
 
 # App
@@ -99,7 +98,7 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
     )
 
 
-@app.get("/users", response_model=List[UserModel])
+@app.get("/users", response_model=list[UserModel])
 async def list_users(limit: int = 100, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(User).limit(limit))
     users = result.scalars().all()

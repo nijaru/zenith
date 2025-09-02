@@ -1,8 +1,6 @@
 """Simplified Zenith benchmark application."""
 
-import asyncio
 from datetime import datetime
-from typing import Dict, List
 
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -83,7 +81,7 @@ async def get_user(user_id: int) -> UserModel:
 
 
 @app.get("/users")
-async def list_users(limit: int = 100) -> List[UserModel]:
+async def list_users(limit: int = 100) -> list[UserModel]:
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(User).limit(limit))
         users = result.scalars().all()

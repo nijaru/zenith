@@ -6,7 +6,8 @@ Essential for APIs that will be called from web applications.
 """
 
 import re
-from typing import List, Optional, Pattern, Set, Union
+from re import Pattern
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -40,12 +41,12 @@ class CORSMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        allow_origins: List[str] = None,
-        allow_origin_regex: Optional[str] = None,
-        allow_methods: List[str] = None,
-        allow_headers: List[str] = None,
+        allow_origins: list[str] | None = None,
+        allow_origin_regex: str | None = None,
+        allow_methods: list[str] | None = None,
+        allow_headers: list[str] | None = None,
         allow_credentials: bool = False,
-        expose_headers: List[str] = None,
+        expose_headers: list[str] | None = None,
         max_age: int = 600,
     ):
         super().__init__(app)
@@ -70,15 +71,15 @@ class CORSMiddleware(BaseHTTPMiddleware):
 
         # Store configuration
         self.allow_all_origins = "*" in allow_origins
-        self.allow_origins: Set[str] = set(allow_origins)
-        self.allow_methods: Set[str] = set(method.upper() for method in allow_methods)
-        self.allow_headers: Set[str] = set(header.lower() for header in allow_headers)
+        self.allow_origins: set[str] = set(allow_origins)
+        self.allow_methods: set[str] = {method.upper() for method in allow_methods}
+        self.allow_headers: set[str] = {header.lower() for header in allow_headers}
         self.allow_credentials = allow_credentials
         self.expose_headers = expose_headers or []
         self.max_age = max_age
 
         # Compile origin regex if provided
-        self.allow_origin_regex: Optional[Pattern] = None
+        self.allow_origin_regex: Pattern | None = None
         if allow_origin_regex is not None:
             self.allow_origin_regex = re.compile(allow_origin_regex)
 
@@ -151,10 +152,7 @@ class CORSMiddleware(BaseHTTPMiddleware):
             return True
 
         # Regex match
-        if self.allow_origin_regex and self.allow_origin_regex.match(origin):
-            return True
-
-        return False
+        return bool(self.allow_origin_regex and self.allow_origin_regex.match(origin))
 
     def _add_cors_headers(
         self, response: Response, origin: str, is_preflight: bool = False
@@ -186,12 +184,12 @@ class CORSMiddleware(BaseHTTPMiddleware):
 
 
 def cors_middleware(
-    allow_origins: List[str] = None,
-    allow_origin_regex: Optional[str] = None,
-    allow_methods: List[str] = None,
-    allow_headers: List[str] = None,
+    allow_origins: list[str] | None = None,
+    allow_origin_regex: str | None = None,
+    allow_methods: list[str] | None = None,
+    allow_headers: list[str] | None = None,
     allow_credentials: bool = False,
-    expose_headers: List[str] = None,
+    expose_headers: list[str] | None = None,
     max_age: int = 600,
 ):
     """

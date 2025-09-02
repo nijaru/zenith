@@ -9,13 +9,9 @@ A complete blog platform built with Zenith demonstrating:
 - Production-ready configuration
 """
 
-import os
 import logging
+import os
 from pathlib import Path
-
-from zenith import Zenith
-from zenith.auth import configure_auth
-from zenith.web.health import add_health_routes, health_manager
 
 # Import contexts
 from blog_api.contexts.auth import AuthContext
@@ -23,7 +19,11 @@ from blog_api.contexts.posts import PostsContext
 from blog_api.contexts.users import UsersContext
 
 # Import route modules
-from blog_api.routes import auth, posts, admin
+from blog_api.routes import admin, auth, posts
+
+from zenith import Zenith
+from zenith.auth import configure_auth
+from zenith.web.health import add_health_routes, health_manager
 
 # Load environment variables
 try:
@@ -99,7 +99,6 @@ add_health_routes(app)
 async def database_health_check():
     """Check database connectivity."""
     try:
-        from blog_api.models import User
 
         # Simple query to test connection
         # This would use the actual database session
@@ -186,8 +185,9 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1 and sys.argv[1] == "create-admin":
         # CLI command to create admin user
-        from blog_api.cli import create_admin_user
         import asyncio
+
+        from blog_api.cli import create_admin_user
 
         asyncio.run(create_admin_user())
     else:

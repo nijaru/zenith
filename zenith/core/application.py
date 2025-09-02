@@ -8,25 +8,25 @@ and coordinates all framework components.
 import asyncio
 import logging
 import signal
-from typing import Any, Dict, Optional, Type
 from contextlib import asynccontextmanager
+from typing import Any
 
 from zenith.core.config import Config
 from zenith.core.container import DIContainer
+from zenith.core.context import ContextRegistry, EventBus
 from zenith.core.supervisor import (
-    Supervisor,
-    SupervisorSpec,
     ChildSpec,
     RestartStrategy,
+    Supervisor,
+    SupervisorSpec,
 )
-from zenith.core.context import EventBus, ContextRegistry
 from zenith.db import Database
 
 
 class Application:
     """Main application class that coordinates all framework components."""
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Config | None = None):
         self.config = config or Config.from_env()
         self.config.validate()
 
@@ -95,12 +95,12 @@ class Application:
         asyncio.create_task(self.shutdown())
 
     def register_service(
-        self, service_type: Type, implementation: Any = None, singleton: bool = True
+        self, service_type: type, implementation: Any = None, singleton: bool = True
     ) -> None:
         """Register a service with the application."""
         self.container.register(service_type, implementation, singleton)
 
-    def register_context(self, name: str, context_class: Type) -> None:
+    def register_context(self, name: str, context_class: type) -> None:
         """Register a business context."""
         self.contexts.register(name, context_class)
 

@@ -5,19 +5,17 @@ Provides SQLAlchemy 2.0 integration with async support, session management,
 and transaction handling for the context system.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
 
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
-from sqlalchemy.pool import NullPool
-
+from sqlalchemy.orm import DeclarativeBase
 
 # Naming conventions for database constraints
 convention = {
@@ -108,9 +106,8 @@ class Database:
                 session.add(user)
                 # Commits automatically if no exception
         """
-        async with self.session() as session:
-            async with session.begin():
-                yield session
+        async with self.session() as session, session.begin():
+            yield session
 
     async def create_all(self) -> None:
         """Create all database tables."""
@@ -138,9 +135,9 @@ class Database:
 
 # Export commonly used components
 __all__ = [
+    "AsyncSession",
     "Base",
     "Database",
-    "AsyncSession",
-    "create_async_engine",
     "async_sessionmaker",
+    "create_async_engine",
 ]

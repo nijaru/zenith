@@ -3,9 +3,9 @@ Tests for configuration management.
 """
 
 import os
-import pytest
-from pathlib import Path
 from tempfile import NamedTemporaryFile
+
+import pytest
 
 from zenith.core.config import Config
 
@@ -19,7 +19,7 @@ class TestConfig:
 
         assert config.host == "127.0.0.1"
         assert config.port == 8000
-        assert config.debug == False  # Default when DEBUG not set
+        assert not config.debug  # Default when DEBUG not set
         assert config.log_level == "INFO"
         assert config.worker_count == 1
         assert config.max_connections == 1000
@@ -34,7 +34,7 @@ class TestConfig:
 
         config = Config()
 
-        assert config.debug == True
+        assert config.debug
         assert config.host == "0.0.0.0"
         assert config.port == 3000
         assert config.log_level == "DEBUG"
@@ -60,7 +60,7 @@ SECRET_KEY=test-secret
         try:
             config = Config.from_env(env_file)
 
-            assert config.debug == True
+            assert config.debug
             assert config.host == "0.0.0.0"
             assert config.port == 4000
             assert config.secret_key == "test-secret"

@@ -6,9 +6,10 @@ clear boundaries between different areas of the application.
 """
 
 import asyncio
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Callable
+from abc import ABC
+from collections.abc import Callable
 from contextlib import asynccontextmanager
+from typing import Any
 
 from zenith.core.container import DIContainer
 
@@ -17,8 +18,8 @@ class EventBus:
     """Simple event bus for context communication."""
 
     def __init__(self):
-        self._listeners: Dict[str, List[Callable]] = {}
-        self._async_listeners: Dict[str, List[Callable]] = {}
+        self._listeners: dict[str, list[Callable]] = {}
+        self._async_listeners: dict[str, list[Callable]] = {}
 
     def subscribe(self, event: str, callback: Callable) -> None:
         """Subscribe to an event."""
@@ -97,8 +98,8 @@ class ContextRegistry:
 
     def __init__(self, container: DIContainer):
         self.container = container
-        self._contexts: Dict[str, Context] = {}
-        self._context_classes: Dict[str, type] = {}
+        self._contexts: dict[str, Context] = {}
+        self._context_classes: dict[str, type] = {}
 
     def register(self, name: str, context_class: type) -> None:
         """Register a context class."""
@@ -123,6 +124,6 @@ class ContextRegistry:
             await context.shutdown()
         self._contexts.clear()
 
-    def list_contexts(self) -> List[str]:
+    def list_contexts(self) -> list[str]:
         """List all registered context names."""
         return list(self._context_classes.keys())

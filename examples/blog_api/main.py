@@ -10,17 +10,17 @@ Demonstrates:
 Run with: python examples/blog_api/main.py
 """
 
-from typing import List, Optional
 from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, EmailStr, Field
-from sqlalchemy import String, Integer, Boolean, DateTime, Enum as SQLEnum, func
+from sqlalchemy import Boolean, DateTime, Integer, String, func
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from zenith import Zenith, Router, Context, Auth
-from zenith.core.context import Context as BaseContext
+from zenith import Auth, Context, Router, Zenith
 from zenith.auth import configure_auth
+from zenith.core.context import Context as BaseContext
 from zenith.db import Base
 
 
@@ -64,13 +64,13 @@ class UserTable(Base):
 
 # Application-specific context (business logic)
 class Users(BaseContext):
-    async def get_user(self, user_id: int) -> Optional[User]:
+    async def get_user(self, user_id: int) -> User | None:
         pass  # Implementation would use database
 
     async def create_user(self, user_data: UserCreate) -> User:
         pass  # Implementation would use database
 
-    async def list_users(self, page: int = 1, per_page: int = 20) -> List[User]:
+    async def list_users(self, page: int = 1, per_page: int = 20) -> list[User]:
         pass  # Implementation would use database
 
 
@@ -112,7 +112,7 @@ async def create_user(
 @api_router.get("/users")
 async def list_users(
     page: int = 1, per_page: int = 20, users: Users = Context()
-) -> List[User]:
+) -> list[User]:
     return await users.list_users(page=page, per_page=per_page)
 
 

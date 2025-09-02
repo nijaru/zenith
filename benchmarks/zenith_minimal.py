@@ -1,7 +1,7 @@
 """Minimal Zenith benchmark application."""
 
 import os
-from typing import Dict, List
+
 from pydantic import BaseModel
 
 # Set required env var

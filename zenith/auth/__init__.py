@@ -5,28 +5,28 @@ Provides JWT token generation/validation, password hashing,
 and authentication middleware for secure API access.
 """
 
-from .jwt import JWTManager, create_access_token, verify_access_token, configure_jwt
-from .password import PasswordManager, hash_password, verify_password
+from .config import auth_required, configure_auth, optional_auth
 from .dependencies import get_current_user, require_auth, require_roles
-from .config import configure_auth, auth_required, optional_auth
+from .jwt import JWTManager, configure_jwt, create_access_token, verify_access_token
+from .password import PasswordManager, hash_password, verify_password
 
 __all__ = [
-    # Easy setup
-    "configure_auth",
     # JWT utilities
     "JWTManager",
-    "create_access_token",
-    "verify_access_token",
-    "configure_jwt",
     # Password utilities
     "PasswordManager",
-    "hash_password",
-    "verify_password",
-    # Dependency injection
-    "get_current_user",
-    "require_auth",
-    "require_roles",
     # Decorators
     "auth_required",
+    # Easy setup
+    "configure_auth",
+    "configure_jwt",
+    "create_access_token",
+    # Dependency injection
+    "get_current_user",
+    "hash_password",
     "optional_auth",
+    "require_auth",
+    "require_roles",
+    "verify_access_token",
+    "verify_password",
 ]

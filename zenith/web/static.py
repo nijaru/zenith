@@ -5,17 +5,15 @@ Provides efficient static file serving with proper headers,
 caching, and security features.
 """
 
-import os
-import mimetypes
-from pathlib import Path
-from typing import Optional, Dict, Any
-from datetime import datetime, timezone
 import hashlib
+import mimetypes
+import os
+from datetime import UTC, datetime
+from pathlib import Path
 
-from starlette.responses import Response, FileResponse
-from starlette.requests import Request
+from starlette.responses import FileResponse, Response
+from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles as StarletteStaticFiles
-from starlette.routing import Mount, Route
 
 
 class StaticFileConfig:
@@ -24,7 +22,7 @@ class StaticFileConfig:
     def __init__(
         self,
         directory: str,
-        packages: Optional[list] = None,
+        packages: list | None = None,
         html: bool = False,
         check_dir: bool = True,
         follow_symlink: bool = False,
@@ -34,7 +32,7 @@ class StaticFileConfig:
         last_modified: bool = True,
         # Security settings
         allow_hidden: bool = False,
-        allowed_extensions: Optional[list] = None,  # None = allow all
+        allowed_extensions: list | None = None,  # None = allow all
     ):
         self.directory = directory
         self.packages = packages
@@ -100,7 +98,7 @@ class ZenithStaticFiles(StarletteStaticFiles):
 
         # Add Last-Modified if enabled
         if self.config.last_modified:
-            mtime = datetime.fromtimestamp(stat_result.st_mtime, tz=timezone.utc)
+            mtime = datetime.fromtimestamp(stat_result.st_mtime, tz=UTC)
             response.headers["last-modified"] = mtime.strftime(
                 "%a, %d %b %Y %H:%M:%S GMT"
             )

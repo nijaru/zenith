@@ -6,11 +6,12 @@ restart of failed services with configurable strategies.
 """
 
 import asyncio
+import contextlib
 import logging
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
-from dataclasses import dataclass
 import traceback
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
 
 
 class RestartStrategy(Enum):
@@ -61,7 +62,7 @@ class SupervisedTask:
     def __init__(self, spec: ChildSpec, supervisor: "Supervisor"):
         self.spec = spec
         self.supervisor = supervisor
-        self.task: Optional[asyncio.Task] = None
+        self.task: asyncio.Task | None = None
         self.restart_count = 0
         self.last_restart = 0.0
         self.logger = logging.getLogger(f"zenith.supervisor.{spec.id}")
@@ -101,10 +102,8 @@ class SupervisedTask:
         if self.task and not self.task.done():
             self.logger.info(f"Stopping supervised task: {self.spec.id}")
             self.task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self.task
-            except asyncio.CancelledError:
-                pass
 
     def is_running(self) -> bool:
         """Check if task is currently running."""
@@ -116,8 +115,8 @@ class Supervisor:
 
     def __init__(self, spec: SupervisorSpec = None):
         self.spec = spec or SupervisorSpec()
-        self.children: Dict[str, SupervisedTask] = {}
-        self.restart_times: List[float] = []
+        self.children: dict[str, SupervisedTask] = {}
+        self.restart_times: list[float] = []
         self.logger = logging.getLogger("zenith.supervisor")
         self._shutdown = False
 

@@ -1,16 +1,13 @@
 """Zenith benchmark application."""
 
-import asyncio
-import os
 from datetime import datetime
-from typing import List, Optional
 
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-from zenith import Context, Zenith, Auth
+from zenith import Auth, Context, Zenith
 from zenith.auth import JWTManager
 from zenith.web.responses import JSONResponse
 
@@ -68,7 +65,7 @@ class UsersContext(Context):
                 session.add(user)
             await session.commit()
 
-    async def get_user(self, user_id: int) -> Optional[UserModel]:
+    async def get_user(self, user_id: int) -> UserModel | None:
         async with self.db() as session:
             result = await session.execute(select(User).where(User.id == user_id))
             user = result.scalar_one_or_none()
@@ -81,7 +78,7 @@ class UsersContext(Context):
                 )
             return None
 
-    async def list_users(self, limit: int = 100) -> List[UserModel]:
+    async def list_users(self, limit: int = 100) -> list[UserModel]:
         async with self.db() as session:
             result = await session.execute(select(User).limit(limit))
             users = result.scalars().all()
@@ -140,7 +137,7 @@ async def get_user(user_id: int, users: UsersContext = Context()) -> UserModel:
 @app.get("/users")
 async def list_users(
     limit: int = 100, users: UsersContext = Context()
-) -> List[UserModel]:
+) -> list[UserModel]:
     return await users.list_users(limit)
 
 

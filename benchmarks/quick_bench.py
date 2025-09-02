@@ -28,7 +28,7 @@ async def benchmark_framework(name: str, file: str, port: int):
             try:
                 await client.get(url)
                 break
-            except:
+            except (httpx.ConnectError, httpx.RequestError):
                 await asyncio.sleep(0.5)
 
     # Benchmark
@@ -44,7 +44,7 @@ async def benchmark_framework(name: str, file: str, port: int):
                     count += 1
                 else:
                     errors += 1
-            except:
+            except (httpx.RequestError, httpx.HTTPStatusError):
                 errors += 1
 
     elapsed = time.time() - start
@@ -54,7 +54,7 @@ async def benchmark_framework(name: str, file: str, port: int):
     process.terminate()
     try:
         process.wait(timeout=2)
-    except:
+    except subprocess.TimeoutExpired:
         process.kill()
 
     print(f"  Requests/sec: {rps:.1f}")

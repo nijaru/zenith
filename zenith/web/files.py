@@ -5,25 +5,22 @@ Provides secure file upload handling with validation, storage options,
 and integration with the routing system.
 """
 
-import os
-import uuid
 import mimetypes
-from pathlib import Path
-from typing import List, Optional, Dict, Any, Union
 import tempfile
-import shutil
+import uuid
+from pathlib import Path
 
+from pydantic import BaseModel, Field, validator
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
-from pydantic import BaseModel, Field, validator
 
 
 class FileUploadConfig(BaseModel):
     """Configuration for file uploads."""
 
     max_file_size: int = 10 * 1024 * 1024  # 10MB default
-    allowed_extensions: List[str] = []  # Empty = allow all
-    allowed_mime_types: List[str] = []  # Empty = allow all
+    allowed_extensions: list[str] = []  # Empty = allow all
+    allowed_mime_types: list[str] = []  # Empty = allow all
     upload_dir: Path = Field(
         default_factory=lambda: Path(tempfile.gettempdir()) / "uploads"
     )
@@ -45,7 +42,7 @@ class UploadedFile(BaseModel):
     content_type: str
     size: int
     file_path: Path
-    url: Optional[str] = None  # URL to access the file
+    url: str | None = None  # URL to access the file
 
     class Config:
         arbitrary_types_allowed = True
@@ -142,7 +139,7 @@ class FileUploader:
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Save file content
-        with open(file_path, "wb") as f:
+        with Path(file_path).open("wb") as f:
             # Read file in chunks to handle large files
             while True:
                 chunk = await file.read(8192)  # 8KB chunks
@@ -170,7 +167,7 @@ class FileUploader:
             file_path=file_path,
         )
 
-    async def save_multiple_files(self, files: List[UploadFile]) -> List[UploadedFile]:
+    async def save_multiple_files(self, files: list[UploadFile]) -> list[UploadedFile]:
         """Save multiple uploaded files."""
         uploaded_files = []
         for file in files:
@@ -185,7 +182,7 @@ default_uploader = FileUploader()
 
 async def handle_file_upload(
     request: Request, field_name: str = "file", config: FileUploadConfig = None
-) -> Union[UploadedFile, List[UploadedFile]]:
+) -> UploadedFile | list[UploadedFile]:
     """
     Handle file upload from request.
 

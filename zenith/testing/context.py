@@ -5,18 +5,16 @@ Provides TestContext for testing contexts in isolation with database
 transaction rollback and dependency injection mocking.
 """
 
-import asyncio
-from typing import Any, Dict, Type, TypeVar, Optional
 from contextlib import asynccontextmanager
+from typing import Any, TypeVar
 
-from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from zenith.core.context import Context
 from zenith.core.container import DIContainer
-from zenith.db import Database, Base
+from zenith.core.context import Context
+from zenith.db import Base, Database
 
 T = TypeVar("T", bound=Context)
 
@@ -46,9 +44,9 @@ class TestContext:
 
     def __init__(
         self,
-        context_class: Type[T],
+        context_class: type[T],
         database_url: str = "sqlite+aiosqlite:///:memory:",
-        dependencies: Optional[Dict[str, Any]] = None,
+        dependencies: dict[str, Any] | None = None,
     ):
         """
         Initialize test context.
@@ -218,7 +216,7 @@ class MockContext(Context):
 
 # Convenience functions for common test scenarios
 async def create_test_context(
-    context_class: Type[T], dependencies: Optional[Dict[str, Any]] = None
+    context_class: type[T], dependencies: dict[str, Any] | None = None
 ) -> T:
     """
     Create a context instance with test dependencies.

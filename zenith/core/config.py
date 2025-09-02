@@ -5,9 +5,9 @@ Handles environment variables, configuration files, and runtime settings.
 """
 
 import os
-from typing import Any, Dict, Optional, Union
-from pathlib import Path
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -50,17 +50,17 @@ class Config:
     )
 
     # Custom settings
-    custom: Dict[str, Any] = field(default_factory=dict)
+    custom: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_env(cls, env_file: Optional[Union[str, Path]] = None) -> "Config":
+    def from_env(cls, env_file: str | Path | None = None) -> "Config":
         """Create config from environment variables and optional .env file."""
         if env_file:
             cls._load_env_file(env_file)
         return cls()
 
     @classmethod
-    def _load_env_file(cls, env_file: Union[str, Path]) -> None:
+    def _load_env_file(cls, env_file: str | Path) -> None:
         """Load environment variables from .env file."""
         env_path = Path(env_file)
         if not env_path.exists():

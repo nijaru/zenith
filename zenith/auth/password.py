@@ -6,9 +6,8 @@ configurable rounds and secure verification.
 """
 
 import logging
-from typing import Optional
+
 from passlib.context import CryptContext
-from passlib.hash import bcrypt
 
 logger = logging.getLogger("zenith.auth.password")
 
@@ -113,7 +112,7 @@ class PasswordManager:
 
 
 # Global password manager instance
-_password_manager: Optional[PasswordManager] = None
+_password_manager: PasswordManager | None = None
 
 
 def configure_password_manager(rounds: int = 12) -> PasswordManager:

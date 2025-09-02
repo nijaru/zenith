@@ -4,19 +4,22 @@ Unit tests for the core routing system.
 Tests the Router class, dependency injection, and route handling.
 """
 
-import asyncio
-import pytest
-from unittest.mock import Mock, AsyncMock
-from typing import List
 
-from zenith.core.routing import Router, Context, Auth, File, RouteSpec, HTTPMethod
-from zenith.core.routing import ContextDependency, AuthDependency, FileUploadDependency
-from zenith.testing import TestClient, create_test_token
+import pytest
+from pydantic import BaseModel
+
 from zenith import Zenith
 from zenith.auth import configure_auth
-from zenith.web.files import FileUploadConfig
-
-from pydantic import BaseModel
+from zenith.core.routing import (
+    Auth,
+    AuthDependency,
+    Context,
+    ContextDependency,
+    File,
+    FileUploadDependency,
+    Router,
+)
+from zenith.testing import TestClient
 
 
 class TestUser(BaseModel):
@@ -100,11 +103,11 @@ class TestRouter:
         # Auth dependency
         auth_dep = Auth()
         assert isinstance(auth_dep, AuthDependency)
-        assert auth_dep.required == True
+        assert auth_dep.required
         assert auth_dep.scopes == []
 
         auth_optional = Auth(required=False, scopes=["admin"])
-        assert auth_optional.required == False
+        assert not auth_optional.required
         assert auth_optional.scopes == ["admin"]
 
         # File dependency
@@ -178,14 +181,14 @@ class TestRouterIntegration:
             assert data["query"] == "python"
             assert data["limit"] == 10  # default
             assert data["sort"] == "name"  # default
-            assert data["active"] == True  # default
+            assert data["active"]  # default
 
             # Test type conversion
             response = await client.get("/search?q=test&limit=5&active=false&sort=date")
             assert response.status_code == 200
             data = response.json()
             assert data["limit"] == 5
-            assert data["active"] == False
+            assert not data["active"]
             assert data["sort"] == "date"
             assert data["types"]["limit"] == "int"
             assert data["types"]["active"] == "bool"
@@ -210,7 +213,7 @@ class TestRouterIntegration:
             assert response.status_code == 200
             data = response.json()
             assert data["name"] == "John"
-            assert data["created"] == True
+            assert data["created"]
 
             # Test validation errors
             invalid_data = {"name": "John"}  # Missing required fields
@@ -245,7 +248,7 @@ class TestRouterIntegration:
             response = await client.get("/public")
             assert response.status_code == 200
             data = response.json()
-            assert data["authenticated"] == False
+            assert not data["authenticated"]
             assert data["user"] is None
 
             # Test public endpoint with auth
@@ -253,7 +256,7 @@ class TestRouterIntegration:
             response = await client.get("/public")
             assert response.status_code == 200
             data = response.json()
-            assert data["authenticated"] == True
+            assert data["authenticated"]
             assert data["user"]["id"] == 123
 
             # Test protected endpoint with auth

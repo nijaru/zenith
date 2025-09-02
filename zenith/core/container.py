@@ -6,8 +6,9 @@ Provides service registration, resolution, and lifecycle management.
 
 import asyncio
 import inspect
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
+from collections.abc import Callable
 from contextlib import asynccontextmanager
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -16,16 +17,16 @@ class DIContainer:
     """Dependency injection container with async support."""
 
     def __init__(self) -> None:
-        self._services: Dict[str, Any] = {}
-        self._singletons: Dict[str, Any] = {}
-        self._factories: Dict[str, Callable] = {}
+        self._services: dict[str, Any] = {}
+        self._singletons: dict[str, Any] = {}
+        self._factories: dict[str, Callable] = {}
         self._startup_hooks: list[Callable] = []
         self._shutdown_hooks: list[Callable] = []
 
     def register(
         self,
-        service_type: Union[Type[T], str],
-        implementation: Union[T, Callable[..., T], None] = None,
+        service_type: type[T] | str,
+        implementation: T | Callable[..., T] | None = None,
         singleton: bool = True,
     ) -> None:
         """Register a service with the container."""
@@ -45,7 +46,7 @@ class DIContainer:
         if singleton:
             self._singletons[key] = True
 
-    def get(self, service_type: Union[Type[T], str]) -> T:
+    def get(self, service_type: type[T] | str) -> T:
         """Get a service instance from the container."""
         key = self._get_key(service_type)
 
@@ -82,11 +83,11 @@ class DIContainer:
                     kwargs[param_name] = dependency
                 except KeyError:
                     if param.default == inspect.Parameter.empty:
-                        raise KeyError(f"Cannot resolve dependency: {param.annotation}")
+                        raise KeyError(f"Cannot resolve dependency: {param.annotation}") from None
 
         return factory(**kwargs)
 
-    def _get_key(self, service_type: Union[Type, str]) -> str:
+    def _get_key(self, service_type: type | str) -> str:
         """Get string key for service type."""
         if isinstance(service_type, str):
             return service_type

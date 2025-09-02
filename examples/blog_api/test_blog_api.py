@@ -8,18 +8,17 @@ Demonstrates:
 - Database transaction rollback
 """
 
-import pytest
-from typing import Optional, List
 
+import pytest
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import String, Integer, Boolean, DateTime, func
+from sqlalchemy import Boolean, DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from zenith import Zenith, Router, Context, Auth
-from zenith.core.context import Context as BaseContext
+from zenith import Auth, Context, Router, Zenith
 from zenith.auth import configure_auth
+from zenith.core.context import Context as BaseContext
 from zenith.db import Base
-from zenith.testing import TestClient, TestContext, create_test_user, mock_auth
+from zenith.testing import TestClient, TestContext, mock_auth
 
 
 # Mock application models for testing
@@ -50,7 +49,7 @@ class UserTable(Base):
 class Users(BaseContext):
     """Mock users context for testing."""
 
-    async def get_user(self, user_id: int) -> Optional[User]:
+    async def get_user(self, user_id: int) -> User | None:
         """Get user by ID."""
         return User(
             id=user_id,
@@ -63,7 +62,7 @@ class Users(BaseContext):
         """Create new user."""
         return User(id=1, email=user_data.email, name=user_data.name, is_active=True)
 
-    async def list_users(self, page: int = 1, per_page: int = 20) -> List[User]:
+    async def list_users(self, page: int = 1, per_page: int = 20) -> list[User]:
         """List users with pagination."""
         return [
             User(id=1, email="user1@example.com", name="User 1"),
@@ -106,7 +105,7 @@ def test_app():
         return await users.create_user(user_data)
 
     @api.get("/users")
-    async def list_users(users: Users = Context()) -> List[User]:
+    async def list_users(users: Users = Context()) -> list[User]:
         return await users.list_users()
 
     @app.get("/health")
@@ -285,7 +284,7 @@ class TestIntegration:
             # 2. List users (public)
             users_response = await client.get("/api/users")
             assert users_response.status_code == 200
-            initial_users = users_response.json()
+            users_response.json()
 
             # 3. Try to get user without auth (should fail)
             unauth_response = await client.get("/api/users/1")

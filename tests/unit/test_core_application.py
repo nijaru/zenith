@@ -4,15 +4,15 @@ Unit tests for the core Zenith application class.
 Tests application lifecycle, middleware integration, and configuration.
 """
 
-import pytest
 import os
-from unittest.mock import Mock, patch, AsyncMock
-from pathlib import Path
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from zenith import Zenith
-from zenith.testing import TestClient
-from zenith.core.context import Context
 from zenith.auth import configure_auth
+from zenith.core.context import Context
+from zenith.testing import TestClient
 
 
 @pytest.fixture(autouse=True)
@@ -42,7 +42,7 @@ class TestZenithApplication:
         """Test application creation with custom configuration."""
         app = Zenith(debug=True)
 
-        assert app.config.debug == True
+        assert app.config.debug
 
     def test_context_registration(self):
         """Test context registration and dependency injection setup."""
@@ -199,7 +199,7 @@ class TestRoutingIntegration:
             response = await client.post("/users")
             assert response.status_code == 200
             data = response.json()
-            assert data["created"] == True
+            assert data["created"]
 
     async def test_route_with_context_dependency(self):
         """Test routes using context dependency injection."""

@@ -7,12 +7,14 @@ logging, and user-friendly error responses.
 
 import logging
 import traceback
-from typing import Any, Callable, Dict, Optional, Union
+from collections.abc import Callable
+from typing import Any
+
+from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
-from pydantic import ValidationError
 
 # Get logger
 logger = logging.getLogger("zenith.exceptions")
@@ -25,8 +27,8 @@ class ZenithException(Exception):
         self,
         message: str,
         status_code: int = 500,
-        error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         self.message = message
         self.status_code = status_code
@@ -39,7 +41,7 @@ class ValidationException(ZenithException):
     """Exception for validation errors."""
 
     def __init__(
-        self, message: str = "Validation failed", details: Dict[str, Any] = None
+        self, message: str = "Validation failed", details: dict[str, Any] | None = None
     ):
         super().__init__(message, status_code=422, details=details)
 
@@ -103,7 +105,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         self,
         app: ASGIApp,
         debug: bool = False,
-        handlers: Optional[Dict[type, Callable]] = None,
+        handlers: dict[type, Callable] | None = None,
     ):
         super().__init__(app)
         self.debug = debug
@@ -167,9 +169,8 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         }
 
         # Add details in debug mode or for client errors (4xx)
-        if self.debug or exc.status_code < 500:
-            if exc.details:
-                error_response["details"] = exc.details
+        if (self.debug or exc.status_code < 500) and exc.details:
+            error_response["details"] = exc.details
 
         return JSONResponse(content=error_response, status_code=exc.status_code)
 
@@ -211,7 +212,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         }
 
         if self.debug:
-            error_response["details"] = f"Missing key: {str(exc)}"
+            error_response["details"] = f"Missing key: {exc!s}"
 
         return JSONResponse(content=error_response, status_code=400)
 
@@ -274,7 +275,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
 
 
 def exception_middleware(
-    debug: bool = False, handlers: Optional[Dict[type, Callable]] = None
+    debug: bool = False, handlers: dict[type, Callable] | None = None
 ):
     """
     Helper function to create exception handling middleware.

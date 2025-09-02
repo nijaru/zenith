@@ -2,9 +2,10 @@
 Command line interface for Zenith framework.
 """
 
-import click
 import asyncio
 from pathlib import Path
+
+import click
 
 from zenith.core.application import Application
 from zenith.core.config import Config

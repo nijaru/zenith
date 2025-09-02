@@ -5,10 +5,11 @@ Provides secure token generation, validation, and user authentication
 using industry-standard JWT (JSON Web Tokens).
 """
 
-import jwt
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Optional, Union
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import jwt
 
 logger = logging.getLogger("zenith.auth.jwt")
 
@@ -45,11 +46,11 @@ class JWTManager:
 
     def create_access_token(
         self,
-        user_id: Union[int, str],
+        user_id: int | str,
         email: str,
         role: str = "user",
-        scopes: Optional[list] = None,
-        expires_delta: Optional[timedelta] = None,
+        scopes: list | None = None,
+        expires_delta: timedelta | None = None,
     ) -> str:
         """
         Create a JWT access token for a user.
@@ -65,9 +66,9 @@ class JWTManager:
             Encoded JWT token string
         """
         if expires_delta:
-            expire = datetime.now(timezone.utc) + expires_delta
+            expire = datetime.now(UTC) + expires_delta
         else:
-            expire = datetime.now(timezone.utc) + timedelta(
+            expire = datetime.now(UTC) + timedelta(
                 minutes=self.access_token_expire_minutes
             )
 
@@ -77,7 +78,7 @@ class JWTManager:
             "role": role,
             "scopes": scopes or [],
             "exp": expire,
-            "iat": datetime.now(timezone.utc),  # Issued at
+            "iat": datetime.now(UTC),  # Issued at
             "type": "access",
         }
 
@@ -89,16 +90,16 @@ class JWTManager:
             logger.error(f"Failed to create JWT token: {e}")
             raise
 
-    def create_refresh_token(self, user_id: Union[int, str]) -> str:
+    def create_refresh_token(self, user_id: int | str) -> str:
         """Create a refresh token for long-term authentication."""
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             days=self.refresh_token_expire_days
         )
 
         payload = {
             "sub": str(user_id),
             "exp": expire,
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
             "type": "refresh",
         }
 
@@ -110,7 +111,7 @@ class JWTManager:
             logger.error(f"Failed to create refresh token: {e}")
             raise
 
-    def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def verify_token(self, token: str) -> dict[str, Any] | None:
         """
         Verify and decode a JWT token.
 
@@ -146,7 +147,7 @@ class JWTManager:
             logger.error(f"Unexpected error verifying token: {e}")
             return None
 
-    def verify_refresh_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def verify_refresh_token(self, token: str) -> dict[str, Any] | None:
         """Verify a refresh token specifically."""
         try:
             payload = jwt.decode(
@@ -169,7 +170,7 @@ class JWTManager:
             logger.warning(f"Invalid refresh token: {e}")
             return None
 
-    def extract_user_from_token(self, token: str) -> Optional[Dict[str, Any]]:
+    def extract_user_from_token(self, token: str) -> dict[str, Any] | None:
         """Extract user information from a valid token."""
         payload = self.verify_token(token)
         if not payload:
@@ -185,7 +186,7 @@ class JWTManager:
 
 
 # Global JWT manager instance (configured by application)
-_jwt_manager: Optional[JWTManager] = None
+_jwt_manager: JWTManager | None = None
 
 
 def configure_jwt(
@@ -214,11 +215,11 @@ def get_jwt_manager() -> JWTManager:
 
 # Convenience functions
 def create_access_token(
-    user_id: Union[int, str],
+    user_id: int | str,
     email: str,
     role: str = "user",
-    scopes: Optional[list] = None,
-    expires_delta: Optional[timedelta] = None,
+    scopes: list | None = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """Create access token using global JWT manager."""
     return get_jwt_manager().create_access_token(
@@ -226,11 +227,11 @@ def create_access_token(
     )
 
 
-def verify_access_token(token: str) -> Optional[Dict[str, Any]]:
+def verify_access_token(token: str) -> dict[str, Any] | None:
     """Verify access token using global JWT manager."""
     return get_jwt_manager().verify_token(token)
 
 
-def extract_user_from_token(token: str) -> Optional[Dict[str, Any]]:
+def extract_user_from_token(token: str) -> dict[str, Any] | None:
     """Extract user from token using global JWT manager."""
     return get_jwt_manager().extract_user_from_token(token)

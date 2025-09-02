@@ -5,19 +5,19 @@ Provides helpers for creating test users, generating test tokens,
 and mocking authentication in Zenith application tests.
 """
 
-from typing import Dict, List, Optional, Any, Union
 from datetime import datetime, timedelta
+from typing import Any
 
-from zenith.auth.jwt import get_jwt_manager, create_access_token
+from zenith.auth.jwt import create_access_token
 from zenith.auth.password import hash_password
 
 
 def create_test_token(
     email: str,
-    user_id: Union[int, str] = 1,
+    user_id: int | str = 1,
     role: str = "user",
-    scopes: Optional[List[str]] = None,
-    expires_delta: Optional[timedelta] = None,
+    scopes: list[str] | None = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Create a test JWT token for authentication testing.
@@ -58,9 +58,9 @@ def create_test_user(
     password: str = "testpassword123",
     role: str = "user",
     user_id: int = 1,
-    scopes: Optional[List[str]] = None,
+    scopes: list[str] | None = None,
     **extra_fields,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create test user data with hashed password.
 
@@ -109,9 +109,9 @@ class MockAuth:
     def __init__(
         self,
         email: str = "test@example.com",
-        user_id: Union[int, str] = 1,
+        user_id: int | str = 1,
         role: str = "user",
-        scopes: Optional[List[str]] = None,
+        scopes: list[str] | None = None,
         **extra_fields,
     ):
         """
@@ -132,17 +132,17 @@ class MockAuth:
             **extra_fields,
         }
 
-    def get_current_user(self, required: bool = True) -> Optional[Dict[str, Any]]:
+    def get_current_user(self, required: bool = True) -> dict[str, Any] | None:
         """Mock get_current_user function."""
         if required:
             return self.user_data
         return self.user_data
 
-    def require_auth(self) -> Dict[str, Any]:
+    def require_auth(self) -> dict[str, Any]:
         """Mock require_auth function."""
         return self.user_data
 
-    def require_roles(self, *roles: str) -> Dict[str, Any]:
+    def require_roles(self, *roles: str) -> dict[str, Any]:
         """Mock require_roles function."""
         user_role = self.user_data.get("role", "user")
         if user_role not in roles:
@@ -154,9 +154,9 @@ class MockAuth:
 
 def mock_auth(
     email: str = "test@example.com",
-    user_id: Union[int, str] = 1,
+    user_id: int | str = 1,
     role: str = "user",
-    scopes: Optional[List[str]] = None,
+    scopes: list[str] | None = None,
     **extra_fields,
 ) -> MockAuth:
     """
@@ -197,15 +197,15 @@ class TestAuthManager:
     """
 
     def __init__(self):
-        self.users: Dict[str, Dict[str, Any]] = {}
-        self.current_user: Optional[str] = None
+        self.users: dict[str, dict[str, Any]] = {}
+        self.current_user: str | None = None
 
     def add_user(
         self,
         identifier: str,
         email: str,
         role: str = "user",
-        scopes: Optional[List[str]] = None,
+        scopes: list[str] | None = None,
         **extra_fields,
     ) -> None:
         """Add a test user to the manager."""
@@ -219,7 +219,7 @@ class TestAuthManager:
             raise ValueError(f"User '{identifier}' not found")
         self.current_user = identifier
 
-    def get_current_user_data(self) -> Optional[Dict[str, Any]]:
+    def get_current_user_data(self) -> dict[str, Any] | None:
         """Get current user data."""
         if not self.current_user:
             return None
@@ -238,7 +238,7 @@ class TestAuthManager:
             scopes=user.get("scopes", []),
         )
 
-    def create_token_for_current_user(self) -> Optional[str]:
+    def create_token_for_current_user(self) -> str | None:
         """Create JWT token for current user."""
         if not self.current_user:
             return None

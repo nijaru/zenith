@@ -2,8 +2,9 @@
 Tests for dependency injection container.
 """
 
+
 import pytest
-import asyncio
+
 from zenith.core.container import DIContainer
 
 

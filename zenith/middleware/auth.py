@@ -6,11 +6,11 @@ available to the dependency injection system.
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Any
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
+from starlette.responses import Response
 
 from zenith.auth.jwt import get_jwt_manager
 
@@ -28,7 +28,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     - Optional authentication for public endpoints
     """
 
-    def __init__(self, app, public_paths: list = None):
+    def __init__(self, app, public_paths: list | None = None):
         super().__init__(app)
         self.public_paths = public_paths or [
             "/docs",
@@ -76,7 +76,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """Check if path is public (no authentication required)."""
         return any(path.startswith(public_path) for public_path in self.public_paths)
 
-    def _extract_bearer_token(self, auth_header: Optional[str]) -> Optional[str]:
+    def _extract_bearer_token(self, auth_header: str | None) -> str | None:
         """Extract Bearer token from Authorization header."""
         if not auth_header:
             return None
@@ -90,7 +90,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
 def get_current_user(
     request: Request, required: bool = True
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Get current authenticated user from request state.
 

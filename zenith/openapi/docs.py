@@ -4,22 +4,22 @@ Documentation routes for serving OpenAPI spec and interactive documentation.
 Provides Swagger UI and ReDoc interfaces for API documentation.
 """
 
-import json
-from typing import Dict, List, Optional
 from starlette.responses import HTMLResponse, JSONResponse
+
 from zenith.core.routing import Router
+
 from .generator import generate_openapi_spec
 
 
 def setup_docs_routes(
-    routers: List[Router],
+    routers: list[Router],
     title: str = "Zenith API",
     version: str = "1.0.0",
     description: str = "API built with Zenith framework",
     docs_url: str = "/docs",
     redoc_url: str = "/redoc",
     openapi_url: str = "/openapi.json",
-    servers: Optional[List[Dict[str, str]]] = None,
+    servers: list[dict[str, str]] | None = None,
 ) -> Router:
     """
     Setup documentation routes for OpenAPI spec and interactive docs.

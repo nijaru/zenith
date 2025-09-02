@@ -5,16 +5,13 @@ Tests authentication, security, CORS, rate limiting, and exception middleware.
 """
 
 import asyncio
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-import time
 
-from zenith.testing import TestClient
+import pytest
+
 from zenith import Zenith
 from zenith.auth import configure_auth
-from zenith.middleware.security import SecurityConfig, SecurityHeadersMiddleware
-from zenith.middleware.auth import AuthenticationMiddleware, get_current_user
-from zenith.middleware.exceptions import ExceptionHandlerMiddleware
+from zenith.middleware.security import SecurityConfig
+from zenith.testing import TestClient
 
 
 @pytest.mark.asyncio
@@ -64,8 +61,8 @@ class TestAuthenticationMiddleware:
             response = await client.get("/protected")
             assert response.status_code == 200
             data = response.json()
-            assert data["has_token"] == True
-            assert data["has_user"] == True
+            assert data["has_token"]
+            assert data["has_user"]
             assert data["user"] is None
             assert data["error"] is None
 
@@ -151,7 +148,6 @@ class TestSecurityMiddleware:
 
     async def test_security_config_customization(self):
         """Test custom security configuration."""
-        from zenith.middleware.security import SecurityConfig
 
         app = Zenith()
         custom_config = SecurityConfig(
@@ -365,7 +361,7 @@ class TestRateLimitMiddleware:
 
         async with TestClient(app) as client:
             # Should allow first 5 requests
-            for i in range(5):
+            for _i in range(5):
                 response = await client.get("/limited")
                 assert response.status_code == 200
 
@@ -410,30 +406,30 @@ class TestSecurityUtilities:
         from zenith.middleware.security import validate_url
 
         # Valid URLs
-        assert validate_url("https://example.com") == True
-        assert validate_url("http://example.com/path") == True
-        assert validate_url("https://api.example.com/v1/data") == True
+        assert validate_url("https://example.com")
+        assert validate_url("http://example.com/path")
+        assert validate_url("https://api.example.com/v1/data")
 
         # Invalid schemes
-        assert validate_url("javascript:alert(1)") == False
-        assert validate_url("data:text/html,<script>alert(1)</script>") == False
-        assert validate_url("file:///etc/passwd") == False
+        assert not validate_url("javascript:alert(1)")
+        assert not validate_url("data:text/html,<script>alert(1)</script>")
+        assert not validate_url("file:///etc/passwd")
 
         # Local/private addresses
-        assert validate_url("http://localhost/admin") == False
-        assert validate_url("http://127.0.0.1/api") == False
-        assert validate_url("http://192.168.1.1/config") == False
-        assert validate_url("http://10.0.0.1/internal") == False
+        assert not validate_url("http://localhost/admin")
+        assert not validate_url("http://127.0.0.1/api")
+        assert not validate_url("http://192.168.1.1/config")
+        assert not validate_url("http://10.0.0.1/internal")
 
         # Edge cases
-        assert validate_url("") == False
-        assert validate_url("not-a-url") == False
+        assert not validate_url("")
+        assert not validate_url("not-a-url")
 
     def test_secure_token_generation(self):
         """Test cryptographically secure token generation."""
         from zenith.middleware.security import (
-            generate_secure_token,
             constant_time_compare,
+            generate_secure_token,
         )
 
         # Test token generation
@@ -451,9 +447,9 @@ class TestSecurityUtilities:
 
         # Test constant time comparison
         secret = "super-secret-value"
-        assert constant_time_compare(secret, secret) == True
-        assert constant_time_compare(secret, "wrong-value") == False
-        assert constant_time_compare("", "") == True
+        assert constant_time_compare(secret, secret)
+        assert not constant_time_compare(secret, "wrong-value")
+        assert constant_time_compare("", "")
 
 
 if __name__ == "__main__":

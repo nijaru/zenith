@@ -8,7 +8,6 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
 
 import httpx
 import psutil
@@ -84,7 +83,7 @@ class BenchmarkRunner:
                     if response.status_code == 200:
                         print(f"  {framework} server ready")
                         return
-                except:
+                except (httpx.ConnectError, httpx.RequestError):
                     pass
                 await asyncio.sleep(1)
 
@@ -111,7 +110,7 @@ class BenchmarkRunner:
                         await client.get(url)
                     else:
                         await client.post(url, json=test.get("body", {}))
-                except:
+                except (httpx.RequestError, httpx.HTTPStatusError):
                     pass
 
     async def run_benchmark(
@@ -296,10 +295,10 @@ class BenchmarkRunner:
             "results": self.results,
         }
 
-        with open("benchmark_results.json", "w") as f:
+        with Path("benchmark_results.json").open("w") as f:
             json.dump(output, f, indent=2)
 
-        print(f"\nResults saved to benchmark_results.json")
+        print("\nResults saved to benchmark_results.json")
 
 
 async def main():

@@ -5,16 +5,14 @@ Provides comprehensive security headers, CSRF protection,
 and other security enhancements.
 """
 
-import secrets
 import hashlib
 import hmac
-from typing import Dict, List, Optional, Callable, Any
+import secrets
 from urllib.parse import urlparse
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
-from starlette.datastructures import MutableHeaders
+from starlette.responses import JSONResponse, Response
 
 
 class SecurityConfig:
@@ -23,7 +21,7 @@ class SecurityConfig:
     def __init__(
         self,
         # Content Security Policy
-        csp_policy: Optional[str] = None,
+        csp_policy: str | None = None,
         csp_report_only: bool = False,
         # HTTP Strict Transport Security
         hsts_max_age: int = 31536000,  # 1 year
@@ -38,14 +36,14 @@ class SecurityConfig:
         # Referrer Policy
         referrer_policy: str = "strict-origin-when-cross-origin",
         # Permissions Policy (formerly Feature Policy)
-        permissions_policy: Optional[str] = None,
+        permissions_policy: str | None = None,
         # CSRF Protection
         csrf_protection: bool = False,
-        csrf_secret_key: Optional[str] = None,
+        csrf_secret_key: str | None = None,
         csrf_token_header: str = "X-CSRF-Token",
-        csrf_safe_methods: List[str] = None,
+        csrf_safe_methods: list[str] | None = None,
         # Trusted Proxies
-        trusted_proxies: List[str] = None,
+        trusted_proxies: list[str] | None = None,
         # Force HTTPS
         force_https: bool = False,
         force_https_permanent: bool = False,
@@ -168,7 +166,7 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
 
         return await call_next(request)
 
-    def _get_csrf_token(self, request: Request) -> Optional[str]:
+    def _get_csrf_token(self, request: Request) -> str | None:
         """Extract CSRF token from request."""
         # Check header first
         token = request.headers.get(self.config.csrf_token_header)
@@ -209,7 +207,7 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
 class TrustedProxyMiddleware(BaseHTTPMiddleware):
     """Middleware for handling trusted proxy headers."""
 
-    def __init__(self, app, trusted_proxies: List[str] = None):
+    def __init__(self, app, trusted_proxies: list[str] | None = None):
         super().__init__(app)
         self.trusted_proxies = set(trusted_proxies or [])
 
@@ -238,7 +236,7 @@ class TrustedProxyMiddleware(BaseHTTPMiddleware):
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
             # Take the first IP in the chain
-            real_ip = forwarded_for.split(",")[0].strip()
+            forwarded_for.split(",")[0].strip()
             # Update request.client if needed
             pass
 
@@ -271,7 +269,7 @@ def sanitize_html_input(text: str) -> str:
     return text
 
 
-def validate_url(url: str, allowed_schemes: List[str] = None) -> bool:
+def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
     """Validate URL to prevent SSRF attacks."""
     if not url:
         return False

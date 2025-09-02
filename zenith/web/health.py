@@ -7,12 +7,13 @@ and deployment orchestration.
 
 import asyncio
 import time
-from typing import Dict, List, Optional, Callable, Any, Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
-from starlette.responses import JSONResponse
 from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 
 class HealthStatus(Enum):
@@ -29,9 +30,9 @@ class HealthCheckResult:
 
     name: str
     status: HealthStatus
-    message: Optional[str] = None
-    duration_ms: Optional[float] = None
-    details: Optional[Dict[str, Any]] = None
+    message: str | None = None
+    duration_ms: float | None = None
+    details: dict[str, Any] | None = None
 
 
 @dataclass
@@ -40,10 +41,10 @@ class OverallHealth:
 
     status: HealthStatus
     timestamp: float
-    checks: List[HealthCheckResult] = field(default_factory=list)
-    version: Optional[str] = None
+    checks: list[HealthCheckResult] = field(default_factory=list)
+    version: str | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON response."""
         return {
             "status": self.status.value,
@@ -101,7 +102,7 @@ class HealthCheck:
                     duration_ms=duration_ms,
                 )
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             duration_ms = (time.time() - start_time) * 1000
             return HealthCheckResult(
                 name=self.name,
@@ -115,7 +116,7 @@ class HealthCheck:
             return HealthCheckResult(
                 name=self.name,
                 status=HealthStatus.UNHEALTHY,
-                message=f"Error: {str(e)}",
+                message=f"Error: {e!s}",
                 duration_ms=duration_ms,
             )
 
@@ -123,8 +124,8 @@ class HealthCheck:
 class HealthManager:
     """Manages multiple health checks."""
 
-    def __init__(self, version: Optional[str] = None):
-        self.checks: List[HealthCheck] = []
+    def __init__(self, version: str | None = None):
+        self.checks: list[HealthCheck] = []
         self.version = version
         self._startup_time = time.time()
 
@@ -164,7 +165,7 @@ class HealthManager:
                 check_result = HealthCheckResult(
                     name=checks_to_run[i].name,
                     status=HealthStatus.UNHEALTHY,
-                    message=f"Unexpected error: {str(result)}",
+                    message=f"Unexpected error: {result!s}",
                 )
             else:
                 check_result = result

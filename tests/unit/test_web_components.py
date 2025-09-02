@@ -5,35 +5,31 @@ Tests file uploads, health checks, static files, and response utilities.
 """
 
 import asyncio
-import pytest
 import tempfile
-import time
 from pathlib import Path
-from unittest.mock import Mock, patch
 
-from zenith.testing import TestClient
-from zenith import Zenith, File
+import pytest
+
+from zenith import File, Zenith
 from zenith.auth import configure_auth
+from zenith.testing import TestClient
 from zenith.web.files import (
     FileUploadConfig,
     FileUploader,
-    UploadedFile,
-    FileUploadError,
 )
 from zenith.web.health import (
     HealthManager,
-    HealthCheck,
     HealthStatus,
     add_health_routes,
 )
 from zenith.web.responses import (
-    success_response,
     error_response,
     file_download_response,
     paginated_response,
     redirect_response,
+    success_response,
 )
-from zenith.web.static import create_static_route, StaticFileConfig
+from zenith.web.static import StaticFileConfig, create_static_route
 
 
 @pytest.mark.asyncio
@@ -163,8 +159,8 @@ class TestFileUploads:
         config = FileUploadConfig()
         assert config.max_file_size == 10 * 1024 * 1024  # 10MB
         assert config.allowed_extensions == []  # Allow all
-        assert config.preserve_filename == False
-        assert config.create_subdirs == True
+        assert not config.preserve_filename
+        assert config.create_subdirs
 
         # Test custom config
         custom_config = FileUploadConfig(
@@ -175,8 +171,8 @@ class TestFileUploads:
         )
         assert custom_config.max_file_size == 5 * 1024 * 1024
         assert custom_config.allowed_extensions == [".jpg", ".png"]
-        assert custom_config.preserve_filename == True
-        assert custom_config.create_subdirs == False
+        assert custom_config.preserve_filename
+        assert not custom_config.create_subdirs
 
 
 @pytest.mark.asyncio
@@ -302,7 +298,7 @@ class TestResponseUtilities:
         assert response.status_code == 201
         body = response.body.decode()
         data = eval(body)  # Simple JSON parsing
-        assert data["success"] == True
+        assert data["success"]
         assert data["message"] == "User created"
         assert data["data"]["id"] == 123
 
@@ -315,7 +311,7 @@ class TestResponseUtilities:
         assert response.status_code == 400
         body = response.body.decode()
         data = eval(body)
-        assert data["success"] == False
+        assert not data["success"]
         assert data["error"] == "VALIDATION_ERROR"
         assert data["message"] == "Invalid input"
         assert data["details"]["field"] == "email"
@@ -336,12 +332,12 @@ class TestResponseUtilities:
         body = response.body.decode()
         data = eval(body)
 
-        assert data["success"] == True
+        assert data["success"]
         assert len(data["data"]) == 3
         assert data["pagination"]["page"] == 2
         assert data["pagination"]["total_pages"] == 3  # 25 items / 10 per page
-        assert data["pagination"]["has_next"] == True
-        assert data["pagination"]["has_prev"] == True
+        assert data["pagination"]["has_next"]
+        assert data["pagination"]["has_prev"]
 
     def test_redirect_response(self):
         """Test redirect response generation."""
@@ -383,7 +379,6 @@ class TestStaticFiles:
 
     def test_static_file_config(self):
         """Test static file configuration."""
-        from zenith.web.static import StaticFileConfig
 
         config = StaticFileConfig(
             directory="/static",
@@ -395,7 +390,7 @@ class TestStaticFiles:
         assert config.directory == "/static"
         assert config.max_age == 3600
         assert config.allowed_extensions == [".css", ".js"]
-        assert config.allow_hidden == False
+        assert not config.allow_hidden
 
     def test_static_route_creation(self):
         """Test static route creation."""

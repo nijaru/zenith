@@ -5,32 +5,25 @@ Combines the best of FastAPI's decorator patterns with Phoenix contexts
 and Rails conventions for maximum developer experience.
 """
 
-import asyncio
 import inspect
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from enum import Enum
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
     TypeVar,
     Union,
     get_type_hints,
 )
-from functools import wraps
-from dataclasses import dataclass
-from enum import Enum
 
 from pydantic import BaseModel, ValidationError
-from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
-from starlette.routing import Route, Router as StarletteRouter
 from starlette.middleware import Middleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
+from starlette.routing import Route
+from starlette.routing import Router as StarletteRouter
 
 from zenith.core.context import Context
-
 
 T = TypeVar("T")
 HandlerFunc = Callable[..., Awaitable[Any]]
@@ -53,23 +46,23 @@ class RouteSpec:
     """Specification for a route."""
 
     path: str
-    methods: List[str]
+    methods: list[str]
     handler: HandlerFunc
-    name: Optional[str] = None
-    middleware: List[Middleware] = None
+    name: str | None = None
+    middleware: list[Middleware] = None
 
 
 class ContextDependency:
     """Dependency marker for auto-injecting contexts."""
 
-    def __init__(self, context_class: Type[Context]):
+    def __init__(self, context_class: type[Context]):
         self.context_class = context_class
 
 
 class AuthDependency:
     """Dependency marker for authentication."""
 
-    def __init__(self, required: bool = True, scopes: List[str] = None):
+    def __init__(self, required: bool = True, scopes: list[str] | None = None):
         self.required = required
         self.scopes = scopes or []
 
@@ -82,12 +75,12 @@ class FileUploadDependency:
         self.config = config
 
 
-def Context(context_class: Optional[Type] = None):
+def Context(context_class: type | None = None):
     """Dependency injection marker for contexts."""
     return ContextDependency(context_class)
 
 
-def Auth(required: bool = True, scopes: List[str] = None):
+def Auth(required: bool = True, scopes: list[str] | None = None):
     """Dependency injection marker for authentication."""
     return AuthDependency(required, scopes)
 
@@ -109,18 +102,18 @@ class Router:
     - Middleware support
     """
 
-    def __init__(self, prefix: str = "", middleware: List[Middleware] = None):
+    def __init__(self, prefix: str = "", middleware: list[Middleware] | None = None):
         self.prefix = prefix
         self.middleware = middleware or []
-        self.routes: List[RouteSpec] = []
+        self.routes: list[RouteSpec] = []
         self._app = None  # Will be set by Application
 
     def route(
         self,
         path: str,
-        methods: List[str],
-        name: Optional[str] = None,
-        middleware: List[Middleware] = None,
+        methods: list[str],
+        name: str | None = None,
+        middleware: list[Middleware] | None = None,
     ):
         """Generic route decorator."""
 
@@ -188,9 +181,9 @@ class Router:
                 if param_name in request.path_params:
                     value = request.path_params[param_name]
                     # Convert to appropriate type
-                    if param_type == int:
+                    if param_type is int:
                         kwargs[param_name] = int(value)
-                    elif param_type == float:
+                    elif param_type is float:
                         kwargs[param_name] = float(value)
                     else:
                         kwargs[param_name] = value
@@ -199,11 +192,11 @@ class Router:
                 # Handle query parameters
                 if param_name in request.query_params:
                     value = request.query_params[param_name]
-                    if param_type == int:
+                    if param_type is int:
                         kwargs[param_name] = int(value)
-                    elif param_type == float:
+                    elif param_type is float:
                         kwargs[param_name] = float(value)
-                    elif param_type == bool:
+                    elif param_type is bool:
                         kwargs[param_name] = value.lower() in ("true", "1", "yes")
                     else:
                         kwargs[param_name] = value
@@ -284,7 +277,7 @@ class Router:
                 return result
             elif isinstance(result, BaseModel):
                 return JSONResponse(result.model_dump())
-            elif isinstance(result, (dict, list)):
+            elif isinstance(result, dict | list):
                 return JSONResponse(result)
             else:
                 return JSONResponse({"result": result})
@@ -293,7 +286,7 @@ class Router:
             # Re-raise exception to be handled by ExceptionHandlerMiddleware
             raise e
 
-    def _validate_response(self, result: Any, return_type: Type) -> Any:
+    def _validate_response(self, result: Any, return_type: type) -> Any:
         """Validate response against return type hint."""
 
         # Handle Optional types (Union[T, None])
@@ -340,7 +333,7 @@ class Router:
                     raise ValidationException(
                         f"Response validation failed for {return_type.__name__}",
                         details={"validation_errors": e.errors()},
-                    )
+                    ) from e
             else:
                 from zenith.middleware.exceptions import ValidationException
 

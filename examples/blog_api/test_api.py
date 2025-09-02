@@ -6,9 +6,8 @@ injection and routing system works correctly.
 """
 
 import asyncio
-import httpx
-from typing import Dict, Any
 
+import httpx
 
 BASE_URL = "http://127.0.0.1:8000"
 
@@ -79,7 +78,7 @@ async def test_api():
         if response.status_code == 200:
             auth_data = response.json()
             token = auth_data["access_token"]
-            print(f"   Login successful, got token")
+            print("   Login successful, got token")
 
             # Test protected route
             headers = {"Authorization": f"Bearer {token}"}

@@ -2,9 +2,8 @@
 Tests for core Application kernel.
 """
 
+
 import pytest
-import asyncio
-from unittest.mock import AsyncMock
 
 from zenith.core.application import Application
 from zenith.core.config import Config

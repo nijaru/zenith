@@ -4,24 +4,22 @@ Unit tests for the authentication system.
 Tests JWT token generation/validation, password hashing, and auth middleware.
 """
 
-import pytest
-from unittest.mock import Mock, patch
-from datetime import datetime, timedelta
-import jwt
-import bcrypt
 import os
+from datetime import datetime, timedelta
+from unittest.mock import patch
 
+import jwt
+import pytest
+
+from zenith import Zenith
+from zenith.auth import configure_auth
 from zenith.auth.jwt import (
-    create_access_token,
-    verify_access_token,
     JWTManager,
     configure_jwt,
 )
 from zenith.auth.password import hash_password, verify_password
-from zenith.auth import configure_auth
-from zenith.testing import TestClient, create_test_token
-from zenith import Zenith
 from zenith.core.routing import Auth
+from zenith.testing import TestClient, create_test_token
 
 
 @pytest.fixture(autouse=True)
@@ -189,7 +187,7 @@ class TestPasswordHashing:
         password = "test_password_123"
         hashed = hash_password(password)
 
-        assert verify_password(password, hashed) == True
+        assert verify_password(password, hashed)
 
     def test_verify_incorrect_password(self):
         """Test verifying incorrect passwords."""
@@ -197,21 +195,21 @@ class TestPasswordHashing:
         wrong_password = "wrong_password"
         hashed = hash_password(password)
 
-        assert verify_password(wrong_password, hashed) == False
+        assert not verify_password(wrong_password, hashed)
 
     def test_verify_empty_password(self):
         """Test verifying empty passwords."""
         hashed = hash_password("password")
 
-        assert verify_password("", hashed) == False
-        assert verify_password(None, hashed) == False
+        assert not verify_password("", hashed)
+        assert not verify_password(None, hashed)
 
     def test_verify_invalid_hash(self):
         """Test verifying with invalid hash."""
         password = "password"
         invalid_hash = "invalid_hash_format"
 
-        assert verify_password(password, invalid_hash) == False
+        assert not verify_password(password, invalid_hash)
 
 
 class TestTestingUtilities:
@@ -308,7 +306,7 @@ class TestAuthenticationMiddleware:
             response = await client.get("/optional")
             assert response.status_code == 200
             data = response.json()
-            assert data["authenticated"] == False
+            assert not data["authenticated"]
             assert data["user"] is None
 
             # With token
@@ -316,7 +314,7 @@ class TestAuthenticationMiddleware:
             response = await client.get("/optional")
             assert response.status_code == 200
             data = response.json()
-            assert data["authenticated"] == True
+            assert data["authenticated"]
             assert data["user"]["email"] == "test@example.com"
 
     async def test_middleware_scope_validation(self):
@@ -414,10 +412,10 @@ class TestAuthenticationHelpers:
         hashed = hash_password(password)
 
         # Verify correct password
-        assert verify_password(password, hashed) == True
+        assert verify_password(password, hashed)
 
         # Verify incorrect password
-        assert verify_password("wrong_password", hashed) == False
+        assert not verify_password("wrong_password", hashed)
 
     def test_jwt_token_lifecycle(self):
         """Test complete JWT token lifecycle."""

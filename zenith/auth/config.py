@@ -6,7 +6,6 @@ with sensible defaults and minimal boilerplate.
 """
 
 import logging
-from typing import List, Optional
 
 from zenith.auth.jwt import configure_jwt
 from zenith.middleware.auth import AuthenticationMiddleware
@@ -20,7 +19,7 @@ def configure_auth(
     algorithm: str = "HS256",
     access_token_expire_minutes: int = 30,
     refresh_token_expire_days: int = 7,
-    public_paths: Optional[List[str]] = None,
+    public_paths: list[str] | None = None,
 ):
     """
     Configure authentication for a Zenith application.
@@ -67,7 +66,7 @@ def configure_auth(
     return jwt_manager
 
 
-def auth_required(scopes: Optional[List[str]] = None):
+def auth_required(scopes: list[str] | None = None):
     """
     Decorator factory for requiring authentication on route handlers.
 

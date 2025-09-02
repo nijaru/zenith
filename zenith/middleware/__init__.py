@@ -9,14 +9,14 @@ Provides essential middleware for production applications:
 - Error handling
 """
 
+from .auth import AuthenticationMiddleware
 from .cors import CORSMiddleware
 from .exceptions import ExceptionHandlerMiddleware
 from .ratelimit import RateLimitMiddleware
-from .auth import AuthenticationMiddleware
 
 __all__ = [
+    "AuthenticationMiddleware",
     "CORSMiddleware",
     "ExceptionHandlerMiddleware",
     "RateLimitMiddleware",
-    "AuthenticationMiddleware",
 ]

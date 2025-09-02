@@ -5,15 +5,16 @@ Provides pytest fixtures and common testing patterns for database setup,
 application testing, and authentication mocking.
 """
 
-import pytest
 import asyncio
-from typing import Generator, AsyncGenerator, Any, Dict, Optional
+from collections.abc import AsyncGenerator, Generator
+
+import pytest
 
 from zenith import Zenith
 from zenith.auth import configure_auth
-from zenith.testing.client import TestClient
-from zenith.testing.context import test_database, TestDatabase
 from zenith.testing.auth import TestAuthManager
+from zenith.testing.client import TestClient
+from zenith.testing.context import TestDatabase, test_database
 
 
 # Pytest event loop fixture for async tests
@@ -252,7 +253,7 @@ def assert_response_error(response, expected_status: int = 400):
     )
 
 
-def assert_response_json(response, expected_keys: list = None):
+def assert_response_json(response, expected_keys: list | None = None):
     """Assert that response contains valid JSON with expected keys."""
     assert response.headers.get("content-type", "").startswith("application/json")
 

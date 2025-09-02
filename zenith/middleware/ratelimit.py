@@ -6,8 +6,9 @@ ensure fair usage across clients.
 """
 
 import time
-from typing import Callable, Dict, List, Optional, Tuple, Union
 from collections import defaultdict, deque
+from collections.abc import Callable
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -19,7 +20,7 @@ class RateLimitStore:
 
     async def is_allowed(
         self, key: str, limit: int, window_seconds: int
-    ) -> Tuple[bool, Dict[str, Union[int, float]]]:
+    ) -> tuple[bool, dict[str, int | float]]:
         """
         Check if a request is allowed and return rate limit info.
 
@@ -37,13 +38,13 @@ class MemoryRateLimitStore(RateLimitStore):
 
     def __init__(self):
         # Store request timestamps for each key
-        self._requests: Dict[str, deque] = defaultdict(deque)
+        self._requests: dict[str, deque] = defaultdict(deque)
         # Store window info for each key
-        self._windows: Dict[str, Tuple[int, float]] = {}
+        self._windows: dict[str, tuple[int, float]] = {}
 
     async def is_allowed(
         self, key: str, limit: int, window_seconds: int
-    ) -> Tuple[bool, Dict[str, Union[int, float]]]:
+    ) -> tuple[bool, dict[str, int | float]]:
         """Check if request is allowed using sliding window algorithm."""
 
         current_time = time.time()
@@ -107,10 +108,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         default_limit: int = 1000,
         window_seconds: int = 3600,
-        per_endpoint_limits: Optional[Dict[str, Tuple[int, int]]] = None,
-        identifier: Union[str, Callable[[Request], str]] = "ip",
-        store: Optional[RateLimitStore] = None,
-        skip_paths: Optional[List[str]] = None,
+        per_endpoint_limits: dict[str, tuple[int, int]] | None = None,
+        identifier: str | Callable[[Request], str] = "ip",
+        store: RateLimitStore | None = None,
+        skip_paths: list[str] | None = None,
         skip_successful_requests: bool = False,
     ):
         super().__init__(app)
@@ -158,7 +159,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Fall back to direct connection IP
         return request.client.host if request.client else "unknown"
 
-    def _get_rate_limit_for_path(self, path: str) -> Tuple[int, int]:
+    def _get_rate_limit_for_path(self, path: str) -> tuple[int, int]:
         """Get rate limit configuration for a specific path."""
 
         # Check for exact path match
@@ -210,7 +211,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    def _create_rate_limit_response(self, rate_info: Dict) -> Response:
+    def _create_rate_limit_response(self, rate_info: dict) -> Response:
         """Create a 429 Too Many Requests response."""
 
         error_response = {
@@ -235,7 +236,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    def _add_rate_limit_headers(self, response: Response, rate_info: Dict) -> None:
+    def _add_rate_limit_headers(self, response: Response, rate_info: dict) -> None:
         """Add rate limit headers to response."""
 
         response.headers["x-ratelimit-limit"] = str(rate_info["limit"])
@@ -253,14 +254,14 @@ class RedisRateLimitStore(RateLimitStore):
             raise ImportError(
                 "Redis rate limiting requires 'redis' package. "
                 "Install with: pip install redis"
-            )
+            ) from None
 
         self.redis = redis_client or redis.Redis(decode_responses=True)
         self.key_prefix = key_prefix
 
     async def is_allowed(
         self, key: str, limit: int, window_seconds: int
-    ) -> Tuple[bool, Dict[str, Union[int, float]]]:
+    ) -> tuple[bool, dict[str, int | float]]:
         """Redis-based sliding window rate limiting."""
 
         redis_key = f"{self.key_prefix}:{key}"
@@ -303,10 +304,10 @@ class RedisRateLimitStore(RateLimitStore):
 def rate_limit_middleware(
     default_limit: int = 1000,
     window_seconds: int = 3600,
-    per_endpoint_limits: Optional[Dict[str, Tuple[int, int]]] = None,
-    identifier: Union[str, Callable[[Request], str]] = "ip",
-    store: Optional[RateLimitStore] = None,
-    skip_paths: Optional[List[str]] = None,
+    per_endpoint_limits: dict[str, tuple[int, int]] | None = None,
+    identifier: str | Callable[[Request], str] = "ip",
+    store: RateLimitStore | None = None,
+    skip_paths: list[str] | None = None,
 ):
     """
     Helper function to create rate limiting middleware.

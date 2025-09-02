@@ -6,8 +6,7 @@ database transaction rollback, and seamless integration with Zenith applications
 """
 
 import asyncio
-from typing import Any, Dict, Optional, Union, List
-from contextlib import asynccontextmanager
+from typing import Any
 
 import httpx
 from starlette.testclient import TestClient as StarletteTestClient
@@ -53,8 +52,8 @@ class TestClient:
         self.app = app
         self.base_url = base_url
         self.raise_server_exceptions = raise_server_exceptions
-        self._client: Optional[httpx.AsyncClient] = None
-        self._auth_token: Optional[str] = None
+        self._client: httpx.AsyncClient | None = None
+        self._auth_token: str | None = None
 
     async def __aenter__(self):
         """Start application and create HTTP client."""
@@ -75,9 +74,9 @@ class TestClient:
     def set_auth_token(
         self,
         email: str,
-        user_id: Union[int, str] = 1,
+        user_id: int | str = 1,
         role: str = "user",
-        scopes: List[str] = None,
+        scopes: list[str] | None = None,
     ) -> str:
         """
         Set authentication token for subsequent requests.
@@ -102,8 +101,8 @@ class TestClient:
         self._auth_token = None
 
     def _prepare_headers(
-        self, headers: Optional[Dict[str, str]] = None
-    ) -> Dict[str, str]:
+        self, headers: dict[str, str] | None = None
+    ) -> dict[str, str]:
         """Add auth headers if token is set."""
         prepared_headers = headers or {}
 
@@ -113,7 +112,7 @@ class TestClient:
         return prepared_headers
 
     async def request(
-        self, method: str, url: str, headers: Optional[Dict[str, str]] = None, **kwargs
+        self, method: str, url: str, headers: dict[str, str] | None = None, **kwargs
     ) -> httpx.Response:
         """Make HTTP request with automatic auth header injection."""
         if not self._client:
@@ -132,8 +131,8 @@ class TestClient:
     async def get(
         self,
         url: str,
-        params: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         **kwargs,
     ) -> httpx.Response:
         """GET request."""
@@ -142,9 +141,9 @@ class TestClient:
     async def post(
         self,
         url: str,
-        json: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         **kwargs,
     ) -> httpx.Response:
         """POST request."""
@@ -155,9 +154,9 @@ class TestClient:
     async def put(
         self,
         url: str,
-        json: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         **kwargs,
     ) -> httpx.Response:
         """PUT request."""
@@ -168,9 +167,9 @@ class TestClient:
     async def patch(
         self,
         url: str,
-        json: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, str]] = None,
+        json: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         **kwargs,
     ) -> httpx.Response:
         """PATCH request."""
@@ -179,7 +178,7 @@ class TestClient:
         )
 
     async def delete(
-        self, url: str, headers: Optional[Dict[str, str]] = None, **kwargs
+        self, url: str, headers: dict[str, str] | None = None, **kwargs
     ) -> httpx.Response:
         """DELETE request."""
         return await self.request("DELETE", url, headers=headers, **kwargs)
@@ -205,10 +204,10 @@ class SyncTestClient:
     def __init__(self, app, **kwargs):
         self.app = app
         self._starlette_client = StarletteTestClient(app, **kwargs)
-        self._auth_token: Optional[str] = None
+        self._auth_token: str | None = None
 
     def set_auth_token(
-        self, email: str, user_id: Union[int, str] = 1, role: str = "user"
+        self, email: str, user_id: int | str = 1, role: str = "user"
     ) -> str:
         """Set authentication token."""
         token = create_access_token(user_id=user_id, email=email, role=role)
@@ -220,8 +219,8 @@ class SyncTestClient:
         self._auth_token = None
 
     def _prepare_headers(
-        self, headers: Optional[Dict[str, str]] = None
-    ) -> Dict[str, str]:
+        self, headers: dict[str, str] | None = None
+    ) -> dict[str, str]:
         """Add auth headers if token is set."""
         prepared_headers = headers or {}
         if self._auth_token:
@@ -229,7 +228,7 @@ class SyncTestClient:
         return prepared_headers
 
     def request(
-        self, method: str, url: str, headers: Optional[Dict[str, str]] = None, **kwargs
+        self, method: str, url: str, headers: dict[str, str] | None = None, **kwargs
     ):
         """Make HTTP request."""
         prepared_headers = self._prepare_headers(headers)

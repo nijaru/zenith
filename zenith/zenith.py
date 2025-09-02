@@ -7,19 +7,17 @@ Combines the power of:
 - Rails-style conventions and developer experience
 """
 
-import asyncio
-from typing import List, Optional, Type, Any, Dict
 from contextlib import asynccontextmanager
+from typing import Any
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
-from starlette.routing import Router as StarletteRouter
 from uvicorn import run
 
 from zenith.core.application import Application
 from zenith.core.config import Config
-from zenith.core.routing import Router, app_router
 from zenith.core.context import Context
+from zenith.core.routing import Router, app_router
 
 
 class Zenith:
@@ -42,9 +40,9 @@ class Zenith:
 
     def __init__(
         self,
-        config: Optional[Config] = None,
-        middleware: List[Middleware] = None,
-        debug: Optional[bool] = None,
+        config: Config | None = None,
+        middleware: list[Middleware] | None = None,
+        debug: bool | None = None,
     ):
         # Initialize configuration
         self.config = config or Config.from_env()
@@ -55,7 +53,7 @@ class Zenith:
         self.app = Application(self.config)
 
         # Initialize routing
-        self.routers: List[Router] = []
+        self.routers: list[Router] = []
         self.middleware = middleware or []
 
         # Add essential middleware by default
@@ -90,11 +88,11 @@ class Zenith:
 
         self.routers.append(router)
 
-    def register_context(self, name: str, context_class: Type[Context]) -> None:
+    def register_context(self, name: str, context_class: type[Context]) -> None:
         """Register a business context."""
         self.app.register_context(name, context_class)
 
-    def register_service(self, service_type: Type, implementation: Any = None) -> None:
+    def register_service(self, service_type: type, implementation: Any = None) -> None:
         """Register a service for dependency injection."""
         self.app.register_service(service_type, implementation)
 
@@ -106,10 +104,10 @@ class Zenith:
 
     def add_cors(
         self,
-        allow_origins: List[str] = None,
+        allow_origins: list[str] | None = None,
         allow_credentials: bool = False,
-        allow_methods: List[str] = None,
-        allow_headers: List[str] = None,
+        allow_methods: list[str] | None = None,
+        allow_headers: list[str] | None = None,
         **kwargs,
     ) -> None:
         """Add CORS middleware with configuration."""
@@ -124,7 +122,7 @@ class Zenith:
             **kwargs,
         )
 
-    def add_exception_handling(self, debug: Optional[bool] = None, **kwargs) -> None:
+    def add_exception_handling(self, debug: bool | None = None, **kwargs) -> None:
         """Add exception handling middleware."""
         from zenith.middleware.exceptions import ExceptionHandlerMiddleware
 
@@ -151,9 +149,8 @@ class Zenith:
         """Add security headers middleware."""
         from zenith.middleware.security import (
             SecurityHeadersMiddleware,
-            SecurityConfig,
-            get_strict_security_config,
             get_development_security_config,
+            get_strict_security_config,
         )
 
         if config is None:
@@ -171,9 +168,9 @@ class Zenith:
 
     def add_csrf_protection(
         self,
-        secret_key: Optional[str] = None,
+        secret_key: str | None = None,
         token_header: str = "X-CSRF-Token",
-        safe_methods: List[str] = None,
+        safe_methods: list[str] | None = None,
         **kwargs,
     ) -> None:
         """Add CSRF protection middleware."""
@@ -189,7 +186,7 @@ class Zenith:
 
         self.add_middleware(CSRFProtectionMiddleware, config=config)
 
-    def add_trusted_proxies(self, trusted_proxies: List[str]) -> None:
+    def add_trusted_proxies(self, trusted_proxies: list[str]) -> None:
         """Add trusted proxy middleware."""
         from zenith.middleware.security import TrustedProxyMiddleware
 
@@ -197,13 +194,13 @@ class Zenith:
 
     def add_docs(
         self,
-        title: Optional[str] = None,
+        title: str | None = None,
         version: str = "1.0.0",
-        description: Optional[str] = None,
+        description: str | None = None,
         docs_url: str = "/docs",
         redoc_url: str = "/redoc",
         openapi_url: str = "/openapi.json",
-        servers: Optional[List[Dict[str, str]]] = None,
+        servers: list[dict[str, str]] | None = None,
     ) -> None:
         """
         Add OpenAPI documentation routes.
@@ -253,7 +250,7 @@ class Zenith:
         """DELETE route decorator."""
         return app_router.delete(path, **kwargs)
 
-    def route(self, path: str, methods: List[str], **kwargs):
+    def route(self, path: str, methods: list[str], **kwargs):
         """Generic route decorator."""
         return app_router.route(path, methods, **kwargs)
 
@@ -294,8 +291,8 @@ class Zenith:
 
     def run(
         self,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
+        host: str | None = None,
+        port: int | None = None,
         reload: bool = False,
         **kwargs,
     ) -> None:
@@ -330,7 +327,7 @@ class Zenith:
 
 # Convenience function for quick app creation
 def create_app(
-    config: Optional[Config] = None,
+    config: Config | None = None,
     debug: bool = False,
     add_middleware: bool = True,
     cors: bool = True,
