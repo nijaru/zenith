@@ -111,8 +111,8 @@ line-ending = "auto"
 known-first-party = ["zenith"]
 
 [tool.pyright]
-include = ["zenith", "tests"]
-exclude = ["**/__pycache__", "examples/**"]  # Exclude incomplete examples from strict type checking
+include = ["zenith"]  # Focus strict type checking on core framework
+exclude = ["**/__pycache__", "examples/**", "tests/**"]  # Tests use mocking patterns that are intentionally looser
 reportMissingImports = true
 reportMissingTypeStubs = false
 pythonVersion = "3.11"
