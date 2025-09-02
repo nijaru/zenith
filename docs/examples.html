@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examples - Zenith Framework</title>
+    <meta name="description" content="Real-world Zenith application examples demonstrating best practices and common patterns.">
+    
+    <link rel="stylesheet" href="./assets/css/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="./assets/images/favicon.ico">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav container">
+            <div class="nav__brand">
+                <img src="./assets/images/logo.svg" alt="Zenith" class="nav__logo">
+                <span class="nav__title">Zenith</span>
+            </div>
+            <div class="nav__menu">
+                <a href="./" class="nav__link">Home</a>
+                <a href="#examples" class="nav__link">Examples</a>
+                <a href="./docs/" class="nav__link">Documentation</a>
+                <a href="https://github.com/zenith-framework/zenith" class="nav__link">GitHub</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Examples Hero -->
+    <section class="hero" style="padding: calc(80px + 2rem) 0 2rem;">
+        <div class="container">
+            <div class="section__header">
+                <h1 class="hero__title">Example Applications</h1>
+                <p class="hero__description">
+                    Real-world Zenith applications demonstrating best practices, architectural patterns, 
+                    and production-ready features across different domains.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Examples -->
+    <section class="examples" id="examples">
+        <div class="container">
+            <div class="examples__grid">
+                <div class="example example--featured">
+                    <div class="example__icon">📝</div>
+                    <h3 class="example__title">Blog API</h3>
+                    <p class="example__description">
+                        Complete blog platform with user authentication, post management, file uploads, 
+                        and comprehensive testing. Perfect starting point for content-driven applications.
+                    </p>
+                    <div class="example__features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li>JWT authentication with refresh tokens</li>
+                            <li>CRUD operations for posts and comments</li>
+                            <li>Image upload for post thumbnails</li>
+                            <li>User roles and permissions</li>
+                            <li>PostgreSQL with migrations</li>
+                            <li>95%+ test coverage</li>
+                        </ul>
+                    </div>
+                    <div class="example__tags">
+                        <span class="tag">JWT Auth</span>
+                        <span class="tag">File Uploads</span>
+                        <span class="tag">PostgreSQL</span>
+                        <span class="tag">Testing</span>
+                    </div>
+                    <div class="example__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/blog-api" class="button button--primary">View Source</a>
+                        <a href="./docs/tutorial/" class="button button--secondary">Tutorial</a>
+                    </div>
+                </div>
+                
+                <div class="example example--featured">
+                    <div class="example__icon">🛒</div>
+                    <h3 class="example__title">E-commerce API</h3>
+                    <p class="example__description">
+                        Scalable e-commerce backend with product catalog, shopping cart, order processing, 
+                        and payment integration. Demonstrates complex business logic and external APIs.
+                    </p>
+                    <div class="example__features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li>Product catalog with variants and inventory</li>
+                            <li>Shopping cart with persistent sessions</li>
+                            <li>Order processing with payment flow</li>
+                            <li>Stripe and PayPal integration</li>
+                            <li>Advanced search with Elasticsearch</li>
+                            <li>Admin dashboard API</li>
+                        </ul>
+                    </div>
+                    <div class="example__tags">
+                        <span class="tag">Payments</span>
+                        <span class="tag">Inventory</span>
+                        <span class="tag">Search</span>
+                        <span class="tag">Webhooks</span>
+                    </div>
+                    <div class="example__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/ecommerce-api" class="button button--primary">View Source</a>
+                        <a href="#" class="button button--secondary">Live Demo</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Examples -->
+            <div class="section__header" style="margin-top: 3rem;">
+                <h2 class="section__title">All Examples</h2>
+                <p class="section__subtitle">
+                    Browse our complete collection of example applications
+                </p>
+            </div>
+
+            <div class="examples__list">
+                <div class="example-card">
+                    <div class="example-card__header">
+                        <span class="example__icon">💬</span>
+                        <div>
+                            <h3>Chat API</h3>
+                            <p>Real-time messaging with WebSocket support</p>
+                        </div>
+                    </div>
+                    <div class="example-card__content">
+                        <p>Demonstrates WebSocket handling, real-time event broadcasting, message queuing with Redis, and optimized database queries for chat history.</p>
+                        <div class="example__tags">
+                            <span class="tag">WebSockets</span>
+                            <span class="tag">Real-time</span>
+                            <span class="tag">Redis</span>
+                        </div>
+                    </div>
+                    <div class="example-card__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/chat-api" class="example__link">View Source →</a>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-card__header">
+                        <span class="example__icon">🎯</span>
+                        <div>
+                            <h3>Task Management API</h3>
+                            <p>Project management with team collaboration</p>
+                        </div>
+                    </div>
+                    <div class="example-card__content">
+                        <p>Multi-tenant architecture with complex authorization rules, real-time updates, and comprehensive reporting. Perfect for understanding business logic organization.</p>
+                        <div class="example__tags">
+                            <span class="tag">Multi-tenant</span>
+                            <span class="tag">Permissions</span>
+                            <span class="tag">Analytics</span>
+                        </div>
+                    </div>
+                    <div class="example-card__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/task-api" class="example__link">View Source →</a>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-card__header">
+                        <span class="example__icon">🏥</span>
+                        <div>
+                            <h3>Healthcare API</h3>
+                            <p>HIPAA-compliant healthcare management system</p>
+                        </div>
+                    </div>
+                    <div class="example-card__content">
+                        <p>Showcases security patterns, audit logging, data encryption, and compliance requirements. Includes FHIR integration and secure file handling.</p>
+                        <div class="example__tags">
+                            <span class="tag">HIPAA</span>
+                            <span class="tag">Security</span>
+                            <span class="tag">FHIR</span>
+                        </div>
+                    </div>
+                    <div class="example-card__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/healthcare-api" class="example__link">View Source →</a>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-card__header">
+                        <span class="example__icon">🎮</span>
+                        <div>
+                            <h3>Gaming Leaderboard API</h3>
+                            <p>High-performance gaming backend</p>
+                        </div>
+                    </div>
+                    <div class="example-card__content">
+                        <p>Optimized for high-throughput gaming workloads with Redis-based leaderboards, efficient stat aggregation, and real-time ranking updates.</p>
+                        <div class="example__tags">
+                            <span class="tag">Performance</span>
+                            <span class="tag">Leaderboards</span>
+                            <span class="tag">Gaming</span>
+                        </div>
+                    </div>
+                    <div class="example-card__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/gaming-api" class="example__link">View Source →</a>
+                    </div>
+                </div>
+
+                <div class="example-card">
+                    <div class="example-card__header">
+                        <span class="example__icon">🌐</span>
+                        <div>
+                            <h3>IoT Device Management API</h3>
+                            <p>IoT platform with telemetry and device control</p>
+                        </div>
+                    </div>
+                    <div class="example-card__content">
+                        <p>Handles high-volume time-series data, device authentication with certificates, and real-time command/control patterns for IoT applications.</p>
+                        <div class="example__tags">
+                            <span class="tag">IoT</span>
+                            <span class="tag">Time-series</span>
+                            <span class="tag">Telemetry</span>
+                        </div>
+                    </div>
+                    <div class="example-card__actions">
+                        <a href="https://github.com/zenith-framework/examples/tree/main/iot-api" class="example__link">View Source →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start Templates -->
+            <div class="section__header" style="margin-top: 3rem;">
+                <h2 class="section__title">Quick Start Templates</h2>
+                <p class="section__subtitle">
+                    Minimal examples to get you started quickly
+                </p>
+            </div>
+
+            <div class="templates">
+                <div class="template">
+                    <h3>Basic API Template</h3>
+                    <pre><code class="language-python">from zenith import Zenith
+
+app = Zenith()
+
+@app.get("/")
+async def root():
+    return {"message": "Hello Zenith!"}
+
+@app.get("/items/{item_id}")
+async def get_item(item_id: int):
+    return {"item_id": item_id}</code></pre>
+                    <a href="https://github.com/zenith-framework/templates/tree/main/basic-api" class="template__link">Use Template →</a>
+                </div>
+
+                <div class="template">
+                    <h3>API with Authentication</h3>
+                    <pre><code class="language-python">from zenith import Zenith
+from zenith.auth import configure_auth
+from zenith.core.routing import Auth
+
+app = Zenith()
+configure_auth(app, secret_key="your-secret")
+
+@app.get("/profile")
+async def get_profile(current_user = Auth(required=True)):
+    return {"user": current_user}</code></pre>
+                    <a href="https://github.com/zenith-framework/templates/tree/main/auth-api" class="template__link">Use Template →</a>
+                </div>
+
+                <div class="template">
+                    <h3>API with Database</h3>
+                    <pre><code class="language-python">from zenith import Zenith
+from zenith.core.context import Context
+
+app = Zenith()
+app.setup_database("postgresql://...")
+
+class UsersContext(Context):
+    async def get_user(self, user_id: int):
+        # Database operations
+        pass
+
+app.register_context(UsersContext)</code></pre>
+                    <a href="https://github.com/zenith-framework/templates/tree/main/database-api" class="template__link">Use Template →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contributing -->
+    <section class="get-started">
+        <div class="container">
+            <div class="section__header">
+                <h2 class="section__title">Contributing Examples</h2>
+                <p class="section__subtitle">
+                    Help grow the Zenith ecosystem by contributing your own examples
+                </p>
+            </div>
+
+            <div class="contribution-info">
+                <div class="contribution-step">
+                    <h3>Example Requirements</h3>
+                    <ul>
+                        <li><strong>Complete</strong> - Runnable application, not just code snippets</li>
+                        <li><strong>Documented</strong> - Clear README with setup and usage instructions</li>
+                        <li><strong>Tested</strong> - Include tests covering main functionality</li>
+                        <li><strong>Modern</strong> - Use current Python and Zenith best practices</li>
+                        <li><strong>Educational</strong> - Focus on demonstrating specific concepts</li>
+                    </ul>
+                </div>
+
+                <div class="contribution-step">
+                    <h3>How to Contribute</h3>
+                    <ol>
+                        <li>Fork the <a href="https://github.com/zenith-framework/examples">examples repository</a></li>
+                        <li>Create your example in a new directory</li>
+                        <li>Include comprehensive README and tests</li>
+                        <li>Submit a pull request</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="section__cta">
+                <a href="https://github.com/zenith-framework/examples" class="button button--primary">View Examples Repo</a>
+                <a href="https://github.com/zenith-framework/zenith/discussions" class="button button--secondary">Join Discussions</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer__content">
+                <div class="footer__brand">
+                    <div class="nav__brand">
+                        <img src="./assets/images/logo.svg" alt="Zenith" class="nav__logo">
+                        <span class="nav__title">Zenith</span>
+                    </div>
+                    <p class="footer__description">
+                        Modern Python web framework built for production
+                    </p>
+                </div>
+                
+                <div class="footer__links">
+                    <div class="footer__column">
+                        <h4>Documentation</h4>
+                        <a href="./docs/">Getting Started</a>
+                        <a href="./docs/tutorial/">Tutorial</a>
+                        <a href="./docs/api/">API Reference</a>
+                    </div>
+                    
+                    <div class="footer__column">
+                        <h4>Examples</h4>
+                        <a href="#examples">Browse Examples</a>
+                        <a href="https://github.com/zenith-framework/examples">GitHub Repository</a>
+                        <a href="https://github.com/zenith-framework/templates">Templates</a>
+                    </div>
+                    
+                    <div class="footer__column">
+                        <h4>Community</h4>
+                        <a href="https://github.com/zenith-framework/zenith">GitHub</a>
+                        <a href="https://github.com/zenith-framework/zenith/discussions">Discussions</a>
+                        <a href="https://discord.gg/zenith">Discord</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer__bottom">
+                <p>&copy; 2024 Zenith Framework. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="./assets/js/main.js"></script>
+</body>
+</html>
+
+<style>
+.example--featured {
+    grid-column: span 2;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    align-items: start;
+}
+
+.example__features {
+    margin: var(--spacing-lg) 0;
+}
+
+.example__features h4 {
+    margin-bottom: var(--spacing-sm);
+    color: var(--color-text);
+}
+
+.example__features ul {
+    list-style: none;
+    padding: 0;
+}
+
+.example__features li {
+    padding: var(--spacing-xs) 0;
+    color: var(--color-text-light);
+}
+
+.example__features li::before {
+    content: "✓";
+    color: var(--color-success);
+    font-weight: bold;
+    margin-right: var(--spacing-sm);
+}
+
+.example__actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.examples__list {
+    display: grid;
+    gap: var(--spacing-lg);
+    margin-top: var(--spacing-xl);
+}
+
+.example-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    align-items: center;
+}
+
+.example-card__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.example-card__header h3 {
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.example-card__header p {
+    margin: 0;
+    color: var(--color-text-light);
+    font-size: var(--font-size-sm);
+}
+
+.example-card__content p {
+    margin-bottom: var(--spacing-md);
+}
+
+.templates {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: var(--spacing-xl);
+    margin-top: var(--spacing-xl);
+}
+
+.template {
+    background-color: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+}
+
+.template h3 {
+    margin-bottom: var(--spacing-md);
+}
+
+.template pre {
+    background-color: var(--color-bg-light);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-md);
+    font-size: var(--font-size-sm);
+    overflow-x: auto;
+    margin-bottom: var(--spacing-md);
+}
+
+.template__link {
+    color: var(--color-primary);
+    font-weight: 500;
+}
+
+.contribution-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-2xl);
+    margin: var(--spacing-2xl) 0;
+}
+
+.contribution-step h3 {
+    margin-bottom: var(--spacing-md);
+}
+
+.contribution-step ul,
+.contribution-step ol {
+    color: var(--color-text-light);
+}
+
+.contribution-step li {
+    margin-bottom: var(--spacing-sm);
+}
+
+.section__cta {
+    text-align: center;
+    margin-top: var(--spacing-2xl);
+}
+
+@media (max-width: 768px) {
+    .example--featured {
+        grid-column: span 1;
+        grid-template-columns: 1fr;
+    }
+    
+    .example-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .templates {
+        grid-template-columns: 1fr;
+    }
+    
+    .contribution-info {
+        grid-template-columns: 1fr;
+    }
+}
+</style>

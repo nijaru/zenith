@@ -1,0 +1,78 @@
+# Zenith Framework Website - GitHub Pages Configuration
+
+title: Zenith Framework
+description: Modern Python web framework with clean architecture and batteries included
+url: "https://zenith-framework.github.io"
+baseurl: ""
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+permalink: pretty
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /docs/:path/
+  examples:
+    output: true
+    permalink: /examples/:path/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: "_docs"
+      type: "docs"
+    values:
+      layout: "docs"
+  - scope:
+      path: "_examples"
+      type: "examples"
+    values:
+      layout: "example"
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - package.json
+  - package-lock.json
+  - README.md
+  - .gitignore
+
+# Include in processing
+include:
+  - _redirects
+
+# SEO settings
+lang: en-US
+author: Zenith Framework Team
+
+# Social
+github_username: zenith-framework
+twitter_username: zenithframework
+
+# Google Analytics (optional)
+# google_analytics: UA-XXXXXXXX-X
+
+# Additional settings
+timezone: UTC
+encoding: utf-8
+
+# Sass configuration
+sass:
+  sass_dir: assets/css
+  style: compressed
