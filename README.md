@@ -1,8 +1,14 @@
 # Zenith Framework
 
+[![PyPI version](https://badge.fury.io/py/zenith-framework.svg)](https://badge.fury.io/py/zenith-framework)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/nijaru/zenith/workflows/Test%20Suite/badge.svg)](https://github.com/nijaru/zenith/actions)
+[![Documentation](https://img.shields.io/badge/docs-passing-brightgreen.svg)](https://nijaru.github.io/zenith/)
+
 A modern Python API framework that prioritizes clean architecture and developer experience.
 
-> **⚠️ Early Development**: Zenith is in active development (v0.0.1-dev). APIs may change.
+> **⚠️ Early Development**: Zenith is in alpha (v0.0.1). APIs may change before v1.0.
 
 ## What is Zenith?
 
