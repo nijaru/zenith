@@ -6,7 +6,7 @@ available to the dependency injection system.
 """
 
 import logging
-from typing import Any
+from typing import Any, Literal, overload
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -86,6 +86,16 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             return None
 
         return parts[1]
+
+
+@overload
+def get_current_user(request: Request, required: Literal[True]) -> dict[str, Any]: ...
+
+
+@overload
+def get_current_user(
+    request: Request, required: Literal[False] = False
+) -> dict[str, Any] | None: ...
 
 
 def get_current_user(request: Request, required: bool = True) -> dict[str, Any] | None:

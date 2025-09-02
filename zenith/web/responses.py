@@ -6,7 +6,7 @@ Provides convenient response helpers for common web application needs.
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from starlette.responses import (
     FileResponse,
@@ -201,7 +201,7 @@ def set_cookie_response(
     domain: str | None = None,
     secure: bool = False,
     httponly: bool = False,
-    samesite: str | None = "lax",
+    samesite: Literal["lax", "strict", "none"] | None = "lax",
 ) -> Response:
     """Add a cookie to a response."""
     response.set_cookie(

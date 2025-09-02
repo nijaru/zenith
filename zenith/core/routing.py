@@ -10,11 +10,15 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     TypeVar,
     Union,
     get_type_hints,
 )
+
+if TYPE_CHECKING:
+    from zenith.core.application import Application
 
 from pydantic import BaseModel, ValidationError
 from starlette.middleware import Middleware
@@ -49,7 +53,7 @@ class RouteSpec:
     methods: list[str]
     handler: HandlerFunc
     name: str | None = None
-    middleware: list[Middleware] = None
+    middleware: list[Middleware] | None = None
 
 
 class ContextDependency:
@@ -85,7 +89,7 @@ def Auth(required: bool = True, scopes: list[str] | None = None):
     return AuthDependency(required, scopes)
 
 
-def File(field_name: str = "file", config=None):
+def File(field_name: str = "file", config=None) -> FileUploadDependency:
     """Dependency injection marker for file uploads."""
     return FileUploadDependency(field_name, config)
 
@@ -106,7 +110,7 @@ class Router:
         self.prefix = prefix
         self.middleware = middleware or []
         self.routes: list[RouteSpec] = []
-        self._app = None  # Will be set by Application
+        self._app: Application | None = None  # Will be set by Application
 
     def route(
         self,
@@ -207,6 +211,8 @@ class Router:
                     if isinstance(param.default, ContextDependency):
                         # Inject context
                         context_class = param.default.context_class or param_type
+                        if self._app is None:
+                            raise RuntimeError("Router not attached to application")
                         context = await self._app.get_context(
                             context_class.__name__.lower()
                         )

@@ -127,6 +127,7 @@ def get_password_manager() -> PasswordManager:
     if _password_manager is None:
         # Auto-configure with defaults if not set
         configure_password_manager()
+    assert _password_manager is not None  # Type hint for pyright
     return _password_manager
 
 

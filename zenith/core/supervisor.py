@@ -49,7 +49,7 @@ class ChildSpec:
     start_func: Callable
     restart_strategy: RestartStrategy = RestartStrategy.PERMANENT
     args: tuple = ()
-    kwargs: dict = None
+    kwargs: dict | None = None
 
     def __post_init__(self):
         if self.kwargs is None:
@@ -146,7 +146,7 @@ class Supervisor:
             await child.stop()
 
     async def _handle_child_failure(
-        self, child: SupervisedTask, exception: Exception
+        self, child: SupervisedTask, exception: BaseException
     ) -> None:
         """Handle child process failure."""
         if self._shutdown:
