@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from zenith import File, Zenith
+from zenith import Auth, File, Zenith
 from zenith.auth import configure_auth
 from zenith.testing import TestClient
 from zenith.web.files import (

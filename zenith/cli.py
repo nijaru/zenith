@@ -44,17 +44,6 @@ def server(host: str, port: int, reload: bool, env: str):
 
 
 @main.command()
-def test():
-    """Run the test suite."""
-    click.echo("🧪 Running tests...")
-    import subprocess
-    import sys
-
-    result = subprocess.run([sys.executable, "-m", "pytest"], cwd=".")
-    sys.exit(result.returncode)
-
-
-@main.command()
 def format():
     """Format code with black and isort."""
     click.echo("🎨 Formatting code...")

@@ -65,7 +65,7 @@ SECRET_KEY=test-secret
             assert config.port == 4000
             assert config.secret_key == "test-secret"
         finally:
-            os.unlink(env_file)
+            Path(env_file).unlink()
 
     def test_custom_config(self):
         """Test custom configuration values."""
