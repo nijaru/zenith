@@ -3,6 +3,7 @@ Tests for configuration management.
 """
 
 import os
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import pytest
