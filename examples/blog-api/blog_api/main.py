@@ -99,7 +99,6 @@ add_health_routes(app)
 async def database_health_check():
     """Check database connectivity."""
     try:
-
         # Simple query to test connection
         # This would use the actual database session
         return True

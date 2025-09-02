@@ -4,7 +4,6 @@ Unit tests for the core routing system.
 Tests the Router class, dependency injection, and route handling.
 """
 
-
 import pytest
 from pydantic import BaseModel
 

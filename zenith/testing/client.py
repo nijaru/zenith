@@ -100,9 +100,7 @@ class TestClient:
         """Clear authentication token."""
         self._auth_token = None
 
-    def _prepare_headers(
-        self, headers: dict[str, str] | None = None
-    ) -> dict[str, str]:
+    def _prepare_headers(self, headers: dict[str, str] | None = None) -> dict[str, str]:
         """Add auth headers if token is set."""
         prepared_headers = headers or {}
 
@@ -218,9 +216,7 @@ class SyncTestClient:
         """Clear authentication token."""
         self._auth_token = None
 
-    def _prepare_headers(
-        self, headers: dict[str, str] | None = None
-    ) -> dict[str, str]:
+    def _prepare_headers(self, headers: dict[str, str] | None = None) -> dict[str, str]:
         """Add auth headers if token is set."""
         prepared_headers = headers or {}
         if self._auth_token:

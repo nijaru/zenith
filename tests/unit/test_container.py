@@ -2,7 +2,6 @@
 Tests for dependency injection container.
 """
 
-
 import pytest
 
 from zenith.core.container import DIContainer

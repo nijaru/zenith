@@ -92,9 +92,7 @@ class JWTManager:
 
     def create_refresh_token(self, user_id: int | str) -> str:
         """Create a refresh token for long-term authentication."""
-        expire = datetime.now(UTC) + timedelta(
-            days=self.refresh_token_expire_days
-        )
+        expire = datetime.now(UTC) + timedelta(days=self.refresh_token_expire_days)
 
         payload = {
             "sub": str(user_id),

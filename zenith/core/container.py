@@ -83,7 +83,9 @@ class DIContainer:
                     kwargs[param_name] = dependency
                 except KeyError:
                     if param.default == inspect.Parameter.empty:
-                        raise KeyError(f"Cannot resolve dependency: {param.annotation}") from None
+                        raise KeyError(
+                            f"Cannot resolve dependency: {param.annotation}"
+                        ) from None
 
         return factory(**kwargs)
 

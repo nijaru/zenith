@@ -8,7 +8,6 @@ Demonstrates:
 - Database transaction rollback
 """
 
-
 import pytest
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import Boolean, DateTime, Integer, String, func

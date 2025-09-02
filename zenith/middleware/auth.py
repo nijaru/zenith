@@ -88,9 +88,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         return parts[1]
 
 
-def get_current_user(
-    request: Request, required: bool = True
-) -> dict[str, Any] | None:
+def get_current_user(request: Request, required: bool = True) -> dict[str, Any] | None:
     """
     Get current authenticated user from request state.
 

@@ -2,7 +2,6 @@
 Tests for core Application kernel.
 """
 
-
 import pytest
 
 from zenith.core.application import Application
