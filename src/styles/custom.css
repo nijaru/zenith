@@ -1,0 +1,231 @@
+/* Zenith Custom Styles */
+
+:root {
+  /* Override Starlight colors with Zenith brand */
+  --sl-color-accent-low: #1e40af1a;
+  --sl-color-accent: #3b82f6;
+  --sl-color-accent-high: #93bbfc;
+  
+  --sl-color-bg: #0a0a0a;
+  --sl-color-bg-nav: #0f0f0f;
+  --sl-color-bg-sidebar: #0f0f0f;
+  --sl-color-bg-inline-code: #1a1a1a;
+  
+  --sl-color-text: #ffffff;
+  --sl-color-text-secondary: #d4d4d8;
+  
+  --sl-color-gray-1: #ffffff;
+  --sl-color-gray-2: #d4d4d8;
+  --sl-color-gray-3: #a1a1aa;
+  --sl-color-gray-4: #71717a;
+  --sl-color-gray-5: #3f3f46;
+  --sl-color-gray-6: #27272a;
+  
+  --sl-font-system: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+}
+
+/* Better contrast for light mode if user switches */
+:root[data-theme="light"] {
+  --sl-color-accent: #2563eb;
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #f9fafb;
+  --sl-color-bg-sidebar: #f9fafb;
+  --sl-color-text: #0f172a;
+}
+
+/* Typography improvements */
+body {
+  font-family: var(--sl-font-system);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Code blocks enhancement */
+pre {
+  border: 1px solid var(--sl-color-gray-6);
+  background: #0f0f0f !important;
+}
+
+.expressive-code {
+  margin: 1.5rem 0;
+}
+
+/* Make copy button more prominent */
+.expressive-code button[data-copy] {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Sidebar enhancements */
+.sidebar {
+  padding-top: 1rem;
+}
+
+nav.sidebar-nav a[aria-current="page"] {
+  background: linear-gradient(to right, #3b82f620, transparent);
+  border-left: 3px solid var(--sl-color-accent);
+  font-weight: 600;
+}
+
+/* Hero section for landing page */
+.hero {
+  padding: 4rem 0;
+  text-align: center;
+  background: linear-gradient(135deg, #1e40af15 0%, #7c3aed15 100%);
+  border-radius: 1rem;
+  margin-bottom: 3rem;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+}
+
+/* Feature cards */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.feature-card {
+  padding: 1.5rem;
+  background: var(--sl-color-bg-sidebar);
+  border: 1px solid var(--sl-color-gray-6);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.feature-card:hover {
+  border-color: var(--sl-color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+}
+
+.feature-card h3 {
+  color: var(--sl-color-accent);
+  margin-bottom: 0.5rem;
+}
+
+/* Callout improvements */
+.starlight-aside {
+  border-left-width: 4px;
+  background: var(--sl-color-bg-sidebar);
+}
+
+.starlight-aside--note {
+  border-color: var(--sl-color-accent);
+  background: #3b82f610;
+}
+
+.starlight-aside--tip {
+  border-color: #10b981;
+  background: #10b98110;
+}
+
+.starlight-aside--caution {
+  border-color: #f59e0b;
+  background: #f59e0b10;
+}
+
+.starlight-aside--danger {
+  border-color: #ef4444;
+  background: #ef444410;
+}
+
+/* Table improvements */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+}
+
+th {
+  background: var(--sl-color-bg-sidebar);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-gray-6);
+}
+
+td {
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-gray-6);
+}
+
+tr:nth-child(even) {
+  background: var(--sl-color-bg-sidebar);
+}
+
+/* Button styles */
+.button {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--sl-color-accent);
+  color: white;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.button:hover {
+  background: var(--sl-color-accent-high);
+  transform: translateY(-2px);
+}
+
+.button-outline {
+  background: transparent;
+  border: 2px solid var(--sl-color-accent);
+  color: var(--sl-color-accent);
+}
+
+.button-outline:hover {
+  background: var(--sl-color-accent);
+  color: white;
+}
+
+/* Performance metrics table */
+.metrics-table {
+  font-family: var(--sl-font-mono);
+  font-size: 0.9rem;
+}
+
+.metrics-table .good {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.metrics-table .warning {
+  color: #f59e0b;
+}
+
+.metrics-table .bad {
+  color: #ef4444;
+}
+
+/* Search improvements */
+[data-pagefind-ui] {
+  --pagefind-ui-primary: var(--sl-color-accent);
+  --pagefind-ui-background: var(--sl-color-bg-sidebar);
+  --pagefind-ui-border: var(--sl-color-gray-6);
+  --pagefind-ui-text: var(--sl-color-text);
+}
+
+/* Mobile improvements */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+  
+  .features {
+    grid-template-columns: 1fr;
+  }
+}
