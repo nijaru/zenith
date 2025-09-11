@@ -3,7 +3,7 @@ title: Context API
 description: Business logic organization with the Context system
 ---
 
-import { Code, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+import { Code, Aside } from '@astrojs/starlight/components';
 
 ## Context Class
 

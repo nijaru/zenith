@@ -3,7 +3,7 @@ title: Routing
 description: Define and organize API endpoints in Zenith
 ---
 
-import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
 
 ## Route Definition
 
