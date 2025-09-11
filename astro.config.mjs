@@ -8,22 +8,11 @@ export default defineConfig({
 	base: '/zenith',
 	integrations: [
 		starlight({
-			title: 'Zenith',
+			title: '⚡ Zenith',
 			description: 'Modern Python web framework with clean architecture and exceptional performance',
-			logo: {
-				light: './src/assets/zenith-logo.svg',
-				dark: './src/assets/zenith-logo.svg',
-				replacesTitle: false,
-			},
-			defaultTheme: 'dark',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/nijaru/zenith' },
-				{ icon: 'x.com', label: 'Twitter', href: 'https://twitter.com/zenithframework' },
-				{ icon: 'discord', label: 'Discord', href: 'https://discord.gg/zenith' },
 			],
-			editLink: {
-				baseUrl: 'https://github.com/nijaru/zenith/edit/main/docs-new/',
-			},
 			customCss: [
 				'./src/styles/custom.css',
 			],
@@ -31,64 +20,42 @@ export default defineConfig({
 				{
 					label: 'Getting Started',
 					items: [
-						{ label: 'Introduction', slug: 'introduction' },
-						{ label: 'Installation', slug: 'installation' },
-						{ label: 'Quick Start', slug: 'quick-start' },
-						{ label: 'Project Structure', slug: 'project-structure' },
+						{ label: 'Introduction', link: '/introduction' },
+						{ label: 'Installation', link: '/installation' },
+						{ label: 'Quick Start', link: '/quick-start' },
+						{ label: 'Project Structure', link: '/project-structure' },
 					],
 				},
 				{
-					label: 'Core Concepts',
+					label: 'Documentation',
 					items: [
-						{ label: 'Application', slug: 'concepts/application' },
-						{ label: 'Context System', slug: 'concepts/contexts' },
-						{ label: 'Routing', slug: 'concepts/routing' },
-						{ label: 'Middleware', slug: 'concepts/middleware' },
-						{ label: 'Dependency Injection', slug: 'concepts/dependency-injection' },
+						{ label: 'Context System', link: '/concepts/contexts' },
+						{ label: 'Routing', link: '/concepts/routing' },
+						{ label: 'Middleware', link: '/concepts/middleware' },
+						{ label: 'Database', link: '/concepts/database' },
+						{ label: 'Authentication', link: '/concepts/authentication' },
 					],
 				},
 				{
-					label: 'Database',
+					label: 'Examples',
 					items: [
-						{ label: 'SQLModel Integration', slug: 'database/sqlmodel' },
-						{ label: 'Migrations', slug: 'database/migrations' },
-						{ label: 'Query Patterns', slug: 'database/queries' },
-						{ label: 'Relationships', slug: 'database/relationships' },
-					],
-				},
-				{
-					label: 'Features',
-					items: [
-						{ label: 'Authentication', slug: 'features/authentication' },
-						{ label: 'Background Tasks', slug: 'features/background-tasks' },
-						{ label: 'WebSockets', slug: 'features/websockets' },
-						{ label: 'File Uploads', slug: 'features/file-uploads' },
-						{ label: 'SPA Serving', slug: 'features/spa-serving' },
-						{ label: 'Testing', slug: 'features/testing' },
-					],
-				},
-				{
-					label: 'Deployment',
-					items: [
-						{ label: 'Docker', slug: 'deployment/docker' },
-						{ label: 'Production Config', slug: 'deployment/production' },
-						{ label: 'Environment Variables', slug: 'deployment/environment' },
-						{ label: 'Monitoring', slug: 'deployment/monitoring' },
-						{ label: 'Performance', slug: 'deployment/performance' },
+						{ label: 'Hello World', link: '/examples/hello-world' },
+						{ label: 'Blog API', link: '/examples/blog-api' },
+						{ label: 'Real-time Chat', link: '/examples/chat' },
+						{ label: 'File Upload', link: '/examples/file-upload' },
 					],
 				},
 				{
 					label: 'API Reference',
-					autogenerate: { directory: 'api' },
+					items: [
+						{ label: 'Application', link: '/api/application' },
+						{ label: 'Context', link: '/api/context' },
+						{ label: 'Router', link: '/api/router' },
+						{ label: 'Middleware', link: '/api/middleware' },
+						{ label: 'Testing', link: '/api/testing' },
+					],
 				},
 			],
-			defaultLocale: 'en',
-			lastUpdated: true,
-			pagination: true,
-			tableOfContents: {
-				minHeadingLevel: 2,
-				maxHeadingLevel: 3,
-			},
 		}),
 	],
 });
