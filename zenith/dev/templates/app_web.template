@@ -1,0 +1,253 @@
+"""
+Production-ready web application built with Zenith.
+Demonstrates: Templates, forms, CSRF protection, session management, and modern web best practices.
+"""
+from zenith import Zenith, Router, Context, not_found
+from zenith.db import SQLModel, Field, ZenithSQLModel, create_repository, AsyncSession
+from zenith.performance_optimizations import PerformanceMiddlewareConfig
+from zenith.middleware.security import SecurityHeadersMiddleware, SecurityConfig
+from zenith.middleware.csrf import CSRFMiddleware, CSRFConfig
+from zenith.middleware.sessions import SessionMiddleware, SessionConfig
+from zenith.middleware.rate_limit import RateLimitMiddleware, RateLimit
+from zenith.middleware.logging import RequestLoggingMiddleware, RequestLoggingConfig
+from zenith.middleware.compression import CompressionMiddleware, CompressionConfig
+
+# Create web app with optimized middleware for web applications
+app = Zenith(
+    title="$project_name Web App", 
+    version="1.0.0",
+    debug=False,
+    middleware=[]  # Start with empty middleware, add optimized stack
+)
+
+# Add web-optimized middleware stack in performance order
+# 1. Security headers with web-appropriate configuration
+app.add_middleware(SecurityHeadersMiddleware, config=SecurityConfig(
+    content_type_nosniff=True,
+    frame_options="DENY",
+    xss_protection="1; mode=block",
+    hsts_max_age=31536000,  # 1 year HSTS for web security
+    force_https=True,       # Force HTTPS for web apps
+    csrf_protection=True,   # Enable CSRF for web forms
+))
+
+# 2. CSRF protection for forms
+app.add_middleware(CSRFMiddleware, config=CSRFConfig(
+    secret_key="$secret_key",
+    exempt_paths={"/api/", "/health", "/metrics"},  # Exempt API endpoints
+))
+
+# 3. Session management for user state
+app.add_middleware(SessionMiddleware, config=SessionConfig(
+    secret_key="$secret_key",
+    max_age=86400,  # 24 hours
+    secure=True,    # HTTPS only
+    same_site="lax" # Balance security and usability
+))
+
+# 4. Rate limiting for web traffic patterns
+app.add_middleware(RateLimitMiddleware, default_limits=[
+    RateLimit(requests=1000, window=3600, per="ip"),    # 1K/hour per IP
+    RateLimit(requests=60, window=60, per="ip"),        # 60/minute per IP
+])
+
+# 5. Request logging for web monitoring
+app.add_middleware(RequestLoggingMiddleware, config=RequestLoggingConfig(
+    level=20,  # INFO level for web audit trails
+    include_headers=False,
+    include_body=False,
+    exclude_health_checks=True,
+    exclude_paths={"/health", "/metrics", "/static/", "/favicon.ico"},
+))
+
+# 6. Compression optimized for web content
+app.add_middleware(CompressionMiddleware, config=CompressionConfig(
+    minimum_size=1024,  # Compress 1KB+ responses
+    compressible_types={
+        "application/json",
+        "text/html",
+        "text/css", 
+        "text/javascript",
+        "application/javascript",
+        "text/xml",
+        "application/xml",
+        "image/svg+xml",
+    },
+    exclude_paths={"/health", "/metrics", "/api/ping"},
+))
+
+# ============================================================================
+# DATABASE MODELS (SQLModel - unified Pydantic + SQLAlchemy)
+# ============================================================================
+
+class PageBase(SQLModel):
+    """Base model for web pages."""
+    title: str = Field(min_length=1, max_length=200)
+    content: str = Field(default="", max_length=10000)
+    published: bool = Field(default=False)
+
+class Page(PageBase, ZenithSQLModel, table=True):
+    """Database model for web pages."""
+    __tablename__ = "pages"
+    
+    slug: str = Field(unique=True, index=True)
+    created_at: str = Field(default="2024-01-01T00:00:00Z")
+    updated_at: str = Field(default="2024-01-01T00:00:00Z")
+
+class PageCreate(PageBase):
+    """Model for creating new pages."""
+    slug: str = Field(min_length=1, max_length=100)
+
+class PageUpdate(SQLModel):
+    """Model for updating pages."""
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    content: str | None = Field(default=None, max_length=10000)
+    published: bool | None = None
+
+class PagePublic(PageBase):
+    """Public model for web responses."""
+    id: int
+    slug: str
+    created_at: str
+    updated_at: str
+
+# ============================================================================
+# BUSINESS LOGIC (Context Pattern)
+# ============================================================================
+
+class PageService(Context):
+    """Service for page operations with clean business logic."""
+    
+    def __init__(self, container):
+        super().__init__(container)
+        # In real apps, get AsyncSession from container
+        # self.db = container.get(AsyncSession)
+        # self.pages = create_repository(self.db, Page)
+        
+        # For demo purposes, using in-memory storage
+        self.pages = {
+            1: Page(
+                id=1, 
+                title="Welcome", 
+                content="Welcome to your new Zenith web application!",
+                slug="welcome",
+                published=True,
+                created_at="2024-01-01T00:00:00Z",
+                updated_at="2024-01-01T00:00:00Z"
+            )
+        }
+        
+    async def create_page(self, page_data: PageCreate) -> Page:
+        """Create a new page."""
+        page_id = len(self.pages) + 1
+        page = Page(id=page_id, **page_data.model_dump())
+        self.pages[page_id] = page
+        return page
+    
+    async def get_page(self, page_id: int) -> Page | None:
+        """Get page by ID."""
+        return self.pages.get(page_id)
+    
+    async def get_page_by_slug(self, slug: str) -> Page | None:
+        """Get page by slug."""
+        for page in self.pages.values():
+            if page.slug == slug:
+                return page
+        return None
+    
+    async def list_pages(self, published_only: bool = True) -> list[Page]:
+        """List pages."""
+        pages = list(self.pages.values())
+        if published_only:
+            pages = [p for p in pages if p.published]
+        return pages
+
+# Register service for dependency injection
+app.register_context("pages", PageService)
+
+# ============================================================================
+# WEB ROUTES (Template Rendering)
+# ============================================================================
+
+@app.get("/")
+async def home(pages: PageService = Context()):
+    """Home page with recent content."""
+    recent_pages = await pages.list_pages(published_only=True)
+    return {
+        "message": "Welcome to $project_name",
+        "pages": [PagePublic.model_validate(page) for page in recent_pages[:5]],
+        "app_info": {
+            "name": "$project_name",
+            "version": "1.0.0",
+            "framework": "Zenith"
+        }
+    }
+
+@app.get("/page/{slug}")
+async def view_page(slug: str, pages: PageService = Context()):
+    """View a specific page by slug."""
+    page = await pages.get_page_by_slug(slug)
+    if not page or not page.published:
+        not_found(f"Page '{slug}' not found")
+    return PagePublic.model_validate(page)
+
+@app.get("/pages")
+async def list_pages(pages: PageService = Context()):
+    """List all published pages."""
+    all_pages = await pages.list_pages(published_only=True)
+    return {
+        "pages": [PagePublic.model_validate(page) for page in all_pages],
+        "count": len(all_pages)
+    }
+
+# ============================================================================
+# API ROUTES (JSON API for AJAX/SPA integration)
+# ============================================================================
+
+api_router = Router(prefix="/api/v1", tags=["api"])
+
+@api_router.get("/pages", response_model=list[PagePublic])
+async def api_list_pages(pages: PageService = Context()) -> list[PagePublic]:
+    """API endpoint for listing pages."""
+    all_pages = await pages.list_pages(published_only=True)
+    return [PagePublic.model_validate(page) for page in all_pages]
+
+@api_router.get("/pages/{page_id}", response_model=PagePublic)
+async def api_get_page(page_id: int, pages: PageService = Context()) -> PagePublic:
+    """API endpoint for getting a specific page."""
+    page = await pages.get_page(page_id)
+    if not page:
+        not_found(f"Page {page_id} not found")
+    return PagePublic.model_validate(page)
+
+app.include_router(api_router)
+
+# ============================================================================
+# UTILITY ROUTES
+# ============================================================================
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {"status": "healthy", "timestamp": "2024-01-01T00:00:00Z", "type": "web"}
+
+@app.get("/about")
+async def about():
+    """About page with app information."""
+    return {
+        "app": "$project_name",
+        "version": "1.0.0",
+        "description": "$template_description built with Zenith framework",
+        "features": [
+            "CSRF Protection",
+            "Session Management", 
+            "Security Headers",
+            "Rate Limiting",
+            "Performance Optimized",
+            "SEO Friendly"
+        ]
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)

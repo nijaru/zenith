@@ -1,0 +1,75 @@
+# ${project_name}
+
+${template_description} built with [Zenith Framework](https://zenith-web.dev).
+
+## ✨ Features
+
+- **Zero Configuration**: Works out of the box with sensible defaults
+- **Auto Documentation**: OpenAPI/Swagger docs at `/docs`
+- **Type Safety**: Full Pydantic validation and response models
+- **Clean Architecture**: Business logic in Context classes
+- **Development Friendly**: Hot reload, auto environment detection
+- **Production Ready**: Built-in security, monitoring, performance optimization
+
+## 🚀 Quick Start
+
+```bash
+# Run development server
+zen dev
+
+# Run production server  
+zen serve
+
+# Or using Python directly
+python app.py
+```
+
+Visit:
+- **API**: http://localhost:8000
+- **Docs**: http://localhost:8000/docs  
+- **Health**: http://localhost:8000/health
+
+## 📁 Project Structure
+
+```
+${project_name}/
+├── app.py              # Main application entry point
+├── tests/              # Test suite
+├── requirements.txt    # Production dependencies
+├── requirements-dev.txt # Development dependencies  
+├── .env               # Environment configuration
+├── .gitignore         # Git ignore patterns
+└── README.md          # This file
+```
+
+## 🧪 Testing
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=app
+```
+
+## 🚀 Deployment
+
+This Zenith application is ready for production deployment with:
+
+- **Docker**: Add a Dockerfile for containerized deployment
+- **Cloud Platforms**: Deploy to Heroku, AWS, GCP, Azure
+- **Traditional Hosting**: Use Gunicorn + Nginx for traditional servers
+
+## 📚 Learn More
+
+- **[Zenith Documentation](https://zenith-web.dev/docs)**
+- **[Tutorial](https://zenith-web.dev/tutorial)**  
+- **[API Reference](https://zenith-web.dev/api)**
+- **[Examples](https://zenith-web.dev/examples)**
+
+---
+
+*Generated with Zenith Framework - Modern Python web development made simple.*
