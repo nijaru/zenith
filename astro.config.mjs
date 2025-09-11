@@ -13,9 +13,28 @@ export default defineConfig({
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/nijaru/zenith' },
 			],
+			editLink: {
+				baseUrl: 'https://github.com/nijaru/zenith/edit/main/docs/',
+			},
+			credits: false,
+			head: [
+				{
+					tag: 'link',
+					attrs: {
+						rel: 'icon',
+						href: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>',
+					},
+				},
+			],
 			customCss: [
 				'./src/styles/custom.css',
 			],
+			components: {
+				Header: './src/components/CustomHeader.astro',
+			},
+			pagefind: false,
+			tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
+			pagination: true,
 			sidebar: [
 				{
 					label: 'Getting Started',
