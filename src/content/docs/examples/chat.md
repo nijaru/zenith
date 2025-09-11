@@ -1,0 +1,1116 @@
+---
+title: Real-time Chat
+description: WebSocket-powered chat application with rooms and presence
+---
+
+import { Code, Tabs, TabItem, FileTree, Aside } from '@astrojs/starlight/components';
+
+## Overview
+
+This example demonstrates building a real-time chat application with Zenith, featuring:
+
+- **WebSocket Communication** - Real-time messaging
+- **Chat Rooms** - Multiple channels/rooms
+- **User Presence** - Online/offline status
+- **Message History** - Persistent chat history
+- **File Sharing** - Image and file uploads
+- **Typing Indicators** - Show when users are typing
+- **Message Reactions** - Emoji reactions to messages
+
+## Project Structure
+
+<FileTree>
+- chat-app/
+  - app/
+    - __init__.py
+    - main.py              **Entry point**
+    - models/
+      - user.py
+      - room.py
+      - message.py
+    - contexts/
+      - chat.py
+      - rooms.py
+      - presence.py
+    - routes/
+      - auth.py
+      - rooms.py
+      - messages.py
+      - websocket.py
+    - websocket/
+      - manager.py         **WebSocket connection manager**
+      - events.py          **Event handlers**
+    - static/
+      - index.html         **Chat interface**
+      - chat.js            **Client-side code**
+      - style.css
+  - tests/
+  - requirements.txt
+</FileTree>
+
+## Models
+
+### Chat Room Model
+
+```python
+# app/models/room.py
+from zenith.db import SQLModel, Field
+from sqlmodel import Relationship
+from typing import Optional, List
+from datetime import datetime
+from enum import Enum
+
+class RoomType(str, Enum):
+    PUBLIC = "public"
+    PRIVATE = "private"
+    DIRECT = "direct"  # DM between two users
+
+class Room(SQLModel, table=True):
+    """Chat room model."""
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    description: Optional[str] = None
+    room_type: RoomType = Field(default=RoomType.PUBLIC)
+    
+    # Room settings
+    is_active: bool = Field(default=True)
+    max_members: Optional[int] = None
+    allow_file_upload: bool = Field(default=True)
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+    
+    # Foreign keys
+    creator_id: int = Field(foreign_key="user.id")
+    
+    # Relationships
+    creator: "User" = Relationship()
+    messages: List["Message"] = Relationship(back_populates="room")
+    members: List["User"] = Relationship(
+        back_populates="rooms",
+        link_model="RoomMember"
+    )
+
+class RoomMember(SQLModel, table=True):
+    """Room membership link table."""
+    
+    room_id: int = Field(foreign_key="room.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    
+    # Membership details
+    joined_at: datetime = Field(default_factory=datetime.utcnow)
+    is_admin: bool = Field(default=False)
+    is_muted: bool = Field(default=False)
+    last_read_at: Optional[datetime] = None
+
+# Request/Response models
+class RoomCreate(SQLModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: Optional[str] = Field(max_length=500)
+    room_type: RoomType = RoomType.PUBLIC
+    max_members: Optional[int] = Field(ge=2, le=1000)
+
+class RoomResponse(SQLModel):
+    id: int
+    name: str
+    description: Optional[str]
+    room_type: RoomType
+    is_active: bool
+    member_count: int
+    created_at: datetime
+    creator: "UserResponse"
+    last_message: Optional["MessageResponse"] = None
+```
+
+### Message Model
+
+```python
+# app/models/message.py
+from zenith.db import SQLModel, Field
+from sqlmodel import Relationship
+from typing import Optional, List, Dict
+from datetime import datetime
+from enum import Enum
+
+class MessageType(str, Enum):
+    TEXT = "text"
+    IMAGE = "image"
+    FILE = "file"
+    SYSTEM = "system"  # Join/leave notifications
+
+class Message(SQLModel, table=True):
+    """Chat message model."""
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    content: str
+    message_type: MessageType = Field(default=MessageType.TEXT)
+    
+    # File attachments
+    file_url: Optional[str] = None
+    file_name: Optional[str] = None
+    file_size: Optional[int] = None
+    
+    # Message metadata
+    is_edited: bool = Field(default=False)
+    is_deleted: bool = Field(default=False)
+    reply_to_id: Optional[int] = Field(foreign_key="message.id")
+    
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    edited_at: Optional[datetime] = None
+    
+    # Foreign keys
+    author_id: int = Field(foreign_key="user.id")
+    room_id: int = Field(foreign_key="room.id")
+    
+    # Relationships
+    author: "User" = Relationship()
+    room: Room = Relationship(back_populates="messages")
+    reply_to: Optional["Message"] = Relationship()
+    reactions: List["MessageReaction"] = Relationship(back_populates="message")
+
+class MessageReaction(SQLModel, table=True):
+    """Message reactions (emoji)."""
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    emoji: str  # Unicode emoji
+    
+    # Foreign keys
+    message_id: int = Field(foreign_key="message.id")
+    user_id: int = Field(foreign_key="user.id")
+    
+    # Relationships
+    message: Message = Relationship(back_populates="reactions")
+    user: "User" = Relationship()
+    
+    # Unique constraint
+    __table_args__ = (UniqueConstraint('message_id', 'user_id', 'emoji'),)
+
+# Request/Response models
+class MessageCreate(SQLModel):
+    content: str = Field(min_length=1, max_length=2000)
+    message_type: MessageType = MessageType.TEXT
+    reply_to_id: Optional[int] = None
+
+class MessageResponse(SQLModel):
+    id: int
+    content: str
+    message_type: MessageType
+    file_url: Optional[str]
+    file_name: Optional[str]
+    is_edited: bool
+    created_at: datetime
+    edited_at: Optional[datetime]
+    author: "UserResponse"
+    reply_to: Optional["MessageResponse"]
+    reactions: Dict[str, int] = {}  # emoji -> count
+```
+
+## WebSocket Manager
+
+```python
+# app/websocket/manager.py
+from zenith import WebSocket
+from typing import Dict, List, Set, Optional
+import json
+import asyncio
+from datetime import datetime
+
+class ConnectionManager:
+    """Manage WebSocket connections and room subscriptions."""
+    
+    def __init__(self):
+        # connection_id -> WebSocket
+        self.connections: Dict[str, WebSocket] = {}
+        
+        # user_id -> Set[connection_id]
+        self.user_connections: Dict[int, Set[str]] = {}
+        
+        # room_id -> Set[connection_id]
+        self.room_connections: Dict[int, Set[str]] = {}
+        
+        # connection_id -> user_id
+        self.connection_users: Dict[str, int] = {}
+        
+        # Typing indicators: room_id -> Set[user_id]
+        self.typing_users: Dict[int, Set[int]] = {}
+    
+    async def connect(self, websocket: WebSocket, connection_id: str, user_id: int):
+        """Accept WebSocket connection."""
+        await websocket.accept()
+        
+        # Store connection
+        self.connections[connection_id] = websocket
+        self.connection_users[connection_id] = user_id
+        
+        # Track user connections
+        if user_id not in self.user_connections:
+            self.user_connections[user_id] = set()
+        self.user_connections[user_id].add(connection_id)
+        
+        print(f"User {user_id} connected: {connection_id}")
+    
+    async def disconnect(self, connection_id: str):
+        """Handle WebSocket disconnection."""
+        if connection_id not in self.connections:
+            return
+        
+        websocket = self.connections[connection_id]
+        user_id = self.connection_users.get(connection_id)
+        
+        # Remove from all rooms
+        for room_id in list(self.room_connections.keys()):
+            if connection_id in self.room_connections[room_id]:
+                self.room_connections[room_id].remove(connection_id)
+                if not self.room_connections[room_id]:
+                    del self.room_connections[room_id]
+        
+        # Remove user connection tracking
+        if user_id:
+            self.user_connections[user_id].discard(connection_id)
+            if not self.user_connections[user_id]:
+                del self.user_connections[user_id]
+        
+        # Clean up
+        del self.connections[connection_id]
+        if connection_id in self.connection_users:
+            del self.connection_users[connection_id]
+        
+        print(f"User {user_id} disconnected: {connection_id}")
+    
+    async def join_room(self, connection_id: str, room_id: int):
+        """Add connection to room."""
+        if room_id not in self.room_connections:
+            self.room_connections[room_id] = set()
+        
+        self.room_connections[room_id].add(connection_id)
+        
+        # Notify room of user join
+        user_id = self.connection_users.get(connection_id)
+        await self.broadcast_to_room(room_id, {
+            "type": "user_joined",
+            "user_id": user_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }, exclude_connection=connection_id)
+    
+    async def leave_room(self, connection_id: str, room_id: int):
+        """Remove connection from room."""
+        if room_id in self.room_connections:
+            self.room_connections[room_id].discard(connection_id)
+            if not self.room_connections[room_id]:
+                del self.room_connections[room_id]
+        
+        # Notify room of user leave
+        user_id = self.connection_users.get(connection_id)
+        await self.broadcast_to_room(room_id, {
+            "type": "user_left",
+            "user_id": user_id,
+            "timestamp": datetime.utcnow().isoformat()
+        }, exclude_connection=connection_id)
+    
+    async def broadcast_to_room(
+        self,
+        room_id: int,
+        message: dict,
+        exclude_connection: Optional[str] = None
+    ):
+        """Send message to all connections in a room."""
+        if room_id not in self.room_connections:
+            return
+        
+        connections = self.room_connections[room_id].copy()
+        if exclude_connection:
+            connections.discard(exclude_connection)
+        
+        # Send to all connections
+        for connection_id in connections:
+            if connection_id in self.connections:
+                try:
+                    websocket = self.connections[connection_id]
+                    await websocket.send_text(json.dumps(message))
+                except:
+                    # Connection closed, clean up
+                    await self.disconnect(connection_id)
+    
+    async def send_to_user(self, user_id: int, message: dict):
+        """Send message to all connections of a user."""
+        if user_id not in self.user_connections:
+            return
+        
+        connections = self.user_connections[user_id].copy()
+        for connection_id in connections:
+            if connection_id in self.connections:
+                try:
+                    websocket = self.connections[connection_id]
+                    await websocket.send_text(json.dumps(message))
+                except:
+                    await self.disconnect(connection_id)
+    
+    async def set_typing(self, room_id: int, user_id: int, is_typing: bool):
+        """Handle typing indicators."""
+        if room_id not in self.typing_users:
+            self.typing_users[room_id] = set()
+        
+        if is_typing:
+            self.typing_users[room_id].add(user_id)
+        else:
+            self.typing_users[room_id].discard(user_id)
+        
+        # Broadcast typing status
+        await self.broadcast_to_room(room_id, {
+            "type": "typing_update",
+            "room_id": room_id,
+            "typing_users": list(self.typing_users[room_id]),
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    
+    def get_room_users(self, room_id: int) -> List[int]:
+        """Get list of user IDs currently in a room."""
+        if room_id not in self.room_connections:
+            return []
+        
+        user_ids = set()
+        for connection_id in self.room_connections[room_id]:
+            user_id = self.connection_users.get(connection_id)
+            if user_id:
+                user_ids.add(user_id)
+        
+        return list(user_ids)
+
+# Global connection manager instance
+manager = ConnectionManager()
+```
+
+## Chat Context
+
+```python
+# app/contexts/chat.py
+from zenith import Context
+from app.models.message import Message, MessageCreate, MessageType, MessageReaction
+from app.models.room import Room, RoomMember
+from app.models.user import User
+from app.websocket.manager import manager
+from sqlmodel import select, func, and_
+from typing import List, Optional, Dict
+from datetime import datetime
+
+class ChatContext(Context):
+    """Chat-related business logic."""
+    
+    async def send_message(
+        self,
+        room_id: int,
+        author: User,
+        message_data: MessageCreate
+    ) -> Message:
+        """Send a message to a room."""
+        # Verify user is member of room
+        if not await self.is_room_member(room_id, author.id):
+            raise PermissionError("Not a member of this room")
+        
+        # Create message
+        message = Message(
+            content=message_data.content,
+            message_type=message_data.message_type,
+            reply_to_id=message_data.reply_to_id,
+            author_id=author.id,
+            room_id=room_id
+        )
+        
+        self.db.add(message)
+        await self.db.commit()
+        await self.db.refresh(message)
+        
+        # Load relationships
+        await self.db.refresh(message, ["author", "reply_to"])
+        
+        # Broadcast to room
+        await manager.broadcast_to_room(room_id, {
+            "type": "new_message",
+            "message": {
+                "id": message.id,
+                "content": message.content,
+                "message_type": message.message_type,
+                "created_at": message.created_at.isoformat(),
+                "author": {
+                    "id": message.author.id,
+                    "username": message.author.username,
+                    "avatar_url": message.author.avatar_url
+                },
+                "reply_to": {
+                    "id": message.reply_to.id,
+                    "content": message.reply_to.content[:100] + "..."
+                } if message.reply_to else None
+            }
+        })
+        
+        return message
+    
+    async def get_room_messages(
+        self,
+        room_id: int,
+        user: User,
+        limit: int = 50,
+        before_id: Optional[int] = None
+    ) -> List[Message]:
+        """Get messages from a room."""
+        # Verify user is member
+        if not await self.is_room_member(room_id, user.id):
+            raise PermissionError("Not a member of this room")
+        
+        statement = (
+            select(Message)
+            .where(Message.room_id == room_id, Message.is_deleted == False)
+            .order_by(Message.id.desc())
+            .limit(limit)
+        )
+        
+        if before_id:
+            statement = statement.where(Message.id < before_id)
+        
+        result = await self.db.exec(statement)
+        messages = result.all()
+        
+        # Update last read timestamp
+        await self.update_last_read(room_id, user.id)
+        
+        return list(reversed(messages))  # Return oldest first
+    
+    async def edit_message(
+        self,
+        message_id: int,
+        user: User,
+        new_content: str
+    ) -> Optional[Message]:
+        """Edit a message."""
+        message = await self.db.get(Message, message_id)
+        if not message:
+            return None
+        
+        # Check if user can edit (author or admin)
+        if message.author_id != user.id and not await self.is_room_admin(message.room_id, user.id):
+            raise PermissionError("Cannot edit this message")
+        
+        # Update message
+        message.content = new_content
+        message.is_edited = True
+        message.edited_at = datetime.utcnow()
+        
+        await self.db.commit()
+        await self.db.refresh(message)
+        
+        # Broadcast update
+        await manager.broadcast_to_room(message.room_id, {
+            "type": "message_edited",
+            "message_id": message.id,
+            "new_content": new_content,
+            "edited_at": message.edited_at.isoformat()
+        })
+        
+        return message
+    
+    async def delete_message(
+        self,
+        message_id: int,
+        user: User
+    ) -> bool:
+        """Delete a message."""
+        message = await self.db.get(Message, message_id)
+        if not message:
+            return False
+        
+        # Check permissions
+        if message.author_id != user.id and not await self.is_room_admin(message.room_id, user.id):
+            raise PermissionError("Cannot delete this message")
+        
+        # Soft delete
+        message.is_deleted = True
+        message.content = "[Message deleted]"
+        
+        await self.db.commit()
+        
+        # Broadcast deletion
+        await manager.broadcast_to_room(message.room_id, {
+            "type": "message_deleted",
+            "message_id": message.id
+        })
+        
+        return True
+    
+    async def add_reaction(
+        self,
+        message_id: int,
+        user: User,
+        emoji: str
+    ) -> bool:
+        """Add emoji reaction to message."""
+        # Check if reaction already exists
+        existing = await self.db.exec(
+            select(MessageReaction).where(
+                MessageReaction.message_id == message_id,
+                MessageReaction.user_id == user.id,
+                MessageReaction.emoji == emoji
+            )
+        )
+        
+        if existing.first():
+            return False  # Already reacted
+        
+        # Add reaction
+        reaction = MessageReaction(
+            message_id=message_id,
+            user_id=user.id,
+            emoji=emoji
+        )
+        
+        self.db.add(reaction)
+        await self.db.commit()
+        
+        # Get message for room_id
+        message = await self.db.get(Message, message_id)
+        if message:
+            # Broadcast reaction
+            await manager.broadcast_to_room(message.room_id, {
+                "type": "reaction_added",
+                "message_id": message_id,
+                "user_id": user.id,
+                "emoji": emoji
+            })
+        
+        return True
+    
+    async def remove_reaction(
+        self,
+        message_id: int,
+        user: User,
+        emoji: str
+    ) -> bool:
+        """Remove emoji reaction."""
+        reaction = await self.db.exec(
+            select(MessageReaction).where(
+                MessageReaction.message_id == message_id,
+                MessageReaction.user_id == user.id,
+                MessageReaction.emoji == emoji
+            )
+        )
+        
+        reaction = reaction.first()
+        if not reaction:
+            return False
+        
+        await self.db.delete(reaction)
+        await self.db.commit()
+        
+        # Get message for room_id
+        message = await self.db.get(Message, message_id)
+        if message:
+            await manager.broadcast_to_room(message.room_id, {
+                "type": "reaction_removed",
+                "message_id": message_id,
+                "user_id": user.id,
+                "emoji": emoji
+            })
+        
+        return True
+    
+    async def is_room_member(self, room_id: int, user_id: int) -> bool:
+        """Check if user is member of room."""
+        result = await self.db.exec(
+            select(RoomMember).where(
+                RoomMember.room_id == room_id,
+                RoomMember.user_id == user_id
+            )
+        )
+        return result.first() is not None
+    
+    async def is_room_admin(self, room_id: int, user_id: int) -> bool:
+        """Check if user is admin of room."""
+        result = await self.db.exec(
+            select(RoomMember).where(
+                RoomMember.room_id == room_id,
+                RoomMember.user_id == user_id,
+                RoomMember.is_admin == True
+            )
+        )
+        return result.first() is not None
+    
+    async def update_last_read(self, room_id: int, user_id: int):
+        """Update user's last read timestamp for room."""
+        member = await self.db.exec(
+            select(RoomMember).where(
+                RoomMember.room_id == room_id,
+                RoomMember.user_id == user_id
+            )
+        )
+        
+        member = member.first()
+        if member:
+            member.last_read_at = datetime.utcnow()
+            await self.db.commit()
+```
+
+## WebSocket Route
+
+```python
+# app/routes/websocket.py
+from zenith import Router, WebSocket, WebSocketDisconnect, Depends
+from zenith.auth import get_current_user_ws  # WebSocket auth
+from app.websocket.manager import manager
+from app.contexts.chat import ChatContext
+from app.models.message import MessageCreate
+from app.models.user import User
+import json
+import uuid
+
+router = Router()
+
+@router.websocket("/ws")
+async def websocket_endpoint(
+    websocket: WebSocket,
+    token: str = Query(),  # Token passed as query param
+    chat: ChatContext = Depends()
+):
+    """WebSocket endpoint for real-time chat."""
+    # Authenticate user
+    try:
+        user = await get_current_user_from_token(token)
+        if not user:
+            await websocket.close(code=1008, reason="Unauthorized")
+            return
+    except Exception:
+        await websocket.close(code=1008, reason="Invalid token")
+        return
+    
+    # Generate connection ID
+    connection_id = str(uuid.uuid4())
+    
+    # Connect
+    await manager.connect(websocket, connection_id, user.id)
+    
+    try:
+        while True:
+            # Receive message
+            data = await websocket.receive_text()
+            
+            try:
+                message_data = json.loads(data)
+                await handle_websocket_message(
+                    connection_id, user, message_data, chat
+                )
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": "Invalid JSON"
+                }))
+            except Exception as e:
+                await websocket.send_text(json.dumps({
+                    "type": "error",
+                    "message": str(e)
+                }))
+    
+    except WebSocketDisconnect:
+        await manager.disconnect(connection_id)
+
+async def handle_websocket_message(
+    connection_id: str,
+    user: User,
+    message_data: dict,
+    chat: ChatContext
+):
+    """Handle incoming WebSocket messages."""
+    message_type = message_data.get("type")
+    
+    if message_type == "join_room":
+        room_id = message_data.get("room_id")
+        if room_id and await chat.is_room_member(room_id, user.id):
+            await manager.join_room(connection_id, room_id)
+            
+            # Send recent messages
+            messages = await chat.get_room_messages(room_id, user, limit=20)
+            await manager.send_to_connection(connection_id, {
+                "type": "room_history",
+                "room_id": room_id,
+                "messages": [serialize_message(msg) for msg in messages]
+            })
+    
+    elif message_type == "leave_room":
+        room_id = message_data.get("room_id")
+        if room_id:
+            await manager.leave_room(connection_id, room_id)
+    
+    elif message_type == "send_message":
+        room_id = message_data.get("room_id")
+        content = message_data.get("content", "").strip()
+        reply_to_id = message_data.get("reply_to_id")
+        
+        if room_id and content:
+            message_create = MessageCreate(
+                content=content,
+                reply_to_id=reply_to_id
+            )
+            await chat.send_message(room_id, user, message_create)
+    
+    elif message_type == "typing":
+        room_id = message_data.get("room_id")
+        is_typing = message_data.get("is_typing", False)
+        
+        if room_id:
+            await manager.set_typing(room_id, user.id, is_typing)
+    
+    elif message_type == "add_reaction":
+        message_id = message_data.get("message_id")
+        emoji = message_data.get("emoji")
+        
+        if message_id and emoji:
+            await chat.add_reaction(message_id, user, emoji)
+    
+    elif message_type == "remove_reaction":
+        message_id = message_data.get("message_id")
+        emoji = message_data.get("emoji")
+        
+        if message_id and emoji:
+            await chat.remove_reaction(message_id, user, emoji)
+
+def serialize_message(message: Message) -> dict:
+    """Serialize message for WebSocket."""
+    return {
+        "id": message.id,
+        "content": message.content,
+        "message_type": message.message_type,
+        "created_at": message.created_at.isoformat(),
+        "is_edited": message.is_edited,
+        "author": {
+            "id": message.author.id,
+            "username": message.author.username,
+            "avatar_url": message.author.avatar_url
+        },
+        "reply_to": {
+            "id": message.reply_to.id,
+            "content": message.reply_to.content[:50] + "..."
+        } if message.reply_to else None
+    }
+```
+
+## Client-Side JavaScript
+
+```javascript
+// app/static/chat.js
+class ChatClient {
+    constructor(token) {
+        this.token = token;
+        this.ws = null;
+        this.currentRoom = null;
+        this.typing = false;
+        this.typingTimeout = null;
+    }
+    
+    connect() {
+        const wsUrl = `ws://localhost:8000/ws?token=${this.token}`;
+        this.ws = new WebSocket(wsUrl);
+        
+        this.ws.onopen = () => {
+            console.log('Connected to chat');
+            this.showStatus('Connected', 'success');
+        };
+        
+        this.ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleMessage(data);
+        };
+        
+        this.ws.onclose = () => {
+            console.log('Disconnected from chat');
+            this.showStatus('Disconnected', 'error');
+            // Attempt to reconnect after 3 seconds
+            setTimeout(() => this.connect(), 3000);
+        };
+        
+        this.ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            this.showStatus('Connection error', 'error');
+        };
+    }
+    
+    handleMessage(data) {
+        switch (data.type) {
+            case 'new_message':
+                this.displayMessage(data.message);
+                break;
+                
+            case 'user_joined':
+                this.showSystemMessage(`User joined the room`);
+                break;
+                
+            case 'user_left':
+                this.showSystemMessage(`User left the room`);
+                break;
+                
+            case 'typing_update':
+                this.updateTypingIndicators(data.typing_users);
+                break;
+                
+            case 'message_edited':
+                this.updateMessage(data.message_id, data.new_content);
+                break;
+                
+            case 'message_deleted':
+                this.removeMessage(data.message_id);
+                break;
+                
+            case 'reaction_added':
+                this.addReaction(data.message_id, data.emoji, data.user_id);
+                break;
+                
+            case 'reaction_removed':
+                this.removeReaction(data.message_id, data.emoji, data.user_id);
+                break;
+                
+            case 'room_history':
+                this.loadRoomHistory(data.messages);
+                break;
+                
+            case 'error':
+                this.showStatus(data.message, 'error');
+                break;
+        }
+    }
+    
+    joinRoom(roomId) {
+        this.currentRoom = roomId;
+        this.send({
+            type: 'join_room',
+            room_id: roomId
+        });
+        
+        // Clear messages
+        document.getElementById('messages').innerHTML = '';
+        document.getElementById('room-name').textContent = `Room ${roomId}`;
+    }
+    
+    sendMessage(content, replyToId = null) {
+        if (!content.trim() || !this.currentRoom) return;
+        
+        this.send({
+            type: 'send_message',
+            room_id: this.currentRoom,
+            content: content.trim(),
+            reply_to_id: replyToId
+        });
+        
+        // Clear input
+        document.getElementById('message-input').value = '';
+        this.stopTyping();
+    }
+    
+    startTyping() {
+        if (!this.typing && this.currentRoom) {
+            this.typing = true;
+            this.send({
+                type: 'typing',
+                room_id: this.currentRoom,
+                is_typing: true
+            });
+        }
+        
+        // Reset typing timeout
+        clearTimeout(this.typingTimeout);
+        this.typingTimeout = setTimeout(() => {
+            this.stopTyping();
+        }, 3000);
+    }
+    
+    stopTyping() {
+        if (this.typing && this.currentRoom) {
+            this.typing = false;
+            this.send({
+                type: 'typing',
+                room_id: this.currentRoom,
+                is_typing: false
+            });
+        }
+        
+        clearTimeout(this.typingTimeout);
+    }
+    
+    addReaction(messageId, emoji) {
+        this.send({
+            type: 'add_reaction',
+            message_id: messageId,
+            emoji: emoji
+        });
+    }
+    
+    send(data) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(data));
+        }
+    }
+    
+    displayMessage(message) {
+        const messagesDiv = document.getElementById('messages');
+        const messageEl = document.createElement('div');
+        messageEl.className = 'message';
+        messageEl.dataset.messageId = message.id;
+        
+        const time = new Date(message.created_at).toLocaleTimeString();
+        
+        messageEl.innerHTML = `
+            <div class="message-header">
+                <span class="author">${message.author.username}</span>
+                <span class="time">${time}</span>
+                ${message.is_edited ? '<span class="edited">(edited)</span>' : ''}
+            </div>
+            <div class="message-content">${message.content}</div>
+            ${message.reply_to ? `<div class="reply-to">Replying to: ${message.reply_to.content}</div>` : ''}
+            <div class="message-actions">
+                <button onclick="chat.addReaction(${message.id}, '👍')">👍</button>
+                <button onclick="chat.addReaction(${message.id}, '❤️')">❤️</button>
+                <button onclick="replyTo(${message.id})">Reply</button>
+            </div>
+        `;
+        
+        messagesDiv.appendChild(messageEl);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    
+    showStatus(message, type = 'info') {
+        const statusEl = document.getElementById('status');
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+        
+        setTimeout(() => {
+            statusEl.textContent = '';
+            statusEl.className = 'status';
+        }, 5000);
+    }
+}
+
+// Initialize chat
+let chat;
+const token = localStorage.getItem('auth_token');
+
+if (token) {
+    chat = new ChatClient(token);
+    chat.connect();
+} else {
+    window.location.href = '/login';
+}
+
+// Event listeners
+document.getElementById('message-input').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const content = e.target.value;
+        chat.sendMessage(content);
+    } else {
+        chat.startTyping();
+    }
+});
+
+document.getElementById('send-button').addEventListener('click', () => {
+    const input = document.getElementById('message-input');
+    chat.sendMessage(input.value);
+});
+
+// Room switching
+function joinRoom(roomId) {
+    chat.joinRoom(roomId);
+}
+
+function replyTo(messageId) {
+    // Set reply context (implementation depends on UI)
+    console.log('Replying to message:', messageId);
+}
+```
+
+## HTML Interface
+
+```html
+<!-- app/static/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zenith Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="sidebar">
+            <h3>Rooms</h3>
+            <ul class="room-list">
+                <li><a href="#" onclick="joinRoom(1)">General</a></li>
+                <li><a href="#" onclick="joinRoom(2)">Random</a></li>
+                <li><a href="#" onclick="joinRoom(3)">Tech Talk</a></li>
+            </ul>
+        </div>
+        
+        <div class="main-chat">
+            <div class="chat-header">
+                <h2 id="room-name">Select a room</h2>
+                <div id="status" class="status"></div>
+            </div>
+            
+            <div id="messages" class="messages"></div>
+            
+            <div id="typing-indicator" class="typing-indicator"></div>
+            
+            <div class="message-input-container">
+                <textarea id="message-input" placeholder="Type a message..." rows="1"></textarea>
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="chat.js"></script>
+</body>
+</html>
+```
+
+<Aside type="tip">
+  **Performance Note**: This chat system uses WebSocket connections efficiently and includes features like typing indicators, message reactions, and real-time presence updates.
+</Aside>
+
+## Testing WebSockets
+
+```python
+# tests/test_websocket.py
+import pytest
+from zenith.testing import TestClient
+from app.main import app
+import asyncio
+import json
+
+@pytest.mark.asyncio
+async def test_websocket_connection():
+    async with TestClient(app) as client:
+        # Connect to WebSocket
+        async with client.websocket_connect("/ws?token=test-token") as websocket:
+            # Send join room message
+            await websocket.send_text(json.dumps({
+                "type": "join_room",
+                "room_id": 1
+            }))
+            
+            # Send message
+            await websocket.send_text(json.dumps({
+                "type": "send_message",
+                "room_id": 1,
+                "content": "Hello, world!"
+            }))
+            
+            # Receive response
+            response = await websocket.receive_text()
+            data = json.loads(response)
+            
+            assert data["type"] == "new_message"
+            assert data["message"]["content"] == "Hello, world!"
+```
+
+## Next Steps
+
+- Add [file sharing](/examples/file-upload) capabilities
+- Implement [push notifications](/features/background-tasks) for offline users
+- Add [moderation tools](/concepts/authentication) for room admins
+- Scale with [Redis](/concepts/database) for message persistence
