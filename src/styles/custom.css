@@ -1,25 +1,26 @@
 /* Zenith Custom Styles */
 
 :root {
-  /* Override Starlight colors with Zenith brand */
+  /* Override Starlight colors with Zenith brand - improved contrast */
   --sl-color-accent-low: #1e40af1a;
   --sl-color-accent: #3b82f6;
   --sl-color-accent-high: #93bbfc;
   
-  --sl-color-bg: #0a0a0a;
-  --sl-color-bg-nav: #0f0f0f;
-  --sl-color-bg-sidebar: #0f0f0f;
-  --sl-color-bg-inline-code: #1a1a1a;
+  /* Lighter dark mode for better readability */
+  --sl-color-bg: #0f0f0f;  /* Slightly lighter */
+  --sl-color-bg-nav: #151515;  /* Lighter nav */
+  --sl-color-bg-sidebar: #151515;  /* Lighter sidebar */
+  --sl-color-bg-inline-code: #252525;  /* Much lighter for inline code */
   
-  --sl-color-text: #ffffff;
-  --sl-color-text-secondary: #d4d4d8;
+  --sl-color-text: #f0f0f0;  /* Slightly softer white */
+  --sl-color-text-secondary: #b4b4b8;  /* Lighter secondary text */
   
-  --sl-color-gray-1: #ffffff;
-  --sl-color-gray-2: #d4d4d8;
-  --sl-color-gray-3: #a1a1aa;
-  --sl-color-gray-4: #71717a;
-  --sl-color-gray-5: #3f3f46;
-  --sl-color-gray-6: #27272a;
+  --sl-color-gray-1: #f0f0f0;
+  --sl-color-gray-2: #c4c4c8;  /* Lighter */
+  --sl-color-gray-3: #9a9a9e;  /* Lighter */
+  --sl-color-gray-4: #6a6a6e;  /* Lighter */
+  --sl-color-gray-5: #454549;  /* Lighter */
+  --sl-color-gray-6: #2a2a2e;  /* Lighter */
   
   --sl-font-system: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
   --sl-font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
@@ -63,10 +64,33 @@ pre {
   padding-top: 1rem;
 }
 
+/* Fix sidebar current page highlighting for better contrast */
 nav.sidebar-nav a[aria-current="page"] {
-  background: linear-gradient(to right, #3b82f620, transparent);
+  background: rgba(59, 130, 246, 0.15);  /* Subtle blue background */
   border-left: 3px solid var(--sl-color-accent);
   font-weight: 600;
+  color: var(--sl-color-text) !important;  /* Use normal text color, not blue */
+}
+
+/* Ensure text under highlighted sections has good contrast */
+nav.sidebar-nav a[aria-current="page"] + ul li a {
+  color: var(--sl-color-text-secondary) !important;
+}
+
+/* Also fix general sidebar link highlighting for better contrast */
+nav.sidebar-nav a:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--sl-color-text) !important;
+}
+
+/* Fix sidebar text contrast in general */
+nav.sidebar-nav a {
+  color: var(--sl-color-text-secondary);
+}
+
+nav.sidebar-nav a:hover,
+nav.sidebar-nav a:focus {
+  color: var(--sl-color-text);
 }
 
 /* Hero section for landing page */

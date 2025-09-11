@@ -3,7 +3,7 @@ title: Blog API
 description: Complete blog API with authentication, CRUD operations, and search
 ---
 
-import { Code, Tabs, TabItem, FileTree, Aside } from '@astrojs/starlight/components';
+import { FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
@@ -874,48 +874,47 @@ async def test_get_post_by_slug():
 
 ## Running the Application
 
-<Tabs>
-  <TabItem label="Development">
-    ```bash
-    # Install dependencies
-    pip install -r requirements.txt
-    
-    # Set up environment
-    cp .env.example .env
-    # Edit .env with your settings
-    
-    # Run migrations
-    alembic upgrade head
-    
-    # Start development server
-    uvicorn app.main:app --reload
-    
-    # Or use Zenith CLI
-    zen server --reload
-    ```
-  </TabItem>
-  <TabItem label="Production">
-    ```bash
-    # Install with production dependencies
-    pip install -r requirements.txt
-    
-    # Set environment variables
-    export DATABASE_URL="postgresql://..."
-    export SECRET_KEY="your-secret-key"
-    export ENVIRONMENT="production"
-    
-    # Run migrations
-    alembic upgrade head
-    
-    # Start with gunicorn
-    gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
-    ```
-  </TabItem>
-  <TabItem label="Docker">
-    ```dockerfile
-    FROM python:3.12-slim
-    
-    WORKDIR /app
+**Development:**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your settings
+
+# Run migrations
+alembic upgrade head
+
+# Start development server
+uvicorn app.main:app --reload
+
+# Or use Zenith CLI
+zen server --reload
+```
+
+**Production:**
+```bash
+# Install with production dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export DATABASE_URL="postgresql://..."
+export SECRET_KEY="your-secret-key"
+export ENVIRONMENT="production"
+
+# Run migrations
+alembic upgrade head
+
+# Start with gunicorn
+gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker
+```
+
+**Docker:**
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
     
     COPY requirements.txt .
     RUN pip install -r requirements.txt

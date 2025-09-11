@@ -3,7 +3,7 @@ title: Real-time Chat
 description: WebSocket-powered chat application with rooms and presence
 ---
 
-import { Code, Tabs, TabItem, FileTree, Aside } from '@astrojs/starlight/components';
+import { FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 

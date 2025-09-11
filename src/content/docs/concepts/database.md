@@ -3,8 +3,6 @@ title: Database Integration
 description: Work with databases using SQLAlchemy and async support
 ---
 
-import { Tabs, TabItem, Code, Aside } from '@astrojs/starlight/components';
-
 ## Overview
 
 Zenith provides seamless database integration with async SQLAlchemy, automatic migrations, and connection pooling. It supports PostgreSQL, MySQL, SQLite, and other SQL databases.
@@ -48,44 +46,41 @@ async def create_user(user: User, session: Session = Depends(get_session)):
 
 ### Connection URLs
 
-<Tabs>
-  <TabItem label="PostgreSQL">
-    ```python
-    # Standard
-    DATABASE_URL = "postgresql://user:password@localhost/dbname"
-    
-    # Async with asyncpg
-    DATABASE_URL = "postgresql+asyncpg://user:password@localhost/dbname"
-    
-    # With options
-    DATABASE_URL = "postgresql://user:pass@localhost/db?sslmode=require"
-    ```
-  </TabItem>
-  <TabItem label="MySQL">
-    ```python
-    # Standard
-    DATABASE_URL = "mysql://user:password@localhost/dbname"
-    
-    # Async with aiomysql
-    DATABASE_URL = "mysql+aiomysql://user:password@localhost/dbname"
-    
-    # With charset
-    DATABASE_URL = "mysql://user:pass@localhost/db?charset=utf8mb4"
-    ```
-  </TabItem>
-  <TabItem label="SQLite">
-    ```python
-    # File database
-    DATABASE_URL = "sqlite:///./app.db"
-    
-    # Async with aiosqlite
-    DATABASE_URL = "sqlite+aiosqlite:///./app.db"
-    
-    # In-memory (testing)
-    DATABASE_URL = "sqlite:///:memory:"
-    ```
-  </TabItem>
-</Tabs>
+**PostgreSQL:**
+```python
+# Standard
+DATABASE_URL = "postgresql://user:password@localhost/dbname"
+
+# Async with asyncpg
+DATABASE_URL = "postgresql+asyncpg://user:password@localhost/dbname"
+
+# With options
+DATABASE_URL = "postgresql://user:pass@localhost/db?sslmode=require"
+```
+
+**MySQL:**
+```python
+# Standard
+DATABASE_URL = "mysql://user:password@localhost/dbname"
+
+# Async with aiomysql
+DATABASE_URL = "mysql+aiomysql://user:password@localhost/dbname"
+
+# With charset
+DATABASE_URL = "mysql://user:pass@localhost/db?charset=utf8mb4"
+```
+
+**SQLite:**
+```python
+# File database
+DATABASE_URL = "sqlite:///./app.db"
+
+# Async with aiosqlite
+DATABASE_URL = "sqlite+aiosqlite:///./app.db"
+
+# In-memory (testing)
+DATABASE_URL = "sqlite:///:memory:"
+```
 
 ### Connection Pooling
 

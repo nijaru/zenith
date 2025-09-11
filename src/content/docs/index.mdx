@@ -6,7 +6,7 @@ hero:
   tagline: Build production-ready APIs with clean architecture and exceptional developer experience
   actions:
     - text: Get Started
-      link: /introduction/
+      link: /zenith/introduction/
       icon: right-arrow
       variant: primary
     - text: View on GitHub
@@ -18,9 +18,9 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Build Modern Python APIs
 
-<CardGrid stagger>
+<CardGrid>
 	<Card title="Clean Architecture" icon="puzzle">
-		Organize business logic with Phoenix-inspired contexts. Keep your domain logic independent of web concerns.
+		Organize business logic with clean contexts. Keep your domain logic independent of web concerns.
 	</Card>
 	<Card title="Type-Safe by Default" icon="shield">
 		Full type hints with Pydantic validation. Catch errors at development time with complete IDE support.
@@ -40,7 +40,7 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 pip install zenith-web
 
 # Create a new project
-zen new my-api --template api
+zen new my-api
 
 # Start development server
 zen server --reload

@@ -3,18 +3,14 @@ title: Quick Start
 description: Build your first Zenith application in 5 minutes
 ---
 
-import { Steps, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
-
 ## Create Your First API
 
 Let's build a simple blog API to demonstrate Zenith's core features.
 
-<Steps>
-
 1. **Create a new project**
 
    ```bash
-   zen new blog-api --template api
+   zen new blog-api
    cd blog-api
    ```
 
@@ -24,6 +20,7 @@ Let's build a simple blog API to demonstrate Zenith's core features.
 
    ```python
    from zenith import Zenith
+   from zenith.exceptions import HTTPException
    from pydantic import BaseModel
    from typing import List, Optional
    from datetime import datetime
@@ -33,6 +30,9 @@ Let's build a simple blog API to demonstrate Zenith's core features.
        version="1.0.0",
        description="A simple blog API built with Zenith"
    )
+   
+   # Enable automatic API documentation
+   app.add_docs()
    
    # In-memory storage for demo
    posts = []
@@ -118,64 +118,59 @@ Let's build a simple blog API to demonstrate Zenith's core features.
 
    Your API is now running at `http://localhost:8000`
 
-   <Tabs>
-     <TabItem label="curl">
-       ```bash
-       # Create a post
-       curl -X POST http://localhost:8000/posts \
-         -H "Content-Type: application/json" \
-         -d '{
-           "title": "Hello Zenith",
-           "content": "This is my first post!",
-           "author": "Alice"
-         }'
-       
-       # Get all posts
-       curl http://localhost:8000/posts
-       
-       # Get a specific post
-       curl http://localhost:8000/posts/1
-       ```
-     </TabItem>
-     <TabItem label="httpie">
-       ```bash
-       # Create a post
-       http POST localhost:8000/posts \
-         title="Hello Zenith" \
-         content="This is my first post!" \
-         author="Alice"
-       
-       # Get all posts
-       http localhost:8000/posts
-       
-       # Get a specific post
-       http localhost:8000/posts/1
-       ```
-     </TabItem>
-     <TabItem label="Python">
-       ```python
-       import httpx
-       
-       # Create a post
-       response = httpx.post("http://localhost:8000/posts", json={
-           "title": "Hello Zenith",
-           "content": "This is my first post!",
-           "author": "Alice"
-       })
-       print(response.json())
-       
-       # Get all posts
-       response = httpx.get("http://localhost:8000/posts")
-       print(response.json())
-       ```
-     </TabItem>
-   </Tabs>
+**curl:**
+```bash
+# Create a post
+curl -X POST http://localhost:8000/posts \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Hello Zenith",
+    "content": "This is my first post!",
+    "author": "Alice"
+  }'
+
+# Get all posts
+curl http://localhost:8000/posts
+
+# Get a specific post
+curl http://localhost:8000/posts/1
+```
+
+**httpie:**
+```bash
+# Create a post
+http POST localhost:8000/posts \
+  title="Hello Zenith" \
+  content="This is my first post!" \
+  author="Alice"
+
+# Get all posts
+http localhost:8000/posts
+
+# Get a specific post
+http localhost:8000/posts/1
+```
+
+**Python:**
+```python
+import httpx
+
+# Create a post
+response = httpx.post("http://localhost:8000/posts", json={
+    "title": "Hello Zenith",
+    "content": "This is my first post!",
+    "author": "Alice"
+})
+print(response.json())
+
+# Get all posts
+response = httpx.get("http://localhost:8000/posts")
+print(response.json())
+```
 
 5. **Explore the automatic documentation**
 
    Visit `http://localhost:8000/docs` to see the interactive API documentation
-
-</Steps>
 
 ## Add a Database
 
@@ -183,14 +178,18 @@ Let's evolve our API to use a real database with SQLModel:
 
 ```python
 from zenith import Zenith
-from zenith.db import SQLModel, Field, create_engine, Session
-from sqlmodel import select
+from zenith.exceptions import HTTPException
+from sqlmodel import SQLModel, Field, create_engine, Session, select
 from typing import Optional
 from datetime import datetime
 
 # Database setup
 DATABASE_URL = "sqlite:///blog.db"
 engine = create_engine(DATABASE_URL)
+
+def get_session():
+    with Session(engine) as session:
+        yield session
 
 app = Zenith(title="Blog API with Database")
 
@@ -212,7 +211,7 @@ async def on_startup():
 async def get_posts(
     skip: int = 0,
     limit: int = 100,
-    session: Session = Depends(get_session)
+    session: Session
 ):
     """Get all posts with pagination."""
     statement = select(Post).offset(skip).limit(limit)
@@ -222,7 +221,7 @@ async def get_posts(
 @app.post("/posts", response_model=Post)
 async def create_post(
     post: Post,
-    session: Session = Depends(get_session)
+    session: Session
 ):
     """Create a new post in the database."""
     session.add(post)
@@ -238,6 +237,7 @@ Protect your endpoints with JWT authentication:
 ```python
 from zenith.auth import Auth, create_access_token, get_current_user
 from zenith.auth.password import hash_password, verify_password
+from zenith.exceptions import HTTPException
 
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -251,7 +251,7 @@ async def register(
     username: str,
     email: str,
     password: str,
-    session: Session = Depends(get_session)
+    session: Session
 ):
     """Register a new user."""
     # Check if user exists
@@ -278,7 +278,7 @@ async def register(
 async def login(
     email: str,
     password: str,
-    session: Session = Depends(get_session)
+    session: Session
 ):
     """Login and get access token."""
     user = session.exec(
@@ -293,7 +293,7 @@ async def login(
 
 # Protected endpoint
 @app.get("/protected")
-async def protected_route(user: User = Depends(get_current_user)):
+async def protected_route(user: User):
     """Only accessible with valid token."""
     return {"message": f"Hello {user.username}!"}
 ```
@@ -349,11 +349,11 @@ app = Zenith(
 
 Congratulations! You've built your first Zenith API. Here's what to explore next:
 
-- **[Context System](/concepts/contexts)** - Organize business logic cleanly
-- **[Background Tasks](/features/background-tasks)** - Process tasks asynchronously
-- **[WebSockets](/features/websockets)** - Real-time communication
-- **[Testing](/features/testing)** - Write comprehensive tests
-- **[Deployment](/deployment/docker)** - Deploy to production
+- **[Context System](/zenith/concepts/contexts)** - Organize business logic cleanly
+- **[Background Tasks](/zenith/examples/background-tasks)** - Process tasks asynchronously
+- **[WebSocket Chat](/zenith/examples/websocket-chat)** - Real-time communication
+- **[Testing](/zenith/api/testing)** - Write comprehensive tests
+- **[Production API](/zenith/examples/production-api)** - Deploy to production
 
 ## Complete Example
 
