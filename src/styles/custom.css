@@ -71,11 +71,12 @@ nav.sidebar-nav a[aria-current="page"] {
 
 /* Hero section for landing page */
 .hero {
-  padding: 4rem 0;
+  padding: 4rem 2rem;
   text-align: center;
   background: linear-gradient(135deg, #1e40af15 0%, #7c3aed15 100%);
   border-radius: 1rem;
-  margin-bottom: 3rem;
+  margin: 2rem auto 3rem auto;
+  max-width: 1200px;
 }
 
 .hero h1 {
@@ -219,6 +220,28 @@ tr:nth-child(even) {
   --pagefind-ui-text: var(--sl-color-text);
 }
 
+/* Content area improvements */
+.sl-markdown-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Fix highlight color for better readability */
+code {
+  background: var(--sl-color-bg-inline-code) !important;
+  color: var(--sl-color-text) !important;
+  padding: 0.2rem 0.4rem !important;
+  border-radius: 0.25rem !important;
+}
+
+/* Better spacing for main sections */
+.sl-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
 /* Mobile improvements */
 @media (max-width: 768px) {
   .hero h1 {
@@ -227,5 +250,10 @@ tr:nth-child(even) {
   
   .features {
     grid-template-columns: 1fr;
+  }
+  
+  .sl-markdown-content,
+  .sl-container {
+    padding: 0 1rem;
   }
 }
