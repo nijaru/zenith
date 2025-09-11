@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import starlightUtils from '@lorenzo_lewis/starlight-utils';
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,6 +14,15 @@ export default defineConfig({
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/nijaru/zenith' },
 			],
+			plugins: [
+				starlightUtils({
+					navLinks: {
+						leading: {
+							useSidebarLabelled: 'leadingNavLinks'
+						}
+					}
+				})
+			],
 			editLink: {
 				baseUrl: 'https://github.com/nijaru/zenith/edit/main/docs/',
 			},
@@ -22,7 +32,7 @@ export default defineConfig({
 					tag: 'link',
 					attrs: {
 						rel: 'icon',
-						href: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>',
+						href: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E⚡%3C/text%3E%3C/svg%3E',
 					},
 				},
 			],
@@ -30,14 +40,25 @@ export default defineConfig({
 				'./src/styles/custom.css',
 			],
 			components: {
-				Header: './src/components/CustomHeader.astro',
+				ThemeSelect: './src/components/overrides/ThemeSelect.astro',
+				// Uncomment to enable custom header with navigation buttons:
+				// Header: './src/components/overrides/Header.astro',
 			},
 			pagefind: false,
 			tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
 			pagination: true,
 			sidebar: [
 				{
+					label: 'leadingNavLinks',
+					items: [
+						{ label: 'Quick Start', link: '/quick-start' },
+						{ label: 'Examples', link: '/examples/hello-world' },
+						{ label: 'API Docs', link: '/api/application' },
+					],
+				},
+				{
 					label: 'Getting Started',
+					collapsed: false,
 					items: [
 						{ label: 'Introduction', link: '/introduction' },
 						{ label: 'Installation', link: '/installation' },
@@ -46,7 +67,8 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Documentation',
+					label: 'Core Concepts',
+					collapsed: false,
 					items: [
 						{ label: 'Context System', link: '/concepts/contexts' },
 						{ label: 'Routing', link: '/concepts/routing' },
@@ -57,25 +79,20 @@ export default defineConfig({
 				},
 				{
 					label: 'Examples',
+					collapsed: false,
 					items: [
 						{ label: 'Hello World', link: '/examples/hello-world' },
 						{ label: 'Basic Routing', link: '/examples/basic-routing' },
-						{ label: 'Pydantic Validation', link: '/examples/pydantic-validation' },
-						{ label: 'Context System', link: '/examples/context-system' },
-						{ label: 'CORS Middleware', link: '/examples/cors-middleware' },
-						{ label: 'Background Tasks', link: '/examples/background-tasks' },
 						{ label: 'File Upload', link: '/examples/file-upload' },
 						{ label: 'WebSocket Chat', link: '/examples/websocket-chat' },
-						{ label: 'Rate Limiting', link: '/examples/rate-limiting' },
-						{ label: 'Database Todo API', link: '/examples/database-todo-api' },
-						{ label: 'Production API', link: '/examples/production-api' },
-						{ label: 'Security Middleware', link: '/examples/security-middleware' },
-						{ label: 'SQLModel Integration', link: '/examples/sqlmodel-integration' },
+						{ label: 'Blog API', link: '/examples/blog-api' },
+						{ label: 'Chat Application', link: '/examples/chat' },
 						{ label: 'Full-Stack SPA', link: '/examples/fullstack-spa' },
 					],
 				},
 				{
 					label: 'API Reference',
+					collapsed: false,
 					items: [
 						{ label: 'Application', link: '/api/application' },
 						{ label: 'Context', link: '/api/context' },

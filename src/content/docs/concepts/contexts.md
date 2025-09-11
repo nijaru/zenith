@@ -1,13 +1,13 @@
 ---
 title: Context System
-description: Organize business logic with Phoenix-inspired contexts
+description: Organize business logic with clean contexts
 ---
 
 import { Tabs, TabItem, Aside, Code } from '@astrojs/starlight/components';
 
 ## What are Contexts?
 
-Contexts are Zenith's way of organizing business logic, inspired by Phoenix's context pattern. They provide a clean separation between your domain logic and web layer, making your code more maintainable, testable, and reusable.
+Contexts are Zenith's way of organizing business logic. They provide a clean separation between your domain logic and web layer, making your code more maintainable, testable, and reusable.
 
 <Aside type="note">
   **Think of Contexts as service layers** that encapsulate all business logic related to a specific domain area of your application.

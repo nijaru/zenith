@@ -3,7 +3,7 @@ title: Introduction
 description: Zenith is a modern Python web framework with clean architecture and exceptional performance
 ---
 
-import { Card, CardGrid, Tabs, TabItem } from '@astrojs/starlight/components';
+import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <div class="hero">
   <h1>⚡ Zenith Framework</h1>
@@ -12,11 +12,11 @@ import { Card, CardGrid, Tabs, TabItem } from '@astrojs/starlight/components';
 
 ## Why Zenith?
 
-Zenith combines the best of modern Python web development with clean architecture patterns inspired by Phoenix and Rails. Built on top of Starlette with modern async patterns, Zenith provides the performance you need with the developer experience you deserve.
+Zenith combines the best of modern Python web development with clean architecture patterns. Built on top of Starlette with modern async patterns, Zenith provides the performance you need with the developer experience you deserve.
 
 <CardGrid>
   <Card title="🏗️ Clean Architecture" icon="puzzle">
-    Context-based business logic separation inspired by Phoenix LiveView. Keep your domain logic clean, testable, and independent of web concerns.
+    Context-based business logic separation. Keep your domain logic clean, testable, and independent of web concerns.
   </Card>
   <Card title="📊 SQLModel Integration" icon="database">
     Unified Pydantic + SQLAlchemy models. Write once, use everywhere - API validation, database models, and OpenAPI documentation.
@@ -31,8 +31,7 @@ Zenith combines the best of modern Python web development with clean architectur
 
 ## Quick Example
 
-<Tabs>
-  <TabItem label="Basic App">
+**Basic App:**
 ```python
 from zenith import Zenith
 
@@ -46,8 +45,8 @@ async def hello():
 async def health():
     return {"status": "healthy"}
 ```
-  </TabItem>
-  <TabItem label="With Context">
+
+**With Context:**
 ```python
 from zenith import Zenith, Context
 from zenith.db import SQLModel, Field
@@ -70,8 +69,8 @@ async def create_user(
 ):
     return await service.create_user(user)
 ```
-  </TabItem>
-  <TabItem label="Full Featured">
+
+**Full Featured:**
 ```python
 from zenith import Zenith
 from zenith.middleware import (
@@ -98,8 +97,6 @@ app.spa("dist")
 async def health():
     return {"status": "healthy"}
 ```
-  </TabItem>
-</Tabs>
 
 ## Key Features
 

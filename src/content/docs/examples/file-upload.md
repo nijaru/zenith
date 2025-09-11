@@ -3,7 +3,7 @@ title: File Upload Service
 description: Handle file uploads with validation, processing, and cloud storage
 ---
 
-import { Code, Tabs, TabItem, FileTree, Aside } from '@astrojs/starlight/components';
+import { FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 

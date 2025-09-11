@@ -3,8 +3,6 @@ title: Installation
 description: Get Zenith installed and set up your development environment
 ---
 
-import { Tabs, TabItem, Code } from '@astrojs/starlight/components';
-
 ## Requirements
 
 Before installing Zenith, ensure you have:
@@ -16,54 +14,59 @@ Before installing Zenith, ensure you have:
 
 ## Installation Methods
 
-<Tabs>
-  <TabItem label="pip">
-    ```bash
-    # Install Zenith
-    pip install zenith-web
-    
-    # Install with all extras
-    pip install "zenith-web[all]"
-    
-    # Install specific extras
-    pip install "zenith-web[redis,postgres]"
-    ```
-  </TabItem>
-  <TabItem label="uv (Recommended)">
-    ```bash
-    # Install uv if you haven't
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    
-    # Install Zenith
-    uv add zenith-web
-    
-    # Install with extras
-    uv add "zenith-web[all]"
-    ```
-  </TabItem>
-  <TabItem label="Poetry">
-    ```bash
-    # Add to your project
-    poetry add zenith-web
-    
-    # With extras
-    poetry add "zenith-web[redis,postgres]"
-    ```
-  </TabItem>
-</Tabs>
+**pip:**
+```bash
+# Install Zenith
+pip install zenith-web
 
-## Available Extras
+# All dependencies are included by default
+# Redis, PostgreSQL, and other drivers are already included
+```
 
-Zenith provides optional extras for additional functionality:
+**uv (Recommended):**
+```bash
+# Install uv if you haven't
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-| Extra | Description | Packages Included |
-|-------|-------------|-------------------|
-| `redis` | Redis support for caching and queues | `redis`, `hiredis` |
-| `postgres` | PostgreSQL database support | `asyncpg`, `psycopg2-binary` |
-| `mysql` | MySQL database support | `aiomysql`, `pymysql` |
-| `testing` | Testing utilities | `pytest`, `pytest-asyncio`, `httpx` |
-| `dev` | Development tools | `black`, `ruff`, `mypy`, `pre-commit` |
-| `all` | Everything included | All of the above |
+# Install Zenith
+uv add zenith-web
+
+# All dependencies are included by default
+```
+
+**Poetry:**
+```bash
+# Add to your project
+poetry add zenith-web
+
+# All dependencies are included by default
+```
+
+## What's Included
+
+Zenith includes all essential dependencies out of the box:
+
+| Component | Description | Packages Included |
+|-----------|-------------|-------------------|
+| **Web Framework** | ASGI server and routing | `uvicorn`, `starlette`, `websockets` |
+| **Database** | Async database support | `sqlalchemy`, `alembic`, `sqlmodel`, `asyncpg`, `aiosqlite` |
+| **Caching** | Redis support | `redis` |
+| **Validation** | Request/response validation | `pydantic` |
+| **Authentication** | JWT and password handling | `pyjwt`, `bcrypt`, `passlib` |
+| **Performance** | High-performance serialization | `orjson`, `msgspec`, `uvloop` |
+| **Monitoring** | Metrics and health checks | `prometheus-client`, `structlog`, `psutil` |
+| **Templates** | Jinja2 templating | `jinja2` |
+| **File Uploads** | Multipart form support | `python-multipart` |
+
+Optional extras for development:
+
+| Extra | Description | Install Command |
+|-------|-------------|----------------|
+| `dev` | Testing and development tools | `pip install "zenith-web[dev]"` |
+| `benchmark` | Performance benchmarking tools | `pip install "zenith-web[benchmark]"` |
+| `performance` | Additional performance optimizations | `pip install "zenith-web[performance]"` |
+| `http3` | HTTP/3 and QUIC support | `pip install "zenith-web[http3]"` |
+| `compression` | Advanced compression algorithms | `pip install "zenith-web[compression]"`
 
 ## Verify Installation
 
@@ -81,33 +84,36 @@ python -c "import zenith; print(zenith.__version__)"
 
 For development, we recommend setting up a virtual environment:
 
-<Tabs>
-  <TabItem label="venv">
-    ```bash
-    # Create virtual environment
-    python -m venv venv
-    
-    # Activate it
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    
-    # Install Zenith with dev extras
-    pip install "zenith-web[dev]"
-    ```
-  </TabItem>
-  <TabItem label="uv">
-    ```bash
-    # uv manages virtual environments automatically
-    uv init my-project
-    cd my-project
-    
-    # Add Zenith with dev extras
-    uv add "zenith-web[dev]"
-    
-    # Run commands
-    uv run zen --version
-    ```
-  </TabItem>
-</Tabs>
+**venv:**
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate it
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install Zenith (production dependencies included)
+pip install zenith-web
+
+# Add development tools
+pip install "zenith-web[dev]"
+```
+
+**uv:**
+```bash
+# uv manages virtual environments automatically
+uv init my-project
+cd my-project
+
+# Add Zenith (production dependencies included)
+uv add zenith-web
+
+# Add development tools if needed
+uv add "zenith-web[dev]"
+
+# Run commands
+uv run zen --version
+```
 
 ## IDE Setup
 
