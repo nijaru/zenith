@@ -1,7 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import starlightUtils from '@lorenzo_lewis/starlight-utils';
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,15 +12,6 @@ export default defineConfig({
 			description: 'Modern Python web framework with clean architecture and exceptional performance',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/nijaru/zenith' },
-			],
-			plugins: [
-				starlightUtils({
-					navLinks: {
-						leading: {
-							useSidebarLabelled: 'leadingNavLinks'
-						}
-					}
-				})
 			],
 			editLink: {
 				baseUrl: 'https://github.com/nijaru/zenith/edit/main/docs/',
@@ -41,21 +31,11 @@ export default defineConfig({
 			],
 			components: {
 				ThemeSelect: './src/components/overrides/ThemeSelect.astro',
-				// Uncomment to enable custom header with navigation buttons:
-				// Header: './src/components/overrides/Header.astro',
 			},
 			pagefind: false,
 			tableOfContents: { minHeadingLevel: 2, maxHeadingLevel: 4 },
 			pagination: true,
 			sidebar: [
-				{
-					label: 'leadingNavLinks',
-					items: [
-						{ label: 'Quick Start', link: '/quick-start' },
-						{ label: 'Examples', link: '/examples/hello-world' },
-						{ label: 'API Docs', link: '/api/application' },
-					],
-				},
 				{
 					label: 'Getting Started',
 					collapsed: false,

@@ -1,153 +1,150 @@
-/* Zenith Custom Styles */
+/* Zenith Custom Styles - Complete Refactor */
 
+/* Dark mode colors - better contrast */
 :root {
-  /* Override Starlight colors with Zenith brand - improved contrast */
-  --sl-color-accent-low: #1e40af1a;
-  --sl-color-accent: #3b82f6;
-  --sl-color-accent-high: #93bbfc;
+  /* Brand colors */
+  --sl-color-accent-low: #3b82f615;
+  --sl-color-accent: #60a5fa;
+  --sl-color-accent-high: #93c5fd;
   
-  /* Lighter dark mode for better readability */
-  --sl-color-bg: #0f0f0f;  /* Slightly lighter */
-  --sl-color-bg-nav: #151515;  /* Lighter nav */
-  --sl-color-bg-sidebar: #151515;  /* Lighter sidebar */
-  --sl-color-bg-inline-code: #252525;  /* Much lighter for inline code */
+  /* Dark mode backgrounds - lighter for readability */
+  --sl-color-bg: #18181b;
+  --sl-color-bg-nav: #1f1f23;
+  --sl-color-bg-sidebar: #1f1f23;
+  --sl-color-bg-inline-code: #27272a;
   
-  --sl-color-text: #f0f0f0;  /* Slightly softer white */
-  --sl-color-text-secondary: #b4b4b8;  /* Lighter secondary text */
+  /* Text colors - better contrast */
+  --sl-color-text: #fafafa;
+  --sl-color-text-secondary: #a1a1aa;
   
-  --sl-color-gray-1: #f0f0f0;
-  --sl-color-gray-2: #c4c4c8;  /* Lighter */
-  --sl-color-gray-3: #9a9a9e;  /* Lighter */
-  --sl-color-gray-4: #6a6a6e;  /* Lighter */
-  --sl-color-gray-5: #454549;  /* Lighter */
-  --sl-color-gray-6: #2a2a2e;  /* Lighter */
+  /* Gray scale - more readable */
+  --sl-color-gray-1: #fafafa;
+  --sl-color-gray-2: #e4e4e7;
+  --sl-color-gray-3: #a1a1aa;
+  --sl-color-gray-4: #71717a;
+  --sl-color-gray-5: #3f3f46;
+  --sl-color-gray-6: #27272a;
   
+  /* Fonts */
   --sl-font-system: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
   --sl-font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
 }
 
-/* Better contrast for light mode if user switches */
+/* Light mode - clean and readable */
 :root[data-theme="light"] {
+  --sl-color-accent-low: #dbeafe;
   --sl-color-accent: #2563eb;
+  --sl-color-accent-high: #1d4ed8;
+  
   --sl-color-bg: #ffffff;
-  --sl-color-bg-nav: #f9fafb;
-  --sl-color-bg-sidebar: #f9fafb;
-  --sl-color-text: #0f172a;
+  --sl-color-bg-nav: #fafafa;
+  --sl-color-bg-sidebar: #fafafa;
+  --sl-color-bg-inline-code: #f3f4f6;
+  
+  --sl-color-text: #18181b;
+  --sl-color-text-secondary: #52525b;
+  
+  --sl-color-gray-1: #18181b;
+  --sl-color-gray-2: #27272a;
+  --sl-color-gray-3: #52525b;
+  --sl-color-gray-4: #71717a;
+  --sl-color-gray-5: #e4e4e7;
+  --sl-color-gray-6: #f4f4f5;
 }
 
-/* Typography improvements */
+/* Typography */
 body {
   font-family: var(--sl-font-system);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Code blocks enhancement */
+/* Sidebar improvements */
+.sidebar {
+  padding-top: 1rem;
+}
+
+/* Sidebar links - better contrast */
+nav.sidebar-nav a {
+  color: var(--sl-color-text-secondary);
+  transition: all 0.15s ease;
+}
+
+nav.sidebar-nav a:hover {
+  color: var(--sl-color-text);
+  background: var(--sl-color-accent-low);
+}
+
+/* Current page highlighting */
+nav.sidebar-nav a[aria-current="page"] {
+  background: var(--sl-color-accent-low);
+  border-left: 3px solid var(--sl-color-accent);
+  font-weight: 600;
+  color: var(--sl-color-accent-high);
+}
+
+/* Light mode specific sidebar */
+:root[data-theme="light"] nav.sidebar-nav a[aria-current="page"] {
+  color: var(--sl-color-accent);
+}
+
+/* Code blocks */
 pre {
-  border: 1px solid var(--sl-color-gray-6);
-  background: #0f0f0f !important;
+  border: 1px solid var(--sl-color-gray-5);
+  background: var(--sl-color-bg-nav) !important;
+}
+
+:root[data-theme="light"] pre {
+  background: var(--sl-color-bg-sidebar) !important;
 }
 
 .expressive-code {
   margin: 1.5rem 0;
 }
 
-/* Make copy button more prominent */
-.expressive-code button[data-copy] {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Sidebar enhancements */
-.sidebar {
-  padding-top: 1rem;
-}
-
-/* Fix sidebar current page highlighting for better contrast */
-nav.sidebar-nav a[aria-current="page"] {
-  background: rgba(59, 130, 246, 0.15);  /* Subtle blue background */
-  border-left: 3px solid var(--sl-color-accent);
-  font-weight: 600;
-  color: var(--sl-color-text) !important;  /* Use normal text color, not blue */
-}
-
-/* Ensure text under highlighted sections has good contrast */
-nav.sidebar-nav a[aria-current="page"] + ul li a {
-  color: var(--sl-color-text-secondary) !important;
-}
-
-/* Also fix general sidebar link highlighting for better contrast */
-nav.sidebar-nav a:hover {
-  background: rgba(59, 130, 246, 0.1);
+/* Inline code */
+code {
+  background: var(--sl-color-bg-inline-code) !important;
   color: var(--sl-color-text) !important;
+  padding: 0.125rem 0.375rem !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.875em !important;
 }
 
-/* Fix sidebar text contrast in general */
-nav.sidebar-nav a {
-  color: var(--sl-color-text-secondary);
-}
-
-nav.sidebar-nav a:hover,
-nav.sidebar-nav a:focus {
-  color: var(--sl-color-text);
-}
-
-/* Hero section for landing page */
-.hero {
-  padding: 4rem 2rem;
-  text-align: center;
-  background: linear-gradient(135deg, #1e40af15 0%, #7c3aed15 100%);
-  border-radius: 1rem;
-  margin: 2rem auto 3rem auto;
-  max-width: 1200px;
-}
-
-.hero h1 {
-  font-size: 3rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 1rem;
-}
-
-/* Feature cards */
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
   margin: 2rem 0;
 }
 
-.feature-card {
-  padding: 1.5rem;
+th {
   background: var(--sl-color-bg-sidebar);
-  border: 1px solid var(--sl-color-gray-6);
-  border-radius: 0.75rem;
-  transition: all 0.2s;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-gray-5);
 }
 
-.feature-card:hover {
-  border-color: var(--sl-color-accent);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+td {
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-gray-5);
 }
 
-.feature-card h3 {
-  color: var(--sl-color-accent);
-  margin-bottom: 0.5rem;
+tr:nth-child(even) {
+  background: var(--sl-color-bg-sidebar);
 }
 
-/* Callout improvements */
+/* Callouts/Asides */
 .starlight-aside {
   border-left-width: 4px;
   background: var(--sl-color-bg-sidebar);
+  margin: 1.5rem 0;
 }
 
 .starlight-aside--note {
   border-color: var(--sl-color-accent);
-  background: #3b82f610;
+  background: var(--sl-color-accent-low);
 }
 
 .starlight-aside--tip {
@@ -165,119 +162,30 @@ nav.sidebar-nav a:focus {
   background: #ef444410;
 }
 
-/* Table improvements */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 2rem 0;
-}
+/* Removed header nav - using sidebar-only navigation for consistency */
 
-th {
-  background: var(--sl-color-bg-sidebar);
-  font-weight: 600;
-  text-align: left;
-  padding: 0.75rem;
-  border: 1px solid var(--sl-color-gray-6);
-}
-
-td {
-  padding: 0.75rem;
-  border: 1px solid var(--sl-color-gray-6);
-}
-
-tr:nth-child(even) {
-  background: var(--sl-color-bg-sidebar);
-}
-
-/* Button styles */
-.button {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  background: var(--sl-color-accent);
-  color: white;
-  text-decoration: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.button:hover {
-  background: var(--sl-color-accent-high);
-  transform: translateY(-2px);
-}
-
-.button-outline {
-  background: transparent;
-  border: 2px solid var(--sl-color-accent);
-  color: var(--sl-color-accent);
-}
-
-.button-outline:hover {
-  background: var(--sl-color-accent);
-  color: white;
-}
-
-/* Performance metrics table */
-.metrics-table {
-  font-family: var(--sl-font-mono);
-  font-size: 0.9rem;
-}
-
-.metrics-table .good {
-  color: #10b981;
-  font-weight: 600;
-}
-
-.metrics-table .warning {
-  color: #f59e0b;
-}
-
-.metrics-table .bad {
-  color: #ef4444;
-}
-
-/* Search improvements */
-[data-pagefind-ui] {
-  --pagefind-ui-primary: var(--sl-color-accent);
-  --pagefind-ui-background: var(--sl-color-bg-sidebar);
-  --pagefind-ui-border: var(--sl-color-gray-6);
-  --pagefind-ui-text: var(--sl-color-text);
-}
-
-/* Content area improvements */
+/* Content area */
 .sl-markdown-content {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
-/* Fix highlight color for better readability */
-code {
-  background: var(--sl-color-bg-inline-code) !important;
-  color: var(--sl-color-text) !important;
-  padding: 0.2rem 0.4rem !important;
-  border-radius: 0.25rem !important;
+/* Search improvements */
+[data-pagefind-ui] {
+  --pagefind-ui-primary: var(--sl-color-accent);
+  --pagefind-ui-background: var(--sl-color-bg-sidebar);
+  --pagefind-ui-border: var(--sl-color-gray-5);
+  --pagefind-ui-text: var(--sl-color-text);
 }
 
-/* Better spacing for main sections */
-.sl-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-
-/* Mobile improvements */
+/* Mobile responsive */
 @media (max-width: 768px) {
-  .hero h1 {
-    font-size: 2rem;
+  .sl-nav-leading {
+    display: none;
   }
   
-  .features {
-    grid-template-columns: 1fr;
-  }
-  
-  .sl-markdown-content,
-  .sl-container {
+  .sl-markdown-content {
     padding: 0 1rem;
   }
 }
