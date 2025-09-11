@@ -3,7 +3,7 @@ title: Context System
 description: Organize business logic with clean contexts
 ---
 
-import { Tabs, TabItem, Aside, Code } from '@astrojs/starlight/components';
+import { Aside, Code } from '@astrojs/starlight/components';
 
 ## What are Contexts?
 

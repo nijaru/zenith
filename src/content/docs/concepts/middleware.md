@@ -3,7 +3,7 @@ title: Middleware
 description: Request processing and response handling in Zenith
 ---
 
-import { Tabs, TabItem, Code, Aside } from '@astrojs/starlight/components';
+import { Code, Aside } from '@astrojs/starlight/components';
 
 ## What is Middleware?
 

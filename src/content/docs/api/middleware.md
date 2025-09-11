@@ -3,7 +3,7 @@ title: Middleware API
 description: Built-in and custom middleware for request processing
 ---
 
-import { Code, Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+import { Code, Aside } from '@astrojs/starlight/components';
 
 ## Middleware Overview
 

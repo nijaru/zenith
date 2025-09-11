@@ -3,7 +3,7 @@ title: Authentication
 description: Secure your Zenith applications with JWT and custom auth
 ---
 
-import { Tabs, TabItem, Code, Aside } from '@astrojs/starlight/components';
+import { Code, Aside } from '@astrojs/starlight/components';
 
 ## Overview
 

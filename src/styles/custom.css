@@ -75,12 +75,12 @@ nav.sidebar-nav a:hover {
   background: var(--sl-color-accent-low);
 }
 
-/* Current page highlighting */
+/* Current page highlighting - fixed contrast */
 nav.sidebar-nav a[aria-current="page"] {
-  background: var(--sl-color-accent-low);
+  background: rgba(96, 165, 250, 0.2);  /* More visible blue background */
   border-left: 3px solid var(--sl-color-accent);
   font-weight: 600;
-  color: var(--sl-color-accent-high);
+  color: var(--sl-color-text);  /* White text for readability */
 }
 
 /* Light mode specific sidebar */
