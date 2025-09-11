@@ -1,0 +1,36 @@
+"""
+Basic tests for the Zenith application.
+"""
+import pytest
+from zenith.testing import TestClient
+from app import app
+
+
+@pytest.mark.asyncio
+async def test_root_endpoint():
+    """Test the root endpoint."""
+    async with TestClient(app) as client:
+        response = await client.get("/")
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+
+
+@pytest.mark.asyncio 
+async def test_health_endpoint():
+    """Test the auto-generated health endpoint."""
+    async with TestClient(app) as client:
+        response = await client.get("/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+
+
+@pytest.mark.asyncio
+async def test_docs_endpoint():
+    """Test auto-generated API docs."""
+    async with TestClient(app) as client:
+        response = await client.get("/openapi.json")
+        assert response.status_code == 200
+        spec = response.json()
+        assert spec["openapi"] == "3.0.0"
