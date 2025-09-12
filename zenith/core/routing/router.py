@@ -1,12 +1,11 @@
 """
 Modern Router implementation with clean separation of concerns.
 
-Focuses purely on route registration and building. Execution, dependency 
+Focuses purely on route registration and building. Execution, dependency
 injection, and response handling are delegated to specialized services.
 """
 
 from collections.abc import Callable
-from typing import Any
 
 from starlette.middleware import Middleware
 from starlette.routing import Route, WebSocketRoute
@@ -19,18 +18,19 @@ from .specs import RouteSpec
 class Router:
     """
     Modern router with clean architecture.
-    
+
     Responsibilities:
     - Route registration via decorators
     - Building Starlette router for ASGI
     - Route organization and prefixing
-    
+
     Does NOT handle:
     - Route execution (delegated to RouteExecutor)
-    - Dependency injection (delegated to DependencyResolver)  
+    - Dependency injection (delegated to DependencyResolver)
     - Response processing (delegated to ResponseProcessor)
     """
-    __slots__ = ('prefix', 'middleware', 'routes', 'executor', '_app')
+
+    __slots__ = ("_app", "executor", "middleware", "prefix", "routes")
 
     def __init__(self, prefix: str = "", middleware: list[Middleware] | None = None):
         self.prefix = prefix
@@ -51,6 +51,7 @@ class Router:
         tags: list[str] | None = None,
     ):
         """Register a route with the given methods."""
+
         def decorator(handler: Callable) -> Callable:
             route_spec = RouteSpec(
                 path=self.prefix + path,
@@ -65,6 +66,7 @@ class Router:
             )
             self.routes.append(route_spec)
             return handler
+
         return decorator
 
     # HTTP method decorators
@@ -90,6 +92,7 @@ class Router:
 
     def websocket(self, path: str, **kwargs):
         """WebSocket route decorator."""
+
         def decorator(handler: Callable) -> Callable:
             from zenith.websockets import WebSocket
 
@@ -102,16 +105,17 @@ class Router:
                 methods=["WEBSOCKET"],
                 handler=handler,
                 raw_handler=websocket_endpoint,
-                **kwargs
+                **kwargs,
             )
             self.routes.append(route_spec)
             return handler
+
         return decorator
 
     def include_router(self, router: "Router", prefix: str = "") -> None:
         """Include routes from another router."""
         combined_prefix = self.prefix + prefix
-        
+
         for route_spec in router.routes:
             # Create a new route spec with the combined prefix
             new_route_spec = RouteSpec(
@@ -127,7 +131,7 @@ class Router:
                 tags=route_spec.tags,
             )
             self.routes.append(new_route_spec)
-    
+
     def build_starlette_router(self) -> StarletteRouter:
         """Build Starlette router from registered routes."""
         starlette_routes = []
@@ -145,7 +149,10 @@ class Router:
                 # HTTP routes - delegate execution to RouteExecutor
                 def create_endpoint(spec):
                     async def endpoint(request):
-                        return await self.executor.execute_route(request, spec, self._app)
+                        return await self.executor.execute_route(
+                            request, spec, self._app
+                        )
+
                     return endpoint
 
                 starlette_route = Route(

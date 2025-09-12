@@ -12,11 +12,13 @@ Then visit: http://localhost:8002/docs for interactive API
 """
 
 from datetime import datetime
-from typing import List
+
 from pydantic import BaseModel, EmailStr, validator
+
 from zenith import Zenith
 
 app = Zenith(debug=True)
+
 
 # Request Models
 class CreateUserRequest(BaseModel):
@@ -24,25 +26,27 @@ class CreateUserRequest(BaseModel):
     email: EmailStr
     age: int
     bio: str | None = None
-    
-    @validator('age')
+
+    @validator("age")
     def age_must_be_positive(cls, v):
         if v < 0:
-            raise ValueError('Age must be positive')
+            raise ValueError("Age must be positive")
         if v > 150:
-            raise ValueError('Age must be realistic')
+            raise ValueError("Age must be realistic")
         return v
-    
-    @validator('name')
+
+    @validator("name")
     def name_must_not_be_empty(cls, v):
         if not v.strip():
-            raise ValueError('Name cannot be empty')
+            raise ValueError("Name cannot be empty")
         return v.strip()
+
 
 class UpdateUserRequest(BaseModel):
     name: str | None = None
     age: int | None = None
     bio: str | None = None
+
 
 # Response Models
 class UserResponse(BaseModel):
@@ -54,14 +58,17 @@ class UserResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
 class ErrorResponse(BaseModel):
     error: str
     message: str
     details: dict | None = None
 
+
 # Mock database
 users_db = []
 next_id = 1
+
 
 @app.get("/", response_model=dict)
 async def root():
@@ -70,34 +77,36 @@ async def root():
         "message": "Pydantic Validation Example",
         "features": [
             "Automatic request validation",
-            "Type-safe response models", 
+            "Type-safe response models",
             "Email validation",
             "Custom field validators",
-            "Comprehensive error handling"
+            "Comprehensive error handling",
         ],
         "endpoints": {
             "users": "GET /users - List all users",
             "create": "POST /users - Create new user",
             "get": "GET /users/{user_id} - Get user by ID",
             "update": "PATCH /users/{user_id} - Update user",
-            "delete": "DELETE /users/{user_id} - Delete user"
-        }
+            "delete": "DELETE /users/{user_id} - Delete user",
+        },
     }
 
-@app.get("/users", response_model=List[UserResponse])
+
+@app.get("/users", response_model=list[UserResponse])
 async def list_users():
     """Get all users."""
     return users_db
+
 
 @app.post("/users", response_model=UserResponse)
 async def create_user(user_data: CreateUserRequest) -> UserResponse:
     """Create a new user with validation."""
     global next_id
-    
+
     # Check for duplicate email
     if any(u["email"] == user_data.email for u in users_db):
         raise ValueError(f"User with email {user_data.email} already exists")
-    
+
     now = datetime.utcnow()
     new_user = {
         "id": next_id,
@@ -108,11 +117,12 @@ async def create_user(user_data: CreateUserRequest) -> UserResponse:
         "created_at": now,
         "updated_at": now,
     }
-    
+
     users_db.append(new_user)
     next_id += 1
-    
+
     return UserResponse(**new_user)
+
 
 @app.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(user_id: int) -> UserResponse:
@@ -120,8 +130,9 @@ async def get_user(user_id: int) -> UserResponse:
     user = next((u for u in users_db if u["id"] == user_id), None)
     if not user:
         raise ValueError(f"User with ID {user_id} not found")
-    
+
     return UserResponse(**user)
+
 
 @app.patch("/users/{user_id}", response_model=UserResponse)
 async def update_user(user_id: int, updates: UpdateUserRequest) -> UserResponse:
@@ -129,15 +140,16 @@ async def update_user(user_id: int, updates: UpdateUserRequest) -> UserResponse:
     user = next((u for u in users_db if u["id"] == user_id), None)
     if not user:
         raise ValueError(f"User with ID {user_id} not found")
-    
+
     # Apply updates (only set fields)
     update_data = updates.dict(exclude_unset=True)
     for field, value in update_data.items():
         user[field] = value
-    
+
     user["updated_at"] = datetime.utcnow()
-    
+
     return UserResponse(**user)
+
 
 @app.delete("/users/{user_id}")
 async def delete_user(user_id: int) -> dict:
@@ -145,11 +157,12 @@ async def delete_user(user_id: int) -> dict:
     global users_db
     original_length = len(users_db)
     users_db = [u for u in users_db if u["id"] != user_id]
-    
+
     if len(users_db) == original_length:
         raise ValueError(f"User with ID {user_id} not found")
-    
+
     return {"message": f"User {user_id} deleted successfully"}
+
 
 @app.get("/health")
 async def health():
@@ -158,8 +171,9 @@ async def health():
         "status": "healthy",
         "example": "02-pydantic-validation",
         "users_count": len(users_db),
-        "next_id": next_id
+        "next_id": next_id,
     }
+
 
 if __name__ == "__main__":
     print("🔍 Starting Pydantic Validation Example")
@@ -168,10 +182,13 @@ if __name__ == "__main__":
     print()
     print("🧪 Try these requests:")
     print('   POST /users {"name": "Alice", "email": "alice@example.com", "age": 25}')
-    print('   POST /users {"name": "", "email": "invalid", "age": -5}  # Will fail validation')
+    print(
+        '   POST /users {"name": "", "email": "invalid", "age": -5}  # Will fail validation'
+    )
     print("   GET /users")
-    print("   PATCH /users/1 {\"age\": 26}")
+    print('   PATCH /users/1 {"age": 26}')
     print()
-    
+
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8002)

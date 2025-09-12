@@ -4,12 +4,10 @@ Routing mixin for Zenith applications.
 Contains HTTP verb decorators and route management methods.
 """
 
-from typing import Any, Callable
-
 
 class RoutingMixin:
     """Mixin for HTTP routing decorator methods."""
-    
+
     def get(self, path: str, **kwargs):
         """Register a GET route."""
         return self._app_router.get(path, **kwargs)

@@ -6,8 +6,6 @@ and database version management for Zenith applications.
 """
 
 import logging
-import os
-import sys
 from pathlib import Path
 
 from alembic import command
@@ -23,11 +21,11 @@ from zenith.db import Database
 class MigrationManager:
     """
     Manages database migrations using Alembic.
-    
+
     Handles automatic Alembic configuration, migration generation,
     and version management with async SQLAlchemy support.
     """
-    
+
     def __init__(
         self,
         database: Database,
@@ -36,7 +34,7 @@ class MigrationManager:
     ):
         """
         Initialize migration manager.
-        
+
         Args:
             database: Database instance
             migrations_dir: Directory for migration files
@@ -46,13 +44,13 @@ class MigrationManager:
         self.migrations_dir = Path(migrations_dir)
         self.script_location = script_location or str(self.migrations_dir)
         self.logger = logging.getLogger("zenith.migrations")
-        
+
         # Ensure migrations directory exists
         self.migrations_dir.mkdir(exist_ok=True)
-        
+
         # Create Alembic configuration
         self.alembic_cfg = self._create_alembic_config()
-    
+
     def _create_alembic_config(self) -> Config:
         """Create Alembic configuration."""
         # Create alembic.ini content
@@ -134,19 +132,19 @@ formatter = generic
 format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 """
-        
+
         # Write alembic.ini if it doesn't exist
         alembic_ini_path = self.migrations_dir / "alembic.ini"
         if not alembic_ini_path.exists():
             alembic_ini_path.write_text(alembic_ini_content.strip())
-        
+
         # Create Alembic config
         config = Config(str(alembic_ini_path))
         config.set_main_option("script_location", self.script_location)
         config.set_main_option("sqlalchemy.url", self.database.url)
-        
+
         return config
-    
+
     def init_migrations(self) -> None:
         """Initialize the migrations directory with Alembic."""
         try:
@@ -154,20 +152,22 @@ datefmt = %H:%M:%S
             self.logger.info(f"Initialized migrations in {self.migrations_dir}")
         except Exception as e:
             if "already exists" in str(e).lower():
-                self.logger.info(f"Migrations already initialized in {self.migrations_dir}")
+                self.logger.info(
+                    f"Migrations already initialized in {self.migrations_dir}"
+                )
             else:
                 raise
-        
+
         # Update env.py to work with async SQLAlchemy
         self._update_env_py()
-    
+
     def _update_env_py(self) -> None:
         """Update env.py to support async SQLAlchemy."""
         env_py_path = self.migrations_dir / "env.py"
-        
+
         if not env_py_path.exists():
             return
-        
+
         env_py_content = '''"""Alembic environment for Zenith async database."""
 
 import asyncio
@@ -243,48 +243,43 @@ if context.is_offline_mode():
 else:
     run_migrations_online()
 '''
-        
+
         env_py_path.write_text(env_py_content)
         self.logger.info("Updated env.py for async SQLAlchemy")
-    
+
     def create_migration(self, message: str, autogenerate: bool = True) -> str | None:
         """
         Create a new migration.
-        
+
         Args:
             message: Migration message/description
             autogenerate: Whether to auto-generate from model changes
-            
+
         Returns:
             Migration revision ID if successful
         """
         try:
             if autogenerate:
                 revision = command.revision(
-                    self.alembic_cfg, 
-                    message=message,
-                    autogenerate=True
+                    self.alembic_cfg, message=message, autogenerate=True
                 )
             else:
-                revision = command.revision(
-                    self.alembic_cfg,
-                    message=message
-                )
-            
+                revision = command.revision(self.alembic_cfg, message=message)
+
             self.logger.info(f"Created migration: {message}")
             return revision.revision if revision else None
-            
+
         except Exception as e:
             self.logger.error(f"Failed to create migration: {e}")
             return None
-    
+
     def upgrade(self, revision: str = "head") -> bool:
         """
         Upgrade database to a specific revision.
-        
+
         Args:
             revision: Target revision ("head" for latest)
-            
+
         Returns:
             True if successful
         """
@@ -295,14 +290,14 @@ else:
         except Exception as e:
             self.logger.error(f"Failed to upgrade database: {e}")
             return False
-    
+
     def downgrade(self, revision: str) -> bool:
         """
         Downgrade database to a specific revision.
-        
+
         Args:
             revision: Target revision
-            
+
         Returns:
             True if successful
         """
@@ -313,56 +308,61 @@ else:
         except Exception as e:
             self.logger.error(f"Failed to downgrade database: {e}")
             return False
-    
+
     def current_revision(self) -> str | None:
         """Get current database revision."""
         try:
             # This is a bit tricky with async engines, need to use sync approach
             script = ScriptDirectory.from_config(self.alembic_cfg)
-            
+
             def get_current(connection):
                 context = MigrationContext.configure(connection)
                 return context.get_current_revision()
-            
+
             # We'll need to create a sync engine for this check
             from sqlalchemy import create_engine
-            sync_url = self.database.url.replace("+asyncpg", "").replace("+aiomysql", "")
+
+            sync_url = self.database.url.replace("+asyncpg", "").replace(
+                "+aiomysql", ""
+            )
             sync_engine = create_engine(sync_url)
-            
+
             with sync_engine.connect() as connection:
                 current = get_current(connection)
-            
+
             sync_engine.dispose()
             return current
-            
+
         except Exception as e:
             self.logger.error(f"Failed to get current revision: {e}")
             return None
-    
+
     def migration_history(self) -> list[dict]:
         """Get migration history."""
         try:
             script = ScriptDirectory.from_config(self.alembic_cfg)
             revisions = []
-            
+
             for revision in script.walk_revisions():
-                revisions.append({
-                    "revision": revision.revision,
-                    "message": revision.doc,
-                    "down_revision": revision.down_revision,
-                })
-            
+                revisions.append(
+                    {
+                        "revision": revision.revision,
+                        "message": revision.doc,
+                        "down_revision": revision.down_revision,
+                    }
+                )
+
             return revisions
-            
+
         except Exception as e:
             self.logger.error(f"Failed to get migration history: {e}")
             return []
-    
+
     def status(self) -> dict:
         """Get migration status."""
         current = self.current_revision()
         history = self.migration_history()
-        
+
         return {
             "current_revision": current,
             "total_migrations": len(history),
@@ -374,44 +374,47 @@ else:
 def setup_migrations_cli(app) -> None:
     """Add migration commands to the Zenith CLI."""
     import click
-    
+
     @app.cli.group()
     def db():
         """Database migration commands."""
         pass
-    
+
     @db.command()
     def init():
         """Initialize migrations directory."""
         # This would need access to the database instance
         # Implementation depends on how the CLI accesses the app
         click.echo("Initializing migrations...")
-    
+
     @db.command()
     @click.argument("message")
-    @click.option("--autogenerate/--no-autogenerate", default=True,
-                  help="Automatically detect model changes")
+    @click.option(
+        "--autogenerate/--no-autogenerate",
+        default=True,
+        help="Automatically detect model changes",
+    )
     def revision(message, autogenerate):
         """Create a new migration revision."""
         click.echo(f"Creating migration: {message}")
-    
+
     @db.command()
     @click.argument("revision", default="head")
     def upgrade(revision):
         """Upgrade database to revision (default: head)."""
         click.echo(f"Upgrading to {revision}")
-    
+
     @db.command()
     @click.argument("revision")
     def downgrade(revision):
         """Downgrade database to revision."""
         click.echo(f"Downgrading to {revision}")
-    
+
     @db.command()
     def current():
         """Show current database revision."""
         click.echo("Current revision: ...")
-    
+
     @db.command()
     def history():
         """Show migration history."""
@@ -419,7 +422,9 @@ def setup_migrations_cli(app) -> None:
 
 
 # Helper functions for integration
-def create_migration_manager(database_url: str, migrations_dir: str = "migrations") -> MigrationManager:
+def create_migration_manager(
+    database_url: str, migrations_dir: str = "migrations"
+) -> MigrationManager:
     """Create a migration manager with database URL."""
     database = Database(database_url)
     return MigrationManager(database, migrations_dir)
@@ -427,21 +432,25 @@ def create_migration_manager(database_url: str, migrations_dir: str = "migration
 
 def auto_create_migrations_table(engine: AsyncEngine) -> None:
     """Ensure Alembic version table exists."""
+
     async def _create_table():
         async with engine.begin() as conn:
-            await conn.execute(text("""
+            await conn.execute(
+                text("""
                 CREATE TABLE IF NOT EXISTS alembic_version (
                     version_num VARCHAR(32) NOT NULL PRIMARY KEY
                 )
-            """))
-    
+            """)
+            )
+
     import asyncio
+
     asyncio.run(_create_table())
 
 
 __all__ = [
     "MigrationManager",
-    "setup_migrations_cli", 
-    "create_migration_manager",
     "auto_create_migrations_table",
+    "create_migration_manager",
+    "setup_migrations_cli",
 ]

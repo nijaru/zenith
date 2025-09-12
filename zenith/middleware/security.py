@@ -93,7 +93,9 @@ class SecurityHeadersMiddleware:
         if self.config.force_https and self._should_redirect_to_https(scope):
             url = self._build_https_url(scope)
             status_code = 301 if self.config.force_https_permanent else 302
-            redirect_response = Response(status_code=status_code, headers={"location": url})
+            redirect_response = Response(
+                status_code=status_code, headers={"location": url}
+            )
             await redirect_response(scope, receive, send)
             return
 
@@ -111,12 +113,12 @@ class SecurityHeadersMiddleware:
         """Check if request should be redirected to HTTPS."""
         if scope.get("scheme") != "http":
             return False
-            
+
         # Skip for test client and localhost
         server = scope.get("server")
         if server and server[0] in ("testserver", "127.0.0.1", "localhost"):
             return False
-            
+
         return True
 
     def _build_https_url(self, scope: Scope) -> str:
@@ -126,14 +128,14 @@ class SecurityHeadersMiddleware:
         port = server[1]
         path = scope.get("path", "/")
         query_string = scope.get("query_string", b"")
-        
+
         url = f"https://{host}"
         if port != 443:
             url += f":{port}"
         url += path
         if query_string:
             url += "?" + query_string.decode("latin-1")
-        
+
         return url
 
     def _add_security_headers_asgi(self, response_headers: list) -> None:
@@ -143,7 +145,9 @@ class SecurityHeadersMiddleware:
             header_name = b"content-security-policy"
             if self.config.csp_report_only:
                 header_name = b"content-security-policy-report-only"
-            response_headers.append((header_name, self.config.csp_policy.encode("latin-1")))
+            response_headers.append(
+                (header_name, self.config.csp_policy.encode("latin-1"))
+            )
 
         # HTTP Strict Transport Security
         if self.config.hsts_max_age > 0:
@@ -152,11 +156,15 @@ class SecurityHeadersMiddleware:
                 hsts_value += "; includeSubDomains"
             if self.config.hsts_preload:
                 hsts_value += "; preload"
-            response_headers.append((b"strict-transport-security", hsts_value.encode("latin-1")))
+            response_headers.append(
+                (b"strict-transport-security", hsts_value.encode("latin-1"))
+            )
 
         # X-Frame-Options
         if self.config.frame_options:
-            response_headers.append((b"x-frame-options", self.config.frame_options.encode("latin-1")))
+            response_headers.append(
+                (b"x-frame-options", self.config.frame_options.encode("latin-1"))
+            )
 
         # X-Content-Type-Options
         if self.config.content_type_nosniff:
@@ -164,15 +172,24 @@ class SecurityHeadersMiddleware:
 
         # X-XSS-Protection
         if self.config.xss_protection:
-            response_headers.append((b"x-xss-protection", self.config.xss_protection.encode("latin-1")))
+            response_headers.append(
+                (b"x-xss-protection", self.config.xss_protection.encode("latin-1"))
+            )
 
         # Referrer-Policy
         if self.config.referrer_policy:
-            response_headers.append((b"referrer-policy", self.config.referrer_policy.encode("latin-1")))
+            response_headers.append(
+                (b"referrer-policy", self.config.referrer_policy.encode("latin-1"))
+            )
 
         # Permissions-Policy
         if self.config.permissions_policy:
-            response_headers.append((b"permissions-policy", self.config.permissions_policy.encode("latin-1")))
+            response_headers.append(
+                (
+                    b"permissions-policy",
+                    self.config.permissions_policy.encode("latin-1"),
+                )
+            )
 
     def _add_security_headers(self, response: Response) -> None:
         """Add security headers to response (legacy method for compatibility)."""
@@ -240,7 +257,9 @@ class CSRFProtectionMiddleware:
         headers = dict(scope.get("headers", []))
         csrf_token = self._get_csrf_token_asgi(headers)
 
-        if not csrf_token or not self._validate_csrf_token_asgi(csrf_token, scope, headers):
+        if not csrf_token or not self._validate_csrf_token_asgi(
+            csrf_token, scope, headers
+        ):
             error_response = JSONResponse(
                 {"error": "CSRF token validation failed"}, status_code=403
             )
@@ -288,7 +307,9 @@ class CSRFProtectionMiddleware:
         except Exception:
             return False
 
-    def _validate_csrf_token_asgi(self, token: str, scope: Scope, headers: dict) -> bool:
+    def _validate_csrf_token_asgi(
+        self, token: str, scope: Scope, headers: dict
+    ) -> bool:
         """Validate CSRF token for ASGI requests."""
         try:
             # Simple HMAC-based validation
@@ -313,7 +334,7 @@ class CSRFProtectionMiddleware:
         session_id = ""  # TODO: Extract from session middleware if available
         user_agent_bytes = headers.get(b"user-agent", b"")
         user_agent = user_agent_bytes.decode("latin-1", errors="ignore")
-        
+
         session_data = f"{session_id}{user_agent}"
         return hmac.new(
             self.config.csrf_secret_key.encode(), session_data.encode(), hashlib.sha256
@@ -354,7 +375,7 @@ class TrustedProxyMiddleware:
     def _process_proxy_headers_asgi(self, scope: Scope) -> None:
         """Process X-Forwarded-* headers for ASGI requests."""
         headers = dict(scope.get("headers", []))
-        
+
         # X-Forwarded-For
         forwarded_for_bytes = headers.get(b"x-forwarded-for")
         if forwarded_for_bytes:

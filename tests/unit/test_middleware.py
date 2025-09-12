@@ -352,7 +352,7 @@ class TestRateLimitMiddleware:
     async def test_rate_limiting_basic(self):
         """Test basic rate limiting functionality."""
         from zenith.middleware.rate_limit import RateLimit, RateLimitMiddleware
-        
+
         app = Zenith(debug=True)
         # Add rate limiting middleware directly with no exempt IPs (including localhost)
         app.add_middleware(

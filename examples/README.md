@@ -48,6 +48,7 @@ Latest patterns for modern web development:
 - **[16-sqlmodel-integration.py](16-sqlmodel-integration.py)** - 💾 Unified Pydantic + SQLAlchemy models with repository pattern
 - **[17-fullstack-spa.py](17-fullstack-spa.py)** - 🌐 Full-stack SPA serving (React, Vue, SolidJS, Angular)
 - **[18-frontend-serving-dx.py](18-frontend-serving-dx.py)** - ✨ Improved developer experience for frontend serving
+- **[19-asgi-concurrent-optimization.py](19-asgi-concurrent-optimization.py)** - 🌊 Pure ASGI concurrent middleware (20-30% performance improvement)
 
 ## 🚀 Quick Start
 

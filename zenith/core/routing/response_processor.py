@@ -17,7 +17,7 @@ from zenith.web.responses import OptimizedJSONResponse
 class ResponseProcessor:
     """
     Processes handler responses with content negotiation and formatting.
-    
+
     Responsibilities:
     - Content negotiation (JSON vs HTML)
     - Template rendering
@@ -26,13 +26,10 @@ class ResponseProcessor:
     """
 
     async def process_response(
-        self, 
-        result: Any, 
-        request: Request, 
-        handler
+        self, result: Any, request: Request, handler
     ) -> Response:
         """Process handler result into appropriate Response."""
-        
+
         # If already a Response, return as-is
         if isinstance(result, Response):
             return result
@@ -49,35 +46,36 @@ class ResponseProcessor:
 
     def _should_render_html(self, request: Request, handler) -> bool:
         """Determine if client wants HTML response."""
-        if not hasattr(handler, '_zenith_negotiate'):
+        if not hasattr(handler, "_zenith_negotiate"):
             return False
 
         accept_header = request.headers.get("accept", "")
-        return (
-            "text/html" in accept_header and
-            (
-                accept_header.find("text/html") < accept_header.find("application/json")
-                or "application/json" not in accept_header
-            )
+        return "text/html" in accept_header and (
+            accept_header.find("text/html") < accept_header.find("application/json")
+            or "application/json" not in accept_header
         )
 
     def _should_use_template(self, handler, wants_html: bool) -> bool:
         """Check if we should render a template."""
         # Template decorator without negotiation
-        if hasattr(handler, '_zenith_template') and not hasattr(handler, '_zenith_negotiate'):
+        if hasattr(handler, "_zenith_template") and not hasattr(
+            handler, "_zenith_negotiate"
+        ):
             return True
-        
+
         # Content negotiation wanting HTML with template available
         return (
-            hasattr(handler, '_zenith_negotiate') and 
-            wants_html and 
-            hasattr(handler, '_zenith_template')
+            hasattr(handler, "_zenith_negotiate")
+            and wants_html
+            and hasattr(handler, "_zenith_template")
         )
 
-    async def _render_template(self, result: Any, request: Request, handler) -> Response:
+    async def _render_template(
+        self, result: Any, request: Request, handler
+    ) -> Response:
         """Render template response."""
         from starlette.templating import Jinja2Templates
-        
+
         templates = Jinja2Templates(directory="templates")
 
         # Prepare template context
@@ -90,7 +88,7 @@ class ResponseProcessor:
             context["data"] = result
 
         # Add any template kwargs from decorator
-        if hasattr(handler, '_zenith_template_kwargs'):
+        if hasattr(handler, "_zenith_template_kwargs"):
             context.update(handler._zenith_template_kwargs)
 
         return templates.TemplateResponse(handler._zenith_template, context)

@@ -6,14 +6,12 @@ Provides persistent session storage using Redis with automatic expiration.
 
 from __future__ import annotations
 
-import json
 import logging
 from datetime import datetime
 
-from zenith.core.json_encoder import _json_dumps, _json_loads
-
 import redis.asyncio as redis
 
+from zenith.core.json_encoder import _json_dumps, _json_loads
 from zenith.sessions.manager import Session
 from zenith.sessions.store import SessionStore
 
@@ -23,7 +21,7 @@ logger = logging.getLogger("zenith.sessions.redis")
 class RedisSessionStore(SessionStore):
     """
     Redis session storage backend.
-    
+
     Features:
     - Persistent session storage
     - Automatic expiration using Redis TTL
@@ -40,7 +38,7 @@ class RedisSessionStore(SessionStore):
     ):
         """
         Initialize Redis session store.
-        
+
         Args:
             redis_url: Redis connection URL
             key_prefix: Prefix for session keys in Redis
@@ -60,7 +58,7 @@ class RedisSessionStore(SessionStore):
         """Get Redis key for session ID."""
         return f"{self.key_prefix}{session_id}"
 
-    async def load(self, session_id: str) -> "Session" | None:
+    async def load(self, session_id: str) -> Session | None:
         """Load session from Redis."""
         from zenith.sessions.manager import Session
 
@@ -86,7 +84,7 @@ class RedisSessionStore(SessionStore):
             logger.error(f"Error loading session {session_id}: {e}")
             return None
 
-    async def save(self, session: "Session") -> None:
+    async def save(self, session: Session) -> None:
         """Save session to Redis."""
         key = self._get_key(session.session_id)
 
@@ -135,7 +133,7 @@ class RedisSessionStore(SessionStore):
     async def cleanup_expired(self) -> int:
         """
         Clean up expired sessions.
-        
+
         For Redis, expired keys are automatically cleaned up by TTL,
         so this method just counts and reports cleanup.
         """

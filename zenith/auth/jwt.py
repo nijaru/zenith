@@ -86,7 +86,12 @@ class JWTManager:
             token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
             logger.debug(f"Created access token for user {user_id}")
             return token
-        except (jwt.InvalidKeyError, jwt.InvalidAlgorithmError, TypeError, ValueError) as e:
+        except (
+            jwt.InvalidKeyError,
+            jwt.InvalidAlgorithmError,
+            TypeError,
+            ValueError,
+        ) as e:
             logger.error(f"Failed to create JWT token: {e}")
             raise
 
@@ -105,7 +110,12 @@ class JWTManager:
             token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
             logger.debug(f"Created refresh token for user {user_id}")
             return token
-        except (jwt.InvalidKeyError, jwt.InvalidAlgorithmError, TypeError, ValueError) as e:
+        except (
+            jwt.InvalidKeyError,
+            jwt.InvalidAlgorithmError,
+            TypeError,
+            ValueError,
+        ) as e:
             logger.error(f"Failed to create refresh token: {e}")
             raise
 

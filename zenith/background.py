@@ -13,12 +13,12 @@ from starlette.background import BackgroundTasks as StarletteBackgroundTasks
 class BackgroundTasks:
     """
     Background task manager for Zenith.
-    
+
     Allows adding tasks to run after the response is sent.
-    
+
     Usage:
         from zenith import BackgroundTasks
-        
+
         @app.post("/send-email")
         async def send_email_endpoint(
             email: str,
@@ -33,22 +33,17 @@ class BackgroundTasks:
         """Initialize background tasks."""
         self._tasks = StarletteBackgroundTasks()
 
-    def add_task(
-        self,
-        func: Callable[..., Any] | Coroutine,
-        *args,
-        **kwargs
-    ) -> None:
+    def add_task(self, func: Callable[..., Any] | Coroutine, *args, **kwargs) -> None:
         """
         Add a task to run in the background.
-        
+
         Args:
             func: Function or coroutine to run
             *args: Positional arguments for the function
             **kwargs: Keyword arguments for the function
         """
         import logging
-        
+
         def safe_task():
             """Wrap task with exception handling for isolation."""
             try:
@@ -56,7 +51,7 @@ class BackgroundTasks:
             except Exception:
                 logger = logging.getLogger("zenith.background")
                 logger.exception(f"Error in background task {func.__name__}")
-        
+
         async def safe_async_task():
             """Wrap async task with exception handling for isolation."""
             try:
@@ -64,9 +59,10 @@ class BackgroundTasks:
             except Exception:
                 logger = logging.getLogger("zenith.background")
                 logger.exception(f"Error in async background task {func.__name__}")
-        
+
         # Check if function is async
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
             self._tasks.add_task(safe_async_task)
         else:
@@ -82,10 +78,10 @@ class BackgroundTasks:
 def background_task(func: Callable) -> Callable:
     """
     Decorator to mark a function as a background task.
-    
+
     This is mainly for documentation - the function can still
     be called normally or added to BackgroundTasks.
-    
+
     Usage:
         @background_task
         async def send_welcome_email(user_id: int):
@@ -99,15 +95,15 @@ def background_task(func: Callable) -> Callable:
 class TaskQueue:
     """
     Simple in-memory task queue for development.
-    
+
     For production, use Celery, RQ, or similar.
-    
+
     Usage:
         queue = TaskQueue()
-        
+
         # Add task
         task_id = await queue.enqueue(send_email, user_id=123)
-        
+
         # Check status
         status = await queue.get_status(task_id)
     """
@@ -119,15 +115,10 @@ class TaskQueue:
         self.results = {}
         self._running = set()
 
-    async def enqueue(
-        self,
-        func: Callable,
-        *args,
-        **kwargs
-    ) -> str:
+    async def enqueue(self, func: Callable, *args, **kwargs) -> str:
         """
         Add a task to the queue.
-        
+
         Returns:
             Task ID for tracking
         """
@@ -139,7 +130,11 @@ class TaskQueue:
         async def run_task():
             self._running.add(task_id)
             try:
-                result = await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
+                result = (
+                    await func(*args, **kwargs)
+                    if asyncio.iscoroutinefunction(func)
+                    else func(*args, **kwargs)
+                )
                 self.results[task_id] = {"status": "completed", "result": result}
             except Exception as e:
                 self.results[task_id] = {"status": "failed", "error": str(e)}
@@ -166,14 +161,14 @@ class TaskQueue:
     async def get_result(self, task_id: str, timeout_secs: float = None) -> Any:
         """
         Wait for task result.
-        
+
         Args:
             task_id: Task ID
             timeout_secs: Maximum wait time in seconds
-            
+
         Returns:
             Task result
-            
+
         Raises:
             TimeoutError: If timeout exceeded
             Exception: If task failed

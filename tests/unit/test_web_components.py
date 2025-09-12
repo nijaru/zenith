@@ -58,11 +58,11 @@ class TestFileUploads:
                 file=File("file", config), current_user=Auth(required=True)
             ):
                 # Ensure we're working with the right object
-                if not hasattr(file, 'size_bytes'):
+                if not hasattr(file, "size_bytes"):
                     # Debug: what did we actually get?
                     print(f"DEBUG: file type = {type(file)}, file = {file}")
                     # If it's an UploadedFile, access the right fields
-                    
+
                 return {
                     "filename": file.filename,
                     "original": file.original_filename,
@@ -81,7 +81,7 @@ class TestFileUploads:
                 if response.status_code != 200:
                     print(f"Response status: {response.status_code}")
                     print(f"Response body: {response.text}")
-                    
+
                 assert response.status_code == 200
                 data = response.json()
                 assert data["original"] == "test.txt"
@@ -306,6 +306,7 @@ class TestResponseUtilities:
     def test_success_response(self):
         """Test success response generation."""
         import json
+
         response = success_response({"id": 123}, "User created", 201)
 
         assert response.status_code == 201
@@ -318,6 +319,7 @@ class TestResponseUtilities:
     def test_error_response(self):
         """Test error response generation."""
         import json
+
         response = error_response(
             "Invalid input", 400, "VALIDATION_ERROR", {"field": "email"}
         )
@@ -333,6 +335,7 @@ class TestResponseUtilities:
     def test_paginated_response(self):
         """Test paginated response generation."""
         import json
+
         items = [{"id": 1}, {"id": 2}, {"id": 3}]
         response = paginated_response(
             data=items,

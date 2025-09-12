@@ -14,7 +14,7 @@ exclude = [
     "*.md",
     ".gitignore",
     ".pre-commit-config.yaml",
-    "run_performance_tests.py",
+    "scripts/",
     "pixi.toml",
     "MANIFEST.in"
 ]
@@ -28,7 +28,7 @@ exclude = [
     "benchmarks/**",
     ".github/**",
     ".pre-commit-config.yaml",
-    "run_performance_tests.py",
+    "scripts/",
     "pixi.toml"
 ]
 

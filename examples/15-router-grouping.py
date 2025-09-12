@@ -14,17 +14,18 @@ Key Features Demonstrated:
 Run with: python examples/15-router-grouping.py
 """
 
-from typing import Optional
 from pydantic import BaseModel
-from zenith import Zenith, Router, Context, Auth, Service
 
+from zenith import Auth, Context, Router, Service, Zenith
 
 # ============================================================================
 # MODELS
 # ============================================================================
 
+
 class Product(BaseModel):
     """Product model."""
+
     id: int
     name: str
     price: float
@@ -34,6 +35,7 @@ class Product(BaseModel):
 
 class User(BaseModel):
     """User model."""
+
     id: int
     username: str
     email: str
@@ -42,6 +44,7 @@ class User(BaseModel):
 
 class Order(BaseModel):
     """Order model."""
+
     id: int
     user_id: int
     product_id: int
@@ -54,10 +57,11 @@ class Order(BaseModel):
 # CONTEXTS (Business Logic)
 # ============================================================================
 
+
 class ProductContext(Service):
     """Product management business logic."""
-    
-    async def list_products(self, category: Optional[str] = None) -> list[Product]:
+
+    async def list_products(self, category: str | None = None) -> list[Product]:
         """List products, optionally filtered by category."""
         products = [
             Product(id=1, name="Laptop", price=999.99, category="Electronics"),
@@ -65,12 +69,12 @@ class ProductContext(Service):
             Product(id=3, name="Coffee Mug", price=12.99, category="Kitchen"),
             Product(id=4, name="Notebook", price=4.99, category="Office"),
         ]
-        
+
         if category:
             return [p for p in products if p.category.lower() == category.lower()]
         return products
-    
-    async def get_product(self, product_id: int) -> Optional[Product]:
+
+    async def get_product(self, product_id: int) -> Product | None:
         """Get product by ID."""
         products = await self.list_products()
         return next((p for p in products if p.id == product_id), None)
@@ -78,7 +82,7 @@ class ProductContext(Service):
 
 class UserContext(Service):
     """User management business logic."""
-    
+
     async def list_users(self) -> list[User]:
         """List all users."""
         return [
@@ -86,8 +90,8 @@ class UserContext(Service):
             User(id=2, username="bob", email="bob@example.com"),
             User(id=3, username="charlie", email="charlie@example.com"),
         ]
-    
-    async def get_user(self, user_id: int) -> Optional[User]:
+
+    async def get_user(self, user_id: int) -> User | None:
         """Get user by ID."""
         users = await self.list_users()
         return next((u for u in users if u.id == user_id), None)
@@ -95,19 +99,19 @@ class UserContext(Service):
 
 class OrderContext(Service):
     """Order management business logic."""
-    
-    async def list_orders(self, user_id: Optional[int] = None) -> list[Order]:
+
+    async def list_orders(self, user_id: int | None = None) -> list[Order]:
         """List orders, optionally filtered by user."""
         orders = [
             Order(id=1, user_id=1, product_id=1, quantity=1, total=999.99),
             Order(id=2, user_id=2, product_id=2, quantity=2, total=59.98),
             Order(id=3, user_id=1, product_id=3, quantity=3, total=38.97),
         ]
-        
+
         if user_id:
             return [o for o in orders if o.user_id == user_id]
         return orders
-    
+
     async def create_order(self, user_id: int, product_id: int, quantity: int) -> Order:
         """Create a new order."""
         # In a real app, this would calculate price and save to database
@@ -117,7 +121,7 @@ class OrderContext(Service):
             product_id=product_id,
             quantity=quantity,
             total=99.99 * quantity,
-            status="confirmed"
+            status="confirmed",
         )
 
 
@@ -144,10 +148,10 @@ api_v1 = Router(prefix="/api/v1")
 # Products router within v1
 products_v1 = Router(prefix="/products")  # tags=["products-v1"])
 
+
 @products_v1.get("/", response_model=list[Product])
 async def list_products_v1(
-    category: Optional[str] = None,
-    products: ProductContext = Context()
+    category: str | None = None, products: ProductContext = Context()
 ) -> list[Product]:
     """List all products (v1)."""
     return await products.list_products(category)
@@ -155,8 +159,7 @@ async def list_products_v1(
 
 @products_v1.get("/{product_id}", response_model=Product)
 async def get_product_v1(
-    product_id: int,
-    products: ProductContext = Context()
+    product_id: int, products: ProductContext = Context()
 ) -> Product:
     """Get product by ID (v1)."""
     product = await products.get_product(product_id)
@@ -168,19 +171,15 @@ async def get_product_v1(
 # Users router within v1
 users_v1 = Router(prefix="/users")  # tags=["users-v1"])
 
+
 @users_v1.get("/", response_model=list[User])
-async def list_users_v1(
-    users: UserContext = Context()
-) -> list[User]:
+async def list_users_v1(users: UserContext = Context()) -> list[User]:
     """List all users (v1)."""
     return await users.list_users()
 
 
 @users_v1.get("/{user_id}", response_model=User)
-async def get_user_v1(
-    user_id: int,
-    users: UserContext = Context()
-) -> User:
+async def get_user_v1(user_id: int, users: UserContext = Context()) -> User:
     """Get user by ID (v1)."""
     user = await users.get_user(user_id)
     if not user:
@@ -203,56 +202,55 @@ api_v2 = Router(prefix="/api/v2")  # tags=["v2"])
 # Products router within v2 (enhanced)
 products_v2 = Router(prefix="/products")  # tags=["products-v2"])
 
+
 @products_v2.get("/", response_model=list[Product])
 async def list_products_v2(
-    category: Optional[str] = None,
-    min_price: Optional[float] = None,
-    max_price: Optional[float] = None,
-    products: ProductContext = Context()
+    category: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    products: ProductContext = Context(),
 ) -> list[Product]:
     """List products with advanced filtering (v2)."""
     result = await products.list_products(category)
-    
+
     # Additional v2 filtering
     if min_price is not None:
         result = [p for p in result if p.price >= min_price]
     if max_price is not None:
         result = [p for p in result if p.price <= max_price]
-    
+
     return result
 
 
 @products_v2.get("/{product_id}", response_model=Product)
 async def get_product_v2(
-    product_id: int,
-    include_related: bool = False,
-    products: ProductContext = Context()
+    product_id: int, include_related: bool = False, products: ProductContext = Context()
 ) -> dict:
     """Get product with optional related data (v2)."""
     product = await products.get_product(product_id)
     if not product:
         raise ValueError(f"Product {product_id} not found")
-    
+
     response = product.model_dump()
-    
+
     if include_related:
         # In v2, we can include related data
         response["reviews"] = [
             {"rating": 5, "comment": "Great product!"},
-            {"rating": 4, "comment": "Good value"}
+            {"rating": 4, "comment": "Good value"},
         ]
         response["similar_products"] = [2, 3]
-    
+
     return response
 
 
 # Orders router within v2 (new in v2)
 orders_v2 = Router(prefix="/orders")  # tags=["orders-v2"])
 
+
 @orders_v2.get("/", response_model=list[Order])
 async def list_orders_v2(
-    user_id: Optional[int] = None,
-    orders: OrderContext = Context()
+    user_id: int | None = None, orders: OrderContext = Context()
 ) -> list[Order]:
     """List orders (v2)."""
     return await orders.list_orders(user_id)
@@ -263,7 +261,7 @@ async def create_order_v2(
     product_id: int,
     quantity: int = 1,
     orders: OrderContext = Context(),
-    current_user: dict = Auth(required=False)  # Mock auth for demo
+    current_user: dict = Auth(required=False),  # Mock auth for demo
 ) -> Order:
     """Create a new order (v2)."""
     # In a real app, current_user would come from authentication
@@ -287,7 +285,7 @@ admin = Router(prefix="/admin")  # tags=["admin"])
 async def admin_stats(
     products: ProductContext = Context(),
     users: UserContext = Context(),
-    orders: OrderContext = Context()
+    orders: OrderContext = Context(),
 ) -> dict:
     """Get admin statistics."""
     return {
@@ -308,7 +306,7 @@ async def admin_health() -> dict:
             "database": "ok",
             "cache": "ok",
             "queue": "ok",
-        }
+        },
     }
 
 
@@ -330,7 +328,7 @@ async def root() -> dict:
             "api_v2": "/api/v2",
             "admin": "/admin",
             "docs": "/docs",
-        }
+        },
     }
 
 
@@ -345,10 +343,10 @@ async def health() -> dict:
 # ============================================================================
 
 # The order matters - routers are matched in the order they're included
-app.include_router(public)     # Public endpoints (no prefix)
-app.include_router(api_v1)     # API v1 endpoints
-app.include_router(api_v2)     # API v2 endpoints
-app.include_router(admin)      # Admin endpoints
+app.include_router(public)  # Public endpoints (no prefix)
+app.include_router(api_v1)  # API v1 endpoints
+app.include_router(api_v2)  # API v2 endpoints
+app.include_router(admin)  # Admin endpoints
 
 
 # ============================================================================
@@ -396,5 +394,5 @@ if __name__ == "__main__":
     print("  • Shared middleware per group")
     print("  • Better code organization")
     print("  • Easier testing and maintenance")
-    
+
     app.run(host="127.0.0.1", port=8015, reload=True)

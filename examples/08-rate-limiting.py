@@ -14,25 +14,29 @@ Run with: SECRET_KEY=test-key python examples/rate_limit_example.py
 
 import asyncio
 import os
-from typing import List
 
 import uvicorn
-from zenith import Auth, Context, Router, Zenith
-from zenith.auth import configure_jwt, create_access_token, hash_password, verify_password
-from zenith.middleware.rate_limit import (
-    RateLimit, 
-    RateLimitMiddleware,
-    create_rate_limiter,
-    MemoryRateLimitStorage,
-)
 
+from zenith import Auth, Context, Zenith
+from zenith.auth import (
+    configure_jwt,
+    create_access_token,
+    hash_password,
+    verify_password,
+)
+from zenith.middleware.rate_limit import (
+    RateLimit,
+    RateLimitMiddleware,
+)
 
 # ============================================================================
 # APPLICATION SETUP
 # ============================================================================
 
 # Set secret key before creating app to avoid validation issues
-os.environ["SECRET_KEY"] = os.getenv("SECRET_KEY", "test-rate-limit-secret-key-at-least-32-chars-long-for-example")
+os.environ["SECRET_KEY"] = os.getenv(
+    "SECRET_KEY", "test-rate-limit-secret-key-at-least-32-chars-long-for-example"
+)
 
 app = Zenith()
 
@@ -49,9 +53,9 @@ USERS = {
     },
     "premium@example.com": {
         "id": 2,
-        "email": "premium@example.com", 
+        "email": "premium@example.com",
         "password_hash": hash_password("premium123"),
-    }
+    },
 }
 
 
@@ -64,11 +68,11 @@ app.add_middleware(
     RateLimitMiddleware,
     default_limits=[
         # General limits
-        RateLimit(requests=10, window=60, per="ip"),    # 10 requests per minute per IP
+        RateLimit(requests=10, window=60, per="ip"),  # 10 requests per minute per IP
         RateLimit(requests=100, window=3600, per="ip"),  # 100 requests per hour per IP
     ],
     exempt_paths=["/", "/health", "/docs"],  # Exempt these paths
-    exempt_ips=["127.0.0.1"],               # Exempt localhost
+    exempt_ips=["127.0.0.1"],  # Exempt localhost
     error_message="Too many requests. Please slow down!",
     include_headers=True,
 )
@@ -78,10 +82,11 @@ app.add_middleware(
 # AUTHENTICATION CONTEXT
 # ============================================================================
 
+
 class AuthContext:
     def __init__(self, container):
         pass
-    
+
     async def authenticate(self, email: str, password: str) -> dict:
         """Authenticate user."""
         user = USERS.get(email)
@@ -97,6 +102,7 @@ app.register_context("authcontext", AuthContext)
 # API ROUTES
 # ============================================================================
 
+
 @app.get("/")
 async def root():
     """Root endpoint (exempt from rate limiting)."""
@@ -107,12 +113,12 @@ async def root():
             "api": "/api/data",
             "protected": "/protected/user-data",
             "login": "/login",
-            "test": "/test-limits"
-        }
+            "test": "/test-limits",
+        },
     }
 
 
-@app.get("/health")  
+@app.get("/health")
 async def health():
     """Health check (exempt from rate limiting)."""
     return {"status": "healthy"}
@@ -124,18 +130,10 @@ async def login(email: str, password: str, auth: AuthContext = Context()) -> dic
     user = await auth.authenticate(email, password)
     if not user:
         raise ValueError("Invalid credentials")
-    
-    token = create_access_token(
-        user_id=user["id"],
-        email=user["email"],
-        role="user"
-    )
-    
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-        "user_id": user["id"]
-    }
+
+    token = create_access_token(user_id=user["id"], email=user["email"], role="user")
+
+    return {"access_token": token, "token_type": "bearer", "user_id": user["id"]}
 
 
 @app.get("/public")
@@ -143,7 +141,7 @@ async def public_endpoint():
     """Public endpoint with default rate limits (10/min, 100/hour per IP)."""
     return {
         "message": "This is a public endpoint with default rate limits",
-        "limits": "10 requests/minute, 100 requests/hour per IP"
+        "limits": "10 requests/minute, 100 requests/hour per IP",
     }
 
 
@@ -151,22 +149,22 @@ async def public_endpoint():
 async def api_endpoint():
     """API endpoint with stricter rate limits (5/min, 50/hour per IP)."""
     return {
-        "message": "This is an API endpoint with stricter rate limits", 
+        "message": "This is an API endpoint with stricter rate limits",
         "limits": "5 requests/minute, 50 requests/hour per IP",
-        "data": {"timestamp": "2025-09-03T10:00:00Z", "value": 42}
+        "data": {"timestamp": "2025-09-03T10:00:00Z", "value": 42},
     }
 
 
 @app.get("/protected/user-data")
-async def protected_endpoint(current_user = Auth(required=True)):
+async def protected_endpoint(current_user=Auth(required=True)):
     """Protected endpoint with user-based rate limits (20/min, 200/hour per user)."""
     return {
         "message": "This is a protected endpoint with user-based rate limits",
-        "limits": "20 requests/minute, 200 requests/hour per authenticated user", 
+        "limits": "20 requests/minute, 200 requests/hour per authenticated user",
         "user": {
             "id": current_user["id"],
-            "email": current_user.get("email", "unknown")
-        }
+            "email": current_user.get("email", "unknown"),
+        },
     }
 
 
@@ -175,7 +173,7 @@ async def test_limits():
     """Endpoint to test rate limits quickly."""
     return {
         "message": "Hit this endpoint multiple times to test rate limiting",
-        "tip": "Try making 11+ requests within a minute to trigger rate limit"
+        "tip": "Try making 11+ requests within a minute to trigger rate limit",
     }
 
 
@@ -183,13 +181,14 @@ async def test_limits():
 # RATE LIMIT TESTING UTILITIES
 # ============================================================================
 
+
 @app.get("/admin/rate-limit-stats")
 async def rate_limit_stats():
     """Get rate limit statistics (for testing)."""
     # This would show current counts in a real implementation
     return {
         "message": "Rate limit statistics",
-        "note": "In a real app, this would show current request counts per IP/user"
+        "note": "In a real app, this would show current request counts per IP/user",
     }
 
 
@@ -197,24 +196,31 @@ async def rate_limit_stats():
 # CONCURRENT REQUEST TESTING
 # ============================================================================
 
+
 async def test_rate_limits():
     """Test rate limits with concurrent requests."""
     import aiohttp
-    
+
     print("Testing rate limits with concurrent requests...")
-    
+
     async with aiohttp.ClientSession() as session:
         # Test public endpoint
         tasks = []
         for i in range(15):  # Exceed 10/minute limit
             tasks.append(session.get("http://localhost:8008/public"))
-        
+
         responses = await asyncio.gather(*tasks, return_exceptions=True)
-        
-        success_count = sum(1 for r in responses if not isinstance(r, Exception) and r.status == 200)
-        rate_limited_count = sum(1 for r in responses if not isinstance(r, Exception) and r.status == 429)
-        
-        print(f"Public endpoint: {success_count} successful, {rate_limited_count} rate limited")
+
+        success_count = sum(
+            1 for r in responses if not isinstance(r, Exception) and r.status == 200
+        )
+        rate_limited_count = sum(
+            1 for r in responses if not isinstance(r, Exception) and r.status == 429
+        )
+
+        print(
+            f"Public endpoint: {success_count} successful, {rate_limited_count} rate limited"
+        )
 
 
 if __name__ == "__main__":
@@ -224,7 +230,7 @@ if __name__ == "__main__":
     print("  GET  /health         - Health check (exempt)")
     print("  POST /login          - Login (default limits)")
     print("  GET  /public         - Public (10/min per IP)")
-    print("  GET  /api/data       - API (5/min per IP)")  
+    print("  GET  /api/data       - API (5/min per IP)")
     print("  GET  /protected/user-data - Protected (20/min per user)")
     print("  GET  /test-limits    - Testing endpoint")
     print()
@@ -237,7 +243,7 @@ if __name__ == "__main__":
     print("  user@example.com / password123")
     print("  premium@example.com / premium123")
     print()
-    
+
     # Option to run concurrent test
     if os.getenv("TEST_CONCURRENT") == "true":
         asyncio.run(test_rate_limits())

@@ -5,13 +5,14 @@ Contains methods for managing services, contexts, databases, and mounting.
 """
 
 from typing import Any
+
 from zenith.core.context import Context
 from zenith.core.routing import Router
 
 
 class ServicesMixin:
     """Mixin for service registration and mounting methods."""
-    
+
     def register_context(self, name: str, context_class: type[Context]) -> None:
         """Register a business context."""
         self.app.register_context(name, context_class)
@@ -19,33 +20,33 @@ class ServicesMixin:
     def register_service(self, service_type: type, implementation: Any = None) -> None:
         """Register a service for dependency injection."""
         self.app.register_service(service_type, implementation)
-    
-    def setup_database(self, database_url: str, migrations_dir: str = "migrations") -> None:
+
+    def setup_database(
+        self, database_url: str, migrations_dir: str = "migrations"
+    ) -> None:
         """
         Set up database connection and migrations.
-        
+
         Args:
             database_url: Database connection URL
             migrations_dir: Directory for migration files
         """
         from zenith.db import Database, MigrationManager
-        
+
         # Set up database connection
         self.database = Database(database_url)
-        
+
         # Set up migrations
         self.migration_manager = MigrationManager(self.database, migrations_dir)
-        
+
         # Register database as a service for dependency injection
         self.register_service(Database, self.database)
-        
+
         # Add database health check
         from zenith.web.health import health_manager
+
         health_manager.add_simple_check(
-            "database",
-            self.database.health_check,
-            timeout=5.0,
-            critical=True
+            "database", self.database.health_check, timeout=5.0, critical=True
         )
 
     def mount(self, path: str, app, name: str = None) -> None:
@@ -56,18 +57,18 @@ class ServicesMixin:
         mount_route = Mount(path, app, name=name)
 
         # Add directly to the app routes
-        if not hasattr(self, '_mount_routes'):
+        if not hasattr(self, "_mount_routes"):
             self._mount_routes = []
         self._mount_routes.append(mount_route)
-        
+
         # If app is already built, add to the underlying Starlette app
-        if hasattr(self, 'app') and hasattr(self.app, '_app'):
+        if hasattr(self, "app") and hasattr(self.app, "_app"):
             self.app._app.routes.append(mount_route)
 
     def mount_static(self, path: str, directory: str, **config) -> None:
         """
         Mount static file serving at the given path.
-        
+
         Args:
             path: URL path prefix for static files (e.g., "/static")
             directory: Directory containing static files
@@ -80,34 +81,37 @@ class ServicesMixin:
         if not hasattr(self, "_static_mounts"):
             self._static_mounts = []
         self._static_mounts.append(static_mount)
-    
-    def spa(self, framework_or_directory: str = None, path: str = "/", **config) -> None:
+
+    def spa(
+        self, framework_or_directory: str = None, path: str = "/", **config
+    ) -> None:
         """
         Serve a Single Page Application with intelligent defaults.
-        
+
         Args:
             framework_or_directory: Framework ("react", "vue", "solidjs") or directory path
             path: URL path to mount SPA (default: "/")
             **config: Additional configuration (max_age, etc.)
-        
+
         Examples:
             app.spa()              # Auto-detect dist/ or build/
             app.spa("dist")        # Serve from dist/
             app.spa("react")       # React (uses build/)
             app.spa("solidjs")     # SolidJS (uses dist/)
         """
-        from zenith.web.static import serve_spa_files
         from pathlib import Path
-        
+
+        from zenith.web.static import serve_spa_files
+
         # Framework-specific defaults
         framework_defaults = {
             "react": "build",
-            "vue": "dist", 
+            "vue": "dist",
             "solidjs": "dist",
             "svelte": "build",
             "angular": "dist",
         }
-        
+
         if framework_or_directory is None:
             # Auto-detect common directories
             for candidate in ["dist", "build", "public"]:
@@ -122,19 +126,21 @@ class ServicesMixin:
         else:
             # Treat as directory path
             directory = framework_or_directory
-        
+
         spa_app = serve_spa_files(directory, **config)
         self.mount(path, spa_app)
-    
-    def static(self, path: str = "/static", directory: str = "static", **config) -> None:
+
+    def static(
+        self, path: str = "/static", directory: str = "static", **config
+    ) -> None:
         """
         Serve static files at the given path.
-        
+
         Args:
             path: URL path prefix (e.g., "/static", "/assets")
-            directory: Local directory containing static files  
+            directory: Local directory containing static files
             **config: Additional configuration (max_age, etc.)
-        
+
         Examples:
             app.static()                    # /static/ -> ./static/
             app.static("/assets", "public") # /assets/ -> ./public/

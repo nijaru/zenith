@@ -4,12 +4,10 @@ Middleware configuration mixin for Zenith applications.
 Contains all methods related to adding and configuring middleware.
 """
 
-from typing import Any
-
 
 class MiddlewareMixin:
     """Mixin for middleware configuration methods."""
-    
+
     def add_middleware(self, middleware_class, **kwargs) -> None:
         """Add middleware to the application."""
         from starlette.middleware import Middleware
@@ -86,11 +84,13 @@ class MiddlewareMixin:
 
         # Remove existing SecurityHeadersMiddleware if present
         from starlette.middleware import Middleware
+
         self.middleware = [
-            m for m in self.middleware 
+            m
+            for m in self.middleware
             if not (isinstance(m, Middleware) and m.cls == SecurityHeadersMiddleware)
         ]
-        
+
         # Add the new one with custom config
         self.add_middleware(SecurityHeadersMiddleware, config=config)
 

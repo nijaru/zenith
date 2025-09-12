@@ -8,10 +8,8 @@ logging, and user-friendly error responses.
 import logging
 import traceback
 from collections.abc import Callable
-from typing import Any
 
 from pydantic import ValidationError
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -23,12 +21,6 @@ logger = logging.getLogger("zenith.exceptions")
 # Import unified exceptions from main module
 from zenith.exceptions import (
     ZenithException,
-    ValidationException,
-    AuthenticationException,
-    AuthorizationException,
-    NotFoundException,
-    ConflictException,
-    RateLimitException,
 )
 
 
@@ -172,7 +164,7 @@ class ExceptionHandlerMiddleware:
         if self.debug:
             error_response["details"] = {
                 "message": str(exc),
-                "traceback": traceback.format_exc()
+                "traceback": traceback.format_exc(),
             }
 
         return JSONResponse(content=error_response, status_code=400)

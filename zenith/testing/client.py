@@ -34,7 +34,7 @@ class ZenithTestClient:
                 response = await client.get("/protected")
                 assert response.status_code == 200
     """
-    
+
     # Tell pytest this is not a test class
     __test__ = False
 

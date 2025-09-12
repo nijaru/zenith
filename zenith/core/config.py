@@ -86,13 +86,13 @@ class Config:
         """Validate configuration settings."""
         # Auto-generate secret key for development if not set
         if not self.secret_key or self.secret_key == "dev-secret-change-in-prod":
+            import logging
             import secrets
             import string
-            import logging
-            
+
             chars = string.ascii_letters + string.digits
-            self.secret_key = ''.join(secrets.choice(chars) for _ in range(64))
-            
+            self.secret_key = "".join(secrets.choice(chars) for _ in range(64))
+
             logger = logging.getLogger("zenith.config")
             if self.debug:
                 # Development mode - this is expected

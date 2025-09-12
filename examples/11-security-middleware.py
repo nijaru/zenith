@@ -31,19 +31,20 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from zenith import Zenith
-from zenith.middleware.security import SecurityHeadersMiddleware, SecurityConfig
-from zenith.middleware.csrf import CSRFMiddleware, CSRFConfig
-from zenith.middleware.compression import CompressionMiddleware, CompressionConfig
-from zenith.middleware.request_id import RequestIDMiddleware
+from zenith.middleware.compression import CompressionConfig, CompressionMiddleware
+from zenith.middleware.csrf import CSRFConfig, CSRFMiddleware
 from zenith.middleware.logging import RequestLoggingMiddleware
-
+from zenith.middleware.request_id import RequestIDMiddleware
+from zenith.middleware.security import SecurityConfig, SecurityHeadersMiddleware
 
 # ============================================================================
 # MODELS
 # ============================================================================
 
+
 class SecurityInfo(BaseModel):
     """Security configuration information."""
+
     csrf_enabled: bool
     hsts_enabled: bool
     csp_enabled: bool
@@ -54,12 +55,14 @@ class SecurityInfo(BaseModel):
 
 class SecureData(BaseModel):
     """Data for CSRF-protected operations."""
+
     message: str
     priority: str = "normal"
 
 
 class SecurityHeaders(BaseModel):
     """Security headers information."""
+
     headers: dict[str, str]
     description: dict[str, str]
 
@@ -128,7 +131,7 @@ csrf_config = CSRFConfig(
     cookie_secure=False,  # Set to True in production with HTTPS
     cookie_httponly=False,  # Allow JavaScript access for AJAX
     cookie_samesite="Lax",  # CSRF protection
-    token_lifetime=3600,  # 1 hour
+    max_age_seconds=3600,  # 1 hour
     exempt_methods={"GET", "HEAD", "OPTIONS"},
     exempt_paths={"/", "/headers", "/metrics"},  # Public endpoints
 )
@@ -141,7 +144,7 @@ compression_config = CompressionConfig(
     compressible_types={
         "application/json",
         "application/javascript",
-        "text/html", 
+        "text/html",
         "text/css",
         "text/plain",
         "text/xml",
@@ -155,6 +158,7 @@ app.add_middleware(CompressionMiddleware, config=compression_config)
 # ============================================================================
 # SECURITY HELPER FUNCTIONS
 # ============================================================================
+
 
 def get_security_info() -> SecurityInfo:
     """Get current security configuration information."""
@@ -174,16 +178,15 @@ def describe_security_headers() -> SecurityHeaders:
         "X-Content-Type-Options": "Prevents MIME type sniffing attacks",
         "X-Frame-Options": "Prevents clickjacking by blocking framing",
         "X-XSS-Protection": "Enables browser XSS filtering",
-        "Strict-Transport-Security": "Forces HTTPS connections", 
+        "Strict-Transport-Security": "Forces HTTPS connections",
         "Content-Security-Policy": "Prevents code injection attacks",
         "Referrer-Policy": "Controls referrer information leakage",
         "Permissions-Policy": "Controls browser feature access",
         "X-Request-ID": "Unique identifier for request tracing",
     }
-    
+
     return SecurityHeaders(
-        headers={k: v for k, v in headers_info.items()},
-        description=headers_info
+        headers={k: v for k, v in headers_info.items()}, description=headers_info
     )
 
 
@@ -191,11 +194,12 @@ def describe_security_headers() -> SecurityHeaders:
 # PUBLIC ENDPOINTS (NO CSRF PROTECTION)
 # ============================================================================
 
+
 @app.get("/")
 async def security_overview():
     """Public homepage showing security configuration."""
     security_info = get_security_info()
-    
+
     return {
         "message": "🛡️ Welcome to Zenith Security Middleware Demo",
         "security": security_info.model_dump(),
@@ -204,10 +208,10 @@ async def security_overview():
             "/secure": "CSRF-protected page (GET for token, POST for action)",
             "/api/secure": "CSRF-protected API endpoint",
             "/headers": "View all security headers",
-            "/metrics": "Request metrics and correlation info"
+            "/metrics": "Request metrics and correlation info",
         },
         "csrf_note": "CSRF protection is active. Use /secure to get a token.",
-        "security_note": "Check response headers to see security measures in action."
+        "security_note": "Check response headers to see security measures in action.",
     }
 
 
@@ -215,7 +219,7 @@ async def security_overview():
 async def view_security_headers():
     """Show all security headers and their descriptions."""
     headers_info = describe_security_headers()
-    
+
     return {
         "message": "🔍 Security Headers Information",
         "headers_applied": headers_info.headers,
@@ -226,8 +230,8 @@ async def view_security_headers():
             "Use secure=True for cookies with HTTPS",
             "Customize CSP policy for your specific needs",
             "Monitor CSP violations in production",
-            "Use HSTS preload list for maximum security"
-        ]
+            "Use HSTS preload list for maximum security",
+        ],
     }
 
 
@@ -241,21 +245,22 @@ async def request_metrics():
             "request_id": "Every request gets unique X-Request-ID header",
             "compression": "Responses compressed automatically",
             "security_headers": "All responses include security headers",
-            "csrf_protection": "POST/PUT/DELETE require CSRF tokens"
+            "csrf_protection": "POST/PUT/DELETE require CSRF tokens",
         },
         "monitoring_tips": [
             "Use X-Request-ID for log correlation",
             "Monitor security header violations",
             "Track CSRF token validation failures",
             "Measure compression ratios",
-            "Alert on security policy violations"
-        ]
+            "Alert on security policy violations",
+        ],
     }
 
 
 # ============================================================================
 # CSRF-PROTECTED ENDPOINTS
 # ============================================================================
+
 
 @app.get("/secure")
 async def secure_page():
@@ -265,7 +270,7 @@ async def secure_page():
         "csrf_info": {
             "token_location": "Check 'csrf_token' cookie in browser",
             "header_name": "X-CSRF-Token",
-            "usage": "Include token in X-CSRF-Token header for POST requests"
+            "usage": "Include token in X-CSRF-Token header for POST requests",
         },
         "test_endpoints": {
             "POST /api/secure": "Try posting to this endpoint with CSRF token"
@@ -274,9 +279,9 @@ async def secure_page():
             "curl -X POST http://localhost:8001/api/secure "
             "-H 'X-CSRF-Token: YOUR_TOKEN_HERE' "
             "-H 'Content-Type: application/json' "
-            "-d '{\"message\": \"Hello from secure endpoint\"}'"
+            '-d \'{"message": "Hello from secure endpoint"}\''
         ),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -290,15 +295,16 @@ async def secure_api(data: SecureData):
             "csrf_validated": "✅ CSRF token validated",
             "headers_applied": "✅ Security headers added",
             "request_logged": "✅ Request logged with correlation ID",
-            "response_compressed": "✅ Response will be compressed if eligible"
+            "response_compressed": "✅ Response will be compressed if eligible",
         },
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 # ============================================================================
 # SECURITY INFORMATION FOR DEVELOPERS
 # ============================================================================
+
 
 def get_csrf_error_info():
     """Get information about CSRF errors for developers."""
@@ -309,10 +315,10 @@ def get_csrf_error_info():
             "1": "Visit GET /secure to obtain a CSRF token",
             "2": "Include token in X-CSRF-Token header",
             "3": "Check that csrf_token cookie is present",
-            "4": "Ensure Content-Type is application/json for API calls"
+            "4": "Ensure Content-Type is application/json for API calls",
         },
         "security_note": "This error indicates CSRF protection is working correctly",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -369,5 +375,5 @@ if __name__ == "__main__":
     print("Visit: http://localhost:8001")
     print("Try the different endpoints to see security features in action!")
     print("\n" + PRODUCTION_CHECKLIST)
-    
+
     app.run(host="127.0.0.1", port=8001, reload=True)

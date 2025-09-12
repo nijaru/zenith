@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from zenith import Zenith
+from zenith import Service, Zenith
 from zenith.core.container import DIContainer
-from zenith import Service
-from zenith.core.context import Context as BaseContext, EventBus
+from zenith.core.context import Context as BaseContext
+from zenith.core.context import EventBus
 from zenith.core.routing import Context
 
 

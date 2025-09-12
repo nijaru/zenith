@@ -17,6 +17,7 @@ logger = logging.getLogger("zenith.jobs.queue")
 
 class JobStatus(str, Enum):
     """Job execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -28,7 +29,7 @@ class JobStatus(str, Enum):
 class JobQueue:
     """
     Redis-backed job queue.
-    
+
     Features:
     - Persistent job storage
     - Status tracking and updates
@@ -40,7 +41,7 @@ class JobQueue:
     def __init__(self, redis_url: str = "redis://localhost:6379/0"):
         """
         Initialize job queue.
-        
+
         Args:
             redis_url: Redis connection URL
         """
@@ -67,7 +68,7 @@ class JobQueue:
     ) -> None:
         """
         Add a job to the queue.
-        
+
         Args:
             job_id: Unique job identifier
             job_name: Name of the job function
@@ -116,10 +117,10 @@ class JobQueue:
     async def dequeue(self, timeout_secs: int = 10) -> dict | None:
         """
         Get the next available job.
-        
+
         Args:
             timeout_secs: Blocking timeout in seconds
-            
+
         Returns:
             Job data or None if timeout
         """
@@ -187,7 +188,9 @@ class JobQueue:
             await self.redis.lrem(self.running_key, 1, job_id)
             await self.redis.zadd(self.scheduled_key, {job_id: retry_at})
 
-            logger.info(f"Retrying job {job_id} in {delay}s (attempt {job_data['retry_count']})")
+            logger.info(
+                f"Retrying job {job_id} in {delay}s (attempt {job_data['retry_count']})"
+            )
         else:
             # Max retries exceeded - move to failed queue
             job_data["status"] = JobStatus.FAILED
@@ -197,12 +200,17 @@ class JobQueue:
             await self.redis.lrem(self.running_key, 1, job_id)
             await self.redis.lpush(self.failed_key, job_id)
 
-            logger.error(f"Job {job_id} failed after {job_data['retry_count']} retries: {error}")
+            logger.error(
+                f"Job {job_id} failed after {job_data['retry_count']} retries: {error}"
+            )
 
     async def cancel(self, job_id: str) -> bool:
         """Cancel a pending job."""
         job_data = await self._get_job_data(job_id)
-        if not job_data or job_data["status"] not in [JobStatus.PENDING, JobStatus.RETRYING]:
+        if not job_data or job_data["status"] not in [
+            JobStatus.PENDING,
+            JobStatus.RETRYING,
+        ]:
             return False
 
         job_data["status"] = JobStatus.CANCELLED
@@ -298,9 +306,7 @@ class JobQueue:
         now = datetime.utcnow().timestamp()
 
         # Get jobs scheduled to run now or earlier
-        ready_jobs = await self.redis.zrangebyscore(
-            self.scheduled_key, 0, now
-        )
+        ready_jobs = await self.redis.zrangebyscore(self.scheduled_key, 0, now)
 
         for job_id in ready_jobs:
             job_id = job_id.decode() if isinstance(job_id, bytes) else job_id

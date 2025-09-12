@@ -1,6 +1,6 @@
 # Zenith Framework
 
-[![PyPI version](https://badge.fury.io/py/zenith-framework.svg)](https://badge.fury.io/py/zenith-framework)
+[![PyPI version](https://badge.fury.io/py/zenith-web.svg)](https://badge.fury.io/py/zenith-web)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/nijaru/zenith/workflows/Test%20Suite/badge.svg)](https://github.com/nijaru/zenith/actions)
@@ -17,7 +17,7 @@ Zenith is a modern Python API framework designed for building production-ready a
 - **Type-safe by design** - Full Pydantic integration with automatic validation
 - **Clean architecture** - Business logic organized in Context classes, separate from web concerns
 - **Zero-configuration defaults** - Production middleware, monitoring, and security built-in
-- **Performance focused** - 9,900+ req/s with async-first architecture and Python optimizations
+- **Performance focused** - 8,000+ req/s with async-first architecture and Python optimizations
 - **Full-stack ready** - Serve APIs alongside SPAs with comprehensive middleware stack
 
 ## Quick Start
@@ -27,7 +27,7 @@ pip install zenith-web
 ```
 
 ```python
-from zenith import Zenith, Context, Service
+from zenith import Zenith, Context
 from pydantic import BaseModel
 
 app = Zenith()
@@ -46,8 +46,8 @@ class User(BaseModel):
     name: str
     email: str
 
-# Business logic in Service classes
-class UserService(Service):
+# Business logic in Context classes
+class UserService(Context):
     def __init__(self):
         self.users = {}
         self.next_id = 1
@@ -94,14 +94,14 @@ uvicorn main:app --reload
 - Built-in support for complex application architectures
 
 ### 🔐 **Production-Ready Security**
-- JWT authentication with `JWTAuth()`
+- JWT authentication with `Auth()`
 - CORS, CSRF, security headers middleware
 - Rate limiting with memory and Redis backends
 - Automatic request correlation IDs
 
 ### ⚡ **High Performance**
-- **9,900+ req/s** on modern hardware
-- **24.8% middleware retention** with full production stack
+- **8,000+ req/s** on modern hardware
+- **82.6% middleware retention** with full production stack
 - Async-first architecture with Python 3.12+ optimizations
 - Comprehensive performance monitoring built-in
 
@@ -135,28 +135,28 @@ Zenith follows clean architecture principles:
 
 ```
 your-app/
-├── main.py           # Application entry point
-├── contexts/         # Business logic (Service classes)
-├── models/          # Data models (Pydantic)
-├── routes/          # API endpoints (optional - can use decorators)
-├── middleware/      # Custom middleware
-├── migrations/      # Database migrations
+├── main.py         # Application entry point
+├── contexts/       # Business logic (Service classes)
+├── models/         # Data models (Pydantic)
+├── routes/         # API endpoints (optional - can use decorators)
+├── middleware/     # Custom middleware
+├── migrations/     # Database migrations
 └── tests/          # Test suite
 ```
 
 ## Performance
 
 **Verified Benchmark Results (v0.1.4):**
-- Simple endpoints: **9,897 req/s**
-- JSON endpoints: **9,982 req/s**  
-- With full middleware: **2,453 req/s** (24.8% retention)
+- Simple endpoints: **8,049 req/s**
+- JSON endpoints: **9,469 req/s**  
+- With full middleware: **6,647 req/s** (82.6% retention)
 
 Run your own benchmarks:
 ```bash
-python run_performance_tests.py --quick
+python scripts/run_performance_tests.py --quick
 ```
 
-*Performance varies by hardware and application complexity. See [Performance Guide](docs/internal/PERFORMANCE_OPTIMIZATIONS.md) for optimization details.*
+*Performance varies by hardware and application complexity.*
 
 ## Documentation
 
@@ -164,7 +164,6 @@ python run_performance_tests.py --quick
 - **[API Reference](docs/reference/)** - Complete API documentation  
 - **[Architecture Guide](docs/reference/spec/ARCHITECTURE.md)** - Framework design patterns
 - **[Examples](examples/)** - Real-world usage examples
-- **[Performance Guide](docs/internal/PERFORMANCE_OPTIMIZATIONS.md)** - Optimization details
 - **[Contributing](docs/guides/contributing/DEVELOPER.md)** - Development guidelines
 
 ## Examples
@@ -173,7 +172,7 @@ Complete working examples in the [examples/](examples/) directory:
 
 - [Hello World](examples/00-hello-world.py) - Basic setup
 - [Context System](examples/03-context-system.py) - Business logic organization
-- [Authentication](examples/02-auth-api.py) - JWT auth implementation
+- [Security Middleware](examples/11-security-middleware.py) - Production security setup
 - [Background Jobs](examples/05-background-tasks.py) - Task processing
 - [WebSocket Chat](examples/07-websocket-chat.py) - Real-time communication
 - [Full Production API](examples/10-complete-production-api/) - Complete example
@@ -258,8 +257,8 @@ pytest  # Run tests
 
 **Current Version**: v0.1.4 (stable release)  
 **Python Support**: 3.12+  
-**Test Suite**: 100% passing (309/309 tests)  
-**Performance**: Production-ready with 9,900+ req/s capability  
+**Test Suite**: 100% passing (328/332 tests)  
+**Performance**: Production-ready with 8,000+ req/s capability  
 **Architecture**: Clean separation with Context system and dependency injection  
 
 Zenith is production-ready with comprehensive middleware, performance optimizations, and clean architecture patterns for modern Python applications.

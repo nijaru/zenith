@@ -23,7 +23,7 @@ Run as demo: python examples/13-testing-patterns.py
 
 Testing Endpoints:
 - GET /                      - Public endpoint
-- GET /users/{user_id}       - Protected endpoint  
+- GET /users/{user_id}       - Protected endpoint
 - POST /users               - User creation with validation
 - GET /admin/users          - Admin-only endpoint
 - POST /api/slow            - Slow endpoint for performance testing
@@ -37,18 +37,24 @@ from datetime import datetime, timedelta
 import pytest
 from pydantic import BaseModel, EmailStr, validator
 
-from zenith import Auth, Context, Zenith
-from zenith.auth import JWTAuth
-from zenith import Service
-from zenith.testing import TestClient, TestContext, create_test_token, create_test_user, mock_auth
-
+from zenith import Auth, Context, Service, Zenith
+# Auth is already imported from zenith main module
+from zenith.testing import (
+    TestClient,
+    TestContext,
+    create_test_token,
+    create_test_user,
+    mock_auth,
+)
 
 # ============================================================================
 # TEST APPLICATION SETUP
 # ============================================================================
 
+
 class User(BaseModel):
     """User model for testing."""
+
     id: int | None = None
     email: EmailStr
     name: str
@@ -56,21 +62,22 @@ class User(BaseModel):
     is_active: bool = True
     created_at: datetime | None = None
 
-    @validator('email')
+    @validator("email")
     def email_must_be_valid(cls, v):
-        if '@' not in v:
-            raise ValueError('Invalid email format')
+        if "@" not in v:
+            raise ValueError("Invalid email format")
         return v.lower()
 
-    @validator('name')
+    @validator("name")
     def name_must_not_be_empty(cls, v):
         if not v or not v.strip():
-            raise ValueError('Name cannot be empty')
+            raise ValueError("Name cannot be empty")
         return v.strip()
 
 
 class UserCreate(BaseModel):
     """User creation model."""
+
     email: EmailStr
     name: str
     role: str = "user"
@@ -89,24 +96,24 @@ class UserService(Service):
         """Create a new user."""
         # Simulate database operation
         await asyncio.sleep(0.1)
-        
+
         # Check for duplicate email
         for existing_user in self.users.values():
             if existing_user.email == user_data.email:
                 raise ValueError(f"User with email {user_data.email} already exists")
-        
+
         # Create user
         user = User(
             id=self.next_id,
             email=user_data.email,
             name=user_data.name,
             role=user_data.role,
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
-        
+
         self.users[self.next_id] = user
         self.next_id += 1
-        
+
         return user
 
     async def get_user(self, user_id: int) -> User | None:
@@ -148,6 +155,7 @@ app = Zenith(debug=True)
 # TEST ENDPOINTS
 # ============================================================================
 
+
 @app.get("/")
 async def root():
     """Public endpoint for basic testing."""
@@ -156,32 +164,30 @@ async def root():
         "timestamp": datetime.utcnow().isoformat(),
         "endpoints": {
             "GET /users/{user_id}": "Get user (protected)",
-            "POST /users": "Create user (protected)",  
+            "POST /users": "Create user (protected)",
             "GET /admin/users": "List users (admin only)",
-            "POST /api/slow": "Slow endpoint for performance testing"
-        }
+            "POST /api/slow": "Slow endpoint for performance testing",
+        },
     }
 
 
 @app.get("/users/{user_id}")
 async def get_user(
-    user_id: int,
-    current_user: Auth = JWTAuth(),
-    users: UserService = Context()
+    user_id: int, current_user: Auth = Auth(), users: UserService = Context()
 ) -> User:
     """Protected endpoint - requires authentication."""
     user = await users.get_user(user_id)
     if not user:
         raise ValueError(f"User {user_id} not found")
-    
+
     return user
 
 
 @app.post("/users")
 async def create_user(
     user_data: UserCreate,
-    current_user: Auth = JWTAuth(),
-    users: UserService = Context()
+    current_user: Auth = Auth(),
+    users: UserService = Context(),
 ) -> User:
     """Create user endpoint - requires authentication."""
     return await users.create_user(user_data)
@@ -189,8 +195,7 @@ async def create_user(
 
 @app.get("/admin/users")
 async def list_users(
-    current_user: Auth = JWTAuth(required_role="admin"),
-    users: UserService = Context()
+    current_user: Auth = Auth(scopes=["admin"]), users: UserService = Context()
 ) -> list[User]:
     """Admin-only endpoint."""
     return await users.list_users()
@@ -202,7 +207,7 @@ async def slow_endpoint(delay: float = 1.0):
     await asyncio.sleep(delay)
     return {
         "message": f"Completed after {delay}s",
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
@@ -214,6 +219,7 @@ async def slow_endpoint(delay: float = 1.0):
 # UNIT TESTS - BUSINESS LOGIC TESTING
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestUserService:
     """Test business logic using TestContext."""
@@ -222,14 +228,11 @@ class TestUserService:
         """Test successful user creation."""
         async with TestContext(UserService) as users:
             # Test data
-            user_data = UserCreate(
-                email="test@example.com",
-                name="Test User"
-            )
-            
+            user_data = UserCreate(email="test@example.com", name="Test User")
+
             # Create user
             user = await users.create_user(user_data)
-            
+
             # Assertions
             assert user.id == 1
             assert user.email == "test@example.com"
@@ -244,10 +247,10 @@ class TestUserService:
             # Create first user
             user_data = UserCreate(email="duplicate@example.com", name="User 1")
             await users.create_user(user_data)
-            
+
             # Try to create duplicate
             duplicate_data = UserCreate(email="duplicate@example.com", name="User 2")
-            
+
             with pytest.raises(ValueError, match="already exists"):
                 await users.create_user(duplicate_data)
 
@@ -257,10 +260,10 @@ class TestUserService:
             # Create user
             user_data = UserCreate(email="retrieve@example.com", name="Retrieve User")
             created_user = await users.create_user(user_data)
-            
+
             # Retrieve user
             retrieved_user = await users.get_user(created_user.id)
-            
+
             # Assertions
             assert retrieved_user is not None
             assert retrieved_user.id == created_user.id
@@ -277,15 +280,12 @@ class TestUserService:
         async with TestContext(UserService) as users:
             # Initially empty
             assert await users.get_user_count() == 0
-            
+
             # Create users
             for i in range(3):
-                user_data = UserCreate(
-                    email=f"user{i}@example.com",
-                    name=f"User {i}"
-                )
+                user_data = UserCreate(email=f"user{i}@example.com", name=f"User {i}")
                 await users.create_user(user_data)
-            
+
             # Check count
             assert await users.get_user_count() == 3
 
@@ -293,6 +293,7 @@ class TestUserService:
 # ============================================================================
 # API TESTS - ENDPOINT TESTING
 # ============================================================================
+
 
 @pytest.mark.asyncio
 class TestUserAPI:
@@ -302,7 +303,7 @@ class TestUserAPI:
         """Test public endpoint without authentication."""
         async with TestClient(app) as client:
             response = await client.get("/")
-            
+
             assert response.status_code == 200
             data = response.json()
             assert "Testing Patterns Demo" in data["message"]
@@ -312,7 +313,7 @@ class TestUserAPI:
         """Test protected endpoint without authentication."""
         async with TestClient(app) as client:
             response = await client.get("/users/1")
-            
+
             # Should be unauthorized
             assert response.status_code == 401
 
@@ -321,15 +322,15 @@ class TestUserAPI:
         async with TestClient(app) as client:
             # Set authentication token
             client.set_auth_token("user@example.com", role="user")
-            
+
             # First create a user in the context
             async with TestContext(UserService) as users:
                 user_data = UserCreate(email="api@example.com", name="API User")
                 created_user = await users.create_user(user_data)
-                
+
                 # Test endpoint
                 response = await client.get(f"/users/{created_user.id}")
-                
+
                 # Might fail due to context isolation, but demonstrates pattern
                 # In real app, you'd have shared database state
 
@@ -338,16 +339,16 @@ class TestUserAPI:
         async with TestClient(app) as client:
             # Authenticate as admin to create users
             client.set_auth_token("admin@example.com", role="admin")
-            
+
             # Create user via API
             user_data = {
                 "email": "newuser@example.com",
                 "name": "New User",
-                "role": "user"
+                "role": "user",
             }
-            
+
             response = await client.post("/users", json=user_data)
-            
+
             # Check response (may fail due to context isolation in this example)
             # In real app with shared database, this would work
             print(f"Create user response: {response.status_code}")
@@ -357,9 +358,9 @@ class TestUserAPI:
         async with TestClient(app) as client:
             # Authenticate as regular user
             client.set_auth_token("user@example.com", role="user")
-            
+
             response = await client.get("/admin/users")
-            
+
             # Should be forbidden
             assert response.status_code == 403
 
@@ -368,9 +369,9 @@ class TestUserAPI:
         async with TestClient(app) as client:
             # Authenticate as admin
             client.set_auth_token("admin@example.com", role="admin")
-            
+
             response = await client.get("/admin/users")
-            
+
             # Should succeed (though may be empty due to context isolation)
             assert response.status_code == 200
 
@@ -378,15 +379,12 @@ class TestUserAPI:
         """Test input validation errors."""
         async with TestClient(app) as client:
             client.set_auth_token("user@example.com", role="user")
-            
+
             # Invalid email format
-            invalid_user = {
-                "email": "not-an-email",
-                "name": "Test User"
-            }
-            
+            invalid_user = {"email": "not-an-email", "name": "Test User"}
+
             response = await client.post("/users", json=invalid_user)
-            
+
             # Should be validation error
             assert response.status_code == 422
 
@@ -395,6 +393,7 @@ class TestUserAPI:
 # AUTHENTICATION TESTING
 # ============================================================================
 
+
 @pytest.mark.asyncio
 class TestAuthentication:
     """Test authentication patterns and utilities."""
@@ -402,27 +401,22 @@ class TestAuthentication:
     def test_create_test_token(self):
         """Test JWT token creation for testing."""
         # Create user token
-        user_token = create_test_token(
-            email="user@example.com",
-            user_id=1,
-            role="user"
-        )
+        user_token = create_test_token(email="user@example.com", user_id=1, role="user")
         assert user_token is not None
         assert isinstance(user_token, str)
 
         # Create admin token with scopes
         admin_token = create_test_token(
-            email="admin@example.com", 
+            email="admin@example.com",
             user_id=2,
             role="admin",
-            scopes=["admin", "user", "read", "write"]
+            scopes=["admin", "user", "read", "write"],
         )
         assert admin_token is not None
 
         # Create token with custom expiration
         short_lived_token = create_test_token(
-            email="temp@example.com",
-            expires_delta=timedelta(minutes=5)
+            email="temp@example.com", expires_delta=timedelta(minutes=5)
         )
         assert short_lived_token is not None
 
@@ -436,9 +430,7 @@ class TestAuthentication:
 
         # Custom test user
         admin = create_test_user(
-            email="admin@test.com",
-            name="Test Admin",
-            role="admin"
+            email="admin@test.com", name="Test Admin", role="admin"
         )
         assert admin["email"] == "admin@test.com"
         assert admin["name"] == "Test Admin"
@@ -448,7 +440,7 @@ class TestAuthentication:
         """Test authentication mocking."""
         # Mock authentication context
         with mock_auth(user_id=123, email="mock@example.com", role="admin"):
-            # In this context, any JWTAuth() dependency would return the mocked user
+            # In this context, any Auth() dependency would return the mocked user
             # This is useful for testing business logic without dealing with tokens
             pass
 
@@ -456,6 +448,7 @@ class TestAuthentication:
 # ============================================================================
 # PERFORMANCE TESTING
 # ============================================================================
+
 
 @pytest.mark.asyncio
 class TestPerformance:
@@ -465,11 +458,11 @@ class TestPerformance:
         """Test endpoint response time."""
         async with TestClient(app) as client:
             start_time = time.time()
-            
+
             response = await client.get("/")
-            
+
             duration = time.time() - start_time
-            
+
             # Assert response time is reasonable
             assert response.status_code == 200
             assert duration < 1.0  # Should respond within 1 second
@@ -479,11 +472,11 @@ class TestPerformance:
         async with TestClient(app) as client:
             delay = 0.5
             start_time = time.time()
-            
+
             response = await client.post("/api/slow", json={"delay": delay})
-            
+
             actual_duration = time.time() - start_time
-            
+
             # Should take at least the delay time
             assert response.status_code == 200
             assert actual_duration >= delay
@@ -497,15 +490,15 @@ class TestPerformance:
             for _ in range(5):
                 task = client.get("/")
                 tasks.append(task)
-            
+
             start_time = time.time()
             responses = await asyncio.gather(*tasks)
             duration = time.time() - start_time
-            
+
             # All requests should succeed
             for response in responses:
                 assert response.status_code == 200
-            
+
             # Should handle concurrently (not take 5x longer than single request)
             assert duration < 2.0
 
@@ -515,31 +508,34 @@ class TestPerformance:
             request_count = 10
             success_count = 0
             total_time = 0
-            
+
             for i in range(request_count):
                 start = time.time()
                 response = await client.get("/")
                 end = time.time()
-                
+
                 if response.status_code == 200:
                     success_count += 1
-                
-                total_time += (end - start)
-            
+
+                total_time += end - start
+
             # Calculate metrics
             success_rate = success_count / request_count * 100
             avg_response_time = total_time / request_count
-            
+
             # Assertions
             assert success_rate >= 95  # At least 95% success rate
             assert avg_response_time < 0.1  # Average response time under 100ms
-            
-            print(f"Load test results: {success_rate}% success, {avg_response_time:.3f}s avg")
+
+            print(
+                f"Load test results: {success_rate}% success, {avg_response_time:.3f}s avg"
+            )
 
 
 # ============================================================================
 # ERROR HANDLING TESTING
 # ============================================================================
+
 
 @pytest.mark.asyncio
 class TestErrorHandling:
@@ -551,7 +547,7 @@ class TestErrorHandling:
             # Test empty name
             with pytest.raises(ValueError, match="Name cannot be empty"):
                 UserCreate(email="test@example.com", name="")
-            
+
             # Test invalid email (handled by Pydantic)
             with pytest.raises(ValueError, match="Invalid email format"):
                 UserCreate(email="not-an-email", name="Test User")
@@ -562,7 +558,7 @@ class TestErrorHandling:
             # Create user
             user_data = UserCreate(email="error@example.com", name="Error User")
             await users.create_user(user_data)
-            
+
             # Try to create duplicate
             with pytest.raises(ValueError, match="already exists"):
                 await users.create_user(user_data)
@@ -571,10 +567,10 @@ class TestErrorHandling:
         """Test API error response format."""
         async with TestClient(app) as client:
             client.set_auth_token("user@example.com", role="user")
-            
+
             # Request non-existent user
             response = await client.get("/users/999")
-            
+
             # Should return error response
             assert response.status_code == 400
             error_data = response.json()
@@ -586,39 +582,37 @@ class TestErrorHandling:
 # TEST FIXTURES AND FACTORIES
 # ============================================================================
 
+
 class UserFactory:
     """Factory for creating test users."""
-    
+
     @staticmethod
     def create_user_data(
-        email: str | None = None,
-        name: str | None = None,
-        role: str = "user"
+        email: str | None = None, name: str | None = None, role: str = "user"
     ) -> UserCreate:
         """Create user data for testing."""
         if email is None:
             email = f"user{random.randint(1000, 9999)}@example.com"
         if name is None:
             name = f"Test User {random.randint(100, 999)}"
-        
+
         return UserCreate(email=email, name=name, role=role)
-    
+
     @staticmethod
     async def create_users(count: int, users_service: UserService) -> list[User]:
         """Create multiple test users."""
         created_users = []
         for i in range(count):
             user_data = UserFactory.create_user_data(
-                email=f"batch_user_{i}@example.com",
-                name=f"Batch User {i}"
+                email=f"batch_user_{i}@example.com", name=f"Batch User {i}"
             )
             user = await users_service.create_user(user_data)
             created_users.append(user)
-        
+
         return created_users
 
 
-@pytest.mark.asyncio 
+@pytest.mark.asyncio
 class TestFactories:
     """Test factory patterns."""
 
@@ -628,7 +622,7 @@ class TestFactories:
             # Create single user
             user_data = UserFactory.create_user_data()
             user = await users.create_user(user_data)
-            
+
             assert user.id is not None
             assert "@example.com" in user.email
             assert "Test User" in user.name
@@ -638,7 +632,7 @@ class TestFactories:
         async with TestContext(UserService) as users:
             # Create multiple users
             created_users = await UserFactory.create_users(3, users)
-            
+
             assert len(created_users) == 3
             assert all(user.id is not None for user in created_users)
             assert len(set(user.email for user in created_users)) == 3  # All unique
@@ -648,39 +642,40 @@ class TestFactories:
 # DEMO MODE - Run as application
 # ============================================================================
 
+
 async def run_demo_tests():
     """Run a subset of tests for demo purposes."""
     print("🧪 Running Zenith Testing Patterns Demo\n")
-    
+
     # 1. Business Logic Testing Demo
     print("📋 Business Logic Testing:")
     async with TestContext(UserService) as users:
         user_data = UserCreate(email="demo@example.com", name="Demo User")
         user = await users.create_user(user_data)
         print(f"   ✅ Created user: {user.name} ({user.email})")
-        
+
         retrieved = await users.get_user(user.id)
         print(f"   ✅ Retrieved user: {retrieved.name}")
-        
+
         count = await users.get_user_count()
         print(f"   ✅ Total users: {count}")
-    
+
     # 2. API Testing Demo
     print("\n🌐 API Endpoint Testing:")
     async with TestClient(app) as client:
         # Test public endpoint
         response = await client.get("/")
         print(f"   ✅ Public endpoint: {response.status_code}")
-        
+
         # Test protected endpoint without auth
         response = await client.get("/users/1")
         print(f"   ✅ Protected without auth: {response.status_code} (Unauthorized)")
-        
+
         # Test with authentication
         client.set_auth_token("demo@example.com", role="admin")
         response = await client.get("/admin/users")
         print(f"   ✅ Admin endpoint with auth: {response.status_code}")
-    
+
     # 3. Performance Testing Demo
     print("\n⚡ Performance Testing:")
     async with TestClient(app) as client:
@@ -688,13 +683,13 @@ async def run_demo_tests():
         response = await client.get("/")
         duration = time.time() - start_time
         print(f"   ✅ Response time: {duration:.3f}s")
-        
+
         # Test slow endpoint
         start_time = time.time()
         response = await client.post("/api/slow", json={"delay": 0.2})
         duration = time.time() - start_time
         print(f"   ✅ Slow endpoint: {duration:.3f}s (expected ~0.2s)")
-    
+
     print("\n✨ Demo completed! Run with pytest for full test suite.")
 
 
@@ -705,6 +700,6 @@ if __name__ == "__main__":
     print("Run as: python examples/13-testing-patterns.py (demo mode)")
     print("Or: python -m pytest examples/13-testing-patterns.py -v (full tests)")
     print("=" * 50)
-    
+
     # Run in demo mode
     asyncio.run(run_demo_tests())

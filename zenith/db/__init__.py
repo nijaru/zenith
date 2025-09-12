@@ -138,11 +138,11 @@ from .migrations import MigrationManager, create_migration_manager
 
 # Import SQLModel integration
 from .sqlmodel import (
-    SQLModel,
     Field,
     Relationship,
-    ZenithSQLModel,
+    SQLModel,
     SQLModelRepository,
+    ZenithSQLModel,
     create_repository,
 )
 
@@ -152,13 +152,13 @@ __all__ = [
     "Base",
     "Database",
     "MigrationManager",
-    "async_sessionmaker", 
+    "async_sessionmaker",
     "create_async_engine",
     "create_migration_manager",
     # SQLModel components
     "SQLModel",
     "Field",
-    "Relationship", 
+    "Relationship",
     "ZenithSQLModel",
     "SQLModelRepository",
     "create_repository",

@@ -18,7 +18,7 @@ logger = logging.getLogger("zenith.jobs.worker")
 class Worker:
     """
     Background job worker.
-    
+
     Features:
     - Async job execution
     - Timeout handling
@@ -26,12 +26,13 @@ class Worker:
     - Error capture and retry logic
     - Resource cleanup
     """
-    __slots__ = ('queue', 'jobs', 'running', 'current_job')
+
+    __slots__ = ("current_job", "jobs", "queue", "running")
 
     def __init__(self, queue: JobQueue, jobs: dict[str, Callable]):
         """
         Initialize worker.
-        
+
         Args:
             queue: Job queue instance
             jobs: Dictionary of registered job functions
@@ -46,6 +47,7 @@ class Worker:
 
     def _setup_signal_handlers(self):
         """Setup signal handlers for graceful shutdown."""
+
         def signal_handler(signum, frame):
             logger.info(f"Received signal {signum}, shutting down gracefully...")
             self.stop()
@@ -56,7 +58,7 @@ class Worker:
     async def process_jobs(self) -> None:
         """
         Main job processing loop.
-        
+
         Continuously polls for jobs and executes them until stopped.
         """
         self.running = True
@@ -84,7 +86,7 @@ class Worker:
     async def _execute_job(self, job_data: dict) -> None:
         """
         Execute a single job.
-        
+
         Args:
             job_data: Job information from queue
         """
@@ -104,8 +106,7 @@ class Worker:
             timeout = job_data.get("timeout", 300)
 
             result = await asyncio.wait_for(
-                job_func(*job_data["args"], **job_data["kwargs"]),
-                timeout=timeout
+                job_func(*job_data["args"], **job_data["kwargs"]), timeout=timeout
             )
 
             # Mark as completed
@@ -132,7 +133,9 @@ class Worker:
 
         # If currently executing a job, let it finish gracefully
         if self.current_job:
-            logger.info(f"Waiting for current job {self.current_job['id']} to complete...")
+            logger.info(
+                f"Waiting for current job {self.current_job['id']} to complete..."
+            )
 
     async def health_check(self) -> dict:
         """Get worker health information."""

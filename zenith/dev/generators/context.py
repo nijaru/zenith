@@ -7,10 +7,10 @@ from .base import CodeGenerator
 
 class ContextGenerator(CodeGenerator):
     """Generate business logic context."""
-    
+
     def generate(self) -> dict[str, str]:
-        model_name = self.options.get('model', self.class_name)
-        
+        model_name = self.options.get("model", self.class_name)
+
         code = f'''"""
 {self.class_name} business logic.
 
@@ -77,5 +77,5 @@ class {self.class_name}Context(Context):
         await self.db.commit()
         return True
 '''
-        
+
         return {f"contexts/{self.variable_name}_context.py": code}

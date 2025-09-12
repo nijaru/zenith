@@ -8,11 +8,9 @@ Demonstrates:
 - Connection tracking and broadcasting
 """
 
-import json
 from datetime import datetime
-from typing import Dict
 
-from zenith import Zenith, WebSocket, WebSocketManager, WebSocketDisconnect
+from zenith import WebSocket, WebSocketDisconnect, WebSocketManager, Zenith
 
 # Create app
 app = Zenith()
@@ -21,7 +19,7 @@ app = Zenith()
 chat_manager = WebSocketManager()
 
 # Store chat history (in production, use database)
-chat_history: Dict[str, list] = {"general": []}
+chat_history: dict[str, list] = {"general": []}
 
 
 @app.websocket("/ws/{room_id}")
@@ -29,34 +27,36 @@ async def websocket_chat(websocket: WebSocket):
     """WebSocket endpoint for chat rooms."""
     room_id = websocket.path_params.get("room_id", "general")
     user_name = websocket.query_params.get("name", "Anonymous")
-    
+
     # Store user info on websocket
     websocket.user_name = user_name
     websocket.room_id = room_id
-    
+
     # Initialize room history if needed
     if room_id not in chat_history:
         chat_history[room_id] = []
-    
+
     try:
         # Connect user to room
         await chat_manager.connect(websocket, room_id)
-        
+
         # Send welcome message and recent history
-        await websocket.send_json({
-            "type": "system",
-            "message": f"Welcome to room '{room_id}', {user_name}!",
-            "timestamp": datetime.now().isoformat()
-        })
-        
+        await websocket.send_json(
+            {
+                "type": "system",
+                "message": f"Welcome to room '{room_id}', {user_name}!",
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+
         # Send recent chat history (last 10 messages)
         for message in chat_history[room_id][-10:]:
             await websocket.send_json(message)
-        
+
         # Listen for messages
         while True:
             data = await websocket.receive_json()
-            
+
             # Process different message types
             if data.get("type") == "chat":
                 # Create chat message
@@ -65,34 +65,36 @@ async def websocket_chat(websocket: WebSocket):
                     "user": user_name,
                     "message": data.get("message", ""),
                     "room": room_id,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
                 }
-                
+
                 # Store in history
                 chat_history[room_id].append(message)
-                
+
                 # Broadcast to all users in room
                 await chat_manager.broadcast_to_room(room_id, message)
-                
+
             elif data.get("type") == "typing":
                 # Broadcast typing indicator (don't store in history)
                 typing_message = {
                     "type": "typing",
                     "user": user_name,
                     "room": room_id,
-                    "typing": data.get("typing", False)
+                    "typing": data.get("typing", False),
                 }
-                await chat_manager.broadcast_to_room(room_id, typing_message, exclude=websocket)
-    
+                await chat_manager.broadcast_to_room(
+                    room_id, typing_message, exclude=websocket
+                )
+
     except WebSocketDisconnect:
         # User disconnected
         await chat_manager.disconnect(websocket, room_id)
-        
+
         # Notify room
         leave_message = {
             "type": "system",
             "message": f"{user_name} left the room",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
         await chat_manager.broadcast_to_room(room_id, leave_message)
 
@@ -242,17 +244,19 @@ async def get_rooms():
     """Get list of active chat rooms."""
     rooms = chat_manager.get_rooms()
     room_info = []
-    
+
     for room in rooms:
-        room_info.append({
-            "name": room,
-            "connections": chat_manager.get_room_connections(room),
-            "messages": len(chat_history.get(room, []))
-        })
-    
+        room_info.append(
+            {
+                "name": room,
+                "connections": chat_manager.get_room_connections(room),
+                "messages": len(chat_history.get(room, [])),
+            }
+        )
+
     return {
         "rooms": room_info,
-        "total_connections": chat_manager.get_total_connections()
+        "total_connections": chat_manager.get_total_connections(),
     }
 
 
@@ -260,11 +264,7 @@ async def get_rooms():
 async def get_room_history(room_id: str, limit: int = 50):
     """Get chat history for a room."""
     messages = chat_history.get(room_id, [])
-    return {
-        "room": room_id,
-        "messages": messages[-limit:],
-        "total": len(messages)
-    }
+    return {"room": room_id, "messages": messages[-limit:], "total": len(messages)}
 
 
 @app.get("/health")
@@ -273,12 +273,13 @@ async def health():
         "status": "healthy",
         "service": "websocket-chat",
         "active_rooms": len(chat_manager.get_rooms()),
-        "total_connections": chat_manager.get_total_connections()
+        "total_connections": chat_manager.get_total_connections(),
     }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     print("🚀 WebSocket Chat Server")
     print("Open your browser to: http://localhost:8007")
     print("API endpoints:")

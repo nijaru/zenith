@@ -344,7 +344,8 @@ class CSRFMiddleware:
             return token
 
         # Try form data for POST requests
-        if request.method == "POST":
+        from zenith.core.patterns import HTTP_POST
+        if request.method == HTTP_POST:
             try:
                 form_data = await request.form()
                 token = form_data.get(self.token_name)

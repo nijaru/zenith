@@ -7,57 +7,57 @@ from .base import CodeGenerator
 
 class ModelGenerator(CodeGenerator):
     """Generate SQLModel model."""
-    
+
     def generate(self) -> dict[str, str]:
-        fields = self.options.get('fields', {})
-        
+        fields = self.options.get("fields", {})
+
         # Build field definitions
         field_defs = []
-        imports = {'from zenith.db import SQLModel, Field'}
-        
+        imports = {"from zenith.db import SQLModel, Field"}
+
         for field_name, field_type in fields.items():
             # Map simple types to Python types
             type_map = {
-                'str': 'str',
-                'string': 'str',
-                'int': 'int',
-                'integer': 'int',
-                'float': 'float',
-                'bool': 'bool',
-                'boolean': 'bool',
-                'datetime': 'datetime',
-                'date': 'date',
-                'json': 'dict',
-                'text': 'str',
+                "str": "str",
+                "string": "str",
+                "int": "int",
+                "integer": "int",
+                "float": "float",
+                "bool": "bool",
+                "boolean": "bool",
+                "datetime": "datetime",
+                "date": "date",
+                "json": "dict",
+                "text": "str",
             }
-            
+
             # Check for optional first
-            is_optional = field_type.endswith('?')
+            is_optional = field_type.endswith("?")
             if is_optional:
                 field_type = field_type[:-1]
-            
-            py_type = type_map.get(field_type.lower(), 'str')
-            
+
+            py_type = type_map.get(field_type.lower(), "str")
+
             # Add imports for special types
-            if py_type == 'datetime':
-                imports.add('from datetime import datetime')
-            elif py_type == 'date':
-                imports.add('from datetime import date')
-            
+            if py_type == "datetime":
+                imports.add("from datetime import datetime")
+            elif py_type == "date":
+                imports.add("from datetime import date")
+
             # Apply optional if needed
             if is_optional:
                 py_type = f"{py_type} | None"
-            
+
             field_defs.append(f"    {field_name}: {py_type}")
-        
+
         # Generate model code
-        imports_str = '\n'.join(sorted(imports))
-        fields_str = '\n'.join(field_defs) if field_defs else '    pass'
-        
+        imports_str = "\n".join(sorted(imports))
+        fields_str = "\n".join(field_defs) if field_defs else "    pass"
+
         # Add datetime import if we have created_at/updated_at
-        if 'from datetime import datetime' not in imports_str:
+        if "from datetime import datetime" not in imports_str:
             imports_str = f"from datetime import datetime\n{imports_str}"
-        
+
         code = f'''"""
 {self.class_name} model.
 
@@ -81,5 +81,5 @@ class {self.class_name}(SQLModel, table=True):
         sa_column_kwargs={{"onupdate": datetime.utcnow}}
     )
 '''
-        
+
         return {f"models/{self.variable_name}.py": code}

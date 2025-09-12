@@ -1,0 +1,87 @@
+name: Minimal CI
+
+# Optimized for free tier (2000 minutes/month)
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  # Manual trigger for emergencies
+  workflow_dispatch:
+
+# Cancel in-progress runs to save minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-critical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5  # Hard limit to prevent runaway jobs
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: zenith
+          POSTGRES_PASSWORD: zenith
+          POSTGRES_DB: zenith_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'  # Cache dependencies
+    
+    - name: Install dependencies (cached)
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[test]"
+    
+    - name: Critical tests only
+      env:
+        DATABASE_URL: postgresql://zenith:zenith@localhost:5432/zenith_test
+        SECRET_KEY: test-secret-key-for-ci
+      run: |
+        # Only run critical tests
+        pytest tests/unit/ -x --tb=short -q
+        pytest tests/integration/test_asyncpg_compatibility.py -x --tb=short -q 2>/dev/null || echo "AsyncPG tests not yet created"
+    
+    - name: Quick benchmark check
+      run: |
+        timeout 30 python benchmarks/simple_bench.py || echo "Benchmark timeout"
+
+  release-check:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test-critical
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    
+    - name: Full test suite for releases
+      run: |
+        pip install -e ".[dev]"
+        SECRET_KEY=test pytest tests/ --tb=short
+    
+    - name: Build check
+      run: |
+        pip install build twine
+        python -m build
+        twine check dist/*

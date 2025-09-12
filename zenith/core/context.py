@@ -16,7 +16,8 @@ from zenith.core.container import DIContainer
 
 class EventBus:
     """Simple event bus for context communication."""
-    __slots__ = ('_listeners', '_async_listeners')
+
+    __slots__ = ("_async_listeners", "_listeners")
 
     def __init__(self):
         self._listeners: dict[str, list[Callable]] = {}
@@ -60,7 +61,8 @@ class EventBus:
 
 class Context(ABC):
     """Base class for business contexts."""
-    __slots__ = ('container', 'events', '_initialized')
+
+    __slots__ = ("_initialized", "container", "events")
 
     def __init__(self, container: DIContainer):
         self.container = container
@@ -97,7 +99,8 @@ class Context(ABC):
 
 class ContextRegistry:
     """Registry for managing application contexts."""
-    __slots__ = ('container', '_contexts', '_context_classes')
+
+    __slots__ = ("_context_classes", "_contexts", "container")
 
     def __init__(self, container: DIContainer):
         self.container = container
