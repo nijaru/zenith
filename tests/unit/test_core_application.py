@@ -9,9 +9,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from zenith import Zenith
+from zenith import Service, Zenith
 from zenith.auth import configure_auth
-from zenith import Service
 from zenith.core.routing import Context
 from zenith.testing import TestClient
 
@@ -72,7 +71,7 @@ class TestZenithApplication:
 
         # Get initial middleware count (auto-added middleware)
         initial_count = len(app.middleware)
-        
+
         app.add_middleware(middleware1, arg1="test")
         app.add_middleware(middleware2, arg2="test2")
 
@@ -80,6 +79,7 @@ class TestZenithApplication:
         assert len(app.middleware) == initial_count + 2
         # Middleware is stored as Starlette Middleware objects
         from starlette.middleware import Middleware
+
         assert isinstance(app.middleware[-2], Middleware)
         assert isinstance(app.middleware[-1], Middleware)
         # New middleware added at the end
@@ -91,7 +91,7 @@ class TestZenithApplication:
     def test_cors_middleware_integration(self):
         """Test CORS middleware integration."""
         app = Zenith(debug=True)
-        
+
         # Get initial middleware count
         initial_count = len(app.middleware)
 
@@ -104,6 +104,7 @@ class TestZenithApplication:
         # Should have added CORS middleware
         assert len(app.middleware) == initial_count + 1
         from starlette.middleware import Middleware
+
         assert isinstance(app.middleware[-1], Middleware)
         middleware_class = app.middleware[-1].cls
         assert "CORS" in middleware_class.__name__
@@ -111,13 +112,15 @@ class TestZenithApplication:
     def test_security_headers_integration(self):
         """Test security headers middleware integration."""
         app = Zenith(debug=True)
-        
+
         # Get initial middleware count
         initial_count = len(app.middleware)
 
         # Test development config (replaces existing SecurityHeaders)
         app.add_security_headers(strict=False)
-        assert len(app.middleware) == initial_count  # Same count - replacement not addition
+        assert (
+            len(app.middleware) == initial_count
+        )  # Same count - replacement not addition
 
         # Test strict config (replaces existing again)
         app.add_security_headers(strict=True)
@@ -126,7 +129,7 @@ class TestZenithApplication:
     def test_exception_handling_integration(self):
         """Test exception handling middleware integration."""
         app = Zenith(debug=True)
-        
+
         # Get initial middleware count
         initial_count = len(app.middleware)
 
@@ -135,6 +138,7 @@ class TestZenithApplication:
         # Should have added exception middleware
         assert len(app.middleware) == initial_count + 1
         from starlette.middleware import Middleware
+
         assert isinstance(app.middleware[-1], Middleware)
         middleware_class = app.middleware[-1].cls
         assert "Exception" in middleware_class.__name__
@@ -207,15 +211,21 @@ class TestRoutingIntegration:
         """Test basic HTTP method route registration."""
         # Use a longer secret key to avoid CSRF being disabled
         import os
-        os.environ['SECRET_KEY'] = 'test-secret-key-that-is-long-enough-for-csrf-testing'
-        
+
+        os.environ["SECRET_KEY"] = (
+            "test-secret-key-that-is-long-enough-for-csrf-testing"
+        )
+
         app = Zenith(debug=True)
-        
+
         # Remove CSRF middleware for testing POST requests
         # (in production, CSRF should be properly handled with tokens)
-        from starlette.middleware import Middleware
-        app.middleware = [m for m in app.middleware 
-                         if not (hasattr(m, 'cls') and 'CSRF' in str(m.cls))]
+
+        app.middleware = [
+            m
+            for m in app.middleware
+            if not (hasattr(m, "cls") and "CSRF" in str(m.cls))
+        ]
 
         @app.get("/users")
         async def get_users():
@@ -294,7 +304,8 @@ class TestApplicationConfiguration:
 
         # Production mode (with proper secret key)
         import os
-        os.environ['SECRET_KEY'] = 'test-secret-key-that-is-long-enough-for-production'
+
+        os.environ["SECRET_KEY"] = "test-secret-key-that-is-long-enough-for-production"
         prod_app = Zenith(debug=False)
         initial_prod_count = len(prod_app.middleware)
         prod_app.add_exception_handling()

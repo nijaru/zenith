@@ -7,15 +7,15 @@ from .base import CodeGenerator
 
 class APIGenerator(CodeGenerator):
     """Generate API routes with CRUD operations."""
-    
+
     def generate(self) -> dict[str, str]:
-        model_name = self.options.get('model', self.class_name)
+        model_name = self.options.get("model", self.class_name)
         context_name = f"{self.class_name}Context"
-        
+
         # Generate request/response models
         create_model = f"{model_name}Create"
         update_model = f"{model_name}Update"
-        
+
         code = f'''"""
 {self.class_name} API routes.
 
@@ -104,5 +104,5 @@ async def delete_{self.variable_name}(
     if not deleted:
         raise HTTPException(404, "{model_name} not found")
 '''
-        
+
         return {f"routes/{self.variable_name}_api.py": code}

@@ -3,7 +3,7 @@ Rate limiting middleware for Zenith applications.
 
 Provides configurable request rate limiting with support for:
 - Per-IP rate limiting
-- Per-user rate limiting  
+- Per-user rate limiting
 - Custom rate limits per endpoint
 - Multiple time windows (per minute, per hour, per day)
 - Redis-backed storage for distributed systems
@@ -13,7 +13,6 @@ Provides configurable request rate limiting with support for:
 import asyncio
 import logging
 import time
-from collections.abc import Callable
 from dataclasses import dataclass
 
 from starlette.requests import Request
@@ -24,11 +23,12 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 logger = logging.getLogger("zenith.middleware.rate_limit")
 
 
-@dataclass
+@dataclass(slots=True)
 class RateLimit:
     """Rate limit configuration."""
+
     requests: int  # Number of requests allowed
-    window: int    # Time window in seconds
+    window: int  # Time window in seconds
     per: str = "ip"  # Rate limit per: 'ip', 'user', 'endpoint'
 
 
@@ -50,7 +50,14 @@ class RateLimitStorage:
 
 class MemoryRateLimitStorage(RateLimitStorage):
     """In-memory rate limit storage with automatic cleanup."""
-    __slots__ = ('_storage', '_lock', '_cleanup_interval', '_max_entries', '_cleanup_task')
+
+    __slots__ = (
+        "_cleanup_interval",
+        "_cleanup_task",
+        "_lock",
+        "_max_entries",
+        "_storage",
+    )
 
     def __init__(self, cleanup_interval: int = 300, max_entries: int = 10000):
         self._storage: dict[str, tuple[int, float]] = {}
@@ -122,7 +129,8 @@ class MemoryRateLimitStorage(RateLimitStorage):
         """Remove expired entries from storage."""
         current_time = time.time()
         expired_keys = [
-            key for key, (_, expires_at) in self._storage.items()
+            key
+            for key, (_, expires_at) in self._storage.items()
             if current_time > expires_at
         ]
         for key in expired_keys:
@@ -142,7 +150,8 @@ class MemoryRateLimitStorage(RateLimitStorage):
             "total_entries": len(self._storage),
             "max_entries": self._max_entries,
             "cleanup_interval": self._cleanup_interval,
-            "cleanup_task_running": self._cleanup_task is not None and not self._cleanup_task.done()
+            "cleanup_task_running": self._cleanup_task is not None
+            and not self._cleanup_task.done(),
         }
 
 
@@ -182,7 +191,7 @@ class RedisRateLimitStorage(RateLimitStorage):
 
 class RateLimitConfig:
     """Configuration for rate limiting middleware."""
-    
+
     def __init__(
         self,
         default_limits: list[RateLimit] | None = None,
@@ -194,7 +203,7 @@ class RateLimitConfig:
     ):
         self.default_limits = default_limits or [
             RateLimit(requests=1000, window=3600, per="ip"),  # 1000/hour
-            RateLimit(requests=100, window=60, per="ip"),     # 100/minute
+            RateLimit(requests=100, window=60, per="ip"),  # 100/minute
         ]
         self.storage = storage or MemoryRateLimitStorage()
         self.exempt_paths = exempt_paths or []
@@ -206,7 +215,7 @@ class RateLimitConfig:
 class RateLimitMiddleware:
     """
     Rate limiting middleware with configurable limits and storage backends.
-    
+
     Features:
     - Multiple rate limits per application
     - Per-IP, per-user, or per-endpoint limiting
@@ -243,18 +252,22 @@ class RateLimitMiddleware:
             # Use individual parameters with defaults
             self.default_limits = default_limits or [
                 RateLimit(requests=1000, window=3600, per="ip"),  # 1000/hour
-                RateLimit(requests=100, window=60, per="ip"),     # 100/minute
+                RateLimit(requests=100, window=60, per="ip"),  # 100/minute
             ]
             self.storage = storage or MemoryRateLimitStorage()
             self.exempt_paths = set(exempt_paths) if exempt_paths is not None else set()
-            self.exempt_ips = set(exempt_ips) if exempt_ips is not None else {"127.0.0.1", "::1"}
+            self.exempt_ips = (
+                set(exempt_ips) if exempt_ips is not None else {"127.0.0.1", "::1"}
+            )
             self.error_message = error_message
             self.include_headers = include_headers
 
         # Per-endpoint limits
         self.endpoint_limits: dict[str, list[RateLimit]] = {}
 
-        logger.info(f"Rate limiting enabled with {len(self.default_limits)} default limits")
+        logger.info(
+            f"Rate limiting enabled with {len(self.default_limits)} default limits"
+        )
 
     def add_endpoint_limit(self, path: str, limits: list[RateLimit]) -> None:
         """Add custom rate limits for specific endpoint."""
@@ -288,6 +301,7 @@ class RateLimitMiddleware:
         if auth_header.startswith("Bearer "):
             try:
                 from zenith.auth import extract_user_from_token
+
                 token = auth_header.split(" ", 1)[1]
                 user = extract_user_from_token(token)
                 if user:
@@ -347,13 +361,11 @@ class RateLimitMiddleware:
         return self.default_limits
 
     async def _check_rate_limits(
-        self,
-        request: Request,
-        limits: list[RateLimit]
+        self, request: Request, limits: list[RateLimit]
     ) -> tuple[bool, RateLimit | None, int, int]:
         """
         Check all applicable rate limits.
-        
+
         Returns:
             (allowed, violated_limit, current_count, limit_count)
         """
@@ -371,18 +383,22 @@ class RateLimitMiddleware:
         rate_limit: RateLimit,
         current_count: int,
         limit_count: int,
-        request: Request
+        request: Request,
     ) -> Response:
         """Create rate limit exceeded response."""
         headers = {}
 
         if self.include_headers:
-            headers.update({
-                "X-RateLimit-Limit": str(rate_limit.requests),
-                "X-RateLimit-Window": str(rate_limit.window),
-                "X-RateLimit-Remaining": str(max(0, rate_limit.requests - current_count)),
-                "Retry-After": str(rate_limit.window),
-            })
+            headers.update(
+                {
+                    "X-RateLimit-Limit": str(rate_limit.requests),
+                    "X-RateLimit-Window": str(rate_limit.window),
+                    "X-RateLimit-Remaining": str(
+                        max(0, rate_limit.requests - current_count)
+                    ),
+                    "Retry-After": str(rate_limit.window),
+                }
+            )
 
         return JSONResponse(
             status_code=HTTP_429_TOO_MANY_REQUESTS,
@@ -411,9 +427,12 @@ class RateLimitMiddleware:
         limits = self._get_applicable_limits_asgi(scope)
 
         # Check rate limits
-        allowed, violated_limit, current_count, limit_count = await self._check_rate_limits_asgi(
-            scope, limits
-        )
+        (
+            allowed,
+            violated_limit,
+            current_count,
+            limit_count,
+        ) = await self._check_rate_limits_asgi(scope, limits)
 
         if not allowed:
             client_ip = self._get_client_ip_asgi(scope)
@@ -430,20 +449,37 @@ class RateLimitMiddleware:
 
         # Wrap send to add rate limit headers to successful responses
         async def send_wrapper(message):
-            if message["type"] == "http.response.start" and self.include_headers and limits:
+            if (
+                message["type"] == "http.response.start"
+                and self.include_headers
+                and limits
+            ):
                 # Use the most restrictive limit for headers
                 most_restrictive = min(limits, key=lambda l: l.requests / l.window)
                 key = self._get_rate_limit_key_asgi(scope, most_restrictive)
                 current = await self.storage.get_count(key)
 
                 response_headers = list(message.get("headers", []))
-                response_headers.extend([
-                    (b"x-ratelimit-limit", str(most_restrictive.requests).encode("latin-1")),
-                    (b"x-ratelimit-window", str(most_restrictive.window).encode("latin-1")),
-                    (b"x-ratelimit-remaining", str(max(0, most_restrictive.requests - current)).encode("latin-1")),
-                ])
+                response_headers.extend(
+                    [
+                        (
+                            b"x-ratelimit-limit",
+                            str(most_restrictive.requests).encode("latin-1"),
+                        ),
+                        (
+                            b"x-ratelimit-window",
+                            str(most_restrictive.window).encode("latin-1"),
+                        ),
+                        (
+                            b"x-ratelimit-remaining",
+                            str(max(0, most_restrictive.requests - current)).encode(
+                                "latin-1"
+                            ),
+                        ),
+                    ]
+                )
                 message["headers"] = response_headers
-            
+
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
@@ -452,7 +488,7 @@ class RateLimitMiddleware:
     def _get_client_ip_asgi(self, scope: Scope) -> str:
         """Extract client IP address from ASGI scope."""
         headers = dict(scope.get("headers", []))
-        
+
         # Check X-Forwarded-For header first (for proxies)
         forwarded_for_bytes = headers.get(b"x-forwarded-for")
         if forwarded_for_bytes:
@@ -485,6 +521,7 @@ class RateLimitMiddleware:
             if auth_header.startswith("Bearer "):
                 try:
                     from zenith.auth import extract_user_from_token
+
                     token = auth_header.split(" ", 1)[1]
                     user = extract_user_from_token(token)
                     if user:
@@ -544,13 +581,11 @@ class RateLimitMiddleware:
         return self.default_limits
 
     async def _check_rate_limits_asgi(
-        self,
-        scope: Scope,
-        limits: list[RateLimit]
+        self, scope: Scope, limits: list[RateLimit]
     ) -> tuple[bool, RateLimit | None, int, int]:
         """
         Check all applicable rate limits for ASGI requests.
-        
+
         Returns:
             (allowed, violated_limit, current_count, limit_count)
         """
@@ -564,22 +599,22 @@ class RateLimitMiddleware:
         return True, None, 0, 0
 
     def _create_error_response_asgi(
-        self,
-        rate_limit: RateLimit,
-        current_count: int,
-        limit_count: int,
-        scope: Scope
+        self, rate_limit: RateLimit, current_count: int, limit_count: int, scope: Scope
     ) -> Response:
         """Create rate limit exceeded response for ASGI requests."""
         headers = {}
 
         if self.include_headers:
-            headers.update({
-                "X-RateLimit-Limit": str(rate_limit.requests),
-                "X-RateLimit-Window": str(rate_limit.window),
-                "X-RateLimit-Remaining": str(max(0, rate_limit.requests - current_count)),
-                "Retry-After": str(rate_limit.window),
-            })
+            headers.update(
+                {
+                    "X-RateLimit-Limit": str(rate_limit.requests),
+                    "X-RateLimit-Window": str(rate_limit.window),
+                    "X-RateLimit-Remaining": str(
+                        max(0, rate_limit.requests - current_count)
+                    ),
+                    "Retry-After": str(rate_limit.window),
+                }
+            )
 
         return JSONResponse(
             status_code=HTTP_429_TOO_MANY_REQUESTS,
@@ -599,17 +634,17 @@ def create_rate_limiter(
     requests_per_minute: int = 100,
     requests_per_hour: int = 1000,
     storage: RateLimitStorage | None = None,
-    **kwargs
+    **kwargs,
 ) -> RateLimitMiddleware:
     """
     Create a rate limiter middleware with common defaults.
-    
+
     Args:
         requests_per_minute: Maximum requests per minute per IP address
-        requests_per_hour: Maximum requests per hour per IP address  
+        requests_per_hour: Maximum requests per hour per IP address
         storage: Storage backend for rate limit data (defaults to memory)
         **kwargs: Additional arguments passed to RateLimitMiddleware
-        
+
     Returns:
         Configured RateLimitMiddleware instance
     """
@@ -622,7 +657,7 @@ def create_rate_limiter(
         app=None,  # Will be set by Zenith
         default_limits=limits,
         storage=storage,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -630,17 +665,17 @@ def create_redis_rate_limiter(
     redis_client,
     requests_per_minute: int = 100,
     requests_per_hour: int = 1000,
-    **kwargs
+    **kwargs,
 ) -> RateLimitMiddleware:
     """
     Create a Redis-backed rate limiter middleware.
-    
+
     Args:
         redis_client: Redis client instance for persistent storage
         requests_per_minute: Maximum requests per minute per IP address
         requests_per_hour: Maximum requests per hour per IP address
         **kwargs: Additional arguments passed to RateLimitMiddleware
-        
+
     Returns:
         Configured RateLimitMiddleware instance with Redis storage
     """
@@ -649,5 +684,5 @@ def create_redis_rate_limiter(
         requests_per_minute=requests_per_minute,
         requests_per_hour=requests_per_hour,
         storage=storage,
-        **kwargs
+        **kwargs,
     )

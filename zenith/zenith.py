@@ -9,7 +9,6 @@ Combines the power of:
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -17,9 +16,8 @@ from uvicorn import run
 
 from zenith.core.application import Application
 from zenith.core.config import Config
-from zenith.core.context import Context
 from zenith.core.routing import Router
-from zenith.mixins import MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin
+from zenith.mixins import DocsMixin, MiddlewareMixin, RoutingMixin, ServicesMixin
 
 
 class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
@@ -55,22 +53,23 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         if enable_optimizations:
             try:
                 from zenith.optimizations import optimize_zenith
+
                 self._optimizations = optimize_zenith()
             except ImportError:
                 self._optimizations = []
         else:
             self._optimizations = []
-        
+
         # Initialize configuration
         self.config = config or Config.from_env()
-        
+
         # Handle explicit debug parameter
         if debug is not None:
             self.config.debug = debug
-            
+
         # Set up logger
         self.logger = logging.getLogger("zenith.application")
-        
+
         if debug is not None:
             self.config._debug_explicitly_set = True
         else:
@@ -111,43 +110,40 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
     def _add_essential_middleware(self) -> None:
         """Add essential middleware with performance-optimized defaults."""
         # Use performance-optimized middleware configuration by default
-        from zenith.performance_optimizations import PerformanceMiddlewareConfig
         from zenith.middleware import (
-            SecurityHeadersMiddleware,
-            RateLimitMiddleware, 
-            RequestLoggingMiddleware,
             CompressionMiddleware,
             ExceptionHandlerMiddleware,
+            RateLimitMiddleware,
             RequestIDMiddleware,
+            RequestLoggingMiddleware,
+            SecurityHeadersMiddleware,
         )
-        
+        from zenith.performance_optimizations import PerformanceMiddlewareConfig
+
         # Get optimized configuration (56% better performance than default)
         config = PerformanceMiddlewareConfig.api_optimized()
-        
+
         # 1. Exception handling (always first)
-        self.add_middleware(
-            ExceptionHandlerMiddleware,
-            debug=self.config.debug
-        )
-        
+        self.add_middleware(ExceptionHandlerMiddleware, debug=self.config.debug)
+
         # 2. Request ID tracking (early for all subsequent middleware/handlers)
         self.add_middleware(RequestIDMiddleware)
-        
+
         # Apply performance-optimized middleware stack in order:
         # (fastest middleware first, most expensive last for maximum performance)
-        
+
         # 3. Security headers (fast header additions)
-        self.add_middleware(SecurityHeadersMiddleware, config=config['security'])
-        
-        # 4. Rate limiting (fast memory/Redis operations) 
-        self.add_middleware(RateLimitMiddleware, default_limits=config['rate_limits'])
-        
+        self.add_middleware(SecurityHeadersMiddleware, config=config["security"])
+
+        # 4. Rate limiting (fast memory/Redis operations)
+        self.add_middleware(RateLimitMiddleware, default_limits=config["rate_limits"])
+
         # 5. Minimal logging (only if needed for performance)
-        if config['logging'].level <= 30:  # Only add if INFO or higher
-            self.add_middleware(RequestLoggingMiddleware, config=config['logging'])
-        
+        if config["logging"].level <= 30:  # Only add if INFO or higher
+            self.add_middleware(RequestLoggingMiddleware, config=config["logging"])
+
         # 6. Compression last (most expensive)
-        self.add_middleware(CompressionMiddleware, config=config['compression'])
+        self.add_middleware(CompressionMiddleware, config=config["compression"])
 
     def _setup_contexts(self) -> None:
         """Auto-register common contexts."""
@@ -156,55 +152,60 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
     def _setup_static_files(self) -> None:
         """Auto-configure static file serving with sensible defaults."""
-        import os
         from pathlib import Path
-        
+
         # Common static file directories to check
         static_dirs = [
-            ("static", "/static"),      # Most common
-            ("assets", "/assets"),      # Modern frontend
-            ("public", "/public"),      # Alternative
+            ("static", "/static"),  # Most common
+            ("assets", "/assets"),  # Modern frontend
+            ("public", "/public"),  # Alternative
         ]
-        
+
         for dir_name, url_path in static_dirs:
             static_path = Path(dir_name)
             if static_path.exists() and static_path.is_dir():
                 # Only mount if directory has files
                 if any(static_path.iterdir()):
                     self.mount_static(url_path, str(static_path))
-                    self.logger.info(f"Auto-mounted static files: {url_path} -> {static_path}")
-    
+                    self.logger.info(
+                        f"Auto-mounted static files: {url_path} -> {static_path}"
+                    )
+
     def _detect_environment(self) -> None:
         """Auto-detect development vs production environment."""
         import os
-        
+
         # Only auto-detect if debug wasn't explicitly set via constructor
-        if not hasattr(self.config, '_debug_explicitly_set') or not self.config._debug_explicitly_set:
-            
+        if (
+            not hasattr(self.config, "_debug_explicitly_set")
+            or not self.config._debug_explicitly_set
+        ):
             # Check if DEBUG environment variable was explicitly set
-            debug_env = os.getenv('DEBUG')
+            debug_env = os.getenv("DEBUG")
             if debug_env is not None:
                 # DEBUG was explicitly set in environment
                 mode = "development" if self.config.debug else "production"
                 self.logger.info(f"{mode.title()} mode (DEBUG env var)")
                 return
-            
+
             # Check other common environment indicators
             env_indicators = [
-                os.getenv('ENVIRONMENT', '').lower(),
-                os.getenv('ENV', '').lower(), 
-                os.getenv('FLASK_ENV', '').lower(),  # Common from Flask
-                os.getenv('NODE_ENV', '').lower(),   # Common from Node.js
+                os.getenv("ENVIRONMENT", "").lower(),
+                os.getenv("ENV", "").lower(),
+                os.getenv("FLASK_ENV", "").lower(),  # Common from Flask
+                os.getenv("NODE_ENV", "").lower(),  # Common from Node.js
             ]
-            
-            is_production = any(env in ['production', 'prod'] for env in env_indicators)
-            is_development = any(env in ['development', 'dev', 'debug'] for env in env_indicators)
-            
+
+            is_production = any(env in ["production", "prod"] for env in env_indicators)
+            is_development = any(
+                env in ["development", "dev", "debug"] for env in env_indicators
+            )
+
             if is_production:
                 self.config.debug = False
                 self.logger.info("Production mode detected")
             elif is_development:
-                self.config.debug = True  
+                self.config.debug = True
                 self.logger.info("Development mode detected")
             else:
                 # Default to development for ease of use (override the config default)
@@ -213,38 +214,43 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         else:
             mode = "development" if self.config.debug else "production"
             self.logger.info(f"{mode.title()} mode (explicit)")
-    
+
     def _add_health_endpoints(self) -> None:
         """Add health check endpoints."""
+
         # Add built-in health endpoints
         @self._app_router.get("/health")
         async def health_check():
             """Health check endpoint."""
             from zenith.web.health import health_endpoint
+
             return await health_endpoint(None)
-        
-        @self._app_router.get("/ready") 
+
+        @self._app_router.get("/ready")
         async def readiness_check():
             """Readiness check endpoint."""
             from zenith.web.health import readiness_endpoint
+
             return await readiness_endpoint(None)
-        
+
         @self._app_router.get("/live")
         async def liveness_check():
-            """Liveness check endpoint.""" 
+            """Liveness check endpoint."""
             from zenith.web.health import liveness_endpoint
+
             return await liveness_endpoint(None)
-    
+
     def _add_openapi_endpoints(
-        self, 
+        self,
         docs_url: str | None = None,
         redoc_url: str | None = None,
-        openapi_url: str = "/openapi.json"
+        openapi_url: str = "/openapi.json",
     ) -> None:
         """Add OpenAPI documentation endpoints."""
+        from starlette.responses import HTMLResponse, JSONResponse
+
         from zenith.openapi import generate_openapi_spec
-        from starlette.responses import JSONResponse, HTMLResponse
-        
+
         # Only register OpenAPI spec endpoint
         @self._app_router.get(openapi_url)
         async def openapi_spec():
@@ -253,17 +259,18 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             all_routes = []
             for router in self.routers:
                 all_routes.extend(router.routes)
-            
+
             spec = generate_openapi_spec(
                 routes=all_routes,
                 title=f"{self.__class__.__name__} API",
                 version="1.0.0",
-                description="API documentation generated by Zenith Framework"
+                description="API documentation generated by Zenith Framework",
             )
             return JSONResponse(spec)
-        
+
         # Only register Swagger UI if docs_url is provided
         if docs_url:
+
             @self._app_router.get(docs_url)
             async def swagger_ui():
                 """Swagger UI documentation."""
@@ -297,9 +304,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             </html>
             """
                 return HTMLResponse(html_content)
-        
+
         # Only register ReDoc if redoc_url is provided
         if redoc_url:
+
             @self._app_router.get(redoc_url)
             async def redoc():
                 """ReDoc documentation."""
@@ -322,31 +330,34 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             </html>
             """
                 return HTMLResponse(html_content)
-        
+
         # Add metrics endpoint (production only for security)
         if not self.config.debug:
             from starlette.responses import PlainTextResponse
-            
+
             @self._app_router.get("/metrics")
             async def metrics_endpoint():
                 """Prometheus metrics endpoint."""
                 from zenith.web.metrics import metrics_endpoint as get_metrics
-                content = await get_metrics()
-                return PlainTextResponse(content, media_type="text/plain; version=0.0.4")
 
+                content = await get_metrics()
+                return PlainTextResponse(
+                    content, media_type="text/plain; version=0.0.4"
+                )
 
     def on_event(self, event_type: str):
         """
         Decorator for registering event handlers.
-        
+
         Args:
             event_type: "startup" or "shutdown"
-            
+
         Example:
             @app.on_event("startup")
             async def startup_handler():
                 self.logger.info("Starting up!")
         """
+
         def decorator(func):
             if event_type == "startup":
                 self.app.add_startup_hook(func)
@@ -355,6 +366,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             else:
                 raise ValueError(f"Unknown event type: {event_type}")
             return func
+
         return decorator
 
     @asynccontextmanager
@@ -380,20 +392,20 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # Collect mount routes and sort them by specificity
         mount_routes = []
         spa_routes = []  # SPA routes (mounted at /) should go last
-        
+
         # Add static mounts (for mount_static() method) - these should come before SPAs
-        if hasattr(self, '_static_mounts'):
+        if hasattr(self, "_static_mounts"):
             mount_routes.extend(self._static_mounts)
-        
+
         # Add mount routes (for spa() and mount() methods)
-        if hasattr(self, '_mount_routes'):
+        if hasattr(self, "_mount_routes"):
             for route in self._mount_routes:
                 # Put SPA routes (mounted at root) at the end
-                if hasattr(route, 'path') and route.path in ('/', ''):
+                if hasattr(route, "path") and route.path in ("/", ""):
                     spa_routes.append(route)
                 else:
                     mount_routes.append(route)
-        
+
         # Add routes in order: API routes, static mounts, then SPA catch-all
         routes.extend(mount_routes)
         routes.extend(spa_routes)
@@ -401,32 +413,37 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # Create custom exception handlers for JSON responses
         from starlette.exceptions import HTTPException
         from starlette.requests import Request
+
         from zenith.web.responses import OptimizedJSONResponse
-        
-        async def not_found_handler(request: Request, exc: HTTPException) -> OptimizedJSONResponse:
+
+        async def not_found_handler(
+            request: Request, exc: HTTPException
+        ) -> OptimizedJSONResponse:
             """Return JSON for 404 errors."""
             return OptimizedJSONResponse(
                 content={
                     "error": "NotFound",
                     "message": "The requested resource was not found",
                     "status_code": 404,
-                    "path": str(request.url.path)
+                    "path": str(request.url.path),
                 },
-                status_code=404
+                status_code=404,
             )
-        
-        async def method_not_allowed_handler(request: Request, exc: HTTPException) -> OptimizedJSONResponse:
+
+        async def method_not_allowed_handler(
+            request: Request, exc: HTTPException
+        ) -> OptimizedJSONResponse:
             """Return JSON for 405 errors."""
             return OptimizedJSONResponse(
                 content={
                     "error": "MethodNotAllowed",
                     "message": f"Method {request.method} not allowed for this endpoint",
                     "status_code": 405,
-                    "path": str(request.url.path)
+                    "path": str(request.url.path),
                 },
-                status_code=405
+                status_code=405,
             )
-        
+
         exception_handlers = {
             404: not_found_handler,
             405: method_not_allowed_handler,
@@ -472,6 +489,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             if port == 443 or self.config.port == 443:
                 try:
                     import aioquic
+
                     protocol = "http3"
                     self.logger.info("Auto-selected HTTP/3 for production")
                 except ImportError:
@@ -479,7 +497,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                     self.logger.info("HTTP/3 not available, using HTTP/2")
             else:
                 protocol = "http"
-        
+
         if protocol == "http3":
             self.run_http3(host=host, port=port, **kwargs)
         else:
@@ -506,7 +524,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         HTTP/3 Benefits:
         - 30-50% faster connection establishment
-        - Better performance on lossy networks  
+        - Better performance on lossy networks
         - No head-of-line blocking
         - Connection migration support
         - Built-in encryption
@@ -523,20 +541,20 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             RuntimeError: If HTTP/3 support is not available
         """
         import asyncio
-        
+
         try:
             from zenith.http3 import create_http3_server
         except ImportError:
             raise RuntimeError(
                 "HTTP/3 support requires 'aioquic'. Install with: pip install zenith-web[http3]"
             )
-        
+
         # Use standard HTTPS port for HTTP/3
         actual_port = port or 443
         actual_host = host or self.config.host
-        
+
         self.logger.info(f"Starting HTTP/3 server on {actual_host}:{actual_port}")
-        
+
         # Create HTTP/3 server
         http3_server = create_http3_server(
             self,
@@ -547,7 +565,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             enable_0rtt=enable_0rtt,
             **kwargs,
         )
-        
+
         # Run the server
         try:
             asyncio.run(http3_server.serve())
@@ -568,7 +586,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
     def on_startup(self, func):
         """
         Decorator to register startup hooks.
-        
+
         Usage:
             @app.on_startup
             async def setup_database():
@@ -581,7 +599,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
     def on_shutdown(self, func):
         """
         Decorator to register shutdown hooks.
-        
+
         Usage:
             @app.on_shutdown
             async def cleanup():

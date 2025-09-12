@@ -31,6 +31,7 @@ def require_auth(request: Request) -> dict[str, Any]:
     user = get_current_user(request)
     if not user:
         from zenith.exceptions import AuthenticationException
+
         raise AuthenticationException("Authentication required")
     return user
 

@@ -25,31 +25,31 @@ my-app/
 Frontend Build Commands:
 - SolidJS: `npm run build` (outputs to dist/)
 - React: `npm run build` (outputs to build/)
-- Vue: `npm run build` (outputs to dist/) 
+- Vue: `npm run build` (outputs to dist/)
 - Svelte: `npm run build` (outputs to build/)
 - Angular: `ng build` (outputs to dist/app-name/)
 
 Run with: python examples/17-fullstack-spa.py
 """
 
-import os
 from datetime import datetime
-from typing import List
 from pathlib import Path
 
 from pydantic import BaseModel
-from zenith import Zenith, Context, Service
+
+from zenith import Context, Service, Zenith
 from zenith.web.static import serve_css_js, serve_images
 
 app = Zenith(
-    title="Full-Stack SPA Application", 
+    title="Full-Stack SPA Application",
     version="1.0.0",
-    description="Modern SPA backend with Zenith"
+    description="Modern SPA backend with Zenith",
 )
 
 # ============================================================================
 # MODELS - API Data Transfer Objects
 # ============================================================================
+
 
 class User(BaseModel):
     id: int
@@ -57,9 +57,11 @@ class User(BaseModel):
     email: str
     created_at: datetime
 
+
 class UserCreate(BaseModel):
     name: str
     email: str
+
 
 class Task(BaseModel):
     id: int
@@ -69,6 +71,7 @@ class Task(BaseModel):
     user_id: int
     created_at: datetime
 
+
 class TaskCreate(BaseModel):
     title: str
     description: str = ""
@@ -76,35 +79,38 @@ class TaskCreate(BaseModel):
 
 
 # ============================================================================
-# SERVICES - Business Logic 
+# SERVICES - Business Logic
 # ============================================================================
+
 
 class UserService(Service):
     """User management service."""
-    
+
     def __init__(self):
         # In real app: database connection
         self.users = [
-            User(id=1, name="Alice", email="alice@example.com", created_at=datetime.now()),
+            User(
+                id=1, name="Alice", email="alice@example.com", created_at=datetime.now()
+            ),
             User(id=2, name="Bob", email="bob@example.com", created_at=datetime.now()),
         ]
         self.next_id = 3
-    
-    async def get_all_users(self) -> List[User]:
+
+    async def get_all_users(self) -> list[User]:
         """Get all users."""
         return self.users
-    
+
     async def get_user(self, user_id: int) -> User | None:
         """Get user by ID."""
         return next((u for u in self.users if u.id == user_id), None)
-    
+
     async def create_user(self, user_data: UserCreate) -> User:
         """Create new user."""
         user = User(
             id=self.next_id,
             name=user_data.name,
             email=user_data.email,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
         self.users.append(user)
         self.next_id += 1
@@ -113,21 +119,32 @@ class UserService(Service):
 
 class TaskService(Service):
     """Task management service."""
-    
+
     def __init__(self):
         # In real app: database connection
         self.tasks = [
-            Task(id=1, title="Learn Zenith", description="Build a full-stack app", 
-                 user_id=1, created_at=datetime.now()),
-            Task(id=2, title="Deploy to production", description="Set up CI/CD", 
-                 user_id=1, completed=True, created_at=datetime.now()),
+            Task(
+                id=1,
+                title="Learn Zenith",
+                description="Build a full-stack app",
+                user_id=1,
+                created_at=datetime.now(),
+            ),
+            Task(
+                id=2,
+                title="Deploy to production",
+                description="Set up CI/CD",
+                user_id=1,
+                completed=True,
+                created_at=datetime.now(),
+            ),
         ]
         self.next_id = 3
-    
-    async def get_user_tasks(self, user_id: int) -> List[Task]:
+
+    async def get_user_tasks(self, user_id: int) -> list[Task]:
         """Get all tasks for a user."""
         return [t for t in self.tasks if t.user_id == user_id]
-    
+
     async def create_task(self, task_data: TaskCreate) -> Task:
         """Create new task."""
         task = Task(
@@ -135,12 +152,12 @@ class TaskService(Service):
             title=task_data.title,
             description=task_data.description,
             user_id=task_data.user_id,
-            created_at=datetime.now()
+            created_at=datetime.now(),
         )
         self.tasks.append(task)
         self.next_id += 1
         return task
-    
+
     async def update_task(self, task_id: int, completed: bool) -> Task | None:
         """Update task completion status."""
         task = next((t for t in self.tasks if t.id == task_id), None)
@@ -153,11 +170,13 @@ class TaskService(Service):
 # API ROUTES - Backend Endpoints
 # ============================================================================
 
+
 # Users API
-@app.get("/api/users", response_model=List[User], tags=["Users"])
+@app.get("/api/users", response_model=list[User], tags=["Users"])
 async def get_users(users: UserService = Context()):
     """Get all users."""
     return await users.get_all_users()
+
 
 @app.get("/api/users/{user_id}", response_model=User, tags=["Users"])
 async def get_user(user_id: int, users: UserService = Context()):
@@ -165,24 +184,29 @@ async def get_user(user_id: int, users: UserService = Context()):
     user = await users.get_user(user_id)
     if not user:
         from zenith import not_found
+
         raise not_found(f"User {user_id} not found")
     return user
+
 
 @app.post("/api/users", response_model=User, tags=["Users"])
 async def create_user(user_data: UserCreate, users: UserService = Context()):
     """Create new user."""
     return await users.create_user(user_data)
 
-# Tasks API  
-@app.get("/api/users/{user_id}/tasks", response_model=List[Task], tags=["Tasks"])
+
+# Tasks API
+@app.get("/api/users/{user_id}/tasks", response_model=list[Task], tags=["Tasks"])
 async def get_user_tasks(user_id: int, tasks: TaskService = Context()):
     """Get tasks for a user."""
     return await tasks.get_user_tasks(user_id)
+
 
 @app.post("/api/tasks", response_model=Task, tags=["Tasks"])
 async def create_task(task_data: TaskCreate, tasks: TaskService = Context()):
     """Create new task."""
     return await tasks.create_task(task_data)
+
 
 @app.patch("/api/tasks/{task_id}", response_model=Task, tags=["Tasks"])
 async def update_task(task_id: int, completed: bool, tasks: TaskService = Context()):
@@ -190,8 +214,10 @@ async def update_task(task_id: int, completed: bool, tasks: TaskService = Contex
     task = await tasks.update_task(task_id, completed)
     if not task:
         from zenith import not_found
+
         raise not_found(f"Task {task_id} not found")
     return task
+
 
 # Health endpoint
 @app.get("/api/health")
@@ -200,7 +226,7 @@ async def api_health():
     return {
         "status": "healthy",
         "version": "1.0.0",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -208,18 +234,19 @@ async def api_health():
 # STATIC FILE SERVING - Frontend Assets
 # ============================================================================
 
+
 def setup_frontend_serving():
     """Configure frontend serving based on environment and available directories."""
-    
+
     # Common frontend build directories to check
     frontend_dirs = [
         ("frontend/dist", "SolidJS/Vue build output"),
-        ("frontend/build", "React build output"),  
+        ("frontend/build", "React build output"),
         ("build", "Svelte build output"),
         ("dist", "General dist directory"),
         ("public", "Static public files"),
     ]
-    
+
     # Find first available frontend directory
     frontend_dir = None
     for dir_path, description in frontend_dirs:
@@ -229,19 +256,21 @@ def setup_frontend_serving():
                 frontend_dir = dir_path
                 print(f"📁 Found frontend files: {dir_path} ({description})")
                 break
-    
+
     if frontend_dir:
         # Production vs development caching
         cache_time = 60 if app.config.debug else 86400  # 1 min dev, 1 day prod
-        
+
         # Mount the SPA with client-side routing support (new clean API)
         app.spa(frontend_dir, max_age=cache_time)
         print(f"🌐 SPA serving: / -> {frontend_dir}")
-        print(f"⚡ Cache policy: {cache_time}s ({'development' if app.config.debug else 'production'})")
+        print(
+            f"⚡ Cache policy: {cache_time}s ({'development' if app.config.debug else 'production'})"
+        )
     else:
         # No frontend found, serve a simple HTML page
         from starlette.responses import HTMLResponse
-        
+
         @app.get("/")
         async def frontend_placeholder():
             """Placeholder when no frontend build is found."""
@@ -303,20 +332,21 @@ const tasks = await fetch('/api/users/1/tasks').then(r => r.json());</code></pre
             </html>
             """
             return HTMLResponse(html)
-        
+
         print("📄 No frontend build found - serving API documentation page")
+
 
 # Additional static asset serving
 def setup_static_assets():
     """Set up additional static asset serving."""
-    
+
     # Serve additional assets with appropriate caching
     static_configs = [
-        ("assets", serve_css_js, 86400 * 30),    # CSS/JS: 30 days
-        ("images", serve_images, 86400 * 7),     # Images: 7 days  
-        ("uploads", "serve_uploads", 3600),      # Uploads: 1 hour
+        ("assets", serve_css_js, 86400 * 30),  # CSS/JS: 30 days
+        ("images", serve_images, 86400 * 7),  # Images: 7 days
+        ("uploads", "serve_uploads", 3600),  # Uploads: 1 hour
     ]
-    
+
     for dir_name, serve_func, max_age in static_configs:
         if Path(dir_name).exists():
             # Use Zenith's clean static serving API
@@ -331,28 +361,28 @@ def setup_static_assets():
 if __name__ == "__main__":
     print("🌐 Starting Zenith Full-Stack Application")
     print("=" * 50)
-    
+
     # Configure frontend and static asset serving
     setup_frontend_serving()
     setup_static_assets()
-    
+
     # Show configuration
     print(f"🔧 Environment: {'Development' if app.config.debug else 'Production'}")
-    print(f"📍 Server: http://localhost:8017")
-    print(f"📖 API Docs: http://localhost:8017/docs")
-    print(f"🏥 Health: http://localhost:8017/api/health")
-    
+    print("📍 Server: http://localhost:8017")
+    print("📖 API Docs: http://localhost:8017/docs")
+    print("🏥 Health: http://localhost:8017/api/health")
+
     print("\n💡 Frontend Framework Support:")
     print("   • SolidJS: Place build output in frontend/dist/")
-    print("   • React: Place build output in frontend/build/") 
+    print("   • React: Place build output in frontend/build/")
     print("   • Vue: Place build output in frontend/dist/")
     print("   • Svelte: Place build output in build/")
     print("   • Angular: Place build output in dist/app-name/")
-    
+
     print("\n🚀 Starting server...")
-    
+
     app.run(
         host="127.0.0.1",
         port=8017,
-        reload=app.config.debug  # Auto-reload in development
+        reload=app.config.debug,  # Auto-reload in development
     )

@@ -11,6 +11,7 @@ import hmac
 import logging
 
 import msgspec
+
 from zenith.sessions.manager import Session
 from zenith.sessions.store import SessionStore
 
@@ -20,19 +21,19 @@ logger = logging.getLogger("zenith.sessions.cookie")
 class CookieSessionStore(SessionStore):
     """
     Cookie-based session storage.
-    
+
     Features:
     - Stateless sessions (no server storage)
     - Cryptographically signed cookies
     - Automatic expiration
     - Tamper detection
     - No Redis/database dependency
-    
+
     Limitations:
     - 4KB cookie size limit
     - Client-side storage (less secure)
     - Session data visible to client (when base64 decoded)
-    
+
     Best for:
     - Simple applications
     - Distributed deployments without shared storage
@@ -46,7 +47,7 @@ class CookieSessionStore(SessionStore):
     ):
         """
         Initialize cookie session store.
-        
+
         Args:
             secret_key: Secret key for signing cookies (must be >=32 chars)
             max_cookie_size: Maximum cookie size in bytes
@@ -60,9 +61,7 @@ class CookieSessionStore(SessionStore):
     def _sign_data(self, data: str) -> str:
         """Sign data with HMAC."""
         signature = hmac.new(
-            self.secret_key,
-            data.encode(),
-            digestmod="sha256"
+            self.secret_key, data.encode(), digestmod="sha256"
         ).hexdigest()
         return f"{data}.{signature}"
 
@@ -75,9 +74,7 @@ class CookieSessionStore(SessionStore):
             return None
 
         expected_signature = hmac.new(
-            self.secret_key,
-            data.encode(),
-            digestmod="sha256"
+            self.secret_key, data.encode(), digestmod="sha256"
         ).hexdigest()
 
         if not hmac.compare_digest(signature, expected_signature):
@@ -86,7 +83,7 @@ class CookieSessionStore(SessionStore):
 
         return data
 
-    def _encode_session(self, session: "Session") -> str | None:
+    def _encode_session(self, session: Session) -> str | None:
         """Encode session to signed cookie value."""
         try:
             # Convert to dict and serialize
@@ -112,7 +109,7 @@ class CookieSessionStore(SessionStore):
             logger.error(f"Error encoding session: {e}")
             return None
 
-    def _decode_session(self, cookie_value: str) -> "Session" | None:
+    def _decode_session(self, cookie_value: str) -> Session | None:
         """Decode session from signed cookie value."""
         from zenith.sessions.manager import Session
 
@@ -135,10 +132,10 @@ class CookieSessionStore(SessionStore):
             logger.error(f"Error decoding session cookie: {e}")
             return None
 
-    async def load(self, session_id: str) -> "Session" | None:
+    async def load(self, session_id: str) -> Session | None:
         """
         Load session from cookie data.
-        
+
         Note: For cookie sessions, the session_id is actually the cookie value.
         This is a bit of an abstraction leak, but necessary for the interface.
         """
@@ -156,10 +153,10 @@ class CookieSessionStore(SessionStore):
 
         return session
 
-    async def save(self, session: "Session") -> None:
+    async def save(self, session: Session) -> None:
         """
         Save session to cookie format.
-        
+
         This doesn't actually persist anything - the encoded cookie
         value needs to be set by the middleware.
         """
@@ -178,11 +175,11 @@ class CookieSessionStore(SessionStore):
         # Cookie sessions don't need cleanup - they expire on the client
         return 0
 
-    def get_cookie_value(self, session: "Session") -> str | None:
+    def get_cookie_value(self, session: Session) -> str | None:
         """Get cookie value for a session."""
         return self._encode_session(session)
 
-    def session_from_cookie(self, cookie_value: str) -> "Session" | None:
+    def session_from_cookie(self, cookie_value: str) -> Session | None:
         """Create session from cookie value."""
         return self._decode_session(cookie_value)
 

@@ -20,7 +20,7 @@ F = TypeVar("F", bound=Callable[..., Awaitable])
 class JobScheduler:
     """
     Job scheduler for recurring and delayed tasks.
-    
+
     Features:
     - Cron-like scheduling syntax
     - One-time delayed execution
@@ -43,32 +43,35 @@ class JobScheduler:
     ):
         """
         Decorator to schedule a job for recurring or delayed execution.
-        
+
         Args:
             cron: Cron expression (e.g., "0 9 * * *" for daily at 9am)
             every: Recurring interval (e.g., timedelta(hours=1))
             at: One-time execution datetime
             name: Schedule name (defaults to function name)
-            
+
         Examples:
             @schedule(cron="0 9 * * *")  # Daily at 9am
             async def daily_report():
                 pass
-                
+
             @schedule(every=timedelta(hours=1))  # Every hour
             async def hourly_cleanup():
                 pass
-                
+
             @schedule(at=datetime(2024, 1, 1, 0, 0))  # One-time
             async def new_year_task():
                 pass
         """
+
         def decorator(func: F) -> F:
             schedule_name = name or func.__name__
 
             # Validate scheduling parameters
             if sum(x is not None for x in [cron, every, at]) != 1:
-                raise ValueError("Exactly one of 'cron', 'every', or 'at' must be specified")
+                raise ValueError(
+                    "Exactly one of 'cron', 'every', or 'at' must be specified"
+                )
 
             # Store schedule configuration
             schedule_config = {
@@ -90,7 +93,9 @@ class JobScheduler:
                 schedule_config["next_run"] = self._parse_cron_next(cron)
 
             self.schedules[schedule_name] = schedule_config
-            logger.info(f"Scheduled job {schedule_name} for {schedule_config['next_run']}")
+            logger.info(
+                f"Scheduled job {schedule_name} for {schedule_config['next_run']}"
+            )
 
             return func
 
@@ -99,7 +104,7 @@ class JobScheduler:
     async def run_scheduler(self) -> None:
         """
         Run the scheduler loop.
-        
+
         Continuously checks for scheduled jobs that are ready to run.
         """
         self.running = True
@@ -164,7 +169,7 @@ class JobScheduler:
     def _parse_cron_next(self, cron: str) -> datetime:
         """
         Parse cron expression and return next execution time.
-        
+
         This is a simplified cron parser. For production use,
         consider using a library like 'croniter'.
         """
@@ -173,7 +178,9 @@ class JobScheduler:
 
         parts = cron.split()
         if len(parts) != 5:
-            raise ValueError("Cron expression must have 5 parts: minute hour day month weekday")
+            raise ValueError(
+                "Cron expression must have 5 parts: minute hour day month weekday"
+            )
 
         # For now, just support simple cases
         minute, hour, day, month, weekday = parts
@@ -182,7 +189,13 @@ class JobScheduler:
         next_run = now.replace(second=0, microsecond=0)
 
         # Simple daily schedule (e.g., "0 9 * * *")
-        if minute.isdigit() and hour.isdigit() and day == "*" and month == "*" and weekday == "*":
+        if (
+            minute.isdigit()
+            and hour.isdigit()
+            and day == "*"
+            and month == "*"
+            and weekday == "*"
+        ):
             target_hour = int(hour)
             target_minute = int(minute)
 
@@ -211,8 +224,12 @@ class JobScheduler:
                 "cron": config["cron"],
                 "every": str(config["every"]) if config["every"] else None,
                 "at": config["at"].isoformat() if config["at"] else None,
-                "next_run": config["next_run"].isoformat() if config["next_run"] else None,
-                "last_run": config["last_run"].isoformat() if config["last_run"] else None,
+                "next_run": config["next_run"].isoformat()
+                if config["next_run"]
+                else None,
+                "last_run": config["last_run"].isoformat()
+                if config["last_run"]
+                else None,
             }
             for name, config in self.schedules.items()
         }
@@ -251,11 +268,11 @@ def schedule(
 ):
     """
     Decorator to schedule a job with the global scheduler.
-    
+
     Examples:
         from zenith.jobs import schedule
         from datetime import timedelta
-        
+
         @schedule(every=timedelta(hours=1))
         async def hourly_cleanup():
             # Cleanup logic here

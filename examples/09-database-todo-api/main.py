@@ -16,13 +16,14 @@ from sqlalchemy import Boolean, DateTime, Integer, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from zenith import Context, Router, Zenith, Service
+from zenith import Context, Router, Service, Zenith
 from zenith.db import Base, Database
+
 
 # Database models
 class TodoItem(Base):
     __tablename__ = "todos"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(String(1000))
@@ -52,7 +53,7 @@ class Todo(BaseModel):
     completed: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -61,46 +62,43 @@ class Todo(BaseModel):
 class TodoRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
-    
+
     async def create(self, data: TodoCreate) -> TodoItem:
-        todo = TodoItem(
-            title=data.title,
-            description=data.description
-        )
+        todo = TodoItem(title=data.title, description=data.description)
         self.session.add(todo)
         await self.session.commit()
         await self.session.refresh(todo)
         return todo
-    
+
     async def get(self, todo_id: int) -> TodoItem | None:
         return await self.session.get(TodoItem, todo_id)
-    
+
     async def list(self, completed: bool | None = None) -> list[TodoItem]:
         query = select(TodoItem)
         if completed is not None:
             query = query.where(TodoItem.completed == completed)
         query = query.order_by(TodoItem.created_at.desc())
-        
+
         result = await self.session.execute(query)
         return list(result.scalars().all())
-    
+
     async def update(self, todo_id: int, data: TodoUpdate) -> TodoItem | None:
         todo = await self.get(todo_id)
         if not todo:
             return None
-        
+
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(todo, field, value)
-        
+
         await self.session.commit()
         await self.session.refresh(todo)
         return todo
-    
+
     async def delete(self, todo_id: int) -> bool:
         todo = await self.get(todo_id)
         if not todo:
             return False
-        
+
         await self.session.delete(todo)
         await self.session.commit()
         return True
@@ -113,41 +111,41 @@ db: Database | None = None
 # Business logic context
 class TodosContext(Service):
     """Business logic for todo management with database persistence."""
-    
+
     def __init__(self, container):
         super().__init__(container)
-    
+
     async def _get_repository(self) -> TodoRepository:
         # Get database session
         if not db:
             raise RuntimeError("Database not initialized")
-        
+
         # Use async context manager for session
         # Note: In production, this would be handled differently
         # to properly manage session lifecycle
         session = db.async_session()
         return TodoRepository(session)
-    
+
     async def create_todo(self, data: TodoCreate) -> Todo:
         repo = await self._get_repository()
         todo = await repo.create(data)
         return Todo.model_validate(todo)
-    
+
     async def get_todo(self, todo_id: int) -> Todo | None:
         repo = await self._get_repository()
         todo = await repo.get(todo_id)
         return Todo.model_validate(todo) if todo else None
-    
+
     async def list_todos(self, completed: bool | None = None) -> list[Todo]:
         repo = await self._get_repository()
         todos = await repo.list(completed)
         return [Todo.model_validate(todo) for todo in todos]
-    
+
     async def update_todo(self, todo_id: int, data: TodoUpdate) -> Todo | None:
         repo = await self._get_repository()
         todo = await repo.update(todo_id, data)
         return Todo.model_validate(todo) if todo else None
-    
+
     async def delete_todo(self, todo_id: int) -> bool:
         repo = await self._get_repository()
         return await repo.delete(todo_id)
@@ -172,8 +170,7 @@ async def create_todo(data: TodoCreate, todos: TodosContext = Context()) -> Todo
 
 @api.get("/todos")
 async def list_todos(
-    completed: bool | None = None,
-    todos: TodosContext = Context()
+    completed: bool | None = None, todos: TodosContext = Context()
 ) -> list[Todo]:
     """List todos, optionally filtered by completion status."""
     return await todos.list_todos(completed)
@@ -190,9 +187,7 @@ async def get_todo(todo_id: int, todos: TodosContext = Context()) -> Todo:
 
 @api.patch("/todos/{todo_id}")
 async def update_todo(
-    todo_id: int,
-    data: TodoUpdate,
-    todos: TodosContext = Context()
+    todo_id: int, data: TodoUpdate, todos: TodosContext = Context()
 ) -> Todo:
     """Update a todo item."""
     todo = await todos.update_todo(todo_id, data)
@@ -243,10 +238,11 @@ app.include_router(api)
 app.add_docs(
     title="Todo Database API",
     description="Todo management with real database persistence",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="127.0.0.1", port=8002, reload=True)

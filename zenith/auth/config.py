@@ -48,8 +48,9 @@ def configure_auth(
 
     # Check if auth is already configured
     from zenith.middleware.auth import AuthenticationMiddleware
+
     for middleware in app.middleware:
-        if hasattr(middleware, 'cls') and middleware.cls == AuthenticationMiddleware:
+        if hasattr(middleware, "cls") and middleware.cls == AuthenticationMiddleware:
             raise RuntimeError("Authentication already configured")
 
     # Set up default public paths
@@ -67,6 +68,7 @@ def configure_auth(
     # Add authentication middleware to the app
     # Import here to avoid circular import
     from zenith.middleware.auth import AuthenticationMiddleware
+
     app.add_middleware(AuthenticationMiddleware, public_paths=public_paths)
     logger.info("Authentication configured successfully")
 

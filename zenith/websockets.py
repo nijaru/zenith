@@ -15,16 +15,16 @@ from starlette.websockets import WebSocketDisconnect
 class WebSocket:
     """
     WebSocket connection wrapper for Zenith.
-    
+
     Provides a clean interface for WebSocket communication with
     automatic JSON encoding/decoding and error handling.
-    
+
     Usage:
         @app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
             await websocket.accept()
             await websocket.send_json({"type": "connected"})
-            
+
             try:
                 while True:
                     data = await websocket.receive_json()
@@ -32,7 +32,8 @@ class WebSocket:
             except WebSocketDisconnect:
                 print("Client disconnected")
     """
-    __slots__ = ('_websocket', 'client_id', 'user_id', 'metadata')
+
+    __slots__ = ("_websocket", "client_id", "metadata", "user_id")
 
     def __init__(self, websocket: StarletteWebSocket):
         """Initialize WebSocket wrapper."""
@@ -106,12 +107,12 @@ class WebSocket:
 class WebSocketManager:
     """
     WebSocket connection manager for handling multiple connections.
-    
+
     Useful for chat rooms, notifications, real-time updates, etc.
-    
+
     Usage:
         manager = WebSocketManager()
-        
+
         @app.websocket("/ws/{room_id}")
         async def websocket_endpoint(websocket: WebSocket, room_id: str):
             await manager.connect(websocket, room_id)
@@ -122,6 +123,7 @@ class WebSocketManager:
             except WebSocketDisconnect:
                 await manager.disconnect(websocket, room_id)
     """
+
     # Note: __slots__ removed to allow mock patching in tests
     # Memory optimization less critical for WebSocketManager (typically singleton)
 
@@ -141,15 +143,19 @@ class WebSocketManager:
         self.connection_metadata[websocket] = {
             "room_id": room_id,
             "connected_at": json.dumps({"timestamp": "now"}),  # Would use datetime
-            "user_id": getattr(websocket, 'user_id', None)
+            "user_id": getattr(websocket, "user_id", None),
         }
 
         # Notify room about new connection
-        await self.broadcast_to_room(room_id, {
-            "type": "user_joined",
-            "room_id": room_id,
-            "connections": len(self.connections[room_id])
-        }, exclude=websocket)
+        await self.broadcast_to_room(
+            room_id,
+            {
+                "type": "user_joined",
+                "room_id": room_id,
+                "connections": len(self.connections[room_id]),
+            },
+            exclude=websocket,
+        )
 
     async def disconnect(self, websocket: WebSocket, room_id: str = "default") -> None:
         """Remove a WebSocket connection from a room."""
@@ -167,17 +173,20 @@ class WebSocketManager:
 
         # Notify room about disconnection
         if room_id in self.connections:
-            await self.broadcast_to_room(room_id, {
-                "type": "user_left",
-                "room_id": room_id,
-                "connections": len(self.connections[room_id])
-            })
+            await self.broadcast_to_room(
+                room_id,
+                {
+                    "type": "user_left",
+                    "room_id": room_id,
+                    "connections": len(self.connections[room_id]),
+                },
+            )
 
     async def broadcast_to_room(
         self,
         room_id: str,
         message: dict[str, Any] | str,
-        exclude: WebSocket | None = None
+        exclude: WebSocket | None = None,
     ) -> None:
         """Broadcast message to all connections in a room."""
         if room_id not in self.connections:
@@ -186,7 +195,7 @@ class WebSocketManager:
         # Remove disconnected connections while preserving excluded ones
         active_connections = []
         dead_connections = []
-        
+
         for websocket in self.connections[room_id]:
             if websocket == exclude:
                 # Keep excluded websockets in the room (just don't send to them)
@@ -204,21 +213,21 @@ class WebSocketManager:
 
         # Update active connections
         self.connections[room_id] = active_connections
-        
+
         # Clean up metadata for dead connections
         for dead_ws in dead_connections:
             self.connection_metadata.pop(dead_ws, None)
 
     async def send_to_user(self, user_id: int, message: dict[str, Any] | str) -> bool:
         """Send message to a specific user across all rooms.
-        
+
         Returns True if user was found (message delivery was attempted),
         False if user was not found.
         """
         user_found = False
         for room_connections in self.connections.values():
             for websocket in room_connections:
-                if getattr(websocket, 'user_id', None) == user_id:
+                if getattr(websocket, "user_id", None) == user_id:
                     user_found = True
                     try:
                         if isinstance(message, dict):
@@ -250,26 +259,26 @@ class WebSocketManager:
     def cleanup_dead_connections(self) -> int:
         """
         Clean up dead connections and their metadata.
-        
+
         Returns the number of connections cleaned up.
         """
         cleaned_count = 0
-        
+
         # Check for connections that exist in metadata but not in any room
         active_connections = set()
         for room_connections in self.connections.values():
             active_connections.update(room_connections)
-        
+
         # Remove metadata for connections not in any room
         dead_metadata_keys = []
         for ws in self.connection_metadata.keys():
             if ws not in active_connections:
                 dead_metadata_keys.append(ws)
-        
+
         for ws in dead_metadata_keys:
             self.connection_metadata.pop(ws, None)
             cleaned_count += 1
-        
+
         return cleaned_count
 
     def get_memory_stats(self) -> dict[str, Any]:
@@ -277,15 +286,16 @@ class WebSocketManager:
         active_connections = set()
         for room_connections in self.connections.values():
             active_connections.update(room_connections)
-        
+
         return {
             "total_rooms": len(self.connections),
-            "total_connections": len(active_connections), 
+            "total_connections": len(active_connections),
             "metadata_entries": len(self.connection_metadata),
-            "orphaned_metadata": len(self.connection_metadata) - len(active_connections),
+            "orphaned_metadata": len(self.connection_metadata)
+            - len(active_connections),
             "largest_room": max(
                 (len(connections) for connections in self.connections.values()),
-                default=0
+                default=0,
             ),
         }
 

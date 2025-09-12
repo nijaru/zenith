@@ -7,10 +7,9 @@ This module provides drop-in performance enhancements including:
 - orjson as a fallback JSON handler
 """
 
-import sys
 import asyncio
 import logging
-from typing import Any, Optional
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -22,18 +21,21 @@ ORJSON_AVAILABLE = False
 # Try to import performance libraries
 try:
     import uvloop
+
     UVLOOP_AVAILABLE = True
 except ImportError:
     uvloop = None
 
 try:
     import msgspec
+
     MSGSPEC_AVAILABLE = True
 except ImportError:
     msgspec = None
 
 try:
     import orjson
+
     ORJSON_AVAILABLE = True
 except ImportError:
     orjson = None
@@ -42,14 +44,14 @@ except ImportError:
 def install_uvloop() -> bool:
     """
     Install uvloop as the default event loop policy.
-    
+
     Returns:
         True if uvloop was installed, False otherwise
     """
     if not UVLOOP_AVAILABLE:
         logger.debug("uvloop not available, using default asyncio event loop")
         return False
-    
+
     try:
         asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
         logger.info("uvloop installed as default event loop")
@@ -62,7 +64,7 @@ def install_uvloop() -> bool:
 def get_optimized_json_encoder():
     """
     Get the best available JSON encoder.
-    
+
     Priority:
     1. msgspec (fastest with validation)
     2. orjson (fastest pure JSON)
@@ -78,13 +80,14 @@ def get_optimized_json_encoder():
 
 def create_msgspec_encoder():
     """Create a msgspec-based JSON encoder."""
-    import msgspec
-    from datetime import datetime, date, time
+    from datetime import date, datetime, time
     from decimal import Decimal
-    from uuid import UUID
-    from pathlib import Path
     from enum import Enum
-    
+    from pathlib import Path
+    from uuid import UUID
+
+    import msgspec
+
     # Custom encoder hook for non-standard types
     def encode_hook(obj):
         if isinstance(obj, (datetime, date, time)):
@@ -95,40 +98,38 @@ def create_msgspec_encoder():
             return obj.value
         elif isinstance(obj, bytes):
             import base64
-            return base64.b64encode(obj).decode('utf-8')
+
+            return base64.b64encode(obj).decode("utf-8")
         elif isinstance(obj, set):
             return list(obj)
         # Let msgspec handle the rest
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-    
+
     encoder = msgspec.json.Encoder(enc_hook=encode_hook)
     decoder = msgspec.json.Decoder()
-    
+
     def dumps(obj, **kwargs):
         # msgspec returns bytes, convert to str for compatibility
-        return encoder.encode(obj).decode('utf-8')
-    
+        return encoder.encode(obj).decode("utf-8")
+
     def loads(data):
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
         return decoder.decode(data)
-    
-    return {
-        'dumps': dumps,
-        'loads': loads,
-        'name': 'msgspec'
-    }
+
+    return {"dumps": dumps, "loads": loads, "name": "msgspec"}
 
 
 def create_orjson_encoder():
     """Create an orjson-based JSON encoder."""
-    import orjson
-    from datetime import datetime, date, time
+    from datetime import date, datetime, time
     from decimal import Decimal
-    from uuid import UUID
-    from pathlib import Path
     from enum import Enum
-    
+    from pathlib import Path
+    from uuid import UUID
+
+    import orjson
+
     def default(obj):
         if isinstance(obj, (datetime, date, time)):
             return obj.isoformat()
@@ -138,77 +139,79 @@ def create_orjson_encoder():
             return obj.value
         elif isinstance(obj, bytes):
             import base64
-            return base64.b64encode(obj).decode('utf-8')
+
+            return base64.b64encode(obj).decode("utf-8")
         elif isinstance(obj, set):
             return list(obj)
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
-    
+
     def dumps(obj, **kwargs):
         # orjson returns bytes, convert to str for compatibility
-        return orjson.dumps(obj, default=default).decode('utf-8')
-    
+        return orjson.dumps(obj, default=default).decode("utf-8")
+
     def loads(data):
         if isinstance(data, str):
-            data = data.encode('utf-8')
+            data = data.encode("utf-8")
         return orjson.loads(data)
-    
-    return {
-        'dumps': dumps,
-        'loads': loads,
-        'name': 'orjson'
-    }
+
+    return {"dumps": dumps, "loads": loads, "name": "orjson"}
 
 
 def optimize_zenith():
     """
     Apply all available optimizations to Zenith.
-    
+
     This should be called before creating the Zenith application.
     """
     optimizations = []
-    
+
     # Install uvloop if available
     if install_uvloop():
         optimizations.append("uvloop")
-    
+
     # Check JSON optimization availability
     if MSGSPEC_AVAILABLE:
         optimizations.append("msgspec")
     elif ORJSON_AVAILABLE:
         optimizations.append("orjson")
-    
+
     if optimizations:
         logger.info(f"Zenith optimizations enabled: {', '.join(optimizations)}")
     else:
         logger.info("No additional optimizations available")
-    
+
     return optimizations
 
 
 def get_optimization_status() -> dict:
     """
     Get the status of available optimizations.
-    
+
     Returns:
         Dictionary with optimization availability
     """
     return {
-        'uvloop': UVLOOP_AVAILABLE,
-        'msgspec': MSGSPEC_AVAILABLE,
-        'orjson': ORJSON_AVAILABLE,
-        'event_loop': 'uvloop' if UVLOOP_AVAILABLE and isinstance(
-            asyncio.get_event_loop_policy(), 
-            uvloop.EventLoopPolicy if uvloop else type(None)
-        ) else 'asyncio',
-        'json_encoder': (
-            'msgspec' if MSGSPEC_AVAILABLE else
-            'orjson' if ORJSON_AVAILABLE else
-            'standard'
+        "uvloop": UVLOOP_AVAILABLE,
+        "msgspec": MSGSPEC_AVAILABLE,
+        "orjson": ORJSON_AVAILABLE,
+        "event_loop": "uvloop"
+        if UVLOOP_AVAILABLE
+        and isinstance(
+            asyncio.get_event_loop_policy(),
+            uvloop.EventLoopPolicy if uvloop else type(None),
         )
+        else "asyncio",
+        "json_encoder": (
+            "msgspec"
+            if MSGSPEC_AVAILABLE
+            else "orjson"
+            if ORJSON_AVAILABLE
+            else "standard"
+        ),
     }
 
 
 # Auto-optimize on import if running as main application
-if not any(test in sys.argv[0] for test in ['pytest', 'test']):
+if not any(test in sys.argv[0] for test in ["pytest", "test"]):
     # Don't auto-optimize during tests
     optimize_zenith()

@@ -15,7 +15,14 @@ T = TypeVar("T")
 
 class DIContainer:
     """Dependency injection container with async support."""
-    __slots__ = ('_services', '_singletons', '_factories', '_startup_hooks', '_shutdown_hooks')
+
+    __slots__ = (
+        "_factories",
+        "_services",
+        "_shutdown_hooks",
+        "_singletons",
+        "_startup_hooks",
+    )
 
     def __init__(self) -> None:
         self._services: dict[str, Any] = {}
@@ -112,15 +119,17 @@ class DIContainer:
         """Execute startup hooks with parallel async execution."""
         if not self._startup_hooks:
             return
-            
+
         # Separate sync and async hooks for optimal execution
-        sync_hooks = [h for h in self._startup_hooks if not asyncio.iscoroutinefunction(h)]
+        sync_hooks = [
+            h for h in self._startup_hooks if not asyncio.iscoroutinefunction(h)
+        ]
         async_hooks = [h for h in self._startup_hooks if asyncio.iscoroutinefunction(h)]
-        
+
         # Run sync hooks first (they're usually faster)
         for hook in sync_hooks:
             hook()
-            
+
         # Run async hooks in parallel using TaskGroup
         if async_hooks:
             async with asyncio.TaskGroup() as tg:
@@ -132,13 +141,15 @@ class DIContainer:
         # Shutdown hooks should run in reverse order, but can parallelize async ones
         if self._shutdown_hooks:
             reversed_hooks = list(reversed(self._shutdown_hooks))
-            sync_hooks = [h for h in reversed_hooks if not asyncio.iscoroutinefunction(h)]
+            sync_hooks = [
+                h for h in reversed_hooks if not asyncio.iscoroutinefunction(h)
+            ]
             async_hooks = [h for h in reversed_hooks if asyncio.iscoroutinefunction(h)]
-            
+
             # Run sync hooks first (they're usually faster)
             for hook in sync_hooks:
                 hook()
-                
+
             # Run async hooks in parallel
             if async_hooks:
                 async with asyncio.TaskGroup() as tg:
@@ -150,11 +161,13 @@ class DIContainer:
         for service in self._services.values():
             if hasattr(service, "__aexit__"):
                 service_cleanup_tasks.append(service.__aexit__(None, None, None))
-            elif hasattr(service, "close") and asyncio.iscoroutinefunction(service.close):
+            elif hasattr(service, "close") and asyncio.iscoroutinefunction(
+                service.close
+            ):
                 service_cleanup_tasks.append(service.close())
             elif hasattr(service, "close"):
                 service.close()  # Sync close
-                
+
         # Cleanup async services in parallel
         if service_cleanup_tasks:
             async with asyncio.TaskGroup() as tg:

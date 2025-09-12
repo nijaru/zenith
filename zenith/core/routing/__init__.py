@@ -6,13 +6,6 @@ separated concerns, and excellent developer experience.
 """
 
 # Core routing components
-from .router import Router
-from .executor import RouteExecutor
-from .dependency_resolver import DependencyResolver
-from .response_processor import ResponseProcessor
-
-# Route specifications and dependency markers
-from .specs import HTTPMethod, RouteSpec
 from .dependencies import (
     Auth,
     AuthDependency,
@@ -21,34 +14,43 @@ from .dependencies import (
     File,
     FileUploadDependency,
 )
+from .dependency_resolver import DependencyResolver
+from .executor import RouteExecutor
+from .response_processor import ResponseProcessor
+from .router import Router
+
+# Route specifications and dependency markers
+from .specs import HTTPMethod, RouteSpec
 
 # Utilities
 from .utils import (
-    validate_response_type,
     create_route_name,
     extract_route_tags,
     normalize_path,
+    validate_response_type,
 )
+
 
 # LiveViewRouter for Phoenix-style patterns
 class LiveViewRouter(Router):
     """Router for Phoenix-style LiveView routes."""
-    
+
     def live(self, path: str, **kwargs):
         """LiveView route decorator."""
         return self.route(path, ["GET", "POST"], **kwargs)
+
 
 __all__ = [
     # Core classes
     "Router",
     "LiveViewRouter",
     "RouteExecutor",
-    "DependencyResolver", 
+    "DependencyResolver",
     "ResponseProcessor",
     # Dependencies
     "Auth",
     "AuthDependency",
-    "Context", 
+    "Context",
     "ContextDependency",
     "File",
     "FileUploadDependency",
@@ -58,6 +60,6 @@ __all__ = [
     # Utilities
     "validate_response_type",
     "create_route_name",
-    "extract_route_tags", 
+    "extract_route_tags",
     "normalize_path",
 ]

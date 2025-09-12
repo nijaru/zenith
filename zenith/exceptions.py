@@ -5,12 +5,12 @@ Provides proper error responses with appropriate status codes
 and JSON formatting for API consistency.
 """
 
-
 from starlette.responses import JSONResponse
 
 
 class ZenithException(Exception):
     """Base exception class for Zenith framework."""
+
     pass
 
 
@@ -45,46 +45,51 @@ class HTTPException(ZenithException):
 
 class BadRequestException(HTTPException):
     """400 Bad Request"""
+
     def __init__(self, detail: str = "Bad request", **kwargs):
         super().__init__(400, detail, **kwargs)
 
 
 class UnauthorizedException(HTTPException):
     """401 Unauthorized"""
+
     def __init__(self, detail: str = "Unauthorized", **kwargs):
         super().__init__(401, detail, **kwargs)
 
 
 class ForbiddenException(HTTPException):
     """403 Forbidden"""
+
     def __init__(self, detail: str = "Forbidden", **kwargs):
         super().__init__(403, detail, **kwargs)
 
 
 class NotFoundException(HTTPException):
     """404 Not Found"""
+
     def __init__(self, detail: str = "Not found", **kwargs):
         super().__init__(404, detail, **kwargs)
 
 
 class ConflictException(HTTPException):
     """409 Conflict"""
+
     def __init__(self, detail: str = "Conflict", **kwargs):
         super().__init__(409, detail, **kwargs)
 
 
 class ValidationException(HTTPException):
     """422 Validation Error"""
-    def __init__(self, detail: str = "Validation error", errors: list | None = None, **kwargs):
+
+    def __init__(
+        self, detail: str = "Validation error", errors: list | None = None, **kwargs
+    ):
         super().__init__(422, detail, **kwargs)
         self.errors = errors or []
 
     def to_response(self) -> JSONResponse:
         """Convert validation exception to JSON response."""
-        content = {
-            "detail": self.detail,
-            "errors": self.errors
-        }
+        content = {"detail": self.detail, "errors": self.errors}
         if self.error_code:
             content["error_code"] = self.error_code
 
@@ -97,24 +102,28 @@ class ValidationException(HTTPException):
 
 class InternalServerException(HTTPException):
     """500 Internal Server Error"""
+
     def __init__(self, detail: str = "Internal server error", **kwargs):
         super().__init__(500, detail, **kwargs)
 
 
 class AuthenticationException(HTTPException):
     """401 Authentication Error - Alternative name for UnauthorizedException"""
+
     def __init__(self, detail: str = "Authentication required", **kwargs):
         super().__init__(401, detail, **kwargs)
 
 
 class AuthorizationException(HTTPException):
     """403 Authorization Error - Alternative name for ForbiddenException"""
+
     def __init__(self, detail: str = "Insufficient permissions", **kwargs):
         super().__init__(403, detail, **kwargs)
 
 
 class RateLimitException(HTTPException):
     """429 Rate Limit Exceeded"""
+
     def __init__(self, detail: str = "Rate limit exceeded", **kwargs):
         super().__init__(429, detail, **kwargs)
 
@@ -122,10 +131,10 @@ class RateLimitException(HTTPException):
 def exception_to_http_exception(exc: Exception) -> HTTPException:
     """
     Convert common Python exceptions to HTTP exceptions.
-    
+
     This provides sensible defaults for common errors:
     - ValueError -> 400 Bad Request
-    - KeyError -> 404 Not Found  
+    - KeyError -> 404 Not Found
     - PermissionError -> 403 Forbidden
     - FileNotFoundError -> 404 Not Found
     - etc.
@@ -146,18 +155,19 @@ def exception_to_http_exception(exc: Exception) -> HTTPException:
     # Check for Pydantic validation errors
     try:
         from pydantic import ValidationError
+
         if isinstance(exc, ValidationError):
             errors = []
             for error in exc.errors():
-                errors.append({
-                    "field": ".".join(str(x) for x in error["loc"]),
-                    "message": error["msg"],
-                    "type": error["type"],
-                })
+                errors.append(
+                    {
+                        "field": ".".join(str(x) for x in error["loc"]),
+                        "message": error["msg"],
+                        "type": error["type"],
+                    }
+                )
             return ValidationException(
-                detail="Validation failed",
-                errors=errors,
-                error_code="validation_error"
+                detail="Validation failed", errors=errors, error_code="validation_error"
             )
     except ImportError:
         pass
@@ -172,7 +182,7 @@ def exception_to_http_exception(exc: Exception) -> HTTPException:
     # Default to 500 Internal Server Error
     return InternalServerException(
         detail=str(exc) if str(exc) else "An unexpected error occurred",
-        error_code="internal_error"
+        error_code="internal_error",
     )
 
 
@@ -202,11 +212,15 @@ def conflict(detail: str = "Conflict", **kwargs) -> ConflictException:
     raise ConflictException(detail, **kwargs)
 
 
-def validation_error(detail: str = "Validation error", errors: list | None = None, **kwargs) -> ValidationException:
+def validation_error(
+    detail: str = "Validation error", errors: list | None = None, **kwargs
+) -> ValidationException:
     """Raise 422 Validation Error."""
     raise ValidationException(detail, errors, **kwargs)
 
 
-def internal_error(detail: str = "Internal server error", **kwargs) -> InternalServerException:
+def internal_error(
+    detail: str = "Internal server error", **kwargs
+) -> InternalServerException:
     """Raise 500 Internal Server Error."""
     raise InternalServerException(detail, **kwargs)

@@ -4,20 +4,20 @@ Zenith CLI - Command-line interface for Zenith web applications.
 Similar to Rails, Django-admin, and Phoenix mix commands.
 """
 
-import sys
-from pathlib import Path
 import secrets
 import string
+import sys
+from pathlib import Path
 
 import click
 
+from zenith.__version__ import __version__
 from zenith.dev.templates import TemplateManager
 from zenith.dev.templates.template_manager import TemplateContext
-from zenith.__version__ import __version__
 
 
 @click.group()
-@click.version_option(version=__version__, package_name='zenith-web')
+@click.version_option(version=__version__, package_name="zenith-web")
 def main():
     """Zenith - Modern Python web framework."""
     pass
@@ -27,12 +27,19 @@ def main():
 # INTERACTIVE SHELL - For debugging and development
 # ============================================================================
 
+
 @main.command()
-@click.option('--app', default=None, help='Import path to application (e.g., main.app)')
-@click.option('--no-ipython', is_flag=True, default=False, help='Use standard Python shell instead of IPython')
+@click.option("--app", default=None, help="Import path to application (e.g., main.app)")
+@click.option(
+    "--no-ipython",
+    is_flag=True,
+    default=False,
+    help="Use standard Python shell instead of IPython",
+)
 def shell(app: str | None, no_ipython: bool):
     """Start interactive Python shell with Zenith context."""
     from zenith.dev.shell import run_shell
+
     run_shell(app_path=app, use_ipython=not no_ipython)
 
 
@@ -44,9 +51,21 @@ def shell(app: str | None, no_ipython: bool):
 @main.command()
 @click.argument("path", default=".")
 @click.option("--name", help="Application name")
-@click.option("--web", "template", flag_value="web", help="Create full web application with templates and static files")
-@click.option("--template", default="api", type=click.Choice(["api", "web"]), help="Project template")
-@click.option("--db", default="sqlite", type=click.Choice(["sqlite", "postgres", "mysql"]))
+@click.option(
+    "--web",
+    "template",
+    flag_value="web",
+    help="Create full web application with templates and static files",
+)
+@click.option(
+    "--template",
+    default="api",
+    type=click.Choice(["api", "web"]),
+    help="Project template",
+)
+@click.option(
+    "--db", default="sqlite", type=click.Choice(["sqlite", "postgres", "mysql"])
+)
 def new(path: str, name: str, template: str, db: str):
     """Create a new Zenith application with state-of-the-art defaults."""
     project_path = Path(path).resolve()
@@ -55,20 +74,19 @@ def new(path: str, name: str, template: str, db: str):
     if path == ".":
         click.echo("🚀 Initializing Zenith app in current directory...")
     else:
-        click.echo(f"🚀 Creating new Zenith app '{project_name}' with {template} template...")
+        click.echo(
+            f"🚀 Creating new Zenith app '{project_name}' with {template} template..."
+        )
         project_path.mkdir(parents=True, exist_ok=True)
 
     # Generate secure production-ready secret key
     chars = string.ascii_letters + string.digits + "!@#$%^&*"
-    secret_key = ''.join(secrets.choice(chars) for _ in range(64))
+    secret_key = "".join(secrets.choice(chars) for _ in range(64))
 
     # Initialize template system
     template_manager = TemplateManager()
     context = TemplateContext(
-        project_name=project_name,
-        secret_key=secret_key,
-        db=db,
-        template_type=template
+        project_name=project_name, secret_key=secret_key, db=db, template_type=template
     )
 
     # Get all required templates for this project type
@@ -76,13 +94,13 @@ def new(path: str, name: str, template: str, db: str):
 
     # Generate all project files from templates
     click.echo("📁 Generating project files...")
-    
+
     for file_path, template_name in file_templates.items():
         full_path = project_path / file_path
-        
+
         # Create directory if needed
         full_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate content from template
         try:
             content = template_manager.render_template(template_name, context)
@@ -101,7 +119,6 @@ def new(path: str, name: str, template: str, db: str):
     click.echo("\n📖 Then visit: http://localhost:8000/docs")
 
 
-
 # ============================================================================
 # DEVELOPMENT COMMANDS
 # ============================================================================
@@ -114,8 +131,8 @@ def new(path: str, name: str, template: str, db: str):
 def dev(host: str, port: int, open: bool):
     """Start Zenith development server with hot reload."""
     import subprocess
-    import webbrowser
     import time
+    import webbrowser
     from pathlib import Path
 
     # Find the app file
@@ -136,38 +153,40 @@ def dev(host: str, port: int, open: bool):
 
     # Build development server command with hot reload
     cmd = [
-        "uvicorn", 
+        "uvicorn",
         f"{app_file}:{app_var}",
-        f"--host={host}", 
+        f"--host={host}",
         f"--port={port}",
         "--reload",
         "--reload-include=*.py",
-        "--reload-include=*.html", 
+        "--reload-include=*.html",
         "--reload-include=*.css",
         "--reload-include=*.js",
         "--log-level=info",
     ]
 
     click.echo("🔧 Starting Zenith development server...")
-    click.echo(f"🔄 Hot reload enabled - edit files to see changes instantly!")
+    click.echo("🔄 Hot reload enabled - edit files to see changes instantly!")
     click.echo(f"🌐 Local:   http://{host}:{port}")
     click.echo(f"📖 Docs:    http://{host}:{port}/docs")
     click.echo(f"❤️ Health:  http://{host}:{port}/health")
-    
+
     # Open browser if requested
     if open:
+
         def open_browser():
             """Open browser after server starts."""
             time.sleep(1.5)  # Wait for server to start
             webbrowser.open(f"http://{host}:{port}")
-        
+
         import threading
+
         threading.Thread(target=open_browser, daemon=True).start()
 
     try:
         subprocess.run(cmd)
     except KeyboardInterrupt:
-        click.echo(f"\n👋 Development server stopped")
+        click.echo("\n👋 Development server stopped")
 
 
 @main.command("serve")
@@ -198,15 +217,15 @@ def serve(host: str, port: int, workers: int, reload: bool):
 
     if reload:
         click.echo("🔧 Starting Zenith development server...")
-        click.echo(f"🔄 Hot reload enabled - edit files to see changes instantly!")
+        click.echo("🔄 Hot reload enabled - edit files to see changes instantly!")
         cmd = [
-            "uvicorn", 
+            "uvicorn",
             f"{app_file}:{app_var}",
-            f"--host={host}", 
+            f"--host={host}",
             f"--port={port}",
             "--reload",
             "--reload-include=*.py",
-            "--reload-include=*.html", 
+            "--reload-include=*.html",
             "--reload-include=*.css",
             "--reload-include=*.js",
             "--log-level=info",
@@ -215,15 +234,15 @@ def serve(host: str, port: int, workers: int, reload: bool):
         click.echo("🚀 Starting Zenith production server...")
         click.echo(f"👥 Workers: {workers}")
         cmd = [
-            "uvicorn", 
+            "uvicorn",
             f"{app_file}:{app_var}",
-            f"--host={host}", 
+            f"--host={host}",
             f"--port={port}",
             f"--workers={workers}",
             "--log-level=info",
             "--access-log",
         ]
-    
+
     click.echo(f"🌐 Server:  http://{host}:{port}")
     click.echo(f"📖 Docs:    http://{host}:{port}/docs")
     click.echo(f"❤️ Health:  http://{host}:{port}/health")
@@ -244,6 +263,7 @@ def dev_shortcut(ctx, host: str, port: int, open: bool):
     """Shortcut for 'dev' command."""
     ctx.invoke(dev, host=host, port=port, open=open)
 
+
 @main.command("s")
 @click.option("--host", "-h", default="0.0.0.0", help="Host to bind to")
 @click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
@@ -253,7 +273,6 @@ def dev_shortcut(ctx, host: str, port: int, open: bool):
 def serve_shortcut(ctx, host: str, port: int, workers: int, reload: bool):
     """Shortcut for 'serve' command."""
     ctx.invoke(serve, host=host, port=port, workers=workers, reload=reload)
-
 
 
 @main.command()
@@ -278,7 +297,9 @@ def routes():
         if hasattr(app, "routes"):
             for route in app.routes:
                 for method in route.methods:
-                    click.echo(f"{method:<8} {route.path:<30} {route.endpoint.__name__}")
+                    click.echo(
+                        f"{method:<8} {route.path:<30} {route.endpoint.__name__}"
+                    )
         else:
             click.echo("  No routes registered yet")
 
@@ -330,22 +351,28 @@ def test(verbose: bool, failfast: bool):
 # ============================================================================
 
 
-@main.group(name='g')
+@main.group(name="g")
 def generate():
     """Generate code for your application."""
     pass
 
 
 @generate.command()
-@click.argument('name')
-@click.option('--fields', '-f', help='Field definitions (e.g., "name:str email:str age:int")')
+@click.argument("name")
+@click.option(
+    "--fields", "-f", help='Field definitions (e.g., "name:str email:str age:int")'
+)
 def model(name: str, fields: str):
     """Generate a SQLModel model."""
-    from zenith.dev.generators import generate_code, write_generated_files, parse_field_spec
-    
+    from zenith.dev.generators import (
+        generate_code,
+        parse_field_spec,
+        write_generated_files,
+    )
+
     field_dict = parse_field_spec(fields) if fields else {}
-    files = generate_code('model', name, fields=field_dict)
-    
+    files = generate_code("model", name, fields=field_dict)
+
     click.echo(f"🏗️  Generating model: {name}")
     created = write_generated_files(files)
     if created:
@@ -353,15 +380,15 @@ def model(name: str, fields: str):
 
 
 @generate.command()
-@click.argument('name')
-@click.option('--model', '-m', help='Associated model name')
+@click.argument("name")
+@click.option("--model", "-m", help="Associated model name")
 def context(name: str, model: str | None):
     """Generate a business logic context."""
     from zenith.dev.generators import generate_code, write_generated_files
-    
-    options = {'model': model} if model else {}
-    files = generate_code('context', name, **options)
-    
+
+    options = {"model": model} if model else {}
+    files = generate_code("context", name, **options)
+
     click.echo(f"🏗️  Generating context: {name}")
     created = write_generated_files(files)
     if created:
@@ -369,19 +396,19 @@ def context(name: str, model: str | None):
 
 
 @generate.command()
-@click.argument('name')
-@click.option('--model', '-m', help='Associated model name')
-@click.option('--crud', is_flag=True, help='Generate full CRUD operations')
+@click.argument("name")
+@click.option("--model", "-m", help="Associated model name")
+@click.option("--crud", is_flag=True, help="Generate full CRUD operations")
 def api(name: str, model: str | None, crud: bool):
     """Generate API routes."""
     from zenith.dev.generators import generate_code, write_generated_files
-    
-    options = {'model': model} if model else {}
+
+    options = {"model": model} if model else {}
     if crud:
-        options['crud'] = True
-    
-    files = generate_code('api', name, **options)
-    
+        options["crud"] = True
+
+    files = generate_code("api", name, **options)
+
     click.echo(f"🏗️  Generating API routes: {name}")
     created = write_generated_files(files)
     if created:
@@ -397,6 +424,7 @@ def api(name: str, model: str | None, crud: bool):
 def version():
     """Show Zenith version."""
     from zenith import __version__
+
     click.echo(f"Zenith v{__version__}")
 
 
@@ -436,6 +464,7 @@ def info():
 # DATABASE MIGRATION COMMANDS
 # ============================================================================
 
+
 @main.group()
 def db():
     """Database migration commands."""
@@ -443,15 +472,18 @@ def db():
 
 
 @db.command()
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def init(migrations_dir: str):
     """Initialize migrations directory."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     # Try to get database URL from environment or config
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         manager.init_migrations()
@@ -465,16 +497,22 @@ def init(migrations_dir: str):
 
 @db.command()
 @click.argument("message")
-@click.option("--autogenerate/--no-autogenerate", default=True, 
-              help="Automatically detect model changes")
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--autogenerate/--no-autogenerate",
+    default=True,
+    help="Automatically detect model changes",
+)
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def revision(message: str, autogenerate: bool, migrations_dir: str):
     """Create a new migration revision."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         revision_id = manager.create_migration(message, autogenerate)
@@ -496,14 +534,17 @@ def revision(message: str, autogenerate: bool, migrations_dir: str):
 
 @db.command()
 @click.argument("revision", default="head")
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def upgrade(revision: str, migrations_dir: str):
     """Upgrade database to revision (default: head)."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         if manager.upgrade(revision):
@@ -516,14 +557,17 @@ def upgrade(revision: str, migrations_dir: str):
 
 @db.command()
 @click.argument("revision")
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def downgrade(revision: str, migrations_dir: str):
     """Downgrade database to revision."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         if manager.downgrade(revision):
@@ -535,14 +579,17 @@ def downgrade(revision: str, migrations_dir: str):
 
 
 @db.command()
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def current(migrations_dir: str):
     """Show current database revision."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         current_rev = manager.current_revision()
@@ -555,59 +602,65 @@ def current(migrations_dir: str):
 
 
 @db.command()
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def history(migrations_dir: str):
     """Show migration history."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         history = manager.migration_history()
-        
+
         if not history:
             click.echo("No migrations found")
             return
-        
+
         click.echo("Migration History:")
         click.echo("─" * 80)
-        
+
         for rev in history:
             click.echo(f"{rev['revision'][:8]} | {rev['message']}")
-            if rev['down_revision']:
+            if rev["down_revision"]:
                 click.echo(f"         └─ from {rev['down_revision'][:8]}")
             click.echo()
-            
+
     except Exception as e:
         click.echo(f"❌ Error getting migration history: {e}")
 
 
 @db.command()
-@click.option("--dir", "migrations_dir", default="migrations", help="Migrations directory")
+@click.option(
+    "--dir", "migrations_dir", default="migrations", help="Migrations directory"
+)
 def status(migrations_dir: str):
     """Show migration status."""
     import os
+
     from zenith.db import create_migration_manager
-    
+
     database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
-    
+
     try:
         manager = create_migration_manager(database_url, migrations_dir)
         status = manager.status()
-        
+
         click.echo("Database Migration Status:")
         click.echo("─" * 40)
         click.echo(f"Current revision: {status['current_revision'] or 'None'}")
         click.echo(f"Total migrations: {status['total_migrations']}")
         click.echo(f"Pending migrations: {status['pending_migrations']}")
-        
-        if status['pending_migrations'] > 0:
+
+        if status["pending_migrations"] > 0:
             click.echo("\n⚠️  Run 'zen db upgrade' to apply pending migrations")
         else:
             click.echo("\n✅ Database is up to date")
-            
+
     except Exception as e:
         click.echo(f"❌ Error getting migration status: {e}")
 

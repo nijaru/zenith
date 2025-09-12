@@ -6,7 +6,7 @@ from the refactored routing package structure for backward compatibility.
 """
 
 # Re-export everything from the routing package
-from zenith.core.routing import *  # noqa: F403, F401
+from zenith.core.routing import *  # noqa: F403
 
-# This ensures backward compatibility while allowing the internal 
+# This ensures backward compatibility while allowing the internal
 # structure to be refactored into separate modules

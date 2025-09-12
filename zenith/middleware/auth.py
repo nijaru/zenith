@@ -8,9 +8,7 @@ available to the dependency injection system.
 import logging
 from typing import Any, Literal, overload
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from zenith.auth.jwt import get_jwt_manager
@@ -46,7 +44,7 @@ class AuthenticationMiddleware:
 
         # Get path from scope
         path = scope.get("path", "")
-        
+
         # Skip auth for public paths
         if self._is_public_path(path):
             await self.app(scope, receive, send)

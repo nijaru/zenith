@@ -12,8 +12,34 @@ Provides essential middleware for production applications:
 - Request ID tracking for distributed tracing
 - Response compression (gzip/deflate)
 - Error handling
+- Concurrent middleware processing for improved performance
+- Zero-copy streaming for memory-efficient file operations
+- Database connection reuse optimization
+- WebSocket concurrent processing
+- Server-sent events with backpressure handling
 """
 
+from .asgi_concurrent import (
+    ConcurrentAuthRateLimitMiddleware,
+    ConcurrentHeadersMiddleware,
+)
+from .db_connection_reuse import (
+    DatabaseConnectionReuseMiddleware,
+    DatabaseTransactionMiddleware,
+    ConcurrentQueryOptimizer,
+)
+from .sse_backpressure import (
+    ServerSentEventsBackpressureMiddleware,
+    SSEEventManager,
+)
+from .websocket_concurrent import (
+    ConcurrentWebSocketMiddleware,
+    WebSocketConnectionManager,
+)
+from .zero_copy_streaming import (
+    ZeroCopyStreamingMiddleware,
+    BackpressureStreamingResponse,
+)
 from .auth import AuthenticationMiddleware
 from .cache import (
     CacheConfig,
@@ -23,9 +49,19 @@ from .cache import (
     cache_control_headers,
     create_cache_middleware,
 )
-from .compression import CompressionConfig, CompressionMiddleware, create_compression_middleware
+from .compression import (
+    CompressionConfig,
+    CompressionMiddleware,
+    create_compression_middleware,
+)
 from .cors import CORSConfig, CORSMiddleware
-from .csrf import CSRFConfig, CSRFError, CSRFMiddleware, create_csrf_middleware, get_csrf_token
+from .csrf import (
+    CSRFConfig,
+    CSRFError,
+    CSRFMiddleware,
+    create_csrf_middleware,
+    get_csrf_token,
+)
 from .exceptions import ExceptionHandlerMiddleware
 from .logging import (
     JsonFormatter,
@@ -36,11 +72,11 @@ from .logging import (
     setup_structured_logging,
 )
 from .rate_limit import (
+    MemoryRateLimitStorage,
     RateLimit,
     RateLimitConfig,
     RateLimitMiddleware,
     RateLimitStorage,
-    MemoryRateLimitStorage,
     RedisRateLimitStorage,
     create_rate_limiter,
     create_redis_rate_limiter,
@@ -65,48 +101,60 @@ from .security import (
 
 __all__ = [
     "AuthenticationMiddleware",
-    "CacheConfig",
-    "CompressionConfig",
-    "CompressionMiddleware", 
-    "create_compression_middleware",
-    "MemoryCache",
-    "RedisCache", 
-    "ResponseCacheMiddleware",
-    "cache_control_headers",
-    "create_cache_middleware",
+    # ASGI Performance Optimizations
+    "ConcurrentAuthRateLimitMiddleware",
+    "ConcurrentHeadersMiddleware", 
+    "DatabaseConnectionReuseMiddleware",
+    "DatabaseTransactionMiddleware",
+    "ConcurrentQueryOptimizer",
+    "ServerSentEventsBackpressureMiddleware",
+    "SSEEventManager",
+    "ConcurrentWebSocketMiddleware",
+    "WebSocketConnectionManager",
+    "ZeroCopyStreamingMiddleware",
+    "BackpressureStreamingResponse",
     "CORSConfig",
     "CORSMiddleware",
     "CSRFConfig",
     "CSRFError",
     "CSRFMiddleware",
-    "create_csrf_middleware",
-    "get_csrf_token",
+    "CacheConfig",
+    "CompressionConfig",
+    "CompressionMiddleware",
     "ExceptionHandlerMiddleware",
     "JsonFormatter",
-    "RequestLoggingConfig",
-    "RequestLoggingMiddleware",
-    "StructuredFormatter",
-    "create_request_logging_middleware",
-    "setup_structured_logging",
+    "MemoryCache",
+    "MemoryRateLimitStorage",
     "RateLimit",
     "RateLimitConfig",
     "RateLimitMiddleware",
     "RateLimitStorage",
-    "MemoryRateLimitStorage",
+    "RedisCache",
     "RedisRateLimitStorage",
-    "create_rate_limiter",
-    "create_redis_rate_limiter",
     "RequestIDConfig",
     "RequestIDMiddleware",
-    "create_request_id_middleware", 
-    "get_request_id",
+    "RequestLoggingConfig",
+    "RequestLoggingMiddleware",
+    "ResponseCacheMiddleware",
     "SecurityConfig",
     "SecurityHeadersMiddleware",
+    "StructuredFormatter",
     "TrustedProxyMiddleware",
+    "cache_control_headers",
     "constant_time_compare",
+    "create_cache_middleware",
+    "create_compression_middleware",
+    "create_csrf_middleware",
+    "create_rate_limiter",
+    "create_redis_rate_limiter",
+    "create_request_id_middleware",
+    "create_request_logging_middleware",
     "generate_secure_token",
+    "get_csrf_token",
     "get_development_security_config",
+    "get_request_id",
     "get_strict_security_config",
     "sanitize_html_input",
+    "setup_structured_logging",
     "validate_url",
 ]

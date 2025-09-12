@@ -15,8 +15,8 @@ twine upload dist/zenith_web-{version}*
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
 - **Status**: v0.1.4 - Performance optimization release with comprehensive improvements
-- **Performance**: 7,743 req/s simple endpoints, 7,834 req/s JSON endpoints, 11.1% performance with middleware
-- **Test Coverage**: 100% (293 tests passing, 2 skipped)
+- **Performance**: 9,557 req/s simple endpoints, 9,602 req/s JSON endpoints, 70.0% performance retention with middleware  
+- **Test Coverage**: 100% (328 tests passing, 4 skipped)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
 
@@ -103,7 +103,8 @@ examples/               # Working example applications
 └── 04-websocket-chat.py # WebSocket example
 
 benchmarks/            # Performance benchmarking tools
-run_performance_tests.py # Performance test runner
+scripts/                # Development scripts
+└── run_performance_tests.py # Performance test runner
 ```
 
 ## Core Framework Components
@@ -334,17 +335,17 @@ zen test                       # Run test suite
 zen test --coverage           # With coverage report
 
 # Performance testing
-python run_performance_tests.py        # Basic performance tests
-python run_performance_tests.py --slow # Include load tests
+python scripts/run_performance_tests.py        # Basic performance tests
+python scripts/run_performance_tests.py --slow # Include load tests
 python benchmarks/simple_bench.py      # Quick benchmark
 ```
 
 ## Performance Characteristics
 
 ### Benchmarks (September 2025)
-- **Simple endpoints**: 7,743 req/s (bare framework)
-- **JSON endpoints**: 7,834 req/s (bare framework)
-- **With middleware**: 856 req/s (88.9% overhead, 11.1% retained performance)
+- **Simple endpoints**: 9,557 req/s (bare framework)
+- **JSON endpoints**: 9,602 req/s (bare framework)  
+- **With middleware**: 6,694 req/s (30.0% overhead, 70.0% retained performance)
 - **Memory efficiency**: <100MB for 1000 requests
 - **Startup time**: <100ms
 - **JSON serialization**: 25% faster with orjson/msgspec
@@ -466,8 +467,8 @@ app = Zenith(config=config)
 - ✅ Performance monitoring and profiling
 - ✅ Health checks and metrics endpoints
 - ✅ CLI development tools
-- ✅ Complete test coverage (285/285 tests)
-- ✅ Performance benchmarking (790+ req/s)
+- ✅ Complete test coverage (328/332 tests, 4 skipped)
+- ✅ Performance benchmarking (9,600+ req/s with optimizations)
 - ✅ Python 3.12 optimizations (generics, pattern matching)
 - ✅ Memory leak prevention (bounded caches, cleanup tasks)
 - ✅ Modern type hints (388 modernized)
@@ -494,7 +495,7 @@ app = Zenith(config=config)
 - Check virtual environment activation
 
 ### Performance Issues
-- Run performance tests: `python run_performance_tests.py`
+- Run performance tests: `python scripts/run_performance_tests.py`
 - Check middleware configuration  
 - Profile with `@track_performance()` decorator
 - Monitor `/metrics` endpoint

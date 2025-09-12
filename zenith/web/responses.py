@@ -4,16 +4,12 @@ Response utilities for Zenith framework.
 Provides convenient response helpers for common web application needs.
 """
 
-import json
 from pathlib import Path
 from typing import Any, Literal
-
-from zenith.core.json_encoder import _json_dumps
 
 from starlette.responses import (
     FileResponse,
     HTMLResponse,
-    JSONResponse,
     Response,
     StreamingResponse,
 )
@@ -21,9 +17,12 @@ from starlette.responses import (
     RedirectResponse as StarletteRedirect,
 )
 
+from zenith.core.json_encoder import _json_dumps
+
 # High-performance JSON handling
 try:
     import orjson
+
     HAS_ORJSON = True
 except ImportError:
     HAS_ORJSON = False
@@ -34,15 +33,16 @@ class OptimizedJSONResponse(Response):
     High-performance JSON response using orjson for 2-3x faster serialization.
     Falls back to standard json if orjson is not available.
     """
+
     media_type = "application/json"
-    
+
     def _json_default(self, obj):
         """Custom JSON encoder for non-standard types."""
-        from pathlib import Path
-        from datetime import datetime, date
+        from datetime import date, datetime
         from decimal import Decimal
+        from pathlib import Path
         from uuid import UUID
-        
+
         if isinstance(obj, Path):
             return str(obj)
         elif isinstance(obj, (datetime, date)):
@@ -51,25 +51,25 @@ class OptimizedJSONResponse(Response):
             return float(obj)
         elif isinstance(obj, UUID):
             return str(obj)
-        elif hasattr(obj, 'model_dump'):
+        elif hasattr(obj, "model_dump"):
             # Pydantic model
             return obj.model_dump()
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-    
+
     def _make_serializable(self, obj):
         """Recursively make object JSON serializable."""
         from pathlib import Path
-        
+
         if isinstance(obj, dict):
             return {k: self._make_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, list):
             return [self._make_serializable(v) for v in obj]
         elif isinstance(obj, Path):
             return str(obj)
-        elif hasattr(obj, 'model_dump'):
+        elif hasattr(obj, "model_dump"):
             return obj.model_dump()
         return obj
-    
+
     def __init__(
         self,
         content: Any,
@@ -84,14 +84,13 @@ class OptimizedJSONResponse(Response):
                 json_bytes = orjson.dumps(
                     content,
                     option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY,
-                    default=self._json_default
+                    default=self._json_default,
                 )
-            except TypeError as e:
+            except TypeError:
                 # Fallback for unserializable types
                 content = self._make_serializable(content)
                 json_bytes = orjson.dumps(
-                    content,
-                    option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY
+                    content, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY
                 )
             super().__init__(
                 content=json_bytes,
@@ -107,6 +106,7 @@ class OptimizedJSONResponse(Response):
                 headers=headers,
                 media_type=media_type or self.media_type,
             )
+
 
 # Convenient response functions
 
@@ -235,7 +235,9 @@ def no_content_response(headers: dict[str, str] | None = None) -> Response:
     return Response(status_code=204, headers=headers)
 
 
-def created_response(data: Any = None, location: str | None = None) -> OptimizedJSONResponse:
+def created_response(
+    data: Any = None, location: str | None = None
+) -> OptimizedJSONResponse:
     """Create a 201 Created response with optional location header."""
     headers = {}
     if location:
@@ -244,7 +246,9 @@ def created_response(data: Any = None, location: str | None = None) -> Optimized
     return success_response(data=data, message="Created", status_code=201)
 
 
-def accepted_response(message: str = "Request accepted for processing") -> OptimizedJSONResponse:
+def accepted_response(
+    message: str = "Request accepted for processing",
+) -> OptimizedJSONResponse:
     """Create a 202 Accepted response."""
     return success_response(message=message, status_code=202)
 
@@ -293,19 +297,19 @@ def set_cookie_response(
     samesite: Literal["lax", "strict", "none"] | None = "lax",
 ) -> Response:
     """Add a cookie to a response with secure defaults.
-    
+
     Args:
         response: Response object to add cookie to
         key: Cookie name
-        value: Cookie value  
+        value: Cookie value
         max_age: Cookie lifetime in seconds
         expires: Cookie expiration date string
         path: Cookie path
         domain: Cookie domain
         secure: Send only over HTTPS (default True for security)
-        httponly: Prevent JavaScript access (default True for XSS protection)  
+        httponly: Prevent JavaScript access (default True for XSS protection)
         samesite: SameSite attribute for CSRF protection
-        
+
     Note:
         Defaults to secure=True and httponly=True for security.
         Set secure=False only for development over HTTP.

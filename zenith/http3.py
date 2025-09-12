@@ -23,7 +23,7 @@ try:
     from aioquic.h3.server import H3Server
     from aioquic.quic.configuration import QuicConfiguration
     from aioquic.quic.events import QuicEvent, StreamDataReceived
-    
+
     HTTP3_AVAILABLE = True
 except ImportError:
     HTTP3_AVAILABLE = False
@@ -36,10 +36,10 @@ logger = logging.getLogger("zenith.http3")
 class HTTP3Config:
     """
     HTTP/3 server configuration.
-    
+
     Provides settings for QUIC protocol and HTTP/3 server.
     """
-    
+
     def __init__(
         self,
         host: str = "0.0.0.0",
@@ -57,7 +57,7 @@ class HTTP3Config:
     ):
         """
         Initialize HTTP/3 configuration.
-        
+
         Args:
             host: Host to bind to
             port: Port to bind to (default 443 for HTTPS)
@@ -84,12 +84,12 @@ class HTTP3Config:
         self.enable_0rtt = enable_0rtt
         self.max_stream_data = max_stream_data
         self.max_data = max_data
-    
+
     def to_quic_config(self) -> "QuicConfiguration":
         """Convert to aioquic QuicConfiguration."""
         if not HTTP3_AVAILABLE:
             raise RuntimeError("HTTP/3 support not available. Install 'aioquic'")
-        
+
         config = QuicConfiguration(
             alpn_protocols=self.alpn_protocols,
             is_client=False,
@@ -98,98 +98,110 @@ class HTTP3Config:
             server_name=self.server_name,
             verify_mode=self.verify_mode,
         )
-        
+
         # Load certificate and key
         if self.cert_path and self.key_path:
             config.load_cert_chain(str(self.cert_path), str(self.key_path))
         else:
             # Generate self-signed certificate for development
-            logger.warning("No certificate provided, generating self-signed certificate")
+            logger.warning(
+                "No certificate provided, generating self-signed certificate"
+            )
             self._generate_self_signed_cert(config)
-        
+
         # Enable 0-RTT for faster reconnection
         if self.enable_0rtt:
             config.max_early_data = 0xFFFFFFFF
-        
+
         # Set flow control limits
         config.max_stream_data = self.max_stream_data
         config.max_data = self.max_data
-        
+
         return config
-    
+
     def _generate_self_signed_cert(self, config: "QuicConfiguration") -> None:
         """Generate self-signed certificate for development."""
         try:
+            import datetime
+
             from cryptography import x509
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import hashes, serialization
             from cryptography.hazmat.primitives.asymmetric import rsa
             from cryptography.x509.oid import NameOID
-            import datetime
-            
+
             # Generate private key
             private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-                backend=default_backend()
+                public_exponent=65537, key_size=2048, backend=default_backend()
             )
-            
+
             # Generate certificate
-            subject = issuer = x509.Name([
-                x509.NameAttribute(NameOID.COMMON_NAME, "localhost"),
-            ])
-            
-            cert = x509.CertificateBuilder().subject_name(
-                subject
-            ).issuer_name(
-                issuer
-            ).public_key(
-                private_key.public_key()
-            ).serial_number(
-                x509.random_serial_number()
-            ).not_valid_before(
-                datetime.datetime.utcnow()
-            ).not_valid_after(
-                datetime.datetime.utcnow() + datetime.timedelta(days=365)
-            ).add_extension(
-                x509.SubjectAlternativeName([
-                    x509.DNSName("localhost"),
-                    x509.DNSName("127.0.0.1"),
-                ]),
-                critical=False,
-            ).sign(private_key, hashes.SHA256(), default_backend())
-            
+            subject = issuer = x509.Name(
+                [
+                    x509.NameAttribute(NameOID.COMMON_NAME, "localhost"),
+                ]
+            )
+
+            cert = (
+                x509.CertificateBuilder()
+                .subject_name(subject)
+                .issuer_name(issuer)
+                .public_key(private_key.public_key())
+                .serial_number(x509.random_serial_number())
+                .not_valid_before(datetime.datetime.utcnow())
+                .not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=365)
+                )
+                .add_extension(
+                    x509.SubjectAlternativeName(
+                        [
+                            x509.DNSName("localhost"),
+                            x509.DNSName("127.0.0.1"),
+                        ]
+                    ),
+                    critical=False,
+                )
+                .sign(private_key, hashes.SHA256(), default_backend())
+            )
+
             # Convert to PEM format
             cert_pem = cert.public_bytes(serialization.Encoding.PEM)
             key_pem = private_key.private_bytes(
                 encoding=serialization.Encoding.PEM,
                 format=serialization.PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=serialization.NoEncryption()
+                encryption_algorithm=serialization.NoEncryption(),
             )
-            
+
             # Load into configuration
             import tempfile
-            with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.pem') as cert_file:
+
+            with tempfile.NamedTemporaryFile(
+                mode="wb", delete=False, suffix=".pem"
+            ) as cert_file:
                 cert_file.write(cert_pem)
                 cert_path = cert_file.name
-            
-            with tempfile.NamedTemporaryFile(mode='wb', delete=False, suffix='.key') as key_file:
+
+            with tempfile.NamedTemporaryFile(
+                mode="wb", delete=False, suffix=".key"
+            ) as key_file:
                 key_file.write(key_pem)
                 key_path = key_file.name
-            
+
             config.load_cert_chain(cert_path, key_path)
-            
+
         except ImportError:
-            raise RuntimeError("cryptography package required for self-signed certificates")
+            raise RuntimeError(
+                "cryptography package required for self-signed certificates"
+            )
 
 
 class HTTP3Protocol(QuicConnectionProtocol if HTTP3_AVAILABLE else object):
     """
     HTTP/3 protocol handler.
-    
+
     Handles HTTP/3 connections and requests.
     """
-    
+
     def __init__(self, *args, app=None, **kwargs):
         """Initialize HTTP/3 protocol."""
         if HTTP3_AVAILABLE:
@@ -199,32 +211,32 @@ class HTTP3Protocol(QuicConnectionProtocol if HTTP3_AVAILABLE else object):
             self._handlers: dict[int, Any] = {}
         else:
             self._app = app
-    
+
     def http_event_received(self, event: H3Event) -> None:
         """Handle HTTP/3 events."""
         if isinstance(event, HeadersReceived):
             self._handle_headers(event)
         elif isinstance(event, DataReceived):
             self._handle_data(event)
-    
+
     def _handle_headers(self, event: HeadersReceived) -> None:
         """Handle HTTP/3 headers."""
         # Convert headers to dict
         headers = {}
         method = None
         path = None
-        
+
         for name, value in event.headers:
-            name = name.decode('ascii')
-            value = value.decode('ascii')
-            
+            name = name.decode("ascii")
+            value = value.decode("ascii")
+
             if name == ":method":
                 method = value
             elif name == ":path":
                 path = value
             elif not name.startswith(":"):
                 headers[name] = value
-        
+
         # Store request info
         self._handlers[event.stream_id] = {
             "method": method,
@@ -232,52 +244,52 @@ class HTTP3Protocol(QuicConnectionProtocol if HTTP3_AVAILABLE else object):
             "headers": headers,
             "body": b"",
         }
-        
+
         # If no body expected, process request
         if method in ("GET", "HEAD", "DELETE"):
             self._process_request(event.stream_id)
-    
+
     def _handle_data(self, event: DataReceived) -> None:
         """Handle HTTP/3 data."""
         if event.stream_id in self._handlers:
             self._handlers[event.stream_id]["body"] += event.data
-            
+
             if event.stream_ended:
                 self._process_request(event.stream_id)
-    
+
     def _process_request(self, stream_id: int) -> None:
         """Process HTTP/3 request."""
         if stream_id not in self._handlers:
             return
-        
+
         handler = self._handlers[stream_id]
-        
+
         # Create response (simplified for example)
         response_headers = [
             (b":status", b"200"),
             (b"content-type", b"application/json"),
             (b"server", b"Zenith/HTTP3"),
         ]
-        
+
         response_body = b'{"message": "Hello from HTTP/3!", "protocol": "h3"}'
-        
+
         # Send response
         if self._h3:
             self._h3.send_headers(
                 stream_id=stream_id,
                 headers=response_headers,
             )
-            
+
             self._h3.send_data(
                 stream_id=stream_id,
                 data=response_body,
                 end_stream=True,
             )
-            
+
             # Transmit pending data
             for data in self._h3.data_to_send():
                 self._quic.send_datagram_frame(data)
-        
+
         # Clean up handler
         del self._handlers[stream_id]
 
@@ -285,25 +297,25 @@ class HTTP3Protocol(QuicConnectionProtocol if HTTP3_AVAILABLE else object):
 class HTTP3Server:
     """
     HTTP/3 server for Zenith applications.
-    
+
     Features:
     - QUIC protocol support
     - 0-RTT connection resumption
     - Multiplexed streams without head-of-line blocking
     - Built-in encryption
     - Connection migration support
-    
+
     Performance Benefits:
     - 30-50% faster connection establishment
     - Better performance on lossy networks
     - Lower latency for mobile users
     - Improved security with mandatory encryption
     """
-    
+
     def __init__(self, app, config: HTTP3Config | None = None):
         """
         Initialize HTTP/3 server.
-        
+
         Args:
             app: Zenith application instance
             config: HTTP/3 configuration
@@ -312,35 +324,35 @@ class HTTP3Server:
             raise RuntimeError(
                 "HTTP/3 support requires 'aioquic'. Install with: pip install aioquic"
             )
-        
+
         self._app = app
         self.config = config or HTTP3Config()
         self._server = None
-    
+
     async def serve(self) -> None:
         """Start HTTP/3 server."""
         logger.info(f"Starting HTTP/3 server on {self.config.host}:{self.config.port}")
-        
+
         # Create QUIC configuration
         quic_config = self.config.to_quic_config()
-        
+
         # Start server
         self._server = await serve(
             self.config.host,
             self.config.port,
             configuration=quic_config,
             create_protocol=lambda *args, **kwargs: HTTP3Protocol(
-                *args,
-                app=self._app,
-                **kwargs
+                *args, app=self._app, **kwargs
             ),
         )
-        
-        logger.info(f"HTTP/3 server running on https://{self.config.host}:{self.config.port}")
-        
+
+        logger.info(
+            f"HTTP/3 server running on https://{self.config.host}:{self.config.port}"
+        )
+
         # Wait forever
         await asyncio.Future()
-    
+
     async def shutdown(self) -> None:
         """Shutdown HTTP/3 server."""
         if self._server:
@@ -352,11 +364,11 @@ class HTTP3Server:
 def create_http3_server(app, **kwargs) -> HTTP3Server:
     """
     Factory function to create HTTP/3 server.
-    
+
     Args:
         app: Zenith application
         **kwargs: Configuration parameters
-    
+
     Returns:
         Configured HTTP/3 server
     """

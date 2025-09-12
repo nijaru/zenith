@@ -145,11 +145,11 @@ def create_static_route(
 
 class SPAStaticFiles(ZenithStaticFiles):
     """Static files handler with SPA fallback support."""
-    
+
     def __init__(self, config: StaticFileConfig, fallback: str = "index.html"):
         super().__init__(config)
         self.fallback = fallback
-    
+
     async def get_response(self, path: str, scope: dict) -> Response:
         """Get response for a path, falling back to index.html for SPAs."""
         try:

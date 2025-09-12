@@ -22,7 +22,7 @@ F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
 class JobManager:
     """
     Central manager for background jobs.
-    
+
     Features:
     - Decorator-based job definition
     - Async job execution
@@ -30,12 +30,13 @@ class JobManager:
     - Job status tracking
     - Redis-backed persistence
     """
-    __slots__ = ('redis_url', 'queue', 'jobs', 'running')
+
+    __slots__ = ("jobs", "queue", "redis_url", "running")
 
     def __init__(self, redis_url: str = "redis://localhost:6379/0"):
         """
         Initialize job manager.
-        
+
         Args:
             redis_url: Redis connection URL for job persistence
         """
@@ -53,19 +54,19 @@ class JobManager:
     ) -> Callable[[F], F]:
         """
         Decorator to register a background job.
-        
+
         Args:
             name: Job name (defaults to function name)
             max_retries: Maximum retry attempts
             retry_delay_secs: Delay between retries in seconds
             timeout_secs: Job execution timeout in seconds
-            
+
         Example:
             @job_manager.job(name="send_email", max_retries=5)
             async def send_email(to: str, subject: str, body: str):
                 # Send email logic here
                 pass
-                
+
             # Queue the job
             await send_email.delay(
                 to="user@example.com",
@@ -73,6 +74,7 @@ class JobManager:
                 body="Welcome to our service"
             )
         """
+
         def decorator(func: F) -> F:
             job_name = name or func.__name__
 
@@ -109,21 +111,17 @@ class JobManager:
         return decorator
 
     async def enqueue(
-        self,
-        job_name: str,
-        *args,
-        delay: timedelta | None = None,
-        **kwargs
+        self, job_name: str, *args, delay: timedelta | None = None, **kwargs
     ) -> str:
         """
         Manually enqueue a job.
-        
+
         Args:
             job_name: Name of the registered job
             *args: Positional arguments for the job
             delay: Delay before job execution
             **kwargs: Keyword arguments for the job
-            
+
         Returns:
             job_id: Unique identifier for the job
         """
@@ -175,7 +173,7 @@ class JobManager:
     async def start_worker(self, concurrency: int = 1) -> None:
         """
         Start processing jobs.
-        
+
         Args:
             concurrency: Number of concurrent job processors
         """
@@ -187,10 +185,7 @@ class JobManager:
         logger.info(f"Starting job worker with concurrency {concurrency}")
 
         # Start multiple worker coroutines
-        tasks = [
-            asyncio.create_task(worker.process_jobs())
-            for _ in range(concurrency)
-        ]
+        tasks = [asyncio.create_task(worker.process_jobs()) for _ in range(concurrency)]
 
         try:
             await asyncio.gather(*tasks)
@@ -228,17 +223,17 @@ def job(
 ) -> Callable[[F], F]:
     """
     Decorator to register a background job with the global manager.
-    
+
     This is a convenience function that uses the global job manager.
-    
+
     Example:
         from zenith.jobs import job
-        
+
         @job(name="process_image", max_retries=5)
         async def process_image(image_path: str):
             # Image processing logic
             pass
-            
+
         # Queue the job
         await process_image.delay("/path/to/image.jpg")
     """

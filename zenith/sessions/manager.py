@@ -7,7 +7,7 @@ Provides a high-level API for session operations with pluggable storage backends
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from zenith.sessions.store import SessionStore
@@ -16,7 +16,7 @@ from zenith.sessions.store import SessionStore
 class Session:
     """
     User session data container.
-    
+
     Provides dict-like access to session data with automatic
     dirty tracking and expiration handling.
     """
@@ -30,7 +30,7 @@ class Session:
     ):
         """
         Initialize session.
-        
+
         Args:
             session_id: Unique session identifier
             data: Session data dictionary
@@ -39,7 +39,7 @@ class Session:
         """
         self.session_id = session_id
         self._data = data or {}
-        self.created_at = created_at or datetime.now(timezone.utc)
+        self.created_at = created_at or datetime.now(UTC)
         self.expires_at = expires_at
         self._dirty = False
         self._new = data is None
@@ -68,11 +68,11 @@ class Session:
         """Check if session is expired."""
         if not self.expires_at:
             return False
-        return datetime.now(timezone.utc) > self.expires_at
+        return datetime.now(UTC) > self.expires_at
 
     def refresh_expiry(self, max_age: timedelta) -> None:
         """Refresh session expiration time."""
-        self.expires_at = datetime.now(timezone.utc) + max_age
+        self.expires_at = datetime.now(UTC) + max_age
         self._dirty = True
 
     @property
@@ -100,7 +100,7 @@ class Session:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Session":
+    def from_dict(cls, data: dict) -> Session:
         """Create session from dictionary."""
         expires_at = None
         if data.get("expires_at"):
@@ -142,7 +142,7 @@ class Session:
 class SessionManager:
     """
     Session manager with pluggable storage backends.
-    
+
     Features:
     - Multiple storage backends (cookie, Redis, database)
     - Automatic session expiration
@@ -163,7 +163,7 @@ class SessionManager:
     ):
         """
         Initialize session manager.
-        
+
         Args:
             store: Session storage backend
             cookie_name: Name of session cookie
@@ -191,7 +191,7 @@ class SessionManager:
     async def create_session(self, data: dict | None = None) -> Session:
         """Create a new session."""
         session_id = self.generate_session_id()
-        expires_at = datetime.now(timezone.utc) + self.max_age
+        expires_at = datetime.now(UTC) + self.max_age
 
         session = Session(
             session_id=session_id,
@@ -229,7 +229,7 @@ class SessionManager:
     async def regenerate_session_id(self, session: Session) -> Session:
         """
         Regenerate session ID for security.
-        
+
         This should be called after login to prevent session fixation attacks.
         """
         old_session_id = session.session_id

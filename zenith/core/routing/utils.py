@@ -27,6 +27,7 @@ def validate_response_type(result: Any, return_type: type) -> Any:
     if hasattr(return_type, "__origin__") and return_type.__origin__ is list:
         if not isinstance(result, list):
             from zenith.exceptions import ValidationException
+
             raise ValidationException(
                 f"Expected list response, got {type(result).__name__}"
             )
@@ -36,15 +37,17 @@ def validate_response_type(result: Any, return_type: type) -> Any:
     if hasattr(return_type, "__origin__") and return_type.__origin__ is dict:
         if not isinstance(result, dict):
             from zenith.exceptions import ValidationException
+
             raise ValidationException(
                 f"Expected dict response, got {type(result).__name__}"
             )
         return result
 
     # Handle Pydantic models
-    from pydantic import BaseModel
     import inspect
-    
+
+    from pydantic import BaseModel
+
     if inspect.isclass(return_type) and issubclass(return_type, BaseModel):
         if isinstance(result, return_type):
             return result  # Already correct type
@@ -54,12 +57,14 @@ def validate_response_type(result: Any, return_type: type) -> Any:
                 return return_type.model_validate(result)
             except ValidationError as e:
                 from zenith.exceptions import ValidationException
+
                 raise ValidationException(
                     f"Response validation failed for {return_type.__name__}",
                     details={"validation_errors": e.errors()},
                 ) from e
         else:
             from zenith.exceptions import ValidationException
+
             raise ValidationException(
                 f"Expected {return_type.__name__} or dict, got {type(result).__name__}"
             )
@@ -73,40 +78,40 @@ def create_route_name(path: str, methods: list[str]) -> str:
     # Convert /users/{id}/posts -> users_id_posts
     name_parts = [part for part in path.split("/") if part]
     name_parts = [part.replace("{", "").replace("}", "") for part in name_parts]
-    
+
     # Add method prefix for non-GET routes
     if methods != ["GET"]:
         method_prefix = "_".join(methods).lower()
         return f"{method_prefix}_{'_'.join(name_parts)}"
-    
+
     return "_".join(name_parts) or "root"
 
 
 def extract_route_tags(handler) -> list[str]:
     """Extract tags from handler for OpenAPI generation."""
     tags = []
-    
+
     # Check for explicit tags attribute
-    if hasattr(handler, '_zenith_tags'):
+    if hasattr(handler, "_zenith_tags"):
         tags.extend(handler._zenith_tags)
-    
+
     # Infer from module/class name
-    if hasattr(handler, '__module__'):
-        module_parts = handler.__module__.split('.')
+    if hasattr(handler, "__module__"):
+        module_parts = handler.__module__.split(".")
         if len(module_parts) > 1:
             tags.append(module_parts[-1])
-    
+
     return tags or ["default"]
 
 
 def normalize_path(path: str) -> str:
     """Normalize route path for consistency."""
     # Ensure path starts with /
-    if not path.startswith('/'):
-        path = '/' + path
-    
+    if not path.startswith("/"):
+        path = "/" + path
+
     # Remove trailing slash except for root
-    if path != '/' and path.endswith('/'):
-        path = path.rstrip('/')
-    
+    if path != "/" and path.endswith("/"):
+        path = path.rstrip("/")
+
     return path

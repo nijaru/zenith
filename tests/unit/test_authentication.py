@@ -289,7 +289,9 @@ class TestAuthenticationMiddleware:
 
         async with TestClient(app) as client:
             # Invalid token
-            response = await client.get("/protected", headers={"Authorization": "Bearer invalid.jwt.token"})
+            response = await client.get(
+                "/protected", headers={"Authorization": "Bearer invalid.jwt.token"}
+            )
             assert response.status_code == 401
 
     async def test_middleware_optional_auth(self):

@@ -14,8 +14,9 @@ from starlette.middleware import Middleware
 
 class HTTPMethod(Enum):
     """HTTP methods supported by the router."""
+
     GET = "GET"
-    POST = "POST"  
+    POST = "POST"
     PUT = "PUT"
     PATCH = "PATCH"
     DELETE = "DELETE"
@@ -27,6 +28,7 @@ class HTTPMethod(Enum):
 @dataclass(slots=True)
 class RouteSpec:
     """Route specification containing all route information."""
+
     path: str
     handler: Callable[..., Any]
     methods: list[str]

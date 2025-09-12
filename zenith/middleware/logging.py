@@ -271,7 +271,8 @@ class RequestLoggingMiddleware:
         if self.include_headers:
             data["headers"] = dict(request.headers)
 
-        if self.include_body and request.method in ("POST", "PUT", "PATCH"):
+        from zenith.core.patterns import METHODS_WITH_BODY
+        if self.include_body and request.method in METHODS_WITH_BODY:
             try:
                 body = await request.body()
                 if len(body) <= self.max_body_size:
