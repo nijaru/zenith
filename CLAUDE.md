@@ -1,10 +1,20 @@
 # Zenith - AI Assistant Context
 *Comprehensive context for AI assistants working with the Zenith Python web framework*
 
+## Publishing to PyPI
+**IMPORTANT**: Use `twine` for PyPI uploads, not `uv publish`:
+```bash
+# Build the package
+uv build
+
+# Upload to PyPI using twine
+twine upload dist/zenith_web-{version}*
+```
+
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.1.2 - First stable release, ready for production use
+- **Status**: v0.1.3-alpha - Critical bug fixes, testing for stability
 - **Performance**: 7,743 req/s simple endpoints, 7,834 req/s JSON endpoints, 11.1% performance with middleware
 - **Test Coverage**: 100% (293 tests passing, 2 skipped)
 - **CLI**: `zen` command for development tools
