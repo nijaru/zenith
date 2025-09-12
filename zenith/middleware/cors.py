@@ -8,10 +8,9 @@ Essential for APIs that will be called from web applications.
 import re
 from re import Pattern
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 class CORSConfig:
@@ -36,7 +35,7 @@ class CORSConfig:
         self.max_age = max_age_secs
 
 
-class CORSMiddleware(BaseHTTPMiddleware):
+class CORSMiddleware:
     """
     CORS middleware that handles Cross-Origin Resource Sharing headers.
 
@@ -73,7 +72,7 @@ class CORSMiddleware(BaseHTTPMiddleware):
         expose_headers: list[str] | None = None,
         max_age_secs: int = 600,
     ):
-        super().__init__(app)
+        self.app = app
 
         # Use config object if provided, otherwise use individual parameters
         if config is not None:
@@ -119,24 +118,33 @@ class CORSMiddleware(BaseHTTPMiddleware):
                 "Specify explicit origins when using credentials."
             )
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Handle CORS for incoming requests."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with CORS handling."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        # Get the origin header
-        origin = request.headers.get("origin")
+        # Get the origin header from scope
+        headers = dict(scope.get("headers", []))
+        origin_bytes = headers.get(b"origin")
+        origin = origin_bytes.decode("latin-1") if origin_bytes else None
 
         # Handle preflight requests (OPTIONS method)
-        if request.method == "OPTIONS" and origin:
-            return self._handle_preflight(request, origin)
+        if scope["method"] == "OPTIONS" and origin:
+            response = self._handle_preflight_asgi(scope, origin)
+            await response(scope, receive, send)
+            return
 
-        # Process the actual request
-        response = await call_next(request)
+        # Wrap send to add CORS headers to response
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start" and origin and self._is_origin_allowed(origin):
+                # Add CORS headers to response
+                response_headers = list(message.get("headers", []))
+                self._add_cors_headers_asgi(response_headers, origin)
+                message["headers"] = response_headers
+            await send(message)
 
-        # Add CORS headers to response
-        if origin and self._is_origin_allowed(origin):
-            self._add_cors_headers(response, origin)
-
-        return response
+        await self.app(scope, receive, send_wrapper)
 
     def _handle_preflight(self, request: Request, origin: str) -> Response:
         """Handle CORS preflight OPTIONS requests."""
@@ -170,6 +178,70 @@ class CORSMiddleware(BaseHTTPMiddleware):
         self._add_cors_headers(response, origin, is_preflight=True)
 
         return response
+
+    def _handle_preflight_asgi(self, scope: Scope, origin: str) -> Response:
+        """Handle CORS preflight OPTIONS requests for ASGI."""
+        
+        # Check if origin is allowed
+        if not self._is_origin_allowed(origin):
+            return Response(status_code=400, content="CORS: Origin not allowed")
+
+        # Get requested method and headers from scope
+        headers = dict(scope.get("headers", []))
+        requested_method_bytes = headers.get(b"access-control-request-method")
+        requested_headers_bytes = headers.get(b"access-control-request-headers")
+        
+        requested_method = requested_method_bytes.decode("latin-1") if requested_method_bytes else None
+        requested_headers = requested_headers_bytes.decode("latin-1") if requested_headers_bytes else None
+
+        # Validate requested method
+        if requested_method and requested_method.upper() not in self.allow_methods:
+            return Response(status_code=400, content="CORS: Method not allowed")
+
+        # Validate requested headers
+        if requested_headers:
+            # Fast path for wildcard headers
+            if not self.allow_all_headers:
+                requested_headers_list = [
+                    header.strip().lower() for header in requested_headers.split(",")
+                ]
+                if not all(
+                    header in self.allow_headers for header in requested_headers_list
+                ):
+                    return Response(status_code=400, content="CORS: Headers not allowed")
+
+        # Create preflight response
+        response = Response(status_code=200)
+        self._add_cors_headers(response, origin, is_preflight=True)
+
+        return response
+
+    def _add_cors_headers_asgi(
+        self, response_headers: list, origin: str, is_preflight: bool = False
+    ) -> None:
+        """Add CORS headers to ASGI response headers list."""
+        
+        # Set allowed origin
+        response_headers.append((b"access-control-allow-origin", origin.encode("latin-1")))
+
+        # Set credentials header if needed
+        if self.allow_credentials:
+            response_headers.append((b"access-control-allow-credentials", b"true"))
+
+        # Set exposed headers
+        if self.expose_headers:
+            expose_value = ", ".join(self.expose_headers)
+            response_headers.append((b"access-control-expose-headers", expose_value.encode("latin-1")))
+
+        # Preflight-specific headers
+        if is_preflight:
+            methods_value = ", ".join(self.allow_methods)
+            response_headers.append((b"access-control-allow-methods", methods_value.encode("latin-1")))
+            
+            headers_value = ", ".join(self.allow_headers)
+            response_headers.append((b"access-control-allow-headers", headers_value.encode("latin-1")))
+            
+            response_headers.append((b"access-control-max-age", str(self.max_age).encode("latin-1")))
 
     def _is_origin_allowed(self, origin: str) -> bool:
         """Check if an origin is allowed."""

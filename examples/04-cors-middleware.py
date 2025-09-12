@@ -46,4 +46,4 @@ if __name__ == "__main__":
     print("🌐 CORS-enabled API running at http://localhost:8004")
     print("Test from browser console:")
     print("  fetch('http://localhost:8004/api/data').then(r => r.json()).then(console.log)")
-    uvicorn.run("cors_example:app", host="127.0.0.1", port=8004, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=8004, reload=False)

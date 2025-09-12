@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 # Get logger
 logger = logging.getLogger("zenith.exceptions")
@@ -32,7 +32,7 @@ from zenith.exceptions import (
 )
 
 
-class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
+class ExceptionHandlerMiddleware:
     """
     Comprehensive exception handling middleware.
 
@@ -58,7 +58,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         debug: bool = False,
         handlers: dict[type, Callable] | None = None,
     ):
-        super().__init__(app)
+        self.app = app
         self.debug = debug
         self.handlers = handlers or {}
 
@@ -81,13 +81,24 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         self.handlers[FileNotFoundError] = self._handle_file_not_found
         self.handlers[PermissionError] = self._handle_permission_error
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Handle exceptions from the application."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with exception handling."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Create request for exception handling
+        request = Request(scope, receive)
+        response_started = False
+
+        async def send_wrapper(message):
+            nonlocal response_started
+            if message["type"] == "http.response.start":
+                response_started = True
+            await send(message)
 
         try:
-            response = await call_next(request)
-            return response
-
+            await self.app(scope, receive, send_wrapper)
         except Exception as exc:
             # Log the exception
             logger.error(
@@ -95,8 +106,15 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
                 exc_info=True,
             )
 
-            # Handle the exception
-            return await self._handle_exception(request, exc)
+            # Don't send response if it was already started
+            if not response_started:
+                response = await self._handle_exception(request, exc)
+                await response(scope, receive, send)
+            else:
+                # If response was already started, we can't send our error response
+                # This is a limitation of the ASGI protocol
+                logger.error("Cannot send error response - response already started")
+                raise
 
     async def _handle_exception(self, request: Request, exc: Exception) -> Response:
         """Handle a specific exception."""
