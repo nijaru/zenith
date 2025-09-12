@@ -3,7 +3,6 @@ title: Hello World Example
 description: Your first Zenith application
 ---
 
-import { Code } from '@astrojs/starlight/components';
 
 ## Minimal Zenith Application
 

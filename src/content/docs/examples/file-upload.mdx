@@ -3,7 +3,7 @@ title: File Upload Service
 description: Handle file uploads with validation, processing, and cloud storage
 ---
 
-import { FileTree } from '@astrojs/starlight/components';
+import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
@@ -20,36 +20,38 @@ This example demonstrates building a comprehensive file upload service with Zeni
 ## Project Structure
 
 <FileTree>
+
 - file-upload-service/
   - app/
-    - __init__.py
-    - main.py              **Entry point**
-    - config.py            **Configuration**
+    - \_\_init\_\_.py
+    - **main.py** Entry point
+    - **config.py** Configuration
     - models/
-      - file.py            **File metadata model**
-      - upload.py          **Upload session model**
+      - **file.py** File metadata model
+      - **upload.py** Upload session model
     - contexts/
-      - uploads.py         **Upload business logic**
-      - storage.py         **Storage backends**
-      - processing.py      **File processing**
+      - **uploads.py** Upload business logic
+      - **storage.py** Storage backends
+      - **processing.py** File processing
     - routes/
-      - uploads.py         **Upload endpoints**
-      - files.py           **File management**
+      - **uploads.py** Upload endpoints
+      - **files.py** File management
     - services/
       - storage/
-        - s3.py            **AWS S3 storage**
-        - local.py         **Local file storage**
+        - **s3.py** AWS S3 storage
+        - **local.py** Local file storage
       - processing/
-        - images.py        **Image processing**
-        - documents.py     **Document processing**
-      - validation.py      **File validation**
-      - virus_scan.py      **Virus scanning**
+        - **images.py** Image processing
+        - **documents.py** Document processing
+      - **validation.py** File validation
+      - **virus_scan.py** Virus scanning
     - static/
-      - upload.html        **Upload interface**
-      - upload.js          **Client code**
-  - uploads/               **Local storage directory**
+      - **upload.html** Upload interface
+      - **upload.js** Client code
+  - uploads/ Local storage directory
   - tests/
   - requirements.txt
+
 </FileTree>
 
 ## File Models

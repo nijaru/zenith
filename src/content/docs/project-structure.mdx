@@ -3,45 +3,46 @@ title: Project Structure
 description: Recommended project organization for Zenith applications
 ---
 
-import { FileTree, Aside } from '@astrojs/starlight/components';
+import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Recommended Structure
 
 Zenith encourages a clean, scalable project structure that separates concerns and makes your codebase maintainable as it grows.
 
 <FileTree>
+
 - my-zenith-app/
   - app/
-    - __init__.py
-    - main.py **Entry point**
-    - config.py **Configuration management**
-    - contexts/ **Business logic**
-      - __init__.py
+    - \_\_init\_\_.py
+    - **main.py** Entry point
+    - config.py Configuration management
+    - contexts/ Business logic
+      - \_\_init\_\_.py
       - users.py
       - products.py
       - orders.py
-    - models/ **Data models**
-      - __init__.py
+    - models/ Data models
+      - \_\_init\_\_.py
       - user.py
       - product.py
       - order.py
-    - routes/ **API endpoints**
-      - __init__.py
+    - routes/ API endpoints
+      - \_\_init\_\_.py
       - auth.py
       - users.py
       - products.py
       - orders.py
-    - middleware/ **Custom middleware**
-      - __init__.py
+    - middleware/ Custom middleware
+      - \_\_init\_\_.py
       - auth.py
       - logging.py
-    - services/ **External services**
-      - __init__.py
+    - services/ External services
+      - \_\_init\_\_.py
       - email.py
       - storage.py
       - payment.py
-    - utils/ **Utility functions**
-      - __init__.py
+    - utils/ Utility functions
+      - \_\_init\_\_.py
       - validators.py
       - formatters.py
   - tests/
@@ -49,27 +50,28 @@ Zenith encourages a clean, scalable project structure that separates concerns an
     - test_users.py
     - test_products.py
     - test_orders.py
-  - migrations/ **Database migrations**
+  - migrations/ Database migrations
     - alembic.ini
     - versions/
-  - static/ **Static files**
+  - static/ Static files
     - css/
     - js/
     - images/
-  - templates/ **Email/HTML templates**
+  - templates/ Email/HTML templates
     - email/
       - welcome.html
       - order_confirmation.html
-  - scripts/ **Utility scripts**
+  - scripts/ Utility scripts
     - seed_db.py
     - cleanup.py
-  - .env **Environment variables**
+  - **.env** Environment variables
   - .env.example
   - .gitignore
   - docker-compose.yml
   - Dockerfile
-  - pyproject.toml **Project dependencies**
+  - **pyproject.toml** Project dependencies
   - README.md
+
 </FileTree>
 
 ## Core Components
