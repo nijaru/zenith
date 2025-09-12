@@ -4,12 +4,12 @@ Job queue implementation with Redis backend.
 Provides persistent job storage, status tracking, and job scheduling.
 """
 
-import json
 import logging
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
+import msgspec
 import redis.asyncio as redis
 
 logger = logging.getLogger("zenith.jobs.queue")
@@ -100,7 +100,7 @@ class JobQueue:
 
         # Store job data
         job_key = f"{self.job_prefix}{job_id}"
-        await self.redis.set(job_key, json.dumps(job_data))
+        await self.redis.set(job_key, msgspec.json.encode(job_data).decode())
 
         # Add to appropriate queue
         if scheduled_at:
@@ -285,13 +285,13 @@ class JobQueue:
         job_key = f"{self.job_prefix}{job_id}"
         data = await self.redis.get(job_key)
         if data:
-            return json.loads(data)
+            return msgspec.json.decode(data.encode())
         return None
 
     async def _update_job_data(self, job_id: str, job_data: dict) -> None:
         """Update job data in Redis."""
         job_key = f"{self.job_prefix}{job_id}"
-        await self.redis.set(job_key, json.dumps(job_data))
+        await self.redis.set(job_key, msgspec.json.encode(job_data).decode())
 
     async def _move_scheduled_jobs(self) -> None:
         """Move scheduled jobs that are ready to the pending queue."""

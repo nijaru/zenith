@@ -15,6 +15,7 @@ T = TypeVar("T")
 
 class DIContainer:
     """Dependency injection container with async support."""
+    __slots__ = ('_services', '_singletons', '_factories', '_startup_hooks', '_shutdown_hooks')
 
     def __init__(self) -> None:
         self._services: dict[str, Any] = {}
@@ -108,30 +109,57 @@ class DIContainer:
         self._shutdown_hooks.append(hook)
 
     async def startup(self) -> None:
-        """Execute startup hooks."""
-        for hook in self._startup_hooks:
-            if asyncio.iscoroutinefunction(hook):
-                await hook()
-            else:
-                hook()
+        """Execute startup hooks with parallel async execution."""
+        if not self._startup_hooks:
+            return
+            
+        # Separate sync and async hooks for optimal execution
+        sync_hooks = [h for h in self._startup_hooks if not asyncio.iscoroutinefunction(h)]
+        async_hooks = [h for h in self._startup_hooks if asyncio.iscoroutinefunction(h)]
+        
+        # Run sync hooks first (they're usually faster)
+        for hook in sync_hooks:
+            hook()
+            
+        # Run async hooks in parallel using TaskGroup
+        if async_hooks:
+            async with asyncio.TaskGroup() as tg:
+                for hook in async_hooks:
+                    tg.create_task(hook())
 
     async def shutdown(self) -> None:
-        """Execute shutdown hooks and cleanup."""
-        for hook in reversed(self._shutdown_hooks):
-            if asyncio.iscoroutinefunction(hook):
-                await hook()
-            else:
+        """Execute shutdown hooks and cleanup with parallel async execution."""
+        # Shutdown hooks should run in reverse order, but can parallelize async ones
+        if self._shutdown_hooks:
+            reversed_hooks = list(reversed(self._shutdown_hooks))
+            sync_hooks = [h for h in reversed_hooks if not asyncio.iscoroutinefunction(h)]
+            async_hooks = [h for h in reversed_hooks if asyncio.iscoroutinefunction(h)]
+            
+            # Run sync hooks first (they're usually faster)
+            for hook in sync_hooks:
                 hook()
+                
+            # Run async hooks in parallel
+            if async_hooks:
+                async with asyncio.TaskGroup() as tg:
+                    for hook in async_hooks:
+                        tg.create_task(hook())
 
-        # Cleanup async services
+        # Cleanup async services in parallel
+        service_cleanup_tasks = []
         for service in self._services.values():
             if hasattr(service, "__aexit__"):
-                await service.__aexit__(None, None, None)
+                service_cleanup_tasks.append(service.__aexit__(None, None, None))
+            elif hasattr(service, "close") and asyncio.iscoroutinefunction(service.close):
+                service_cleanup_tasks.append(service.close())
             elif hasattr(service, "close"):
-                if asyncio.iscoroutinefunction(service.close):
-                    await service.close()
-                else:
-                    service.close()
+                service.close()  # Sync close
+                
+        # Cleanup async services in parallel
+        if service_cleanup_tasks:
+            async with asyncio.TaskGroup() as tg:
+                for cleanup_task in service_cleanup_tasks:
+                    tg.create_task(cleanup_task)
 
     @asynccontextmanager
     async def lifespan(self):

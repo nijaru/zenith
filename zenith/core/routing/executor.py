@@ -6,7 +6,8 @@ parameter injection, and error handling.
 """
 
 import inspect
-from typing import Any, get_type_hints
+import sys
+from typing import Any, get_type_hints, Final
 
 from pydantic import BaseModel, ValidationError
 from starlette.requests import Request
@@ -16,6 +17,17 @@ from zenith.web.responses import OptimizedJSONResponse
 from .dependency_resolver import DependencyResolver
 from .response_processor import ResponseProcessor
 from .specs import RouteSpec
+
+# Intern common HTTP methods for faster string comparisons
+_POST_METHODS: Final = frozenset([
+    sys.intern("POST"), sys.intern("PUT"), sys.intern("PATCH")
+])
+
+_HTTP_METHODS: Final = {
+    sys.intern("GET"), sys.intern("POST"), sys.intern("PUT"), 
+    sys.intern("PATCH"), sys.intern("DELETE"), sys.intern("HEAD"), 
+    sys.intern("OPTIONS"), sys.intern("TRACE")
+}
 
 
 class RouteExecutor:
@@ -117,7 +129,7 @@ class RouteExecutor:
             if (
                 inspect.isclass(param_type)
                 and issubclass(param_type, BaseModel)
-                and request.method in ["POST", "PUT", "PATCH"]
+                and request.method in _POST_METHODS
             ):
                 # Get raw body to handle special characters properly
                 body_bytes = await request.body()

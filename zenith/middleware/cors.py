@@ -76,9 +76,9 @@ class CORSMiddleware:
 
         # Use config object if provided, otherwise use individual parameters
         if config is not None:
-            self.allow_origins: set[str] = set(config.allow_origins)
-            self.allow_methods: set[str] = {method.upper() for method in config.allow_methods}
-            self.allow_headers: set[str] = {header.lower() for header in config.allow_headers}
+            self.allow_origins: frozenset[str] = frozenset(config.allow_origins)
+            self.allow_methods: frozenset[str] = frozenset(method.upper() for method in config.allow_methods)
+            self.allow_headers: frozenset[str] = frozenset(header.lower() for header in config.allow_headers)
             self.allow_credentials = config.allow_credentials
             self.expose_headers = config.expose_headers
             self.max_age = config.max_age
@@ -87,6 +87,11 @@ class CORSMiddleware:
             self.allow_origin_regex: Pattern | None = None
             if config.allow_origin_regex is not None:
                 self.allow_origin_regex = re.compile(config.allow_origin_regex)
+                
+            # Pre-compute encoded header values for performance
+            self._encoded_methods = ", ".join(self.allow_methods).encode("latin-1")
+            self._encoded_headers = ", ".join(self.allow_headers).encode("latin-1")
+            self._encoded_max_age = str(self.max_age).encode("latin-1")
         else:
             # Use individual parameters with defaults
             origins = allow_origins or []
@@ -95,9 +100,9 @@ class CORSMiddleware:
                 "Accept", "Accept-Language", "Content-Language", "Content-Type", "Authorization"
             ]
             
-            self.allow_origins: set[str] = set(origins)
-            self.allow_methods: set[str] = {method.upper() for method in methods}
-            self.allow_headers: set[str] = {header.lower() for header in headers}
+            self.allow_origins: frozenset[str] = frozenset(origins)
+            self.allow_methods: frozenset[str] = frozenset(method.upper() for method in methods)
+            self.allow_headers: frozenset[str] = frozenset(header.lower() for header in headers)
             self.allow_credentials = allow_credentials
             self.expose_headers = expose_headers or []
             self.max_age = max_age_secs
@@ -233,15 +238,24 @@ class CORSMiddleware:
             expose_value = ", ".join(self.expose_headers)
             response_headers.append((b"access-control-expose-headers", expose_value.encode("latin-1")))
 
-        # Preflight-specific headers
+        # Preflight-specific headers (using pre-encoded values for performance)
         if is_preflight:
-            methods_value = ", ".join(self.allow_methods)
-            response_headers.append((b"access-control-allow-methods", methods_value.encode("latin-1")))
+            if hasattr(self, '_encoded_methods'):
+                response_headers.append((b"access-control-allow-methods", self._encoded_methods))
+            else:
+                methods_value = ", ".join(self.allow_methods)
+                response_headers.append((b"access-control-allow-methods", methods_value.encode("latin-1")))
             
-            headers_value = ", ".join(self.allow_headers)
-            response_headers.append((b"access-control-allow-headers", headers_value.encode("latin-1")))
+            if hasattr(self, '_encoded_headers'):
+                response_headers.append((b"access-control-allow-headers", self._encoded_headers))
+            else:
+                headers_value = ", ".join(self.allow_headers)
+                response_headers.append((b"access-control-allow-headers", headers_value.encode("latin-1")))
             
-            response_headers.append((b"access-control-max-age", str(self.max_age).encode("latin-1")))
+            if hasattr(self, '_encoded_max_age'):
+                response_headers.append((b"access-control-max-age", self._encoded_max_age))
+            else:
+                response_headers.append((b"access-control-max-age", str(self.max_age).encode("latin-1")))
 
     def _is_origin_allowed(self, origin: str) -> bool:
         """Check if an origin is allowed."""
