@@ -256,6 +256,7 @@ def batch_queries(batch_size: int = 100):
 
 class PerformanceProfiler:
     """Simple performance profiler for tracking bottlenecks."""
+    __slots__ = ('timings', 'enabled')
     
     def __init__(self):
         self.timings: dict[str, list[float]] = {}

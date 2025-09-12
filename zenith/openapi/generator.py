@@ -193,10 +193,8 @@ class OpenAPIGenerator:
 
     def _extract_path_params(self, path: str) -> list[str]:
         """Extract parameter names from path template."""
-
-        import re
-
-        return re.findall(r"\{(\w+)\}", path)
+        from zenith.core.patterns import extract_path_params
+        return extract_path_params(path)
 
     def _get_responses(self, return_type: type | None) -> dict[str, Any]:
         """Generate response specifications from return type."""

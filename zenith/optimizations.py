@@ -104,9 +104,18 @@ def create_msgspec_encoder():
     encoder = msgspec.json.Encoder(enc_hook=encode_hook)
     decoder = msgspec.json.Decoder()
     
+    def dumps(obj, **kwargs):
+        # msgspec returns bytes, convert to str for compatibility
+        return encoder.encode(obj).decode('utf-8')
+    
+    def loads(data):
+        if isinstance(data, str):
+            data = data.encode('utf-8')
+        return decoder.decode(data)
+    
     return {
-        'dumps': encoder.encode,
-        'loads': decoder.decode,
+        'dumps': dumps,
+        'loads': loads,
         'name': 'msgspec'
     }
 

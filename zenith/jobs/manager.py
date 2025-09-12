@@ -30,6 +30,7 @@ class JobManager:
     - Job status tracking
     - Redis-backed persistence
     """
+    __slots__ = ('redis_url', 'queue', 'jobs', 'running')
 
     def __init__(self, redis_url: str = "redis://localhost:6379/0"):
         """

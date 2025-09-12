@@ -3,7 +3,11 @@ Base code generator class.
 """
 
 import re
-from typing import Any
+from typing import Any, Final
+
+# Precompiled regex patterns for performance
+_CAMEL_TO_SNAKE_1: Final = re.compile('(.)([A-Z][a-z]+)')
+_CAMEL_TO_SNAKE_2: Final = re.compile('([a-z0-9])([A-Z])')
 
 
 class CodeGenerator:
@@ -25,8 +29,8 @@ class CodeGenerator:
     def _to_variable_name(self, name: str) -> str:
         """Convert to snake_case variable name."""
         # UserProfile -> user_profile
-        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+        s1 = _CAMEL_TO_SNAKE_1.sub(r'\1_\2', name)
+        return _CAMEL_TO_SNAKE_2.sub(r'\1_\2', s1).lower()
     
     def _to_table_name(self, name: str) -> str:
         """Convert to plural table name."""
