@@ -143,9 +143,37 @@ def create_static_route(
     return Mount(path, app=static_files, name=name)
 
 
+class SPAStaticFiles(ZenithStaticFiles):
+    """Static files handler with SPA fallback support."""
+    
+    def __init__(self, config: StaticFileConfig, fallback: str = "index.html"):
+        super().__init__(config)
+        self.fallback = fallback
+    
+    async def get_response(self, path: str, scope: dict) -> Response:
+        """Get response for a path, falling back to index.html for SPAs."""
+        try:
+            # Try to get the actual file first
+            response = await super().get_response(path, scope)
+            # If we get a 404, try the fallback
+            if response.status_code == 404:
+                # Try to serve the fallback file (usually index.html)
+                fallback_path = "" if self.fallback == "index.html" else self.fallback
+                response = await super().get_response(fallback_path, scope)
+            return response
+        except Exception:
+            # If anything fails, try to serve the fallback
+            try:
+                fallback_path = "" if self.fallback == "index.html" else self.fallback
+                return await super().get_response(fallback_path, scope)
+            except Exception:
+                # If even the fallback fails, return 404
+                return Response(status_code=404)
+
+
 def serve_spa_files(
     directory: str = "dist", fallback: str = "index.html", **config_kwargs
-) -> ZenithStaticFiles:
+) -> SPAStaticFiles:
     """
     Serve Single Page Application files with fallback support.
 
@@ -170,7 +198,7 @@ def serve_spa_files(
         **config_kwargs,
     )
 
-    return ZenithStaticFiles(config)
+    return SPAStaticFiles(config, fallback=fallback)
 
 
 # Convenience functions for common static file patterns

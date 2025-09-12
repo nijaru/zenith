@@ -156,8 +156,7 @@ class Router:
                 )
                 starlette_routes.append(starlette_route)
 
-        # Add mount routes if they exist
-        if hasattr(self, '_mount_routes'):
-            starlette_routes.extend(self._mount_routes)
+        # Note: Mount routes are now handled at the Zenith application level
+        # in _build_starlette_app() to ensure they're properly included
 
         return StarletteRouter(routes=starlette_routes, middleware=self.middleware)

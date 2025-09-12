@@ -11,6 +11,7 @@ from typing import Any, Callable
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 class RequestIDConfig:
@@ -27,7 +28,7 @@ class RequestIDConfig:
         self.generator = generator or (lambda: str(uuid.uuid4()))
 
 
-class RequestIDMiddleware(BaseHTTPMiddleware):
+class RequestIDMiddleware:
     """
     Middleware that adds a unique request ID to each request.
     
@@ -37,7 +38,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     
     def __init__(
         self,
-        app: Any,
+        app: ASGIApp,
         config: RequestIDConfig | None = None,
         # Individual parameters (for backward compatibility)
         header_name: str = "X-Request-ID",
@@ -54,7 +55,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             state_key: Key to store the request ID in request.state
             generator: Function to generate request IDs (defaults to uuid4)
         """
-        super().__init__(app)
+        self.app = app
         
         # Use config object if provided, otherwise use individual parameters
         if config is not None:
@@ -66,25 +67,40 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
             self.state_key = state_key
             self.generator = generator or (lambda: str(uuid.uuid4()))
     
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Process request and add request ID."""
-        # Check if request already has an ID from upstream proxy/load balancer
-        request_id = request.headers.get(self.header_name)
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
         
-        # Generate new ID if not present
-        if not request_id:
+        # Get or generate request ID
+        headers = dict(scope.get("headers", []))
+        request_id_bytes = headers.get(self.header_name.lower().encode())
+        
+        if request_id_bytes:
+            request_id = request_id_bytes.decode("latin-1")
+        else:
             request_id = self.generator()
         
-        # Store in request state for access in handlers
-        setattr(request.state, self.state_key, request_id)
+        # Store in scope state
+        if "state" not in scope:
+            scope["state"] = {}
+        scope["state"][self.state_key] = request_id
         
-        # Process request
-        response = await call_next(request)
+        # Wrap send to add response header
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                # Add request ID header
+                headers.append((
+                    self.header_name.lower().encode(),
+                    request_id.encode("latin-1")
+                ))
+                message["headers"] = headers
+            await send(message)
         
-        # Add request ID to response headers
-        response.headers[self.header_name] = request_id
-        
-        return response
+        # Call the next app with wrapped send
+        await self.app(scope, receive, send_wrapper)
 
 
 def get_request_id(request: Request, state_key: str = "request_id") -> str | None:
