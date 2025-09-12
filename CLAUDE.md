@@ -14,7 +14,7 @@ twine upload dist/zenith_web-{version}*
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.1.3-alpha - Critical bug fixes, testing for stability
+- **Status**: v0.1.4 - Performance optimization release with comprehensive improvements
 - **Performance**: 7,743 req/s simple endpoints, 7,834 req/s JSON endpoints, 11.1% performance with middleware
 - **Test Coverage**: 100% (293 tests passing, 2 skipped)
 - **CLI**: `zen` command for development tools
@@ -366,7 +366,7 @@ python benchmarks/simple_bench.py      # Quick benchmark
 
 ## API Stability & Versioning
 
-### Current Status (v0.1.2)
+### Current Status (v0.1.4)
 - **Core APIs**: Stable, minor changes possible
 - **Middleware**: Stable configuration patterns
 - **Testing**: Stable API, expanding utilities
@@ -452,7 +452,7 @@ app = Zenith(config=config)
 
 ## Development Status & Roadmap
 
-### Completed (v0.1.2)
+### Completed (v0.1.4)
 - ✅ Core framework architecture
 - ✅ Context system for business logic  
 - ✅ Type-safe routing and dependency injection
@@ -536,4 +536,4 @@ app = Zenith(config=config)
 - Documentation enhancement
 - Developer experience improvements
 
-*Updated September 2025 - Reflects current v0.1.2 status with production-ready feature set*
+*Updated September 2025 - Reflects current v0.1.4 status with production-ready feature set and comprehensive performance optimizations*
