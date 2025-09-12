@@ -288,10 +288,10 @@ async def sse_middleware(scope, receive, send):
 ```
 
 **Implementation Priority:**
-1. **Zero-copy streaming** - Immediate memory benefits for file uploads
-2. **Concurrent middleware** - Easy wins for auth/rate limiting  
-3. **Database connection reuse** - Significant DB performance gains
-4. **WebSocket optimization** - Better real-time performance
+1. **Zero-copy streaming** - Immediate memory benefits for file uploads (specialized use case)
+2. **Database connection reuse** - Significant DB performance gains (DB-heavy applications)
+3. **WebSocket optimization** - Better real-time performance (chat/dashboard applications)
+4. **SSE backpressure** - Prevents memory issues (broadcast applications)
 5. **HTTP/2 support** - Protocol-level improvements
 
 ## 🎯 Optimization Implementation Checklist
