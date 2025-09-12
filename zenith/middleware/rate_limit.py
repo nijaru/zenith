@@ -16,10 +16,10 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.status import HTTP_429_TOO_MANY_REQUESTS
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 logger = logging.getLogger("zenith.middleware.rate_limit")
 
@@ -203,7 +203,7 @@ class RateLimitConfig:
         self.include_headers = include_headers
 
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
+class RateLimitMiddleware:
     """
     Rate limiting middleware with configurable limits and storage backends.
     
@@ -218,7 +218,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,
+        app: ASGIApp,
         config: RateLimitConfig | None = None,
         # Individual parameters (for backward compatibility)
         *,
@@ -229,7 +229,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         error_message: str = "Rate limit exceeded",
         include_headers: bool = True,
     ):
-        super().__init__(app)
+        self.app = app
 
         # Use config object if provided, otherwise use individual parameters
         if config is not None:
@@ -396,46 +396,202 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             headers=headers,
         )
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """Process request with rate limiting."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with rate limiting."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         # Skip rate limiting for exempt requests
-        if self._should_exempt(request):
-            return await call_next(request)
+        if self._should_exempt_asgi(scope):
+            await self.app(scope, receive, send)
+            return
 
         # Get applicable rate limits
-        limits = self._get_applicable_limits(request)
+        limits = self._get_applicable_limits_asgi(scope)
 
         # Check rate limits
-        allowed, violated_limit, current_count, limit_count = await self._check_rate_limits(
-            request, limits
+        allowed, violated_limit, current_count, limit_count = await self._check_rate_limits_asgi(
+            scope, limits
         )
 
         if not allowed:
+            client_ip = self._get_client_ip_asgi(scope)
+            path = scope.get("path", "")
             logger.warning(
-                f"Rate limit exceeded for {self._get_client_ip(request)} "
-                f"on {request.url.path}: {current_count}/{limit_count}"
+                f"Rate limit exceeded for {client_ip} "
+                f"on {path}: {current_count}/{limit_count}"
             )
-            return self._create_error_response(
-                violated_limit, current_count, limit_count, request
+            error_response = self._create_error_response_asgi(
+                violated_limit, current_count, limit_count, scope
             )
+            await error_response(scope, receive, send)
+            return
 
-        # Process request
-        response = await call_next(request)
+        # Wrap send to add rate limit headers to successful responses
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start" and self.include_headers and limits:
+                # Use the most restrictive limit for headers
+                most_restrictive = min(limits, key=lambda l: l.requests / l.window)
+                key = self._get_rate_limit_key_asgi(scope, most_restrictive)
+                current = await self.storage.get_count(key)
 
-        # Add rate limit headers to successful responses
-        if self.include_headers and limits:
-            # Use the most restrictive limit for headers
-            most_restrictive = min(limits, key=lambda l: l.requests / l.window)
-            key = self._get_rate_limit_key(request, most_restrictive)
-            current = await self.storage.get_count(key)
+                response_headers = list(message.get("headers", []))
+                response_headers.extend([
+                    (b"x-ratelimit-limit", str(most_restrictive.requests).encode("latin-1")),
+                    (b"x-ratelimit-window", str(most_restrictive.window).encode("latin-1")),
+                    (b"x-ratelimit-remaining", str(max(0, most_restrictive.requests - current)).encode("latin-1")),
+                ])
+                message["headers"] = response_headers
+            
+            await send(message)
 
-            response.headers["X-RateLimit-Limit"] = str(most_restrictive.requests)
-            response.headers["X-RateLimit-Window"] = str(most_restrictive.window)
-            response.headers["X-RateLimit-Remaining"] = str(
-                max(0, most_restrictive.requests - current)
-            )
+        await self.app(scope, receive, send_wrapper)
 
-        return response
+    # ASGI-specific helper methods
+    def _get_client_ip_asgi(self, scope: Scope) -> str:
+        """Extract client IP address from ASGI scope."""
+        headers = dict(scope.get("headers", []))
+        
+        # Check X-Forwarded-For header first (for proxies)
+        forwarded_for_bytes = headers.get(b"x-forwarded-for")
+        if forwarded_for_bytes:
+            forwarded_for = forwarded_for_bytes.decode("latin-1")
+            return forwarded_for.split(",")[0].strip()
+
+        # Check X-Real-IP header
+        real_ip_bytes = headers.get(b"x-real-ip")
+        if real_ip_bytes:
+            return real_ip_bytes.decode("latin-1").strip()
+
+        # Fall back to client host from scope
+        client = scope.get("client")
+        return client[0] if client else "unknown"
+
+    def _get_user_id_asgi(self, scope: Scope) -> str | None:
+        """Extract user ID from ASGI scope (if authenticated)."""
+        # Try to get user from scope state (set by auth middleware)
+        state = scope.get("state", {})
+        if "current_user" in state:
+            user = state["current_user"]
+            if user:
+                return str(user.get("id") or user.get("user_id", ""))
+
+        # Try to extract from JWT token in Authorization header
+        headers = dict(scope.get("headers", []))
+        auth_header_bytes = headers.get(b"authorization")
+        if auth_header_bytes:
+            auth_header = auth_header_bytes.decode("latin-1")
+            if auth_header.startswith("Bearer "):
+                try:
+                    from zenith.auth import extract_user_from_token
+                    token = auth_header.split(" ", 1)[1]
+                    user = extract_user_from_token(token)
+                    if user:
+                        return str(user["id"])
+                except Exception:
+                    pass
+
+        return None
+
+    def _get_rate_limit_key_asgi(self, scope: Scope, rate_limit: RateLimit) -> str:
+        """Generate rate limit key based on limit type for ASGI requests."""
+        path = scope.get("path", "")
+
+        if rate_limit.per == "ip":
+            client_ip = self._get_client_ip_asgi(scope)
+            return f"ip:{client_ip}:{rate_limit.window}"
+
+        elif rate_limit.per == "user":
+            user_id = self._get_user_id_asgi(scope)
+            if not user_id:
+                # Fall back to IP if no user
+                client_ip = self._get_client_ip_asgi(scope)
+                return f"ip:{client_ip}:{rate_limit.window}"
+            return f"user:{user_id}:{rate_limit.window}"
+
+        elif rate_limit.per == "endpoint":
+            client_ip = self._get_client_ip_asgi(scope)
+            return f"endpoint:{path}:{client_ip}:{rate_limit.window}"
+
+        else:
+            raise ValueError(f"Unknown rate limit type: {rate_limit.per}")
+
+    def _should_exempt_asgi(self, scope: Scope) -> bool:
+        """Check if ASGI request should be exempted from rate limiting."""
+        # Check exempt paths
+        path = scope.get("path", "")
+        if path in self.exempt_paths:
+            return True
+
+        # Check exempt IPs
+        client_ip = self._get_client_ip_asgi(scope)
+        if client_ip in self.exempt_ips:
+            return True
+
+        return False
+
+    def _get_applicable_limits_asgi(self, scope: Scope) -> list[RateLimit]:
+        """Get rate limits applicable to this ASGI request."""
+        path = scope.get("path", "")
+
+        # Check for endpoint-specific limits
+        for endpoint_path, limits in self.endpoint_limits.items():
+            if path.startswith(endpoint_path):
+                return limits
+
+        # Use default limits
+        return self.default_limits
+
+    async def _check_rate_limits_asgi(
+        self,
+        scope: Scope,
+        limits: list[RateLimit]
+    ) -> tuple[bool, RateLimit | None, int, int]:
+        """
+        Check all applicable rate limits for ASGI requests.
+        
+        Returns:
+            (allowed, violated_limit, current_count, limit_count)
+        """
+        for rate_limit in limits:
+            key = self._get_rate_limit_key_asgi(scope, rate_limit)
+            current_count = await self.storage.increment(key, rate_limit.window)
+
+            if current_count > rate_limit.requests:
+                return False, rate_limit, current_count, rate_limit.requests
+
+        return True, None, 0, 0
+
+    def _create_error_response_asgi(
+        self,
+        rate_limit: RateLimit,
+        current_count: int,
+        limit_count: int,
+        scope: Scope
+    ) -> Response:
+        """Create rate limit exceeded response for ASGI requests."""
+        headers = {}
+
+        if self.include_headers:
+            headers.update({
+                "X-RateLimit-Limit": str(rate_limit.requests),
+                "X-RateLimit-Window": str(rate_limit.window),
+                "X-RateLimit-Remaining": str(max(0, rate_limit.requests - current_count)),
+                "Retry-After": str(rate_limit.window),
+            })
+
+        return JSONResponse(
+            status_code=HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "error": "rate_limit_exceeded",
+                "message": self.error_message,
+                "limit": rate_limit.requests,
+                "window": rate_limit.window,
+                "current": current_count,
+            },
+            headers=headers,
+        )
 
 
 # Convenience functions for easy setup

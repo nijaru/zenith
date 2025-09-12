@@ -11,13 +11,14 @@ from typing import Any, Literal, overload
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from zenith.auth.jwt import get_jwt_manager
 
 logger = logging.getLogger("zenith.middleware.auth")
 
 
-class AuthenticationMiddleware(BaseHTTPMiddleware):
+class AuthenticationMiddleware:
     """
     JWT authentication middleware.
 
@@ -28,8 +29,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     - Optional authentication for public endpoints
     """
 
-    def __init__(self, app, public_paths: list | None = None):
-        super().__init__(app)
+    def __init__(self, app: ASGIApp, public_paths: list | None = None):
+        self.app = app
         self.public_paths = public_paths or [
             "/docs",
             "/redoc",
@@ -37,21 +38,34 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             "/health",
         ]
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Process authentication for incoming requests."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with authentication."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
+        # Get path from scope
+        path = scope.get("path", "")
+        
         # Skip auth for public paths
-        if self._is_public_path(request.url.path):
-            return await call_next(request)
+        if self._is_public_path(path):
+            await self.app(scope, receive, send)
+            return
 
-        # Extract token from Authorization header
-        auth_header = request.headers.get("Authorization")
+        # Extract token from headers
+        headers = dict(scope.get("headers", []))
+        auth_header_bytes = headers.get(b"authorization")
+        auth_header = auth_header_bytes.decode("latin-1") if auth_header_bytes else None
         token = self._extract_bearer_token(auth_header)
 
-        # Store auth state in request (None means no token provided)
-        request.state.auth_token = token
-        request.state.current_user = None
-        request.state.auth_error = None
+        # Create state if not exists
+        if "state" not in scope:
+            scope["state"] = {}
+
+        # Store auth state in scope
+        scope["state"]["auth_token"] = token
+        scope["state"]["current_user"] = None
+        scope["state"]["auth_error"] = None
 
         # If token provided, validate it
         if token:
@@ -60,17 +74,17 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 user_info = jwt_manager.extract_user_from_token(token)
 
                 if user_info:
-                    request.state.current_user = user_info
+                    scope["state"]["current_user"] = user_info
                     logger.debug(f"Authenticated user {user_info['id']}")
                 else:
-                    request.state.auth_error = "Invalid or expired token"
+                    scope["state"]["auth_error"] = "Invalid or expired token"
                     logger.warning("Invalid JWT token provided")
 
             except Exception as e:
-                request.state.auth_error = str(e)
+                scope["state"]["auth_error"] = str(e)
                 logger.error(f"Authentication error: {e}")
 
-        return await call_next(request)
+        await self.app(scope, receive, send)
 
     def _is_public_path(self, path: str) -> bool:
         """Check if path is public (no authentication required)."""
