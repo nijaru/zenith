@@ -7,9 +7,9 @@ Integrates session management into the request/response cycle.
 import logging
 from typing import Any
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from zenith.sessions.cookie import CookieSessionStore
 from zenith.sessions.manager import SessionManager
@@ -17,10 +17,10 @@ from zenith.sessions.manager import SessionManager
 logger = logging.getLogger("zenith.sessions.middleware")
 
 
-class SessionMiddleware(BaseHTTPMiddleware):
+class SessionMiddleware:
     """
     Session middleware for automatic session handling.
-    
+
     Features:
     - Automatic session loading from cookies
     - Session creation for new users
@@ -31,38 +31,102 @@ class SessionMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,
+        app: ASGIApp,
         session_manager: SessionManager,
         auto_create: bool = True,
     ):
         """
         Initialize session middleware.
-        
+
         Args:
             app: ASGI application
             session_manager: Session manager instance
             auto_create: Automatically create sessions for new users
         """
-        super().__init__(app)
+        self.app = app
         self.session_manager = session_manager
         self.auto_create = auto_create
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Process session for incoming requests."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with session handling."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Create request object to work with cookies
+        request = Request(scope, receive)
 
         # Load session from cookie
         session = await self._load_session(request)
 
-        # Add session to request state
-        request.state.session = session
+        # Add session to scope state
+        if "state" not in scope:
+            scope["state"] = {}
+        scope["state"]["session"] = session
 
-        # Process request
-        response = await call_next(request)
+        # Track if response has been started
+        response_started = False
+        session_to_save = session
 
-        # Save session changes
-        await self._save_session(request, response, session)
+        # Wrap send to handle session saving and cookie setting
+        async def send_wrapper(message):
+            nonlocal response_started, session_to_save
 
-        return response
+            if message["type"] == "http.response.start" and not response_started:
+                response_started = True
+
+                # Save session and prepare cookie headers
+                if session_to_save:
+                    await self.session_manager.save_session(session_to_save)
+
+                    # Get cookie configuration
+                    cookie_config = self.session_manager.get_cookie_config()
+
+                    # Determine cookie value
+                    if isinstance(self.session_manager.store, CookieSessionStore):
+                        # For cookie sessions, get the encoded cookie value
+                        cookie_value = self.session_manager.store.get_cookie_value(
+                            session_to_save
+                        )
+                    else:
+                        # For Redis/DB sessions, set the session ID
+                        cookie_value = session_to_save.session_id
+
+                    if cookie_value:
+                        # Add session cookie to response headers
+                        cookie_name = self.session_manager.cookie_name
+
+                        # Build cookie string
+                        cookie_parts = [f"{cookie_name}={cookie_value}"]
+
+                        # Add cookie attributes
+                        if cookie_config.get("max_age"):
+                            cookie_parts.append(f"Max-Age={cookie_config['max_age']}")
+                        if cookie_config.get("path"):
+                            cookie_parts.append(f"Path={cookie_config['path']}")
+                        if cookie_config.get("domain"):
+                            cookie_parts.append(f"Domain={cookie_config['domain']}")
+                        if cookie_config.get("secure"):
+                            cookie_parts.append("Secure")
+                        if cookie_config.get("httponly"):
+                            cookie_parts.append("HttpOnly")
+                        if cookie_config.get("samesite"):
+                            cookie_parts.append(f"SameSite={cookie_config['samesite']}")
+
+                        cookie_header = "; ".join(cookie_parts).encode("latin-1")
+
+                        # Add to headers
+                        headers = list(message.get("headers", []))
+                        headers.append((b"set-cookie", cookie_header))
+                        message["headers"] = headers
+
+                        logger.debug(
+                            f"Set session cookie for {session_to_save.session_id}"
+                        )
+
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
     async def _load_session(self, request: Request) -> Any:
         """Load session from request cookie."""
@@ -88,10 +152,7 @@ class SessionMiddleware(BaseHTTPMiddleware):
         return session
 
     async def _save_session(
-        self,
-        request: Request,
-        response: Response,
-        session: Any
+        self, request: Request, response: Response, session: Any
     ) -> None:
         """Save session and set cookie."""
         if not session:
@@ -118,25 +179,30 @@ class SessionMiddleware(BaseHTTPMiddleware):
 def get_session(request: Request) -> Any:
     """
     Get session from request.
-    
+
     This function can be used for dependency injection:
-    
+
     @app.get("/profile")
     async def profile(session = Depends(get_session)):
         user_id = session.get("user_id")
         return {"user_id": user_id}
     """
-    return getattr(request.state, "session", None)
+    # Try request.state first (for compatibility)
+    if hasattr(request.state, "session"):
+        return request.state.session
+
+    # Fall back to scope state (new ASGI approach)
+    return request.scope.get("state", {}).get("session", None)
 
 
 # Zenith-specific session dependency
 class Session:
     """
     Session dependency marker for Zenith's dependency injection.
-    
+
     Usage:
         from zenith.sessions import Session
-        
+
         @app.get("/profile")
         async def profile(session = Session()):
             user_id = session.get("user_id")
@@ -147,7 +213,12 @@ class Session:
         self.required = True
 
     def __call__(self, request: Request) -> Any:
+        # Try request.state first (for compatibility)
         session = getattr(request.state, "session", None)
+        if session is None:
+            # Fall back to scope state (new ASGI approach)
+            session = request.scope.get("state", {}).get("session", None)
+
         if not session and self.required:
             raise RuntimeError(
                 "No session available. Make sure SessionMiddleware is installed."

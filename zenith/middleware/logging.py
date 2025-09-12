@@ -7,19 +7,18 @@ formats, filtering, and integration with request ID tracking.
 
 import logging
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import msgspec
-
-
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 class RequestLoggingConfig:
     """Configuration for request logging middleware."""
-    
+
     def __init__(
         self,
         logger: logging.Logger | None = None,
@@ -36,42 +35,44 @@ class RequestLoggingConfig:
         self.include_headers = include_headers
         self.include_body = include_body
         self.max_body_size = max_body_size
-        
+
         # Default exclude patterns
         self.exclude_paths = exclude_paths or set()
         if exclude_health_checks:
             self.exclude_paths.update({"/health", "/health/", "/healthz", "/ping"})
-        
+
         # Default formatter
         self.formatter = formatter or self._create_default_formatter()
-    
+
     def _create_default_formatter(self) -> Callable[[dict], str]:
         """Create the default formatter for log messages."""
+
         def formatter(log_data: dict[str, Any]) -> str:
             req = log_data["request"]
             resp = log_data["response"]
             duration = log_data["duration_ms"]
-            
+
             return (
                 f"{req['method']} {req['path']} "
                 f"- {resp['status_code']} "
                 f"({duration}ms) "
                 f"[{req['client_ip']}]"
             )
+
         return formatter
 
 
-class RequestLoggingMiddleware(BaseHTTPMiddleware):
+class RequestLoggingMiddleware:
     """
     Middleware that logs HTTP requests and responses with structured data.
-    
+
     Supports filtering by path patterns, configurable log formats,
     and integration with request ID tracking.
     """
-    
+
     def __init__(
         self,
-        app: Any,
+        app: ASGIApp,
         config: RequestLoggingConfig | None = None,
         # Individual parameters (for backward compatibility)
         logger: logging.Logger | None = None,
@@ -85,7 +86,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     ):
         """
         Initialize the request logging middleware.
-        
+
         Args:
             app: The ASGI application
             config: Request logging configuration object
@@ -98,8 +99,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             max_body_size: Maximum body size to log in bytes
             formatter: Custom formatter function for log messages
         """
-        super().__init__(app)
-        
+        self.app = app
+
         # Use config object if provided, otherwise use individual parameters
         if config is not None:
             self.logger = config.logger
@@ -115,39 +116,121 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             self.include_headers = include_headers
             self.include_body = include_body
             self.max_body_size = max_body_size
-            
+
             # Default exclude patterns
             self.exclude_paths = set(exclude_paths) if exclude_paths else set()
             if exclude_health_checks:
                 self.exclude_paths.update({"/health", "/health/", "/healthz", "/ping"})
-            
+
             # Default formatter
             self.formatter = formatter or self._create_default_formatter()
-    
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Process request and log request/response data."""
-        # Skip logging for excluded paths
-        if request.url.path in self.exclude_paths:
-            return await call_next(request)
-        
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with request logging."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Check if this path should be excluded
+        path = scope.get("path", "")
+        if path in self.exclude_paths:
+            await self.app(scope, receive, send)
+            return
+
         # Record start time
-        start_time = time.time()
-        
-        # Get request ID if available
-        request_id = getattr(request.state, "request_id", None)
-        
+        start_time = time.perf_counter()
+
+        # Create request object to read headers/body
+        request = Request(scope, receive)
+
+        # Get request ID from scope state if available
+        request_id = scope.get("state", {}).get("request_id", None)
+
         # Prepare request data
         request_data = await self._prepare_request_data(request)
-        
-        # Process request
-        response = await call_next(request)
-        
+
+        # Variables to capture response data
+        response_status = 500
+        response_headers = {}
+        response_body = b""
+        response_started = False
+
+        # Wrap send to capture response data
+        async def send_wrapper(message):
+            nonlocal response_status, response_headers, response_body, response_started
+
+            if message["type"] == "http.response.start":
+                response_started = True
+                response_status = message["status"]
+                response_headers = dict(message.get("headers", []))
+
+            elif message["type"] == "http.response.body":
+                if self.include_body:
+                    body_bytes = message.get("body", b"")
+                    if isinstance(body_bytes, bytes):
+                        response_body += body_bytes
+
+                # Check if this is the last body message
+                more_body = message.get("more_body", False)
+                if not more_body:
+                    # This is the end of the response, now we can log
+                    await self._log_request(
+                        scope,
+                        request_data,
+                        response_status,
+                        response_headers,
+                        response_body,
+                        start_time,
+                        request_id,
+                    )
+
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+    async def _log_request(
+        self,
+        scope: Scope,
+        request_data: dict[str, Any],
+        response_status: int,
+        response_headers: dict[bytes, bytes],
+        response_body: bytes,
+        start_time: float,
+        request_id: str | None,
+    ):
+        """Log the completed request."""
         # Calculate duration
-        duration_ms = round((time.time() - start_time) * 1000, 2)
-        
+        duration_ms = round((time.perf_counter() - start_time) * 1000, 2)
+
         # Prepare response data
-        response_data = await self._prepare_response_data(response, duration_ms)
-        
+        response_data = {
+            "status_code": response_status,
+            "content_type": response_headers.get(b"content-type", b"").decode(
+                "latin-1"
+            ),
+            "content_length": response_headers.get(b"content-length", b"").decode(
+                "latin-1"
+            ),
+        }
+
+        if self.include_headers:
+            response_data["headers"] = {
+                k.decode("latin-1"): v.decode("latin-1")
+                for k, v in response_headers.items()
+            }
+
+        if self.include_body and response_body:
+            if len(response_body) <= self.max_body_size:
+                try:
+                    response_data["body"] = msgspec.json.decode(response_body)
+                except (msgspec.DecodeError, UnicodeDecodeError):
+                    response_data["body"] = response_body.decode(
+                        "utf-8", errors="replace"
+                    )[: self.max_body_size]
+            else:
+                response_data["body_size"] = len(response_body)
+                response_data["body"] = "[Body too large for logging]"
+
         # Combine log data
         log_data = {
             "request_id": request_id,
@@ -155,26 +238,25 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             "response": response_data,
             "duration_ms": duration_ms,
         }
-        
+
         # Log the request
         message = self.formatter(log_data)
         self.logger.log(self.level, message, extra={"request_data": log_data})
-        
+
         # Record metrics if available
         try:
             from zenith.web.metrics import record_request_metrics
+
             record_request_metrics(
-                method=request.method,
-                path=request.url.path,
-                status_code=response.status_code,
+                method=scope.get("method", "GET"),
+                path=scope.get("path", ""),
+                status_code=response_status,
                 duration_seconds=duration_ms / 1000.0,
             )
         except ImportError:
             # Metrics not available, skip
             pass
-        
-        return response
-    
+
     async def _prepare_request_data(self, request: Request) -> dict[str, Any]:
         """Prepare request data for logging."""
         data = {
@@ -185,10 +267,10 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             "client_ip": self._get_client_ip(request),
             "user_agent": request.headers.get("user-agent"),
         }
-        
+
         if self.include_headers:
             data["headers"] = dict(request.headers)
-        
+
         if self.include_body and request.method in ("POST", "PUT", "PATCH"):
             try:
                 body = await request.body()
@@ -197,26 +279,30 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     try:
                         data["body"] = msgspec.json.decode(body)
                     except (msgspec.DecodeError, UnicodeDecodeError):
-                        data["body"] = body.decode("utf-8", errors="replace")[:self.max_body_size]
+                        data["body"] = body.decode("utf-8", errors="replace")[
+                            : self.max_body_size
+                        ]
                 else:
                     data["body_size"] = len(body)
                     data["body"] = "[Body too large for logging]"
             except Exception:
                 data["body"] = "[Error reading body]"
-        
+
         return data
-    
-    async def _prepare_response_data(self, response: Response, duration_ms: float) -> dict[str, Any]:
+
+    async def _prepare_response_data(
+        self, response: Response, duration_ms: float
+    ) -> dict[str, Any]:
         """Prepare response data for logging."""
         data = {
             "status_code": response.status_code,
             "content_type": response.headers.get("content-type"),
             "content_length": response.headers.get("content-length"),
         }
-        
+
         if self.include_headers:
             data["headers"] = dict(response.headers)
-        
+
         if self.include_body and hasattr(response, "body"):
             try:
                 body = response.body
@@ -225,45 +311,51 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     try:
                         data["body"] = msgspec.json.decode(body)
                     except (msgspec.DecodeError, UnicodeDecodeError):
-                        data["body"] = body.decode("utf-8", errors="replace")[:self.max_body_size]
+                        data["body"] = body.decode("utf-8", errors="replace")[
+                            : self.max_body_size
+                        ]
                 else:
-                    data["body_size"] = len(body) if isinstance(body, bytes) else "unknown"
+                    data["body_size"] = (
+                        len(body) if isinstance(body, bytes) else "unknown"
+                    )
                     data["body"] = "[Body too large for logging]"
             except Exception:
                 data["body"] = "[Error reading body]"
-        
+
         return data
-    
+
     def _get_client_ip(self, request: Request) -> str:
         """Get the client IP address from request headers."""
         # Check for forwarded headers from reverse proxies
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
-        
+
         real_ip = request.headers.get("x-real-ip")
         if real_ip:
             return real_ip
-        
+
         # Fallback to direct client
         if hasattr(request, "client") and request.client:
             return request.client.host
-        
+
         return "unknown"
-    
+
     def _create_default_formatter(self) -> Callable[[dict], str]:
         """Create the default formatter for log messages."""
+
         def formatter(log_data: dict[str, Any]) -> str:
             req = log_data["request"]
             resp = log_data["response"]
             duration = log_data["duration_ms"]
-            
+
             return (
                 f"{req['method']} {req['path']} "
                 f"- {resp['status_code']} "
                 f"({duration}ms) "
                 f"[{req['client_ip']}]"
             )
+
         return formatter
 
 
@@ -279,7 +371,7 @@ def create_request_logging_middleware(
 ) -> type[RequestLoggingMiddleware]:
     """
     Factory function to create a configured request logging middleware.
-    
+
     Args:
         logger: Logger instance to use (defaults to 'zenith.requests')
         level: Log level for request logs
@@ -289,10 +381,11 @@ def create_request_logging_middleware(
         exclude_health_checks: Whether to exclude health check endpoints
         max_body_size: Maximum body size to log in bytes
         formatter: Custom formatter function for log messages
-        
+
     Returns:
         Configured RequestLoggingMiddleware class
     """
+
     def middleware_factory(app):
         return RequestLoggingMiddleware(
             app=app,
@@ -305,7 +398,7 @@ def create_request_logging_middleware(
             max_body_size=max_body_size,
             formatter=formatter,
         )
-    
+
     return middleware_factory
 
 
@@ -316,7 +409,7 @@ def setup_structured_logging(
 ) -> None:
     """
     Configure structured logging for the application.
-    
+
     Args:
         level: Global log level
         format_json: Whether to use JSON formatting
@@ -324,13 +417,13 @@ def setup_structured_logging(
     """
     # Configure root logger
     logging.basicConfig(level=level)
-    
+
     # Create structured formatter
     if format_json:
         formatter = JsonFormatter(include_timestamp=include_timestamp)
     else:
         formatter = StructuredFormatter(include_timestamp=include_timestamp)
-    
+
     # Configure Zenith loggers
     for logger_name in ["zenith.requests", "zenith.auth", "zenith.jobs"]:
         logger = logging.getLogger(logger_name)
@@ -341,25 +434,25 @@ def setup_structured_logging(
 
 class StructuredFormatter(logging.Formatter):
     """Structured log formatter for human-readable output."""
-    
+
     def __init__(self, include_timestamp: bool = True):
         self.include_timestamp = include_timestamp
-        
+
         if include_timestamp:
             fmt = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
         else:
             fmt = "[%(levelname)s] %(name)s: %(message)s"
-        
+
         super().__init__(fmt, datefmt="%Y-%m-%d %H:%M:%S")
 
 
 class JsonFormatter(logging.Formatter):
     """JSON log formatter for structured logging systems."""
-    
+
     def __init__(self, include_timestamp: bool = True):
         self.include_timestamp = include_timestamp
         super().__init__()
-    
+
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_entry = {
@@ -367,12 +460,12 @@ class JsonFormatter(logging.Formatter):
             "logger": record.name,
             "message": record.getMessage(),
         }
-        
+
         if self.include_timestamp:
             log_entry["timestamp"] = self.formatTime(record, "%Y-%m-%dT%H:%M:%S")
-        
+
         # Include extra data if present
         if hasattr(record, "request_data"):
             log_entry.update(record.request_data)
-        
+
         return msgspec.json.encode(log_entry).decode()
