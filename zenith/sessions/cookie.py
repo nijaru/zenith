@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import base64
 import hmac
-import json
 import logging
 
+import msgspec
 from zenith.sessions.manager import Session
 from zenith.sessions.store import SessionStore
 
@@ -91,10 +91,10 @@ class CookieSessionStore(SessionStore):
         try:
             # Convert to dict and serialize
             session_dict = session.to_dict()
-            json_data = json.dumps(session_dict)
+            json_bytes = msgspec.json.encode(session_dict)
 
             # Base64 encode
-            b64_data = base64.b64encode(json_data.encode()).decode()
+            b64_data = base64.b64encode(json_bytes).decode()
 
             # Sign the data
             signed_data = self._sign_data(b64_data)
@@ -126,7 +126,7 @@ class CookieSessionStore(SessionStore):
             json_data = base64.b64decode(b64_data).decode()
 
             # Parse JSON
-            session_dict = json.loads(json_data)
+            session_dict = msgspec.json.decode(json_data.encode())
 
             # Create session object
             return Session.from_dict(session_dict)

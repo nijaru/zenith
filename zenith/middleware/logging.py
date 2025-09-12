@@ -5,12 +5,12 @@ Provides comprehensive request/response logging with configurable
 formats, filtering, and integration with request ID tracking.
 """
 
-import json
 import logging
 import time
 from typing import Any, Callable
 
-from zenith.core.json_encoder import _json_dumps
+import msgspec
+
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -195,8 +195,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 if len(body) <= self.max_body_size:
                     # Try to decode as JSON for better formatting
                     try:
-                        data["body"] = json.loads(body.decode("utf-8"))
-                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        data["body"] = msgspec.json.decode(body)
+                    except (msgspec.DecodeError, UnicodeDecodeError):
                         data["body"] = body.decode("utf-8", errors="replace")[:self.max_body_size]
                 else:
                     data["body_size"] = len(body)
@@ -223,8 +223,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 if isinstance(body, bytes) and len(body) <= self.max_body_size:
                     # Try to decode as JSON for better formatting
                     try:
-                        data["body"] = json.loads(body.decode("utf-8"))
-                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        data["body"] = msgspec.json.decode(body)
+                    except (msgspec.DecodeError, UnicodeDecodeError):
                         data["body"] = body.decode("utf-8", errors="replace")[:self.max_body_size]
                 else:
                     data["body_size"] = len(body) if isinstance(body, bytes) else "unknown"
@@ -375,4 +375,4 @@ class JsonFormatter(logging.Formatter):
         if hasattr(record, "request_data"):
             log_entry.update(record.request_data)
         
-        return _json_dumps(log_entry)
+        return msgspec.json.encode(log_entry).decode()

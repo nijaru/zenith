@@ -9,6 +9,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import lru_cache
 from threading import Lock
 from typing import Any
 
@@ -343,10 +344,22 @@ def record_request_metrics(
         collector.counter("http_errors_total", labels=error_labels)
 
 
-# Route handler for metrics endpoint
+# Route handler for metrics endpoint with time-based caching
+_metrics_cache = {"data": "", "expires": 0}
+
 async def metrics_endpoint() -> str:
-    """Metrics endpoint handler returning Prometheus format."""
-    return metrics.export_prometheus()
+    """Metrics endpoint handler returning Prometheus format with 5s caching."""
+    current_time = time.time()
+    
+    # Use cached data if still valid (5 second cache)
+    if current_time < _metrics_cache["expires"]:
+        return _metrics_cache["data"]
+    
+    # Generate fresh metrics and cache
+    _metrics_cache["data"] = metrics.export_prometheus()
+    _metrics_cache["expires"] = current_time + 5.0  # 5 second TTL
+    
+    return _metrics_cache["data"]
 
 
 def add_metrics_route(app, metrics_path: str = "/metrics") -> None:

@@ -6,15 +6,15 @@ to improve API performance and reduce database load.
 """
 
 import hashlib
-import json
 import time
+from collections import OrderedDict
 from typing import Any
 
-from zenith.core.json_encoder import _json_dumps, _json_loads
+import msgspec
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 class CacheConfig:
@@ -57,15 +57,14 @@ class CacheConfig:
 
 
 class MemoryCache:
-    """Simple in-memory LRU cache."""
+    """Optimized in-memory LRU cache using OrderedDict."""
     
     def __init__(self, max_size: int = 1000):
         self.max_size = max_size
-        self.cache: dict[str, dict] = {}
-        self.access_times: dict[str, float] = {}
+        self.cache: OrderedDict[str, dict] = OrderedDict()
     
     def get(self, key: str) -> dict | None:
-        """Get cached item."""
+        """Get cached item with LRU update."""
         if key not in self.cache:
             return None
             
@@ -73,18 +72,23 @@ class MemoryCache:
         
         # Check if expired
         if time.time() > item["expires_at"]:
-            self.delete(key)
+            del self.cache[key]
             return None
             
-        # Update access time for LRU
-        self.access_times[key] = time.time()
+        # Move to end for LRU (O(1) operation in OrderedDict)
+        self.cache.move_to_end(key)
         return item
     
     def set(self, key: str, data: dict, ttl: int) -> None:
-        """Set cached item with TTL."""
+        """Set cached item with TTL and LRU eviction."""
+        # Update existing item
+        if key in self.cache:
+            del self.cache[key]
+        
         # Evict oldest items if cache is full
-        if len(self.cache) >= self.max_size:
-            self._evict_oldest()
+        elif len(self.cache) >= self.max_size:
+            # Remove oldest (first) item
+            self.cache.popitem(last=False)
             
         self.cache[key] = {
             "content": data["content"],
@@ -94,32 +98,21 @@ class MemoryCache:
             "expires_at": time.time() + ttl,
             "cached_at": time.time(),
         }
-        self.access_times[key] = time.time()
     
     def delete(self, key: str) -> None:
         """Delete cached item."""
         self.cache.pop(key, None)
-        self.access_times.pop(key, None)
     
     def clear(self) -> None:
         """Clear all cached items."""
         self.cache.clear()
-        self.access_times.clear()
-    
-    def _evict_oldest(self) -> None:
-        """Evict oldest accessed item."""
-        if not self.access_times:
-            return
-            
-        oldest_key = min(self.access_times, key=self.access_times.get)
-        self.delete(oldest_key)
 
 
-class ResponseCacheMiddleware(BaseHTTPMiddleware):
-    """Middleware for caching HTTP responses."""
+class ResponseCacheMiddleware:
+    """Pure ASGI middleware for caching HTTP responses."""
     
-    def __init__(self, app, config: CacheConfig = None):
-        super().__init__(app)
+    def __init__(self, app: ASGIApp, config: CacheConfig = None):
+        self.app = app
         self.config = config or CacheConfig()
         
         # Initialize cache backend
@@ -128,39 +121,96 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
         else:
             self.cache = MemoryCache(self.config.max_cache_size)
     
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Cache responses for GET requests."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with response caching."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
         
         # Only cache specific methods
-        if request.method not in self.config.cache_methods:
-            return await call_next(request)
+        method = scope["method"]
+        if method not in self.config.cache_methods:
+            await self.app(scope, receive, send)
+            return
         
         # Check if path should be cached
-        if not self._should_cache_path(request.url.path):
-            return await call_next(request)
+        path = scope["path"]
+        if not self._should_cache_path(path):
+            await self.app(scope, receive, send)
+            return
         
-        # Generate cache key
+        # Create request object for cache key generation
+        request = Request(scope, receive)
         cache_key = self._generate_cache_key(request)
         
         # Try to get cached response
         cached = self.cache.get(cache_key)
         if cached:
-            return Response(
-                content=cached["content"],
-                status_code=cached["status_code"],
-                headers=dict(cached["headers"], **{"X-Cache": "HIT"}),
-                media_type=cached["media_type"],
-            )
+            await self._send_cached_response(cached, send)
+            return
         
-        # Get fresh response
-        response = await call_next(request)
+        # Intercept response for caching
+        response_started = False
+        response_data = {
+            "status_code": 200,
+            "headers": [],
+            "body": b"",
+        }
         
-        # Cache successful responses
-        if response.status_code in self.config.cache_status_codes:
-            await self._cache_response(cache_key, response)
-            response.headers["X-Cache"] = "MISS"
+        async def send_wrapper(message):
+            nonlocal response_started, response_data
+            
+            if message["type"] == "http.response.start":
+                response_started = True
+                response_data["status_code"] = message["status"]
+                response_data["headers"] = list(message.get("headers", []))
+                
+                # Add cache miss header
+                response_data["headers"].append((b"x-cache", b"MISS"))
+                message["headers"] = response_data["headers"]
+                
+            elif message["type"] == "http.response.body" and response_started:
+                body_chunk = message.get("body", b"")
+                response_data["body"] += body_chunk
+                
+                # If this is the last chunk, cache the response
+                if not message.get("more_body", False):
+                    if response_data["status_code"] in self.config.cache_status_codes:
+                        await self._cache_response_asgi(cache_key, response_data)
+                
+            await send(message)
         
-        return response
+        await self.app(scope, receive, send_wrapper)
+    
+    async def _send_cached_response(self, cached: dict, send: Send) -> None:
+        """Send a cached response via ASGI."""
+        # Send response start
+        headers = [(b"x-cache", b"HIT")]
+        headers.extend(cached.get("headers", []))
+        
+        await send({
+            "type": "http.response.start",
+            "status": cached["status_code"],
+            "headers": headers,
+        })
+        
+        # Send response body
+        await send({
+            "type": "http.response.body",
+            "body": cached["content"],
+            "more_body": False,
+        })
+    
+    async def _cache_response_asgi(self, cache_key: str, response_data: dict) -> None:
+        """Cache response data from ASGI intercepted response."""
+        cache_data = {
+            "content": response_data["body"],
+            "media_type": "application/json",  # Default, could be enhanced
+            "headers": response_data["headers"],
+            "status_code": response_data["status_code"],
+        }
+        
+        self.cache.set(cache_key, cache_data, self.config.default_ttl)
     
     def _should_cache_path(self, path: str) -> bool:
         """Check if path should be cached."""
@@ -185,7 +235,7 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
             query_params.pop(ignore_param, None)
         
         if query_params:
-            key_parts.append(_json_dumps(query_params))
+            key_parts.append(msgspec.json.encode(query_params).decode())
         
         # Add vary headers
         for header in self.config.vary_headers:
@@ -196,25 +246,6 @@ class ResponseCacheMiddleware(BaseHTTPMiddleware):
         key_string = "|".join(key_parts)
         return hashlib.md5(key_string.encode()).hexdigest()
     
-    async def _cache_response(self, cache_key: str, response: Response) -> None:
-        """Cache response data."""
-        # Read response body
-        body = b""
-        async for chunk in response.body_iterator:
-            body += chunk
-        
-        # Store in cache
-        cache_data = {
-            "content": body,
-            "media_type": response.media_type,
-            "headers": dict(response.headers),
-            "status_code": response.status_code,
-        }
-        
-        self.cache.set(cache_key, cache_data, self.config.default_ttl)
-        
-        # Recreate response with cached body
-        response.body_iterator = iter([body])
 
 
 class RedisCache:
@@ -229,7 +260,7 @@ class RedisCache:
         try:
             data = self.redis.get(f"{self.prefix}{key}")
             if data:
-                return _json_loads(data)
+                return msgspec.json.decode(data.encode() if isinstance(data, str) else data)
             return None
         except Exception:
             return None
@@ -237,7 +268,7 @@ class RedisCache:
     def set(self, key: str, data: dict, ttl: int) -> None:
         """Set cached item in Redis with TTL."""
         try:
-            serialized = _json_dumps(data)
+            serialized = msgspec.json.encode(data).decode()
             self.redis.setex(f"{self.prefix}{key}", ttl, serialized)
         except Exception:
             pass  # Fail silently for cache errors

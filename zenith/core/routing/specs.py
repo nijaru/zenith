@@ -24,7 +24,7 @@ class HTTPMethod(Enum):
     TRACE = "TRACE"
 
 
-@dataclass
+@dataclass(slots=True)
 class RouteSpec:
     """Route specification containing all route information."""
     path: str

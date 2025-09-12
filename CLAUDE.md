@@ -495,9 +495,10 @@ app = Zenith(config=config)
 
 ### Performance Issues
 - Run performance tests: `python run_performance_tests.py`
-- Check middleware configuration
+- Check middleware configuration  
 - Profile with `@track_performance()` decorator
 - Monitor `/metrics` endpoint
+- **Reference:** Complete optimization guide at `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
 
 ### Database Issues
 - Verify async database URL format
@@ -518,7 +519,7 @@ app = Zenith(config=config)
 1. **Architecture**: Use Context classes for business logic, keep routes thin
 2. **Type Safety**: Always use type hints, Pydantic models for validation
 3. **Testing**: Include both endpoint tests (TestClient) and business logic tests (TestContext)
-4. **Performance**: Consider performance impact, use profiling decorators
+4. **Performance**: Consider performance impact, use profiling decorators, follow optimization patterns in `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
 5. **Standards**: Follow existing patterns in codebase, maintain consistency
 6. **Documentation**: Update docs for any API changes or new features
 
