@@ -318,139 +318,113 @@ app.add_middleware(RequestIDMiddleware, {
 })
 ```
 
-## Performance Optimization Middleware
+## Specialized Middleware
 
-<Aside type="caution">
-  **Advanced Performance Features**: These middleware are specialized optimizations for high-throughput scenarios. Most applications should use the standard middleware above. Only use these when you have specific performance bottlenecks and understand the tradeoffs.
-</Aside>
+These middleware serve specific use cases and can be added when your application needs their functionality.
 
-### When to Use Optimization Middleware
+### When to Use Specialized Middleware
 
-**Use standard middleware when:**
-- Building typical web applications
-- You want separation of concerns (separate auth, rate limiting, etc.)
-- You prefer simplicity and maintainability
-- You don't have specific performance bottlenecks
+**File Operations:**
+- Use `ZeroCopyStreamingMiddleware` for applications handling large file uploads/downloads
 
-**Use optimization middleware when:**
-- You have high-traffic applications (1000+ concurrent users)
-- You've identified specific performance bottlenecks
-- You need maximum performance and are willing to trade some complexity
-- You have specialized use cases (large file streaming, intensive WebSocket usage, etc.)
+**Database-Heavy Applications:**
+- Use `DatabaseConnectionReuseMiddleware` for applications with frequent database operations
 
-### ConcurrentAuthRateLimitMiddleware
-
-High-performance authentication and rate limiting with concurrent processing:
-
-```python
-from zenith.middleware import ConcurrentAuthRateLimitMiddleware, RateLimit
-
-app.add_middleware(ConcurrentAuthRateLimitMiddleware, {
-    # Rate limiting settings
-    "rate_limit": RateLimit(requests=100, window=60),
-    
-    # Public paths (skip auth and rate limiting)
-    "public_paths": ["/docs", "/redoc", "/health", "/metrics"],
-    
-    # JWT configuration
-    "jwt_secret_key": "your-jwt-secret-key"
-})
-```
-
-**Performance improvement**: 20-30% faster than sequential auth + rate limit checks.
+**Real-Time Applications:**
+- Use `ConcurrentWebSocketMiddleware` for applications with intensive WebSocket usage
+- Use `ServerSentEventsBackpressureMiddleware` for applications with many concurrent SSE connections
 
 ### ZeroCopyStreamingMiddleware
 
-Memory-efficient file streaming with zero-copy optimization:
+Memory-efficient file operations with zero-copy optimization:
 
 ```python
 from zenith.middleware import ZeroCopyStreamingMiddleware
 
 app.add_middleware(ZeroCopyStreamingMiddleware, {
     # File size thresholds
-    "min_file_size": 1024,  # Only optimize files > 1KB
-    "max_file_size": 100 * 1024 * 1024,  # Max 100MB
+    "max_chunk_size": 8192,  # 8KB chunks for optimal streaming
+    "enable_streaming_validation": True,
     
-    # Buffer settings
-    "chunk_size": 8192,  # 8KB chunks
-    "use_sendfile": True,  # OS-level sendfile when available
+    # Paths that should use zero-copy streaming
+    "streaming_paths": ["/upload", "/download", "/files"],
     
-    # Content type filters
-    "include_media_types": [
-        "application/octet-stream",
-        "video/*",
-        "audio/*",
-        "image/*"
-    ]
+    # Upload directory configuration
+    "upload_directory": "/tmp/app_uploads"
 })
 ```
 
+**Use case**: Applications handling large file uploads or downloads (>1MB files).
 **Memory reduction**: 40-60% less memory usage for large file transfers.
+
 
 ### DatabaseConnectionReuseMiddleware
 
-Optimized database connections with connection reuse:
+Optimizes database performance by reusing connections across request lifecycle:
 
 ```python
 from zenith.middleware import DatabaseConnectionReuseMiddleware
 
 app.add_middleware(DatabaseConnectionReuseMiddleware, {
-    # Database configuration
+    # Database URL (AsyncPG or SQLAlchemy async)
     "database_url": "postgresql+asyncpg://user:pass@localhost/db",
     "engine_type": "asyncpg",  # or "sqlalchemy"
     
-    # Pool settings
+    # Connection pool configuration
     "pool_size": 20,
     "max_overflow": 30,
     "pool_timeout": 30,
-    "pool_recycle": 3600  # 1 hour
+    "pool_recycle": 3600  # Connection lifetime in seconds
 })
 ```
 
+**Use case**: Applications with frequent database queries (>10 queries per request).
 **Performance improvement**: 15-25% faster database operations.
 
 ### ConcurrentWebSocketMiddleware
 
-Optimized WebSocket message processing:
+Enhances WebSocket performance with concurrent message processing:
 
 ```python
 from zenith.middleware import ConcurrentWebSocketMiddleware
 
 app.add_middleware(ConcurrentWebSocketMiddleware, {
-    # Connection settings
+    # Connection management
     "max_connections": 1000,
     "heartbeat_interval": 30,
     "connection_timeout": 300,
     
-    # Message processing
-    "max_message_size": 1024 * 1024,  # 1MB
-    "queue_size": 100,
-    "process_concurrently": True
+    # Message processing optimization
+    "max_message_size": 1024 * 1024,  # 1MB max message size
+    "queue_size": 100,  # Message queue size per connection
+    "process_concurrently": True  # Enable concurrent processing
 })
 ```
 
-**Throughput improvement**: 15-25% better WebSocket performance.
+**Use case**: Applications with high WebSocket message volume (chat apps, real-time dashboards).
+**Throughput improvement**: 15-25% better WebSocket performance under load.
 
 ### ServerSentEventsBackpressureMiddleware
 
-Intelligent backpressure handling for SSE:
+Prevents memory issues in SSE connections with intelligent backpressure:
 
 ```python
 from zenith.middleware import ServerSentEventsBackpressureMiddleware
 
 app.add_middleware(ServerSentEventsBackpressureMiddleware, {
-    # Backpressure settings
-    "max_queue_size": 1000,
-    "drop_policy": "oldest",  # or "newest"
-    "flow_control": True,
+    # Backpressure configuration
+    "max_queue_size": 1000,  # Max queued events per connection
+    "drop_policy": "oldest",  # "oldest" or "newest" when queue full
+    "flow_control": True,  # Enable adaptive flow control
     
-    # Performance tuning
-    "batch_size": 10,
-    "flush_interval": 0.1  # 100ms
+    # Performance optimization
+    "batch_size": 10,  # Events per batch
+    "flush_interval": 0.1  # 100ms flush interval
 })
 ```
 
-**Scaling improvement**: 10x more concurrent SSE connections.
+**Use case**: Applications with many concurrent SSE connections (live feeds, notifications).
+**Scaling improvement**: 10x more concurrent SSE connections without memory issues.
 
 ### CSRFMiddleware
 
@@ -722,17 +696,18 @@ app.add_middleware(AuthMiddleware)               # 6th request, 6th-last respons
 app.add_middleware(RateLimitMiddleware)          # 7th request, 7th-last response
 app.add_middleware(CompressionMiddleware)        # Last request, 1st response
 
-# Recommended order for performance-optimized middleware
+# Recommended order with specialized middleware (add as needed)
 app.add_middleware(ErrorHandlingMiddleware)           # Error handling (outermost)
 app.add_middleware(SecurityHeadersMiddleware)         # Security headers
 app.add_middleware(CORSMiddleware)                    # CORS handling
-app.add_middleware(ZeroCopyStreamingMiddleware)       # File streaming optimization
-app.add_middleware(DatabaseConnectionReuseMiddleware) # DB connection optimization
-app.add_middleware(ConcurrentWebSocketMiddleware)     # WebSocket optimization
-app.add_middleware(ServerSentEventsBackpressureMiddleware) # SSE optimization
+app.add_middleware(ZeroCopyStreamingMiddleware)       # File operations (if needed)
+app.add_middleware(DatabaseConnectionReuseMiddleware) # Database optimization (if needed)
+app.add_middleware(ConcurrentWebSocketMiddleware)     # WebSocket performance (if needed)
+app.add_middleware(ServerSentEventsBackpressureMiddleware) # SSE scaling (if needed)
 app.add_middleware(RequestIDMiddleware)               # Request tracking
-app.add_middleware(LoggingMiddleware)                 # Request logging
-app.add_middleware(ConcurrentAuthRateLimitMiddleware) # Concurrent auth + rate limit
+app.add_middleware(LoggingMiddleware)                 # Request logging  
+app.add_middleware(AuthenticationMiddleware)          # Authentication
+app.add_middleware(RateLimitMiddleware)               # Rate limiting
 app.add_middleware(CompressionMiddleware)             # Response compression (last)
 ```
 
