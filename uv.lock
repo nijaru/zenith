@@ -1553,6 +1553,7 @@ performance = [
 [package.dev-dependencies]
 dev = [
     { name = "httpx" },
+    { name = "pytest-asyncio" },
     { name = "pytest-cov" },
 ]
 
@@ -1605,6 +1606,7 @@ provides-extras = ["benchmark", "compression", "dev", "http3", "performance"]
 [package.metadata.requires-dev]
 dev = [
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-cov", specifier = ">=6.3.0" },
 ]
 
