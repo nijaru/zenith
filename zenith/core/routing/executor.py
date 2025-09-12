@@ -119,7 +119,26 @@ class RouteExecutor:
                 and issubclass(param_type, BaseModel)
                 and request.method in ["POST", "PUT", "PATCH"]
             ):
-                body = await request.json()
+                # Get raw body to handle special characters properly
+                body_bytes = await request.body()
+                try:
+                    # Use orjson if available for better performance
+                    try:
+                        import orjson
+                        body = orjson.loads(body_bytes)  # orjson handles bytes directly
+                    except ImportError:
+                        # Fallback to standard json with proper encoding
+                        import json
+                        try:
+                            body_str = body_bytes.decode('utf-8', errors='strict')
+                            body = json.loads(body_str)  # Use strict mode (default)
+                        except UnicodeDecodeError as e:
+                            raise ValidationError(f"Invalid UTF-8 encoding in request body: {str(e)}")
+                except Exception as e:
+                    # Provide helpful error message
+                    if hasattr(e, '__class__') and e.__class__.__name__ == 'JSONDecodeError':
+                        raise ValidationError(f"Invalid JSON in request body: {str(e)}")
+                    raise ValidationError(f"Failed to parse request body: {str(e)}")
                 kwargs[param_name] = param_type.model_validate(body)
                 continue
 

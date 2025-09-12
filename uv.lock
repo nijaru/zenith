@@ -1552,6 +1552,7 @@ performance = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "httpx" },
     { name = "pytest-cov" },
 ]
 
@@ -1602,7 +1603,10 @@ requires-dist = [
 provides-extras = ["benchmark", "compression", "dev", "http3", "performance"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest-cov", specifier = ">=6.3.0" }]
+dev = [
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest-cov", specifier = ">=6.3.0" },
+]
 
 [[package]]
 name = "zstandard"

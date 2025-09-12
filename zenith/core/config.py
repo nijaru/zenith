@@ -86,26 +86,24 @@ class Config:
         """Validate configuration settings."""
         # Auto-generate secret key for development if not set
         if not self.secret_key or self.secret_key == "dev-secret-change-in-prod":
+            import secrets
+            import string
+            import logging
+            
+            chars = string.ascii_letters + string.digits
+            self.secret_key = ''.join(secrets.choice(chars) for _ in range(64))
+            
+            logger = logging.getLogger("zenith.config")
             if self.debug:
-                # Generate a secure development key
-                import secrets
-                import string
-                import logging
-                chars = string.ascii_letters + string.digits
-                self.secret_key = ''.join(secrets.choice(chars) for _ in range(64))
-                logging.getLogger("zenith.config").warning(
-                    "Generated development SECRET_KEY (set DEBUG=false and SECRET_KEY for production)"
+                # Development mode - this is expected
+                logger.info(
+                    "Generated development SECRET_KEY (set SECRET_KEY environment variable for production)"
                 )
             else:
-                # For testing/development, generate a key but warn about it
-                import secrets
-                import string
-                import logging
-                chars = string.ascii_letters + string.digits
-                self.secret_key = ''.join(secrets.choice(chars) for _ in range(64))
-                logging.getLogger("zenith.config").warning(
-                    "Generated SECRET_KEY for testing/development. "
-                    "Set DEBUG=true or provide SECRET_KEY environment variable for production."
+                # Production mode without secret key - this is a warning
+                logger.warning(
+                    "No SECRET_KEY provided in production mode! "
+                    "Generated temporary key. Set SECRET_KEY environment variable for security."
                 )
 
         if self.port < 1 or self.port > 65535:

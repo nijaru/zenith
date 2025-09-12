@@ -377,12 +377,68 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             starlette_router = router.build_starlette_router()
             routes.extend(starlette_router.routes)
 
+        # Collect mount routes and sort them by specificity
+        mount_routes = []
+        spa_routes = []  # SPA routes (mounted at /) should go last
+        
+        # Add static mounts (for mount_static() method) - these should come before SPAs
+        if hasattr(self, '_static_mounts'):
+            mount_routes.extend(self._static_mounts)
+        
+        # Add mount routes (for spa() and mount() methods)
+        if hasattr(self, '_mount_routes'):
+            for route in self._mount_routes:
+                # Put SPA routes (mounted at root) at the end
+                if hasattr(route, 'path') and route.path in ('/', ''):
+                    spa_routes.append(route)
+                else:
+                    mount_routes.append(route)
+        
+        # Add routes in order: API routes, static mounts, then SPA catch-all
+        routes.extend(mount_routes)
+        routes.extend(spa_routes)
+
+        # Create custom exception handlers for JSON responses
+        from starlette.exceptions import HTTPException
+        from starlette.requests import Request
+        from zenith.web.responses import OptimizedJSONResponse
+        
+        async def not_found_handler(request: Request, exc: HTTPException) -> OptimizedJSONResponse:
+            """Return JSON for 404 errors."""
+            return OptimizedJSONResponse(
+                content={
+                    "error": "NotFound",
+                    "message": "The requested resource was not found",
+                    "status_code": 404,
+                    "path": str(request.url.path)
+                },
+                status_code=404
+            )
+        
+        async def method_not_allowed_handler(request: Request, exc: HTTPException) -> OptimizedJSONResponse:
+            """Return JSON for 405 errors."""
+            return OptimizedJSONResponse(
+                content={
+                    "error": "MethodNotAllowed",
+                    "message": f"Method {request.method} not allowed for this endpoint",
+                    "status_code": 405,
+                    "path": str(request.url.path)
+                },
+                status_code=405
+            )
+        
+        exception_handlers = {
+            404: not_found_handler,
+            405: method_not_allowed_handler,
+        }
+
         # Create Starlette app
         self._starlette_app = Starlette(
             routes=routes,
             middleware=self.middleware,
             lifespan=self.lifespan,
             debug=self.config.debug,
+            exception_handlers=exception_handlers,
         )
 
         return self._starlette_app
