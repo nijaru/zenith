@@ -7,7 +7,7 @@ description: Get Zenith installed and set up your development environment
 
 Before installing Zenith, ensure you have:
 
-- **Python 3.11 or higher** (3.12+ recommended for best performance)
+- **Python 3.12 or higher** (required for Zenith framework)
 - **pip** or **uv** package manager
 - **PostgreSQL** or **SQLite** for database (optional)
 - **Redis** for caching and background tasks (optional)
