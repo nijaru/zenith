@@ -3,7 +3,7 @@ title: Real-time Chat
 description: WebSocket-powered chat application with rooms and presence
 ---
 
-import { FileTree } from '@astrojs/starlight/components';
+import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
@@ -20,10 +20,11 @@ This example demonstrates building a real-time chat application with Zenith, fea
 ## Project Structure
 
 <FileTree>
+
 - chat-app/
   - app/
-    - __init__.py
-    - main.py              **Entry point**
+    - \_\_init\_\_.py
+    - **main.py** Entry point
     - models/
       - user.py
       - room.py
@@ -38,14 +39,15 @@ This example demonstrates building a real-time chat application with Zenith, fea
       - messages.py
       - websocket.py
     - websocket/
-      - manager.py         **WebSocket connection manager**
-      - events.py          **Event handlers**
+      - **manager.py** WebSocket connection manager
+      - **events.py** Event handlers
     - static/
-      - index.html         **Chat interface**
-      - chat.js            **Client-side code**
+      - **index.html** Chat interface
+      - **chat.js** Client-side code
       - style.css
   - tests/
   - requirements.txt
+
 </FileTree>
 
 ## Models

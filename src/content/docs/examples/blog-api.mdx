@@ -3,7 +3,7 @@ title: Blog API
 description: Complete blog API with authentication, CRUD operations, and search
 ---
 
-import { FileTree } from '@astrojs/starlight/components';
+import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
@@ -19,30 +19,31 @@ This example demonstrates building a complete blog API with Zenith, featuring:
 ## Project Structure
 
 <FileTree>
+
 - blog-api/
   - app/
-    - __init__.py
-    - main.py                **Entry point**
-    - config.py              **Configuration**
-    - models/               **Database models**
-      - __init__.py
+    - \_\_init\_\_.py
+    - **main.py** Entry point
+    - **config.py** Configuration
+    - models/ Database models
+      - \_\_init\_\_.py
       - user.py
       - post.py
       - comment.py
       - category.py
-    - contexts/             **Business logic**
-      - __init__.py
+    - contexts/ Business logic
+      - \_\_init\_\_.py
       - auth.py
       - posts.py
       - comments.py
-    - routes/               **API endpoints**
-      - __init__.py
+    - routes/ API endpoints
+      - \_\_init\_\_.py
       - auth.py
       - posts.py
       - comments.py
       - categories.py
     - utils/
-      - __init__.py
+      - \_\_init\_\_.py
       - search.py
       - uploads.py
   - tests/
@@ -50,6 +51,7 @@ This example demonstrates building a complete blog API with Zenith, featuring:
   - uploads/
   - .env
   - requirements.txt
+
 </FileTree>
 
 ## Database Models
@@ -925,8 +927,6 @@ WORKDIR /app
     
     CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ```
-  </TabItem>
-</Tabs>
 
 <Aside type="tip">
   **Pro Tip**: This example demonstrates many Zenith features working together. You can use parts of it as a starting point for your own projects.
