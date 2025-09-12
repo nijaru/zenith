@@ -9,22 +9,22 @@ import hashlib
 import hmac
 import secrets
 import time
-from typing import Any
 
-from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.status import HTTP_403_FORBIDDEN
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 class CSRFError(Exception):
     """CSRF validation error."""
+
     pass
 
 
 class CSRFConfig:
     """Configuration for CSRF middleware."""
-    
+
     def __init__(
         self,
         secret_key: str,
@@ -41,7 +41,7 @@ class CSRFConfig:
     ):
         if len(secret_key) < 32:
             raise ValueError("CSRF secret key must be at least 32 characters long")
-        
+
         self.secret_key = secret_key
         self.token_name = token_name
         self.header_name = header_name
@@ -55,10 +55,10 @@ class CSRFConfig:
         self.require_token = require_token
 
 
-class CSRFMiddleware(BaseHTTPMiddleware):
+class CSRFMiddleware:
     """
     CSRF protection middleware.
-    
+
     Features:
     - Token generation and validation
     - Configurable exempt methods and paths
@@ -69,7 +69,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
     def __init__(
         self,
-        app,
+        app: ASGIApp,
         config: CSRFConfig | None = None,
         # Individual parameters (for backward compatibility)
         *,
@@ -87,7 +87,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     ):
         """
         Initialize CSRF middleware.
-        
+
         Args:
             app: ASGI application
             config: CSRF configuration object
@@ -103,8 +103,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             exempt_paths: URL paths exempt from CSRF
             require_token: Whether to require CSRF tokens
         """
-        super().__init__(app)
-        
+        self.app = app
+
         # Use config object if provided, otherwise use individual parameters
         if config is not None:
             self.secret_key = config.secret_key.encode()
@@ -121,10 +121,10 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         else:
             if secret_key is None:
                 raise ValueError("secret_key is required when not using config object")
-            
+
             if len(secret_key) < 32:
                 raise ValueError("CSRF secret key must be at least 32 characters long")
-            
+
             self.secret_key = secret_key.encode()
             self.token_name = token_name
             self.header_name = header_name
@@ -140,27 +140,22 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     def _generate_token(self, user_agent: str = "", remote_addr: str = "") -> str:
         """
         Generate a CSRF token.
-        
+
         Token format: timestamp:random:signature
         """
         timestamp = str(int(time.time()))
         random_part = secrets.token_urlsafe(16)
-        
+
         # Create signature based on timestamp, random part, user agent, and IP
         message = f"{timestamp}:{random_part}:{user_agent}:{remote_addr}"
         signature = hmac.new(
-            self.secret_key,
-            message.encode(),
-            hashlib.sha256
+            self.secret_key, message.encode(), hashlib.sha256
         ).hexdigest()
-        
+
         return f"{timestamp}:{random_part}:{signature}"
 
     def _validate_token(
-        self, 
-        token: str, 
-        user_agent: str = "", 
-        remote_addr: str = ""
+        self, token: str, user_agent: str = "", remote_addr: str = ""
     ) -> bool:
         """Validate a CSRF token."""
         try:
@@ -168,30 +163,22 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             timestamp = int(timestamp_str)
         except (ValueError, IndexError):
             return False
-        
+
         # Check token age
         if time.time() - timestamp > self.max_age_seconds:
             return False
-        
+
         # Verify signature
         message = f"{timestamp_str}:{random_part}:{user_agent}:{remote_addr}"
         expected_signature = hmac.new(
-            self.secret_key,
-            message.encode(),
-            hashlib.sha256
+            self.secret_key, message.encode(), hashlib.sha256
         ).hexdigest()
-        
+
         return hmac.compare_digest(signature, expected_signature)
 
     def _get_token_from_request(self, request: Request) -> str | None:
-        """Extract CSRF token from request."""
-        # Try form data first
-        if hasattr(request, "_form") and request._form is not None:
-            form_data = request._form
-            if self.token_name in form_data:
-                return form_data[self.token_name]
-        
-        # Try headers
+        """Extract CSRF token from request (deprecated - use async version)."""
+        # Try headers only (form data requires async)
         return request.headers.get(self.header_name)
 
     def _should_exempt(self, request: Request) -> bool:
@@ -199,138 +186,243 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         # Check method exemptions
         if request.method in self.exempt_methods:
             return True
-        
+
         # Check path exemptions
         path = request.url.path
         if path in self.exempt_paths:
             return True
-        
+
         # Check path patterns
         for exempt_path in self.exempt_paths:
             if exempt_path.endswith("*") and path.startswith(exempt_path[:-1]):
                 return True
-        
+
         return False
 
     def _get_client_info(self, request: Request) -> tuple[str, str]:
         """Get client user agent and IP address."""
         user_agent = request.headers.get("User-Agent", "")
-        
+
         # Get real IP (considering proxies)
         remote_addr = request.headers.get("X-Forwarded-For", "")
         if remote_addr:
             remote_addr = remote_addr.split(",")[0].strip()
         else:
             remote_addr = request.headers.get("X-Real-IP", "")
-        
+
         if not remote_addr and request.client:
             remote_addr = request.client.host
-        
+
         return user_agent, remote_addr or "unknown"
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        """Process request with CSRF protection."""
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        """ASGI3 interface implementation with CSRF protection."""
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope, receive)
+
         # Skip CSRF for exempt requests
         if self._should_exempt(request):
-            response = await call_next(request)
-            return self._set_csrf_cookie(request, response)
-        
+            await self._handle_exempt_request(request, scope, receive, send)
+            return
+
         # Get client information
         user_agent, remote_addr = self._get_client_info(request)
-        
+
         # Get existing token from cookie
         existing_token = request.cookies.get(self.cookie_name)
-        
+
         if self.require_token:
-            # Get token from request
-            submitted_token = self._get_token_from_request(request)
-            
+            # Get token from request (need to read form data if POST)
+            submitted_token = await self._get_token_from_request_async(request)
+
             # Validate submitted token
             if not submitted_token:
-                return Response(
-                    content='{"error": "CSRF token missing"}',
-                    status_code=HTTP_403_FORBIDDEN,
-                    media_type="application/json"
-                )
-            
+                await self._send_csrf_error(send, "CSRF token missing")
+                return
+
             if not self._validate_token(submitted_token, user_agent, remote_addr):
-                return Response(
-                    content='{"error": "CSRF token invalid or expired"}',
-                    status_code=HTTP_403_FORBIDDEN,
-                    media_type="application/json"
-                )
-        
-        # Process request
-        response = await call_next(request)
-        
-        # Set CSRF token in cookie and response
-        return self._set_csrf_cookie(request, response, existing_token, user_agent, remote_addr)
+                await self._send_csrf_error(send, "CSRF token invalid or expired")
+                return
+
+        # Process request with CSRF cookie handling
+        await self._handle_protected_request(
+            request, scope, receive, send, existing_token, user_agent, remote_addr
+        )
+
+    async def _handle_exempt_request(
+        self, request: Request, scope: Scope, receive: Receive, send: Send
+    ) -> None:
+        """Handle exempt requests with CSRF cookie setting."""
+        await self._handle_request_with_csrf_cookie(
+            request, scope, receive, send, None, None, None
+        )
+
+    async def _handle_protected_request(
+        self,
+        request: Request,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+        existing_token: str | None,
+        user_agent: str,
+        remote_addr: str,
+    ) -> None:
+        """Handle protected requests with CSRF validation and cookie setting."""
+        await self._handle_request_with_csrf_cookie(
+            request, scope, receive, send, existing_token, user_agent, remote_addr
+        )
+
+    async def _handle_request_with_csrf_cookie(
+        self,
+        request: Request,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+        existing_token: str | None,
+        user_agent: str | None,
+        remote_addr: str | None,
+    ) -> None:
+        """Handle request and set CSRF cookie on response."""
+        if user_agent is None or remote_addr is None:
+            user_agent, remote_addr = self._get_client_info(request)
+
+        # Determine if we need a new token
+        new_token = None
+        if not existing_token or not self._validate_token(
+            existing_token, user_agent, remote_addr
+        ):
+            new_token = self._generate_token(user_agent, remote_addr)
+
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start" and new_token:
+                # Add CSRF cookie to response headers
+                headers = list(message.get("headers", []))
+
+                # Create cookie header
+                cookie_value = f"{self.cookie_name}={new_token}"
+                if self.cookie_secure:
+                    cookie_value += "; Secure"
+                if self.cookie_httponly:
+                    cookie_value += "; HttpOnly"
+                if self.cookie_samesite:
+                    cookie_value += f"; SameSite={self.cookie_samesite}"
+                cookie_value += f"; Max-Age={self.max_age_seconds}"
+
+                headers.append((b"set-cookie", cookie_value.encode("latin-1")))
+                headers.append((b"x-csrf-token", new_token.encode("latin-1")))
+
+                message["headers"] = headers
+
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+    async def _send_csrf_error(self, send: Send, error_message: str) -> None:
+        """Send CSRF error response."""
+        response_body = f'{{"error": "{error_message}"}}'.encode("utf-8")
+
+        await send(
+            {
+                "type": "http.response.start",
+                "status": HTTP_403_FORBIDDEN,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(response_body)).encode("latin-1")),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": response_body})
+
+    async def _get_token_from_request_async(self, request: Request) -> str | None:
+        """Extract CSRF token from request (async version for form data)."""
+        # Try headers first (most common for AJAX)
+        token = request.headers.get(self.header_name)
+        if token:
+            return token
+
+        # Try form data for POST requests
+        if request.method == "POST":
+            try:
+                form_data = await request.form()
+                token = form_data.get(self.token_name)
+                if token:
+                    return str(token)
+            except Exception:
+                # Form parsing failed, continue to other methods
+                pass
+
+        return None
 
     def _set_csrf_cookie(
-        self, 
-        request: Request, 
+        self,
+        request: Request,
         response: Response,
         existing_token: str | None = None,
         user_agent: str | None = None,
-        remote_addr: str | None = None
+        remote_addr: str | None = None,
     ) -> Response:
-        """Set CSRF token cookie on response."""
+        """Set CSRF token cookie on response (deprecated - handled in ASGI wrapper)."""
         if user_agent is None or remote_addr is None:
             user_agent, remote_addr = self._get_client_info(request)
-        
+
         # Generate new token if needed
-        if not existing_token or not self._validate_token(existing_token, user_agent, remote_addr):
+        if not existing_token or not self._validate_token(
+            existing_token, user_agent, remote_addr
+        ):
             new_token = self._generate_token(user_agent, remote_addr)
-            
+
             response.set_cookie(
                 self.cookie_name,
                 new_token,
                 secure=self.cookie_secure,
                 httponly=self.cookie_httponly,
                 samesite=self.cookie_samesite,
-                max_age=self.max_age_seconds
+                max_age=self.max_age_seconds,
             )
-            
+
             # Also add token to response headers for AJAX requests
             response.headers["X-CSRF-Token"] = new_token
-        
+
         return response
 
 
 # Convenience functions
 def create_csrf_middleware(
-    secret_key: str,
-    exempt_paths: list[str] | None = None,
-    **kwargs
+    secret_key: str, exempt_paths: list[str] | None = None, **kwargs
 ) -> CSRFMiddleware:
     """
     Create CSRF protection middleware with common defaults.
-    
+
     Args:
         secret_key: Secret key for CSRF token generation (min 32 characters)
         exempt_paths: Additional paths to exempt from CSRF protection
         **kwargs: Additional arguments passed to CSRFMiddleware
-        
+
     Returns:
         Configured CSRFMiddleware instance with common exempt paths
     """
     exempt_paths_set = set(exempt_paths or [])
-    
+
     # Add common exempt paths
-    exempt_paths_set.update({
-        "/health",
-        "/metrics", 
-        "/api/health",
-        "/docs",
-        "/redoc",
-        "/openapi.json",
-    })
-    
+    exempt_paths_set.update(
+        {
+            "/health",
+            "/metrics",
+            "/api/health",
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+        }
+    )
+
     return CSRFMiddleware(
         app=None,  # Will be set by framework
         secret_key=secret_key,
         exempt_paths=exempt_paths_set,
-        **kwargs
+        **kwargs,
     )
 
 
