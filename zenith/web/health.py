@@ -84,7 +84,9 @@ class HealthCheck:
 
         try:
             # Run check with timeout
-            result = await asyncio.wait_for(self.check_func(), timeout=self.timeout_secs)
+            result = await asyncio.wait_for(
+                self.check_func(), timeout=self.timeout_secs
+            )
             duration_ms = (time.time() - start_time) * 1000
 
             if result:
@@ -150,10 +152,17 @@ class HealthManager:
         if not include_non_critical:
             checks_to_run = [c for c in self.checks if c.critical]
 
-        # Run all checks concurrently
-        results = await asyncio.gather(
-            *[check.run() for check in checks_to_run], return_exceptions=True
-        )
+        # Run all checks concurrently using TaskGroup for better error handling
+        results = []
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(check.run()) for check in checks_to_run]
+
+        # Collect results with proper exception handling
+        for task in tasks:
+            try:
+                results.append(task.result())
+            except Exception as e:
+                results.append(e)
 
         # Process results
         check_results = []
@@ -209,7 +218,9 @@ class HealthManager:
 
     def add_database_check(self, timeout_secs: float = 5.0) -> None:
         """Add database connectivity check."""
-        self.add_simple_check("database", self.check_database, timeout_secs, critical=True)
+        self.add_simple_check(
+            "database", self.check_database, timeout_secs, critical=True
+        )
 
     def add_redis_check(self, timeout_secs: float = 3.0) -> None:
         """Add Redis connectivity check."""
