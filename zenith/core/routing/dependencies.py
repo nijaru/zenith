@@ -13,14 +13,16 @@ if TYPE_CHECKING:
 
 class ContextDependency:
     """Marker for context dependency injection."""
-    
+    __slots__ = ('context_class',)
+
     def __init__(self, context_class: type["BaseContext"] | None = None):
         self.context_class = context_class
 
 
 class AuthDependency:
     """Marker for authentication dependency injection."""
-    
+    __slots__ = ('required', 'scopes')
+
     def __init__(self, required: bool = True, scopes: list[str] | None = None):
         self.required = required
         self.scopes = scopes or []
@@ -28,8 +30,13 @@ class AuthDependency:
 
 class FileUploadDependency:
     """Marker for file upload dependency injection."""
-    
-    def __init__(self, field_name: str = "file", config: Union["FileUploadConfig", dict[str, Any], None] = None):
+    __slots__ = ('field_name', 'config')
+
+    def __init__(
+        self,
+        field_name: str = "file",
+        config: Union["FileUploadConfig", dict[str, Any], None] = None,
+    ):
         self.field_name = field_name
         self.config = config or {}
 
@@ -44,6 +51,9 @@ def Auth(required: bool = True, scopes: list[str] | None = None) -> AuthDependen
     return AuthDependency(required, scopes)
 
 
-def File(field_name: str = "file", config: Union["FileUploadConfig", dict[str, Any], None] = None) -> FileUploadDependency:
+def File(
+    field_name: str = "file",
+    config: Union["FileUploadConfig", dict[str, Any], None] = None,
+) -> FileUploadDependency:
     """Create a file upload dependency marker."""
     return FileUploadDependency(field_name, config)
