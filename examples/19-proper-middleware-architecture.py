@@ -1,27 +1,27 @@
 """
-🌊 Pure ASGI Concurrent Middleware Optimization - 20-30% Performance Improvement
+🌊 Proper Middleware Architecture - Separation of Concerns
 
-This example demonstrates Zenith's Pure ASGI concurrent middleware processing
-optimization, which provides significant performance improvements by running
-independent middleware operations concurrently using Python 3.11+ TaskGroups.
+This example demonstrates the correct way to use Zenith's middleware system
+with proper separation of concerns. Each middleware has a single responsibility
+and optimizations are built into the middleware implementations.
 
-Key Performance Improvements:
-- 20-30% faster middleware processing for auth + rate limiting
-- Zero BaseHTTPMiddleware usage - full AsyncPG compatibility
-- Concurrent security headers and request ID processing
-- Efficient error handling with fail-open strategy
+Key Architecture Principles:
+- Separation of concerns - each middleware handles one responsibility
+- Optimizations built into standard middleware (no "optimization middleware")
+- Flexible configuration - can enable/disable middleware independently
+- Clean, maintainable architecture
 
 Prerequisites: 
-    None - uses built-in concurrent middleware
+    None - uses standard middleware with built-in optimizations
 
-Run with: python examples/19-asgi-concurrent-optimization.py
+Run with: python examples/19-proper-middleware-architecture.py
 Visit: http://localhost:8019
 
-Performance Comparison Endpoints:
-- GET  /                     - Public endpoint (bypasses auth/rate limiting)
-- GET  /protected            - Protected endpoint (demonstrates concurrent processing)
-- GET  /performance          - Performance comparison endpoint
-- GET  /metrics              - Request metrics and timing information
+Endpoints:
+- GET  /                     - Public endpoint 
+- GET  /protected            - Protected endpoint (auth required)
+- GET  /admin               - Admin endpoint (auth + rate limiting)
+- GET  /metrics             - Middleware performance metrics
 """
 
 import asyncio
@@ -32,11 +32,13 @@ from pydantic import BaseModel
 
 from zenith import Zenith
 from zenith.middleware import (
-    ConcurrentAuthRateLimitMiddleware,
-    ConcurrentHeadersMiddleware,
+    AuthenticationMiddleware,
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware, 
+    RequestIDMiddleware,
     RateLimit,
 )
-# Note: Using default storage for simplicity
+# Note: Each middleware handles a single responsibility
 
 # ============================================================================
 # APPLICATION SETUP
@@ -49,27 +51,44 @@ app = Zenith(
 )
 
 # ============================================================================
-# CONCURRENT MIDDLEWARE STACK
+# PROPER MIDDLEWARE STACK - SEPARATION OF CONCERNS
 # ============================================================================
 
-# 1. Concurrent Headers Middleware - Process security headers and request ID in parallel
+# 1. Security Headers Middleware - Adds security headers
 app.add_middleware(
-    ConcurrentHeadersMiddleware,
-    security_headers={
-        "X-Content-Type-Options": "nosniff",
-        "X-Frame-Options": "DENY", 
-        "X-XSS-Protection": "1; mode=block",
-        "X-Performance-Optimized": "Pure-ASGI-Concurrent",
-    },
-    include_request_id=True,
+    SecurityHeadersMiddleware,
+    config={
+        "content_type_nosniff": True,
+        "frame_deny": True, 
+        "xss_protection": True,
+        "custom_headers": {
+            "X-Architecture": "Proper-Separation-Of-Concerns",
+        }
+    }
 )
 
-# 2. Concurrent Auth + Rate Limiting Middleware - Run auth and rate limiting concurrently
+# 2. Request ID Middleware - Adds unique request identifiers
 app.add_middleware(
-    ConcurrentAuthRateLimitMiddleware,
-    rate_limit=RateLimit(requests=10, window=60, per="ip"),  # 10 requests per minute per IP
-    # Use default storage (avoids event loop issues during initialization)
-    public_paths=["/", "/performance", "/metrics", "/docs", "/redoc", "/openapi.json"],
+    RequestIDMiddleware,
+    config={
+        "request_id_header": "X-Request-ID",
+        "response_id_header": "X-Request-ID",
+    }
+)
+
+# 3. Authentication Middleware - Handles JWT authentication
+app.add_middleware(
+    AuthenticationMiddleware,
+    public_paths=["/", "/metrics", "/docs", "/redoc", "/openapi.json"],
+)
+
+# 4. Rate Limiting Middleware - Handles request rate limiting 
+app.add_middleware(
+    RateLimitMiddleware,
+    config={
+        "default_limits": ["10/minute"],  # 10 requests per minute per IP
+        "exempt_paths": ["/", "/metrics", "/docs", "/redoc", "/openapi.json"],
+    }
 )
 
 # ============================================================================
