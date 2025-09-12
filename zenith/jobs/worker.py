@@ -26,6 +26,7 @@ class Worker:
     - Error capture and retry logic
     - Resource cleanup
     """
+    __slots__ = ('queue', 'jobs', 'running', 'current_job')
 
     def __init__(self, queue: JobQueue, jobs: dict[str, Callable]):
         """
