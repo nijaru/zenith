@@ -49,10 +49,10 @@ class User(SQLModel, table=True):
 ```
 
 ### ⚡ **Exceptional Performance**
-- **7,743 req/s** for simple endpoints
-- **7,834 req/s** for JSON responses  
-- **11.1% performance retained** with full middleware stack
-- Zero memory leaks with bounded caches
+- **9,897 req/s** for simple endpoints
+- **9,982 req/s** for JSON responses  
+- **24.8% performance retained** with full middleware stack (127% improvement)
+- Zero memory leaks with bounded caches and comprehensive optimizations
 
 ### 🛡️ **Production Features**
 Built-in middleware for enterprise needs:

@@ -74,7 +74,12 @@ pre {
 
 /* Make inline code more readable */
 code {
-  font-size: 0.875em;
+  font-size: 0.95em;  /* Increased from 0.875em */
+}
+
+/* Better code block font size */
+pre code {
+  font-size: 0.925rem;  /* Increased for better readability */
 }
 
 /* Table improvements */
@@ -97,9 +102,25 @@ td {
   border: 1px solid var(--sl-color-hairline);
 }
 
-/* Content area adjustments */
+/* Content area adjustments - wider on large screens */
 .sl-markdown-content {
-  max-width: 72ch;
+  max-width: 85ch;  /* Increased from 72ch */
+}
+
+/* Extra width for splash/landing pages */
+.sl-layout[data-page-template="splash"] .sl-markdown-content {
+  max-width: 95ch;
+}
+
+/* Even wider on very large screens */
+@media (min-width: 90rem) {
+  .sl-markdown-content {
+    max-width: 90ch;
+  }
+  
+  .sl-layout[data-page-template="splash"] .sl-markdown-content {
+    max-width: 100ch;
+  }
 }
 
 /* Search improvements */
