@@ -19,10 +19,8 @@ Provides essential middleware for production applications:
 - Server-sent events with backpressure handling
 """
 
-from .asgi_concurrent import (
-    ConcurrentAuthRateLimitMiddleware,
-    ConcurrentHeadersMiddleware,
-)
+# Removed combined middleware - violates separation of concerns
+# Use individual AuthMiddleware, RateLimitMiddleware, SecurityMiddleware, RequestIDMiddleware instead
 from .db_connection_reuse import (
     DatabaseConnectionReuseMiddleware,
     DatabaseTransactionMiddleware,
@@ -101,9 +99,7 @@ from .security import (
 
 __all__ = [
     "AuthenticationMiddleware",
-    # ASGI Performance Optimizations
-    "ConcurrentAuthRateLimitMiddleware",
-    "ConcurrentHeadersMiddleware", 
+    # Core Performance Optimizations (built into standard middleware) 
     "DatabaseConnectionReuseMiddleware",
     "DatabaseTransactionMiddleware",
     "ConcurrentQueryOptimizer",
