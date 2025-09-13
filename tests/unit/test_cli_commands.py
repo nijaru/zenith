@@ -8,7 +8,7 @@ import pytest
 
 from zenith.dev.generators import (
     APIGenerator,
-    ContextGenerator,
+    ServiceGenerator,
     ModelGenerator,
     generate_code,
     parse_field_spec,
@@ -27,7 +27,7 @@ class TestShellCommand:
         assert "Zenith" in namespace
         assert "Config" in namespace
         assert "Router" in namespace
-        assert "Context" in namespace
+        assert "Service" in namespace
 
         # Check async helpers
         assert "run" in namespace
@@ -81,14 +81,14 @@ class TestCodeGenerators:
         assert "active: bool | None" in code
         assert "created_at: datetime" in code
 
-    def test_context_generator(self):
-        """Test context code generation."""
-        generator = ContextGenerator("user", model="User")
+    def test_service_generator(self):
+        """Test service code generation."""
+        generator = ServiceGenerator("user", model="User")
 
         files = generator.generate()
-        assert "contexts/user_context.py" in files
+        assert "services/user_service.py" in files
 
-        code = files["contexts/user_context.py"]
+        code = files["services/user_service.py"]
         assert "class UserService(Service):" in code
         assert "async def get_all(" in code
         assert "async def get_by_id(" in code

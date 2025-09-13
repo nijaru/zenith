@@ -8,14 +8,18 @@ generate comprehensive API documentation.
 import functools
 import inspect
 from typing import (
+    TYPE_CHECKING,
     Any,
     get_origin,
     get_type_hints,
 )
 
+if TYPE_CHECKING:
+    from zenith.core.routing import Router
+
 from pydantic import BaseModel
 
-from zenith.core.routing import Inject
+from zenith.core.routing import Inject, InjectDependency, AuthDependency, RouteSpec
 
 
 class OpenAPIGenerator:
@@ -49,7 +53,7 @@ class OpenAPIGenerator:
     # Simple in-memory cache for generated specs
     _spec_cache: dict[str, dict] = {}
     
-    def _get_cache_key(self, routers: list[Router]) -> str:
+    def _get_cache_key(self, routers: list['Router']) -> str:
         """Create simple string cache key from router structure."""
         route_sigs = []
         for router in routers:
@@ -61,7 +65,7 @@ class OpenAPIGenerator:
         config_hash = hash((self.title, self.version, self.description))
         return f"{routes_hash}_{config_hash}"
 
-    def generate_spec(self, routers: list[Router]) -> dict[str, Any]:
+    def generate_spec(self, routers: list['Router']) -> dict[str, Any]:
         """Generate complete OpenAPI 3.0 specification with caching."""
         
         # Check cache first for performance optimization
@@ -136,7 +140,7 @@ class OpenAPIGenerator:
                     continue
 
                 # Handle dependency injection markers
-                if isinstance(param.default, ContextDependency | AuthDependency):
+                if isinstance(param.default, InjectDependency | AuthDependency):
                     if isinstance(param.default, AuthDependency):
                         # Add security requirement
                         if "security" not in operation:
@@ -333,7 +337,7 @@ class OpenAPIGenerator:
 
 
 def generate_openapi_spec(
-    routers: list[Router],
+    routers: list['Router'],
     title: str = "Zenith API",
     version: str = "1.0.0",
     description: str = "API built with Zenith framework",
