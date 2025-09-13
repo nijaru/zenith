@@ -42,6 +42,7 @@ class SecurityConfig:
         csrf_secret_key: str | None = None,
         csrf_token_header: str = "X-CSRF-Token",
         csrf_safe_methods: list[str] | None = None,
+        csrf_cookie_name: str = "csrftoken",
         # Trusted Proxies
         trusted_proxies: list[str] | None = None,
         # Force HTTPS
@@ -63,6 +64,7 @@ class SecurityConfig:
         self.csrf_protection = csrf_protection
         self.csrf_secret_key = csrf_secret_key or secrets.token_urlsafe(32)
         self.csrf_token_header = csrf_token_header
+        self.csrf_cookie_name = csrf_cookie_name
         self.csrf_safe_methods = csrf_safe_methods or [
             "GET",
             "HEAD",
@@ -294,8 +296,18 @@ class CSRFProtectionMiddleware:
         if token_bytes:
             return token_bytes.decode("latin-1")
 
-        # TODO: Check form data for POST requests
-        # This would require body parsing which is complex in ASGI
+        # Check cookies for CSRF token as alternative
+        cookie_header = headers.get(b"cookie")
+        if cookie_header:
+            cookie_str = cookie_header.decode("latin-1")
+            for cookie in cookie_str.split("; "):
+                if "=" in cookie:
+                    name, value = cookie.split("=", 1)
+                    if name == self.config.csrf_cookie_name:
+                        return value
+
+        # Note: Form data parsing in ASGI requires buffering the entire body,
+        # which is avoided here for performance. Use header or cookie-based tokens.
         return None
 
     def _validate_csrf_token(self, token: str, request: Request) -> bool:
@@ -331,7 +343,12 @@ class CSRFProtectionMiddleware:
     def _generate_csrf_token_asgi(self, scope: Scope, headers: dict) -> str:
         """Generate CSRF token for ASGI requests."""
         # Use session ID and user agent from ASGI scope
-        session_id = ""  # TODO: Extract from session middleware if available
+        # Extract session ID from session middleware if available
+        session_id = ""
+        if "state" in scope and "session" in scope["state"]:
+            session = scope["state"]["session"]
+            if hasattr(session, "session_id"):
+                session_id = session.session_id
         user_agent_bytes = headers.get(b"user-agent", b"")
         user_agent = user_agent_bytes.decode("latin-1", errors="ignore")
 
