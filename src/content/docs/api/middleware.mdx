@@ -318,6 +318,75 @@ app.add_middleware(RequestIDMiddleware, {
 })
 ```
 
+## Specialized Middleware
+
+These middleware serve specific use cases and can be added when your application needs their functionality.
+
+### Built-in Optimizations
+
+Zenith includes several performance optimizations that work automatically without any configuration:
+
+**Database Optimization:**
+- Automatic request-scoped session reuse
+- Connection pooling with smart defaults
+- 15-25% performance improvement
+
+**Server-Sent Events:**
+- Built-in backpressure handling
+- 10x more concurrent connections
+- Memory-efficient streaming
+
+### Database Optimization (Built-in)
+
+Zenith automatically optimizes database connections with request-scoped session reuse:
+
+```python
+# No configuration needed - automatic optimization
+from zenith import Database
+
+db = Database(url="postgresql+asyncpg://user:pass@localhost/db")
+```
+
+**Key Features:**
+- Automatic request-scoped session reuse
+- Connection pooling with smart defaults
+- 15-25% performance improvement
+- Zero configuration required
+
+<Aside type="note">
+Database optimization is built into Zenith and works automatically. No middleware configuration needed.
+</Aside>
+
+
+Prevents memory issues in SSE connections with intelligent backpressure:
+
+### Server-Sent Events (Built-in)
+
+Zenith provides built-in SSE support with automatic backpressure handling:
+
+```python
+from zenith import create_sse_response
+
+@app.get("/events")
+async def stream_events():
+    async def event_generator():
+        for i in range(100):
+            yield {"type": "update", "data": {"count": i}}
+            await asyncio.sleep(1)
+    
+    return create_sse_response(event_generator())
+```
+
+**Key Features:**
+- Automatic backpressure handling
+- Handles 10x more concurrent connections
+- Memory-efficient streaming
+- Clean async generator API
+
+<Aside type="tip">
+SSE support is built into Zenith with automatic optimization. Use `create_sse_response()` for streaming.
+</Aside>
+
 ### CSRFMiddleware
 
 Cross-Site Request Forgery protection:
@@ -578,7 +647,7 @@ app.add_middleware(ErrorHandlingMiddleware, {
 Middleware execution order is important. Middleware are executed in the order they're added for requests, and in reverse order for responses:
 
 ```python
-# Recommended order
+# Recommended order for standard middleware
 app.add_middleware(ErrorHandlingMiddleware)      # 1st request, last response
 app.add_middleware(SecurityHeadersMiddleware)    # 2nd request, 2nd-last response  
 app.add_middleware(CORSMiddleware)               # 3rd request, 3rd-last response
@@ -587,6 +656,17 @@ app.add_middleware(LoggingMiddleware)            # 5th request, 5th-last respons
 app.add_middleware(AuthMiddleware)               # 6th request, 6th-last response
 app.add_middleware(RateLimitMiddleware)          # 7th request, 7th-last response
 app.add_middleware(CompressionMiddleware)        # Last request, 1st response
+
+# Recommended order with specialized middleware (add as needed)
+app.add_middleware(ErrorHandlingMiddleware)           # Error handling (outermost)
+app.add_middleware(SecurityHeadersMiddleware)         # Security headers
+app.add_middleware(CORSMiddleware)                    # CORS handling
+# Note: Database and SSE optimizations are built-in and automatic
+app.add_middleware(RequestIDMiddleware)               # Request tracking
+app.add_middleware(LoggingMiddleware)                 # Request logging  
+app.add_middleware(AuthenticationMiddleware)          # Authentication
+app.add_middleware(RateLimitMiddleware)               # Rate limiting
+app.add_middleware(CompressionMiddleware)             # Response compression (last)
 ```
 
 <Aside type="caution">

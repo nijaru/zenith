@@ -1,49 +1,62 @@
-# Starlight Starter Kit: Basics
+# Zenith Framework Documentation
 
 [![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
 
-```
-npm create astro@latest -- --template starlight
-```
+This is the documentation site for the Zenith web framework, built with Astro Starlight.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## 🚀 Development
 
-## 🚀 Project Structure
+To work on the documentation:
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
-
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
+```bash
+cd docs
+npm install
+npm run dev
 ```
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+The site will be available at `http://localhost:4321`.
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+## 📁 Content Structure
 
-Static assets, like favicons, can be placed in the `public/` directory.
+Documentation content is organized in `src/content/docs/`:
+
+```
+src/content/docs/
+├── index.mdx                  # Homepage
+├── installation.md            # Installation guide
+├── introduction.md            # Framework introduction
+├── quick-start.mdx           # Getting started guide
+├── project-structure.mdx     # Project organization
+├── api/                      # API reference
+├── concepts/                 # Core concepts
+├── examples/                 # Usage examples
+├── guides/                   # How-to guides
+└── reference/                # Technical reference
+```
 
 ## 🧞 Commands
 
-All commands are run from the root of the project, from a terminal:
+All commands should be run from the `docs/` directory:
 
 | Command                   | Action                                           |
 | :------------------------ | :----------------------------------------------- |
 | `npm install`             | Installs dependencies                            |
 | `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
+| `npm run build`           | Build production site to `./dist/`              |
+| `npm run preview`         | Preview build locally                            |
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
+## 📝 Writing Documentation
 
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+- Use `.mdx` for pages that need React components
+- Use `.md` for simple markdown content
+- All pages should have proper frontmatter with title and description
+- Include code examples for all API documentation
+- Test all code examples to ensure they work
+
+## 🔗 Useful Links
+
+- [Starlight Documentation](https://starlight.astro.build/)
+- [Astro Documentation](https://docs.astro.build)
+- [Zenith Framework Repository](https://github.com/nijaru/zenith)
