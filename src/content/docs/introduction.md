@@ -22,7 +22,7 @@ Zenith combines the best ideas from modern web frameworks with Python's ecosyste
 Organize your business logic in contexts, keeping domain concerns separate from HTTP handling:
 
 ```python
-class UserContext(Context):
+class UserService(Service):
     async def create_user(self, data: UserCreate) -> User:
         # Business logic stays here, not in route handlers
         return await self.users.create(data)

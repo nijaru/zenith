@@ -1,21 +1,21 @@
 ---
-title: Context System
+title: Service System
 description: Organize business logic with clean contexts
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-## What are Contexts?
+## What are Services?
 
-Contexts are Zenith's way of organizing business logic. They provide a clean separation between your domain logic and web layer, making your code more maintainable, testable, and reusable.
+Services are Zenith's way of organizing business logic. They provide a clean separation between your domain logic and web layer, making your code more maintainable, testable, and reusable.
 
 <Aside type="note">
-  **Think of Contexts as service layers** that encapsulate all business logic related to a specific domain area of your application.
+  **Services encapsulate** all business logic related to a specific domain area of your application.
 </Aside>
 
-## Why Use Contexts?
+## Why Use Services?
 
-### Traditional Approach (Without Contexts)
+### Traditional Approach (Without Services)
 
 ```python
 # ❌ Business logic mixed with web layer
@@ -50,11 +50,11 @@ async def create_user(user_data: UserCreate, db: Session):
     return user
 ```
 
-### Zenith Approach (With Contexts)
+### Zenith Approach (With Services)
 
 ```python
 # ✅ Clean separation of concerns
-class UserContext(Context):
+class UserService(Service):
     """Encapsulates all user-related business logic."""
     
     async def create_user(self, user_data: UserCreate) -> User:
@@ -71,20 +71,20 @@ class UserContext(Context):
 @app.post("/users")
 async def create_user(
     user_data: UserCreate,
-    users: UserContext = Depends()
+    users: UserService = Inject()
 ) -> User:
     return await users.create_user(user_data)
 ```
 
-## Creating Contexts
+## Creating Services
 
-### Basic Context
+### Basic Service
 
 ```python
-from zenith import Context
+from zenith import Service, Inject
 from typing import List, Optional
 
-class ProductContext(Context):
+class ProductService(Service):
     """Handles all product-related business logic."""
     
     async def list_products(
@@ -106,7 +106,7 @@ class ProductContext(Context):
     
     async def create_product(self, data: ProductCreate) -> Product:
         """Create a new product."""
-        product = Product(**data.dict())
+        product = Product(**data.model_dump())
         self.db.add(product)
         await self.db.commit()
         await self.db.refresh(product)
@@ -133,19 +133,19 @@ class ProductContext(Context):
         return product
 ```
 
-### Context with Dependencies
+### Service with Dependencies
 
-Contexts can depend on other contexts and services:
+Services can depend on other services:
 
 ```python
-class OrderContext(Context):
+class OrderService(Service):
     """Handles order processing logic."""
     
     def __init__(
         self,
-        products: ProductContext = Depends(),
-        payments: PaymentContext = Depends(),
-        notifications: NotificationService = Depends()
+        products: ProductService = Inject(),
+        payments: PaymentService = Inject(),
+        notifications: NotificationService = Inject()
     ):
         super().__init__()
         self.products = products
@@ -196,7 +196,7 @@ class OrderContext(Context):
         return order
 ```
 
-## Context Patterns
+## Service Patterns
 
 ### Repository Pattern
 
@@ -222,10 +222,10 @@ class UserRepository:
         await self.db.refresh(user)
         return user
 
-class UserContext(Context):
+class UserService(Service):
     """Business logic layer for users."""
     
-    def __init__(self, repo: UserRepository = Depends()):
+    def __init__(self, repo: UserRepository = Inject()):
         self.repo = repo
     
     async def get_user_by_email(self, email: str) -> User:
@@ -235,12 +235,12 @@ class UserContext(Context):
         return user
 ```
 
-### Event-Driven Contexts
+### Event-Driven Services
 
-Contexts can emit and listen to events:
+Services can emit and listen to events:
 
 ```python
-class NotificationContext(Context):
+class NotificationService(Service):
     """Handles notification logic."""
     
     async def on_startup(self):
@@ -260,9 +260,9 @@ class NotificationContext(Context):
         )
 ```
 
-## Testing Contexts
+## Testing Services
 
-Contexts are easy to test in isolation:
+Services are easy to test in isolation:
 
 ```python
 import pytest
@@ -271,7 +271,7 @@ from zenith.testing import TestContext
 @pytest.mark.asyncio
 async def test_user_creation():
     """Test user creation logic."""
-    async with TestContext(UserContext) as users:
+    async with TestContext(UserService) as users:
         # Test data
         user_data = UserCreate(
             email="test@example.com",
@@ -293,7 +293,7 @@ async def test_user_creation():
 @pytest.mark.asyncio
 async def test_duplicate_email():
     """Test that duplicate emails are rejected."""
-    async with TestContext(UserContext) as users:
+    async with TestContext(UserService) as users:
         # Create first user
         await users.create_user(UserCreate(
             email="test@example.com",
@@ -312,21 +312,21 @@ async def test_duplicate_email():
 
 ## Advanced Patterns
 
-### Context Composition
+### Service Composition
 
 Combine multiple contexts for complex operations:
 
 ```python
-class CheckoutContext(Context):
+class CheckoutService(Service):
     """Orchestrates the checkout process."""
     
     def __init__(
         self,
-        cart: CartContext = Depends(),
-        inventory: InventoryContext = Depends(),
-        payment: PaymentContext = Depends(),
-        shipping: ShippingContext = Depends(),
-        email: EmailContext = Depends()
+        cart: CartService = Inject(),
+        inventory: InventoryService = Inject(),
+        payment: PaymentService = Inject(),
+        shipping: ShippingService = Inject(),
+        email: EmailService = Inject()
     ):
         super().__init__()
         self.cart = cart
@@ -383,16 +383,16 @@ class CheckoutContext(Context):
                 raise
 ```
 
-### Context Middleware
+### Service Middleware
 
 Add cross-cutting concerns to all context methods:
 
 ```python
-class AuditedContext(Context):
-    """Base context with audit logging."""
-    
+class AuditedService(Service):
+    """Base service with audit logging."""
+
     async def __call__(self, method_name: str, *args, **kwargs):
-        """Log all context method calls."""
+        """Log all service method calls."""
         start_time = time.time()
         user = self.request.user if hasattr(self.request, 'user') else None
         
@@ -423,32 +423,32 @@ class AuditedContext(Context):
 
 ## Best Practices
 
-<Aside type="tip" title="Context Best Practices">
-  1. **Single Responsibility** - Each context should handle one domain area
-  2. **Business Logic Only** - Keep HTTP concerns out of contexts
-  3. **Dependency Injection** - Use DI for database, services, and other contexts
+<Aside type="tip" title="Service Best Practices">
+  1. **Single Responsibility** - Each service should handle one domain area
+  2. **Business Logic Only** - Keep HTTP concerns out of services
+  3. **Dependency Injection** - Use DI for database, services, and other services
   4. **Error Handling** - Throw domain exceptions, let routes handle HTTP errors
-  5. **Testing** - Test contexts independently from web layer
+  5. **Testing** - Test services independently from web layer
 </Aside>
 
 ### Do's ✅
 
-- Keep contexts focused on a single domain
+- Keep services focused on a single domain
 - Use type hints for all methods
-- Write comprehensive tests for context logic
+- Write comprehensive tests for service logic
 - Use dependency injection for flexibility
 - Document complex business rules
 
 ### Don'ts ❌
 
-- Don't import web framework code in contexts
-- Don't handle HTTP errors in contexts
-- Don't make contexts too large (split if needed)
+- Don't import web framework code in services
+- Don't handle HTTP errors in services
+- Don't make services too large (split if needed)
 - Don't mix different domain concerns
-- Don't bypass contexts for business logic
+- Don't bypass services for business logic
 
 ## Next Steps
 
 - Learn about [Dependency Injection](/concepts/dependency-injection)
-- Explore [Testing Contexts](/features/testing#context-testing)
+- Explore [Testing Services](/features/testing#service-testing)
 - See [Real-world Examples](https://github.com/nijaru/zenith/tree/main/examples)

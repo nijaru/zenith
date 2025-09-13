@@ -16,7 +16,7 @@ Zenith combines the best of modern Python web development with clean architectur
 
 <CardGrid>
   <Card title="🏗️ Clean Architecture" icon="puzzle">
-    Context-based business logic separation. Keep your domain logic clean, testable, and independent of web concerns.
+    Service-based business logic separation. Keep your domain logic clean, testable, and independent of web concerns.
   </Card>
   <Card title="📊 SQLModel Integration" icon="database">
     Unified Pydantic + SQLAlchemy models. Write once, use everywhere - API validation, database models, and OpenAPI documentation.
@@ -25,7 +25,7 @@ Zenith combines the best of modern Python web development with clean architectur
     Built on Starlette with modern async patterns. Leverages Python 3.12+ features including TaskGroups for optimal concurrency.
   </Card>
   <Card title="🔒 Type Safety" icon="shield">
-    Full type hints throughout. Context() and Auth() dependency injection with complete IDE support and compile-time checking.
+    Full type hints throughout. Inject() and Auth() dependency injection with complete IDE support and compile-time checking.
   </Card>
 </CardGrid>
 
@@ -46,9 +46,9 @@ async def health():
     return {"status": "healthy"}
 ```
 
-**With Context:**
+**With Service:**
 ```python
-from zenith import Zenith, Context
+from zenith import Zenith, Service, Inject
 from zenith.db import SQLModel, Field
 
 app = Zenith()
@@ -57,7 +57,7 @@ class User(SQLModel, table=True):
     name: str = Field(description="User name")
     email: str = Field(description="User email")
 
-class UserService(Context):
+class UserService(Service):
     async def create_user(self, user: User) -> User:
         # Business logic here
         return user
@@ -65,7 +65,7 @@ class UserService(Context):
 @app.post("/users")
 async def create_user(
     user: User,
-    service: UserService = Context()
+    service: UserService = Inject()
 ):
     return await service.create_user(user)
 ```
@@ -115,7 +115,7 @@ async def health():
 - 🌐 **SPA Serving** - One command: `app.spa("dist")`
 - 🔄 **Hot Reload** - Instant feedback during development
 - 📚 **Auto Documentation** - OpenAPI/Swagger built-in
-- 🧪 **Testing Utilities** - TestClient, TestContext, fixtures
+- 🧪 **Testing Utilities** - TestClient, TestService, fixtures
 - 🎯 **Type Safety** - Full IDE support with type hints
 
 ## Philosophy
@@ -139,7 +139,7 @@ Ready to build with Zenith?
   <Card title="Quick Start" icon="rocket" link="/quick-start">
     Build your first Zenith application in 5 minutes
   </Card>
-  <Card title="Context System" icon="puzzle" link="/concepts/contexts">
+  <Card title="Service System" icon="puzzle" link="/concepts/services">
     Learn about Zenith's unique approach to organizing business logic
   </Card>
   <Card title="Examples" icon="code" link="https://github.com/nijaru/zenith/tree/main/examples">

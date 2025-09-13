@@ -25,6 +25,33 @@ export default defineConfig({
 						href: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y=".9em" font-size="90"%3E⚡%3C/text%3E%3C/svg%3E',
 					},
 				},
+				{
+					tag: 'script',
+					content: `
+						// Zenith Framework Developer Console
+						if (typeof console !== 'undefined' && console.log) {
+							const zenithStyle = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;';
+							const versionStyle = 'color: #667eea; font-weight: bold;';
+							const linkStyle = 'color: #764ba2; text-decoration: underline;';
+
+							console.log('%c⚡ Zenith Framework %cv0.2.1', zenithStyle, versionStyle);
+							console.log('🚀 Modern Python web framework with clean architecture');
+							console.log('📚 Docs: %chttps://nijaru.com/zenith', linkStyle);
+							console.log('💻 GitHub: %chttps://github.com/nijaru/zenith', linkStyle);
+							console.log('📦 Install: pip install zenith-web');
+						}
+
+						// Fix preload crossorigin issues
+						document.addEventListener('DOMContentLoaded', function() {
+							const preloads = document.querySelectorAll('link[rel="modulepreload"]');
+							preloads.forEach(link => {
+								if (!link.hasAttribute('crossorigin')) {
+									link.setAttribute('crossorigin', 'anonymous');
+								}
+							});
+						});
+					`,
+				},
 			],
 			customCss: [
 				'./src/styles/custom.css',
@@ -50,7 +77,7 @@ export default defineConfig({
 					label: 'Core Concepts',
 					collapsed: false,
 					items: [
-						{ label: 'Context System', link: '/concepts/contexts' },
+						{ label: 'Service System', link: '/concepts/services' },
 						{ label: 'Routing', link: '/concepts/routing' },
 						{ label: 'Middleware', link: '/concepts/middleware' },
 						{ label: 'Database', link: '/concepts/database' },
@@ -75,7 +102,7 @@ export default defineConfig({
 					collapsed: false,
 					items: [
 						{ label: 'Application', link: '/api/application' },
-						{ label: 'Context', link: '/api/context' },
+						{ label: 'Service', link: '/api/service' },
 						{ label: 'Router', link: '/api/router' },
 						{ label: 'Middleware', link: '/api/middleware' },
 						{ label: 'Testing', link: '/api/testing' },
