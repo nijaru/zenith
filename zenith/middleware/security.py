@@ -37,12 +37,6 @@ class SecurityConfig:
         referrer_policy: str = "strict-origin-when-cross-origin",
         # Permissions Policy (formerly Feature Policy)
         permissions_policy: str | None = None,
-        # CSRF Protection
-        csrf_protection: bool = False,
-        csrf_secret_key: str | None = None,
-        csrf_token_header: str = "X-CSRF-Token",
-        csrf_safe_methods: list[str] | None = None,
-        csrf_cookie_name: str = "csrftoken",
         # Trusted Proxies
         trusted_proxies: list[str] | None = None,
         # Force HTTPS
@@ -59,18 +53,6 @@ class SecurityConfig:
         self.xss_protection = xss_protection
         self.referrer_policy = referrer_policy
         self.permissions_policy = permissions_policy
-
-        # CSRF
-        self.csrf_protection = csrf_protection
-        self.csrf_secret_key = csrf_secret_key or secrets.token_urlsafe(32)
-        self.csrf_token_header = csrf_token_header
-        self.csrf_cookie_name = csrf_cookie_name
-        self.csrf_safe_methods = csrf_safe_methods or [
-            "GET",
-            "HEAD",
-            "OPTIONS",
-            "TRACE",
-        ]
 
         # Network security
         self.trusted_proxies = trusted_proxies or []
@@ -232,131 +214,6 @@ class SecurityHeadersMiddleware:
             response.headers["permissions-policy"] = self.config.permissions_policy
 
 
-class CSRFProtectionMiddleware:
-    """Middleware for CSRF protection."""
-
-    def __init__(self, app: ASGIApp, config: SecurityConfig):
-        self.app = app
-        self.config = config
-
-    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        """ASGI3 interface implementation with CSRF protection."""
-        if scope["type"] != "http":
-            await self.app(scope, receive, send)
-            return
-
-        if not self.config.csrf_protection:
-            await self.app(scope, receive, send)
-            return
-
-        # Skip CSRF check for safe methods
-        method = scope.get("method", "GET")
-        if method in self.config.csrf_safe_methods:
-            await self.app(scope, receive, send)
-            return
-
-        # Get CSRF token from request
-        headers = dict(scope.get("headers", []))
-        csrf_token = self._get_csrf_token_asgi(headers)
-
-        if not csrf_token or not self._validate_csrf_token_asgi(
-            csrf_token, scope, headers
-        ):
-            error_response = JSONResponse(
-                {"error": "CSRF token validation failed"}, status_code=403
-            )
-            await error_response(scope, receive, send)
-            return
-
-        await self.app(scope, receive, send)
-
-    def _get_csrf_token(self, request: Request) -> str | None:
-        """Extract CSRF token from request."""
-        # Check header first
-        token = request.headers.get(self.config.csrf_token_header)
-        if token:
-            return token
-
-        # Check form data for POST requests
-        if (
-            request.method == "POST"
-            and "application/x-www-form-urlencoded"
-            in request.headers.get("content-type", "")
-        ):
-            # This would require form parsing - simplified for now
-            pass
-
-        return None
-
-    def _get_csrf_token_asgi(self, headers: dict) -> str | None:
-        """Extract CSRF token from ASGI headers."""
-        # Check header first
-        header_name = self.config.csrf_token_header.lower().encode()
-        token_bytes = headers.get(header_name)
-        if token_bytes:
-            return token_bytes.decode("latin-1")
-
-        # Check cookies for CSRF token as alternative
-        cookie_header = headers.get(b"cookie")
-        if cookie_header:
-            cookie_str = cookie_header.decode("latin-1")
-            for cookie in cookie_str.split("; "):
-                if "=" in cookie:
-                    name, value = cookie.split("=", 1)
-                    if name == self.config.csrf_cookie_name:
-                        return value
-
-        # Note: Form data parsing in ASGI requires buffering the entire body,
-        # which is avoided here for performance. Use header or cookie-based tokens.
-        return None
-
-    def _validate_csrf_token(self, token: str, request: Request) -> bool:
-        """Validate CSRF token."""
-        try:
-            # Simple HMAC-based validation
-            expected = self._generate_csrf_token(request)
-            return hmac.compare_digest(token, expected)
-        except Exception:
-            return False
-
-    def _validate_csrf_token_asgi(
-        self, token: str, scope: Scope, headers: dict
-    ) -> bool:
-        """Validate CSRF token for ASGI requests."""
-        try:
-            # Simple HMAC-based validation
-            expected = self._generate_csrf_token_asgi(scope, headers)
-            return hmac.compare_digest(token, expected)
-        except Exception:
-            return False
-
-    def _generate_csrf_token(self, request: Request) -> str:
-        """Generate CSRF token for the current session."""
-        # Use session ID, user agent, and secret to generate token
-        session_data = (
-            f"{request.session.get('id', '')}{request.headers.get('user-agent', '')}"
-        )
-        return hmac.new(
-            self.config.csrf_secret_key.encode(), session_data.encode(), hashlib.sha256
-        ).hexdigest()
-
-    def _generate_csrf_token_asgi(self, scope: Scope, headers: dict) -> str:
-        """Generate CSRF token for ASGI requests."""
-        # Use session ID and user agent from ASGI scope
-        # Extract session ID from session middleware if available
-        session_id = ""
-        if "state" in scope and "session" in scope["state"]:
-            session = scope["state"]["session"]
-            if hasattr(session, "session_id"):
-                session_id = session.session_id
-        user_agent_bytes = headers.get(b"user-agent", b"")
-        user_agent = user_agent_bytes.decode("latin-1", errors="ignore")
-
-        session_data = f"{session_id}{user_agent}"
-        return hmac.new(
-            self.config.csrf_secret_key.encode(), session_data.encode(), hashlib.sha256
-        ).hexdigest()
-
 
 class TrustedProxyMiddleware:
     """Middleware for handling trusted proxy headers."""
@@ -508,7 +365,6 @@ def get_strict_security_config() -> SecurityConfig:
         xss_protection="1; mode=block",
         referrer_policy="strict-origin-when-cross-origin",
         permissions_policy="geolocation=(), microphone=(), camera=()",
-        csrf_protection=True,
         force_https=True,
         force_https_permanent=True,
     )
@@ -523,6 +379,5 @@ def get_development_security_config() -> SecurityConfig:
         content_type_nosniff=True,
         xss_protection="1; mode=block",
         referrer_policy="no-referrer-when-downgrade",
-        csrf_protection=False,  # Disable CSRF for development
         force_https=False,
     )

@@ -98,21 +98,23 @@ class MiddlewareMixin:
         self,
         secret_key: str | None = None,
         csrf_token_header: str = "X-CSRF-Token",
-        safe_methods: list[str] | None = None,
+        exempt_methods: list[str] | None = None,
         **kwargs,
     ) -> None:
         """Add CSRF protection middleware."""
-        from zenith.middleware.security import CSRFProtectionMiddleware, SecurityConfig
+        from zenith.middleware.csrf import CSRFConfig, CSRFMiddleware
 
-        config = SecurityConfig(
-            csrf_protection=True,
-            csrf_secret_key=secret_key,
-            csrf_token_header=csrf_token_header,
-            csrf_safe_methods=safe_methods,
+        if secret_key is None:
+            raise ValueError("CSRF secret key is required")
+
+        config = CSRFConfig(
+            secret_key=secret_key,
+            header_name=csrf_token_header,
+            exempt_methods=set(exempt_methods or ["GET", "HEAD", "OPTIONS", "TRACE"]),
             **kwargs,
         )
 
-        self.add_middleware(CSRFProtectionMiddleware, config=config)
+        self.add_middleware(CSRFMiddleware, config=config)
 
     def add_trusted_proxies(self, trusted_proxies: list[str]) -> None:
         """Add trusted proxy middleware."""
