@@ -19,7 +19,7 @@ from enum import Enum
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from zenith import Auth, Context, Router, Service, Zenith, not_found
+from zenith import Auth, Inject, Router, Service, Zenith, not_found
 from zenith.auth import (
     configure_jwt,
     create_access_token,

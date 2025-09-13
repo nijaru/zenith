@@ -5,7 +5,7 @@ Generator utility functions.
 from pathlib import Path
 
 from .api import APIGenerator
-from .context import ContextGenerator
+from .service import ServiceGenerator
 from .model import ModelGenerator
 
 
@@ -33,7 +33,7 @@ def generate_code(generator_type: str, name: str, **options) -> dict[str, str]:
     """
     generators = {
         "model": ModelGenerator,
-        "context": ContextGenerator,
+        "service": ServiceGenerator,
         "api": APIGenerator,
     }
 

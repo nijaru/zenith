@@ -15,7 +15,7 @@ A modern Python API framework that prioritizes clean architecture, exceptional p
 Zenith is a modern Python API framework designed for building production-ready applications with clean architecture:
 
 - **Type-safe by design** - Full Pydantic integration with automatic validation
-- **Clean architecture** - Business logic organized in Context classes, separate from web concerns
+- **Clean architecture** - Business logic organized in Service classes, separate from web concerns
 - **Zero-configuration defaults** - Production middleware, monitoring, and security built-in
 - **Performance focused** - 8,000+ req/s with async-first architecture and Python optimizations
 - **Full-stack ready** - Serve APIs alongside SPAs with comprehensive middleware stack
@@ -27,7 +27,7 @@ pip install zenith-web
 ```
 
 ```python
-from zenith import Zenith, Context
+from zenith import Zenith, Service, Inject
 from pydantic import BaseModel
 
 app = Zenith()
@@ -63,11 +63,11 @@ class UserService(Context):
 
 # Clean dependency injection
 @app.post("/users", response_model=User)
-async def create_user(user_data: UserCreate, users: UserService = Context()):
+async def create_user(user_data: UserCreate, users: UserService = Inject()):
     return await users.create_user(user_data)
 
 @app.get("/users/{user_id}", response_model=User)
-async def get_user(user_id: int, users: UserService = Context()):
+async def get_user(user_id: int, users: UserService = Inject()):
     user = await users.get_user(user_id)
     if not user:
         raise HTTPException(404, "User not found")
@@ -88,7 +88,7 @@ uvicorn main:app --reload
 - Zero-configuration setup
 
 ### 🏗️ **Clean Architecture**
-- Business logic organized in Service classes with `Context()` injection
+- Business logic organized in Service classes with `Inject()` injection
 - Separation of web concerns from business logic
 - Type-safe dependency injection without boilerplate
 - Built-in support for complex application architectures
@@ -259,7 +259,7 @@ pytest  # Run tests
 **Python Support**: 3.12+  
 **Test Suite**: 100% passing (328/332 tests)  
 **Performance**: Production-ready with 8,000+ req/s capability  
-**Architecture**: Clean separation with Context system and dependency injection  
+**Architecture**: Clean separation with Service system and dependency injection  
 
 Zenith is production-ready with comprehensive middleware, performance optimizations, and clean architecture patterns for modern Python applications.
 

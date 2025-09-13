@@ -17,7 +17,7 @@ import os
 
 import uvicorn
 
-from zenith import Auth, Context, Zenith
+from zenith import Auth, Inject, Zenith
 from zenith.auth import (
     configure_jwt,
     create_access_token,

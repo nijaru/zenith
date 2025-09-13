@@ -385,11 +385,11 @@ class ConnectionManager:
 manager = ConnectionManager()
 ```
 
-## Chat Context
+## Chat Service
 
 ```python
-# app/contexts/chat.py
-from zenith import Context
+# app/services/chat.py
+from zenith import Service, Inject
 from app.models.message import Message, MessageCreate, MessageType, MessageReaction
 from app.models.room import Room, RoomMember
 from app.models.user import User
@@ -398,7 +398,7 @@ from sqlmodel import select, func, and_
 from typing import List, Optional, Dict
 from datetime import datetime
 
-class ChatContext(Context):
+class ChatService(Service):
     """Chat-related business logic."""
     
     async def send_message(

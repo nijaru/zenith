@@ -16,7 +16,7 @@ Run with: python examples/15-router-grouping.py
 
 from pydantic import BaseModel
 
-from zenith import Auth, Context, Router, Service, Zenith
+from zenith import Auth, Inject, Router, Service, Zenith
 
 # ============================================================================
 # MODELS

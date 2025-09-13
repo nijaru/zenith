@@ -14,7 +14,7 @@ from zenith import Zenith
 from zenith.auth import configure_auth
 from zenith.testing.auth import TestAuthManager
 from zenith.testing.client import TestClient
-from zenith.testing.context import TestDatabase, test_database
+from zenith.testing.service import TestDatabase, test_database
 
 
 # Pytest event loop fixture for async tests

@@ -20,7 +20,7 @@ from sqlalchemy import Boolean, DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 # Zenith imports
-from zenith import Auth, Context, Router, Service, Zenith
+from zenith import Auth, Inject, Router, Service, Zenith
 from zenith.auth import configure_auth, hash_password, verify_password
 from zenith.db import Base, Database
 from zenith.jobs import job, schedule

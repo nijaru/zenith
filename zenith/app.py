@@ -135,10 +135,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             RequestLoggingMiddleware,
             SecurityHeadersMiddleware,
         )
-        from zenith.performance_optimizations import PerformanceMiddlewareConfig
-
-        # Get optimized configuration (56% better performance than default)
-        config = PerformanceMiddlewareConfig.api_optimized()
 
         # 1. Exception handling (always first)
         self.add_middleware(ExceptionHandlerMiddleware, debug=self.config.debug)
@@ -153,17 +149,17 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # (fastest middleware first, most expensive last for maximum performance)
 
         # 4. Security headers (fast header additions)
-        self.add_middleware(SecurityHeadersMiddleware, config=config["security"])
+        self.add_middleware(SecurityHeadersMiddleware)
 
         # 5. Rate limiting (fast memory/Redis operations)
-        self.add_middleware(RateLimitMiddleware, default_limits=config["rate_limits"])
+        self.add_middleware(RateLimitMiddleware, default_limits=["100/minute"])
 
-        # 6. Minimal logging (only if needed for performance)
-        if config["logging"].level <= 30:  # Only add if INFO or higher
-            self.add_middleware(RequestLoggingMiddleware, config=config["logging"])
+        # 6. Minimal logging 
+        if self.config.debug:
+            self.add_middleware(RequestLoggingMiddleware)
 
         # 7. Compression last (most expensive)
-        self.add_middleware(CompressionMiddleware, config=config["compression"])
+        self.add_middleware(CompressionMiddleware)
 
     def _setup_contexts(self) -> None:
         """Auto-register common contexts."""

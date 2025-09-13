@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from zenith.performance import (
+from zenith.monitoring.performance import (
     PerformanceProfiler,
     cache_stats,
     cached,

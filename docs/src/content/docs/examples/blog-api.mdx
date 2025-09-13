@@ -211,11 +211,11 @@ class PostResponse(SQLModel):
     comments_count: int = 0
 ```
 
-## Authentication Context
+## Authentication Service
 
 ```python
-# app/contexts/auth.py
-from zenith import Context
+# app/services/auth.py
+from zenith import Service, Inject
 from zenith.auth.password import hash_password, verify_password
 from zenith.auth import create_access_token
 from app.models.user import User, UserCreate, UserLogin
@@ -223,7 +223,7 @@ from sqlmodel import select
 from typing import Optional
 from datetime import datetime
 
-class AuthContext(Context):
+class AuthService(Service):
     """Authentication business logic."""
     
     async def register_user(self, user_data: UserCreate) -> dict:
@@ -312,11 +312,11 @@ class AuthContext(Context):
         return await self.db.get(User, user_id)
 ```
 
-## Posts Context
+## Posts Service
 
 ```python
-# app/contexts/posts.py
-from zenith import Context
+# app/services/posts.py
+from zenith import Service, Inject
 from app.models.post import Post, PostCreate, PostUpdate, PostStatus
 from app.models.user import User
 from sqlmodel import select, func, or_, and_
@@ -324,7 +324,7 @@ from typing import List, Optional
 from datetime import datetime
 import re
 
-class PostsContext(Context):
+class PostsService(Service):
     """Posts business logic."""
     
     async def create_post(self, post_data: PostCreate, author: User) -> Post:

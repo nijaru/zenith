@@ -1,22 +1,22 @@
 ---
-title: Context API
-description: Business logic organization with the Context system
+title: Service API
+description: Business logic organization with the Service system
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 ## Context Class
 
-The Context system is Zenith's approach to organizing business logic separately from web concerns. Contexts provide dependency injection, database access, and service composition.
+The Service system is Zenith's approach to organizing business logic separately from web concerns. Contexts provide dependency injection, database access, and service composition.
 
 ### Basic Context
 
 ```python
-from zenith import Context
+from zenith import Service, Inject
 from zenith.db import Session
 from sqlmodel import select
 
-class UserContext(Context):
+class UserService(Service):
     """User-related business logic."""
     
     def __init__(self):
@@ -41,11 +41,11 @@ class UserContext(Context):
 ### Context with Dependency Injection
 
 ```python
-from zenith import Context, Depends
+from zenith import Service, Inject, Depends
 from app.services.email import EmailService
 from app.services.storage import StorageService
 
-class UserContext(Context):
+class UserService(Service):
     """User context with service dependencies."""
     
     def __init__(
@@ -83,7 +83,7 @@ class UserContext(Context):
 Every context has access to a database session:
 
 ```python
-class ProductContext(Context):
+class ProductService(Service):
     async def create_product(self, product_data: ProductCreate) -> Product:
         product = Product(**product_data.model_dump())
         
@@ -110,7 +110,7 @@ class ProductContext(Context):
 Access current request information:
 
 ```python
-class AuditContext(Context):
+class AuditService(Service):
     async def log_user_action(self, action: str, details: dict):
         """Log user action with request context."""
         log_entry = AuditLog(
@@ -133,7 +133,7 @@ Built-in caching support:
 ```python
 from zenith.cache import cache_result
 
-class ProductContext(Context):
+class ProductService(Service):
     @cache_result(ttl=300)  # Cache for 5 minutes
     async def get_featured_products(self) -> List[Product]:
         """Get featured products with caching."""
@@ -231,7 +231,7 @@ async def create_order(
 ### Nested Contexts
 
 ```python
-class OrderContext(Context):
+class OrderService(Service):
     def __init__(
         self,
         users: UserContext = Depends(),
@@ -275,7 +275,7 @@ class OrderContext(Context):
 ### Context Inheritance
 
 ```python
-class BaseContext(Context):
+class BaseService(Service):
     """Base context with common functionality."""
     
     async def log_action(self, action: str, entity_id: int):
@@ -295,7 +295,7 @@ class BaseContext(Context):
             return False
         return permission in self.current_user.permissions
 
-class UserContext(BaseContext):
+class UserService(BaseContext):
     """User context extending base functionality."""
     
     async def update_user(self, user_id: int, updates: UserUpdate) -> User:
@@ -324,7 +324,7 @@ class UserContext(BaseContext):
 ```python
 from zenith.exceptions import BusinessLogicError, ValidationError
 
-class PaymentContext(Context):
+class PaymentService(Service):
     async def process_payment(
         self,
         user_id: int,
@@ -407,7 +407,7 @@ app.configure_context(ProductContext, {
 ### Environment-Specific Configuration
 
 ```python
-class UserContext(Context):
+class UserService(Service):
     def __init__(self, config: dict = None):
         super().__init__()
         self.config = config or {}
@@ -475,7 +475,7 @@ async def test_user_context_with_mocks():
 ### Connection Pooling
 
 ```python
-class UserContext(Context):
+class UserService(Service):
     async def bulk_create_users(self, users_data: List[UserCreate]) -> List[User]:
         """Efficient bulk user creation."""
         users = [User(**data.model_dump()) for data in users_data]
@@ -494,7 +494,7 @@ class UserContext(Context):
 ### Lazy Loading
 
 ```python
-class ProductContext(Context):
+class ProductService(Service):
     @property
     def search_service(self):
         """Lazy-loaded search service."""

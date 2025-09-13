@@ -529,11 +529,11 @@ class ImageProcessor:
             }
 ```
 
-## Upload Context
+## Upload Service
 
 ```python
-# app/contexts/uploads.py
-from zenith import Context, UploadFile
+# app/services/uploads.py
+from zenith import Service, Inject, UploadFile
 from app.models.file import File, UploadSession, FileStatus, FileType
 from app.models.user import User
 from app.services.validation import FileValidator
@@ -546,7 +546,7 @@ import uuid
 import os
 import tempfile
 
-class UploadsContext(Context):
+class UploadsService(Service):
     """File upload business logic."""
     
     def __init__(

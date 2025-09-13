@@ -1,7 +1,7 @@
 """
-Unit tests for the Context system and dependency injection.
+Unit tests for the Service system and dependency injection.
 
-Tests context creation, registration, dependency resolution, and lifecycle.
+Tests service creation, registration, dependency resolution, and lifecycle.
 """
 
 from unittest.mock import AsyncMock, Mock
@@ -10,9 +10,9 @@ import pytest
 
 from zenith import Service, Zenith
 from zenith.core.container import DIContainer
-from zenith.core.service import Service as BaseContext
+from zenith.core.service import Service as BaseService
 from zenith.core.service import EventBus
-from zenith.core.routing import Context
+from zenith.core.routing.dependencies import Inject
 
 
 class UserService:
@@ -38,7 +38,7 @@ class UserService:
         return self.users[:limit]
 
 
-class UserService(Service):
+class UserContext(Service):
     """Example context for testing."""
 
     def __init__(self, container: DIContainer, user_service: UserService = None):

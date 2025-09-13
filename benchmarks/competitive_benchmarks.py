@@ -156,8 +156,8 @@ class FrameworkBenchmark:
         base_imports = """
 import os
 import asyncio
-from zenith import Zenith, Context
-from zenith.core.context import Context as BaseContext
+from zenith import Zenith, Inject, Service
+from zenith.core.service import Service as BaseService
 from pydantic import BaseModel
 """
 
@@ -248,7 +248,7 @@ class UserCreate(BaseModel):
     email: str
     age: int
 
-class UserService(BaseContext):
+class UserService(BaseService):
     def __init__(self, container):
         super().__init__(container)
         self.users = {}
@@ -274,15 +274,15 @@ async def root():
     return {"message": "Database API", "framework": "zenith"}
 
 @app.get("/users")
-async def get_users(users: UserService = Context()):
+async def get_users(users: UserService = Inject()):
     return await users.list_users()
 
 @app.post("/users")
-async def create_user(user: UserCreate, users: UserService = Context()):
+async def create_user(user: UserCreate, users: UserService = Inject()):
     return await users.create_user(user)
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, users: UserService = Context()):
+async def get_user(user_id: int, users: UserService = Inject()):
     user = await users.get_user(user_id)
     if not user:
         from zenith import not_found
