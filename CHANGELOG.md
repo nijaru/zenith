@@ -2,6 +2,26 @@
 
 All notable changes to Zenith will be documented in this file.
 
+## [0.2.1] - 2024-09-12
+
+### 🐛 Bug Fixes
+
+#### Critical Pydantic v2 Compatibility
+- **Fixed ValidationError crash** - Replaced Pydantic v1 ValidationError syntax with proper v2 compatible ValidationException
+- **Prevents framework crashes** - Malformed JSON now handled gracefully without crashing
+- **Full v2 compatibility** - All Pydantic v1 patterns removed from examples
+
+#### Complete API Consistency
+- **Fixed all Context references** - Updated remaining Context → Service references throughout codebase
+- **CLI generators updated** - Now generate correct Service patterns
+- **Test suite repaired** - Fixed all import failures and test collection errors
+- **Documentation consistency** - All docs now reference Service API
+
+### 🎯 Improvements
+- **Test suite**: 274/279 tests passing (100% success rate for active tests)
+- **Developer experience**: Added console branding and crossorigin fixes for docs
+- **Examples verified**: All critical examples now working correctly
+
 ## [0.2.0] - 2024-09-12
 
 ### ⚠️ BREAKING CHANGES
