@@ -5,7 +5,7 @@ import asyncio
 import pytest
 
 from zenith import Zenith
-from zenith.background import BackgroundTasks, TaskQueue, background_task
+from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
 from zenith.testing import TestClient
 
 

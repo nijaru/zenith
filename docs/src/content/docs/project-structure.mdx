@@ -178,18 +178,18 @@ class Settings(BaseSettings):
 settings = Settings()
 ```
 
-### Contexts (`contexts/`)
+### Services (`services/`)
 
 Business logic organized by domain:
 
 ```python
-# app/contexts/users.py
-from zenith import Context
+# app/services/users.py
+from zenith import Service, Inject
 from app.models.user import User, UserCreate, UserUpdate
 from app.services.email import EmailService
 from typing import Optional, List
 
-class UserContext(Context):
+class UserService(Service):
     """User business logic."""
     
     def __init__(self, email_service: EmailService = Depends()):
@@ -506,6 +506,6 @@ For enterprise applications, add more layers:
 
 ## Next Steps
 
-- Learn about [Contexts](/concepts/contexts) for organizing business logic
+- Learn about [Services](/concepts/services) for organizing business logic
 - Explore [Configuration Management](/deployment/environment)
 - See [Example Projects](https://github.com/nijaru/zenith/tree/main/examples)

@@ -7,7 +7,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## Testing Overview
 
-Zenith provides comprehensive testing utilities that make it easy to test your APIs, contexts, authentication, and integrations.
+Zenith provides comprehensive testing utilities that make it easy to test your APIs, services, authentication, and integrations.
 
 ## TestClient
 
@@ -226,20 +226,20 @@ async def test_role_based_access():
             assert response.status_code == 204  # Success
 ```
 
-## Context Testing
+## Service Testing
 
 Test business logic independently of HTTP endpoints.
 
-### TestContext
+### TestService
 
 ```python
-from zenith.testing import TestContext
-from app.contexts.users import UserContext
+from zenith.testing import TestService
+from app.services.users import UserService
 from app.models.user import UserCreate
 
 @pytest.mark.asyncio
-async def test_user_context():
-    async with TestContext(UserContext) as users:
+async def test_user_service():
+    async with TestService(UserService) as users:
         # Test user creation
         user_data = UserCreate(
             email="test@example.com",
@@ -259,16 +259,16 @@ async def test_user_context():
         assert found_user.id == user.id
 ```
 
-### Context with Dependencies
+### Service with Dependencies
 
 ```python
 from unittest.mock import Mock, AsyncMock
-from app.contexts.orders import OrderContext
+from app.services.orders import OrderService
 from app.services.email import EmailService
 from app.services.payment import PaymentService
 
 @pytest.mark.asyncio
-async def test_order_context_with_mocks():
+async def test_order_service_with_mocks():
     # Create mock services
     mock_email = Mock(spec=EmailService)
     mock_email.send_order_confirmation = AsyncMock()
@@ -280,7 +280,7 @@ async def test_order_context_with_mocks():
     })
     
     # Test with mocked dependencies
-    async with TestContext(OrderContext, {
+    async with TestService(OrderService, {
         'email_service': mock_email,
         'payment_service': mock_payment
     }) as orders:

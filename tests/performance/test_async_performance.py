@@ -8,8 +8,8 @@ import pytest
 from starlette.requests import Request
 
 from zenith import Zenith
-from zenith.background import BackgroundTasks, TaskQueue
-from zenith.performance import cached, track_performance
+from zenith.tasks.background import BackgroundTasks, TaskQueue
+from zenith.monitoring.performance import cached, track_performance
 from zenith.testing import TestClient
 
 

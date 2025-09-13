@@ -215,4 +215,4 @@ Now that Zenith is installed, you're ready to:
 
 - [Create your first application](/quick-start)
 - [Understand the project structure](/project-structure)
-- [Learn about the Context system](/concepts/contexts)
+- [Learn about the Service system](/concepts/contexts)

@@ -194,7 +194,7 @@ class TestProfiler:
 
     def test_performance_tracking(self):
         """Test performance tracking decorator."""
-        from zenith.performance import track_performance
+        from zenith.monitoring.performance import track_performance
 
         call_count = 0
 
@@ -213,7 +213,7 @@ class TestProfiler:
     @pytest.mark.asyncio
     async def test_async_performance_tracking(self):
         """Test async performance tracking."""
-        from zenith.performance import track_performance
+        from zenith.monitoring.performance import track_performance
 
         @track_performance(threshold_ms=1)
         async def async_slow():

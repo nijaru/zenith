@@ -26,7 +26,7 @@ __author__ = "Nick"
 # BACKGROUND PROCESSING
 # ============================================================================
 # Background tasks
-from zenith.tasks.background import BackgroundTasks, background_task
+from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
 
 # Core application components
 from zenith.core.application import Application
@@ -205,6 +205,7 @@ __all__ = [
     # BACKGROUND PROCESSING
     # ========================================================================
     "BackgroundTasks",
+    "TaskQueue",
     "background_task",
     "JobManager",
     "JobQueue",

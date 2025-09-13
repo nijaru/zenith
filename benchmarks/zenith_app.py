@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
-from zenith import Auth, Context, Zenith
+from zenith import Auth, Inject, Service, Zenith
 from zenith.auth import JWTManager
 from zenith.web.responses import JSONResponse
 
@@ -39,7 +39,7 @@ class CreateUserModel(BaseModel):
 
 
 # Context
-class UsersContext(Context):
+class UsersService(Service):
     def __init__(self):
         super().__init__()
         self.db = None
@@ -111,7 +111,7 @@ jwt_manager = JWTManager(secret_key="benchmark-secret-key-123")
 app.dependency_overrides[Auth] = lambda: jwt_manager
 
 # Initialize context
-users_context = UsersContext()
+users_service = UsersService()
 
 
 @app.on_startup
@@ -127,7 +127,7 @@ async def hello_world():
 
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, users: UsersContext = Context()) -> UserModel:
+async def get_user(user_id: int, users: UsersService = Inject()) -> UserModel:
     user = await users.get_user(user_id)
     if not user:
         return JSONResponse({"error": "User not found"}, status_code=404)
@@ -136,14 +136,14 @@ async def get_user(user_id: int, users: UsersContext = Context()) -> UserModel:
 
 @app.get("/users")
 async def list_users(
-    limit: int = 100, users: UsersContext = Context()
+    limit: int = 100, users: UsersService = Inject()
 ) -> list[UserModel]:
     return await users.list_users(limit)
 
 
 @app.post("/users")
 async def create_user(
-    data: CreateUserModel, users: UsersContext = Context()
+    data: CreateUserModel, users: UsersService = Inject()
 ) -> UserModel:
     return await users.create_user(data)
 

@@ -7,7 +7,7 @@ performance testing patterns.
 
 Key Testing Features Demonstrated:
 - TestClient for HTTP endpoint testing
-- TestContext for business logic testing
+- TestService for business logic testing
 - Authentication mocking and token creation
 - Database testing with transaction rollback
 - Performance and load testing patterns
@@ -37,11 +37,11 @@ from datetime import datetime, timedelta
 import pytest
 from pydantic import BaseModel, EmailStr, validator
 
-from zenith import Auth, Context, Service, Zenith
+from zenith import Auth, Inject, Service, Zenith
 # Auth is already imported from zenith main module
 from zenith.testing import (
     TestClient,
-    TestContext,
+    TestService,
     create_test_token,
     create_test_user,
     mock_auth,
@@ -222,11 +222,11 @@ async def slow_endpoint(delay: float = 1.0):
 
 @pytest.mark.asyncio
 class TestUserService:
-    """Test business logic using TestContext."""
+    """Test business logic using TestService."""
 
     async def test_create_user_success(self):
         """Test successful user creation."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Test data
             user_data = UserCreate(email="test@example.com", name="Test User")
 
@@ -243,7 +243,7 @@ class TestUserService:
 
     async def test_create_user_duplicate_email(self):
         """Test duplicate email validation."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Create first user
             user_data = UserCreate(email="duplicate@example.com", name="User 1")
             await users.create_user(user_data)
@@ -256,7 +256,7 @@ class TestUserService:
 
     async def test_get_user_by_id(self):
         """Test user retrieval by ID."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Create user
             user_data = UserCreate(email="retrieve@example.com", name="Retrieve User")
             created_user = await users.create_user(user_data)
@@ -271,13 +271,13 @@ class TestUserService:
 
     async def test_get_nonexistent_user(self):
         """Test retrieving non-existent user."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             user = await users.get_user(999)
             assert user is None
 
     async def test_user_count(self):
         """Test user count tracking."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Initially empty
             assert await users.get_user_count() == 0
 
@@ -324,7 +324,7 @@ class TestUserAPI:
             client.set_auth_token("user@example.com", role="user")
 
             # First create a user in the context
-            async with TestContext(UserService) as users:
+            async with TestService(UserService) as users:
                 user_data = UserCreate(email="api@example.com", name="API User")
                 created_user = await users.create_user(user_data)
 
@@ -543,7 +543,7 @@ class TestErrorHandling:
 
     async def test_validation_errors(self):
         """Test input validation error handling."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Test empty name
             with pytest.raises(ValueError, match="Name cannot be empty"):
                 UserCreate(email="test@example.com", name="")
@@ -554,7 +554,7 @@ class TestErrorHandling:
 
     async def test_business_logic_errors(self):
         """Test business logic error handling."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Create user
             user_data = UserCreate(email="error@example.com", name="Error User")
             await users.create_user(user_data)
@@ -618,7 +618,7 @@ class TestFactories:
 
     async def test_user_factory(self):
         """Test user factory."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Create single user
             user_data = UserFactory.create_user_data()
             user = await users.create_user(user_data)
@@ -629,7 +629,7 @@ class TestFactories:
 
     async def test_batch_user_creation(self):
         """Test batch user creation with factory."""
-        async with TestContext(UserService) as users:
+        async with TestService(UserService) as users:
             # Create multiple users
             created_users = await UserFactory.create_users(3, users)
 
@@ -649,7 +649,7 @@ async def run_demo_tests():
 
     # 1. Business Logic Testing Demo
     print("📋 Business Logic Testing:")
-    async with TestContext(UserService) as users:
+    async with TestService(UserService) as users:
         user_data = UserCreate(email="demo@example.com", name="Demo User")
         user = await users.create_user(user_data)
         print(f"   ✅ Created user: {user.name} ({user.email})")

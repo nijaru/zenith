@@ -49,7 +49,7 @@ twine upload dist/zenith_web-{version}*
 zenith/                      # Framework source code
 ├── core/                   # Framework kernel
 │   ├── application.py     # Main Zenith class - app creation and configuration
-│   ├── context.py         # Context system for business logic organization
+│   ├── service.py         # Service system for business logic organization
 │   ├── routing/           # Modular routing system (router, executor, resolvers)
 │   ├── config.py          # Application configuration management
 │   └── container.py       # Dependency injection container
@@ -137,11 +137,11 @@ app = Zenith(
 )
 ```
 
-### 2. Context System - Business Logic Organization
+### 2. Service System - Business Logic Organization
 ```python
-from zenith import Context
+from zenith import Service, Inject
 
-class UserService(Context):
+class UserService(Service):
     """Business logic for user operations."""
     
     def __init__(self):
@@ -163,7 +163,7 @@ class UserService(Context):
 @app.post("/users", response_model=User)
 async def create_user(
     user_data: UserCreate,
-    users: UserService = Context()  # Automatic dependency injection
+    users: UserService = Inject()  # Automatic dependency injection
 ) -> User:
     return await users.create_user(user_data)
 ```
@@ -285,7 +285,7 @@ with profiler.time_function("database_query"):
 - **Async SQLAlchemy**: Full async/await support
 - **Alembic Migrations**: Automatic async-compatible migration generation
 - **Connection Pooling**: Optimized connection management
-- **Transaction Support**: Context managers for transaction handling
+- **Transaction Support**: Service managers for transaction handling
 
 ## Development & Testing
 
@@ -421,7 +421,7 @@ class UserNotFoundError(ZenithException):
     detail = "User not found"
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, users: UserService = Context()) -> User:
+async def get_user(user_id: int, users: UserService = Inject()) -> User:
     user = await users.get_by_id(user_id)
     if not user:
         raise UserNotFoundError(f"User {user_id} not found")
@@ -448,7 +448,7 @@ app = Zenith(config=config)
 
 ### From FastAPI
 - **Routes**: Minimal changes, same decorator patterns
-- **Dependencies**: Replace `Depends()` with `Context()` for business logic
+- **Dependencies**: Replace `Depends()` with `Inject()` for business logic
 - **Middleware**: Enhanced built-in middleware, less configuration needed
 - **Testing**: More comprehensive testing utilities
 - **Performance**: Immediate performance improvements
@@ -456,14 +456,14 @@ app = Zenith(config=config)
 ### From Flask
 - **Async support**: Full async/await throughout
 - **Type safety**: Automatic request/response validation
-- **Architecture**: Context system for better organization
+- **Architecture**: Service system for better organization
 - **Production features**: Built-in middleware, monitoring, health checks
 
 ## Development Status & Roadmap
 
 ### Completed (v0.1.4)
 - ✅ Core framework architecture
-- ✅ Context system for business logic  
+- ✅ Service system for business logic  
 - ✅ Type-safe routing and dependency injection
 - ✅ Production-ready middleware stack
 - ✅ JWT authentication system
@@ -525,7 +525,7 @@ app = Zenith(config=config)
 
 **When helping with Zenith development:**
 
-1. **Architecture**: Use Context classes for business logic, keep routes thin
+1. **Architecture**: Use Service classes for business logic, keep routes thin
 2. **Type Safety**: Always use type hints, Pydantic models for validation
 3. **Testing**: Include both endpoint tests (TestClient) and business logic tests (TestContext)
 4. **Performance**: Consider performance impact, use profiling decorators, follow optimization patterns in `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
@@ -533,7 +533,7 @@ app = Zenith(config=config)
 6. **Documentation**: Update docs for any API changes or new features
 
 **Framework Strengths to Leverage:**
-- Context system for clean architecture
+- Service system for clean architecture
 - Built-in production features
 - Comprehensive testing utilities
 - Performance monitoring capabilities

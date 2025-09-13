@@ -1,7 +1,7 @@
 """
-Context testing utilities for isolated business logic testing.
+Service testing utilities for isolated business logic testing.
 
-Provides TestContext for testing contexts in isolation with database
+Provides TestService for testing services in isolation with database
 transaction rollback and dependency injection mocking.
 """
 
@@ -16,14 +16,14 @@ from zenith.core.container import DIContainer
 from zenith.core.service import Service
 from zenith.db import Base, Database
 
-T = TypeVar("T", bound=Context)
+T = TypeVar("T", bound=Service)
 
 
-class TestContext:
+class TestService:
     """
-    Test wrapper for Zenith contexts with database transaction rollback.
+    Test wrapper for Zenith services with database transaction rollback.
 
-    Allows testing business logic contexts in complete isolation with:
+    Allows testing business logic services in complete isolation with:
     - Automatic database transaction rollback after each test
     - Dependency injection container setup
     - Mock dependency registration
@@ -31,7 +31,7 @@ class TestContext:
 
     Example:
         async def test_user_creation():
-            async with TestContext(Users) as users:
+            async with TestService(Users) as users:
                 # This will be rolled back
                 user = await users.create_user({
                     "email": "test@example.com",
@@ -44,19 +44,19 @@ class TestContext:
 
     def __init__(
         self,
-        context_class: type[T],
+        service_class: type[T],
         database_url: str = "sqlite+aiosqlite:///:memory:",
         dependencies: dict[str, Any] | None = None,
     ):
         """
-        Initialize test context.
+        Initialize test service.
 
         Args:
-            context_class: Context class to test
+            service_class: Service class to test
             database_url: Test database URL (defaults to in-memory SQLite)
             dependencies: Mock dependencies to register
         """
-        self.context_class = context_class
+        self.service_class = service_class
         self.database_url = database_url
         self.dependencies = dependencies or {}
 
@@ -66,10 +66,10 @@ class TestContext:
         self.transaction = None
         self.database = None
         self.container = None
-        self.context_instance = None
+        self.service_instance = None
 
     async def __aenter__(self) -> T:
-        """Set up test context with database transaction."""
+        """Set up test service with database transaction."""
         # Create test database
         self.engine = create_async_engine(
             self.database_url,
@@ -108,19 +108,19 @@ class TestContext:
         for service_type, implementation in self.dependencies.items():
             self.container.register(service_type, implementation)
 
-        # Create context instance with test dependencies
-        self.context_instance = self.context_class()
-        self.context_instance._container = self.container
+        # Create service instance with test dependencies
+        self.service_instance = self.service_class()
+        self.service_instance._container = self.container
 
-        # Initialize context
-        await self.context_instance.startup()
+        # Initialize service
+        await self.service_instance.startup()
 
-        return self.context_instance
+        return self.service_instance
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Clean up test context and rollback transaction."""
-        if self.context_instance:
-            await self.context_instance.shutdown()
+        """Clean up test service and rollback transaction."""
+        if self.service_instance:
+            await self.service_instance.shutdown()
 
         if self.container:
             await self.container.shutdown()
@@ -146,7 +146,7 @@ class TestDatabase:
 
     @asynccontextmanager
     async def session(self):
-        """Provide database session for context operations."""
+        """Provide database session for service operations."""
         yield self.session
 
     async def close(self):
@@ -186,7 +186,7 @@ async def test_database(database_url: str = "sqlite+aiosqlite:///:memory:"):
             bind=engine, class_=AsyncSession, expire_on_commit=False
         )
 
-        # Create Database instance for contexts
+        # Create Database instance for services
         db = TestDatabase(async_session())
 
         yield db
@@ -197,14 +197,14 @@ async def test_database(database_url: str = "sqlite+aiosqlite:///:memory:"):
 
 class MockService(Service):
     """
-    Mock context for testing dependencies.
+    Mock service for testing dependencies.
 
-    Provides a simple way to mock context dependencies in tests.
+    Provides a simple way to mock service dependencies in tests.
     """
 
     def __init__(self, **methods):
         """
-        Create mock context with specified methods.
+        Create mock service with specified methods.
 
         Args:
             **methods: Method name to implementation mapping
@@ -215,14 +215,14 @@ class MockService(Service):
 
 
 # Convenience functions for common test scenarios
-async def create_test_context(
-    context_class: type[T], dependencies: dict[str, Any] | None = None
+async def create_test_service(
+    service_class: type[T], dependencies: dict[str, Any] | None = None
 ) -> T:
     """
-    Create a context instance with test dependencies.
+    Create a service instance with test dependencies.
 
     Note: This doesn't provide database transaction rollback.
-    Use TestContext context manager for full isolation.
+    Use TestService context manager for full isolation.
     """
     container = DIContainer()
     await container.startup()
@@ -232,9 +232,9 @@ async def create_test_context(
         for service_type, implementation in dependencies.items():
             container.register(service_type, implementation)
 
-    # Create and initialize context
-    context = context_class()
-    context._container = container
-    await context.startup()
+    # Create and initialize service
+    service = service_class()
+    service._container = container
+    await service.startup()
 
-    return context
+    return service

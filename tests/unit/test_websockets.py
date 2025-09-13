@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
-from zenith.websockets import WebSocket, WebSocketManager
+from zenith.web.websockets import WebSocket, WebSocketManager
 
 
 class TestWebSocket:
@@ -511,7 +511,7 @@ class TestWebSocketIntegration:
 
     def test_websocket_disconnect_import(self):
         """Test WebSocketDisconnect is properly exported."""
-        from zenith.websockets import WebSocketDisconnect as ImportedDisconnect
+        from zenith.web.websockets import WebSocketDisconnect as ImportedDisconnect
 
         # Should be the same as Starlette's WebSocketDisconnect
         assert ImportedDisconnect == WebSocketDisconnect
