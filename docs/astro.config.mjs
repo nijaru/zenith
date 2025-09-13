@@ -1,11 +1,15 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { crossoriginPlugin } from './vite-crossorigin-plugin.js';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://nijaru.com',
 	base: '/zenith',
+	vite: {
+		plugins: [crossoriginPlugin()],
+	},
 	integrations: [
 		starlight({
 			title: '⚡ Zenith',
@@ -28,31 +32,6 @@ export default defineConfig({
 				{
 					tag: 'script',
 					content: `
-						// Fix preload crossorigin issues immediately
-						(function() {
-							const observer = new MutationObserver(function(mutations) {
-								mutations.forEach(function(mutation) {
-									mutation.addedNodes.forEach(function(node) {
-										if (node.nodeType === 1 && node.tagName === 'LINK' &&
-											node.rel === 'modulepreload' && !node.crossOrigin) {
-											node.crossOrigin = 'anonymous';
-										}
-									});
-								});
-							});
-							observer.observe(document.head, { childList: true, subtree: true });
-
-							// Also fix existing preloads
-							document.addEventListener('DOMContentLoaded', function() {
-								const preloads = document.querySelectorAll('link[rel="modulepreload"]');
-								preloads.forEach(link => {
-									if (!link.hasAttribute('crossorigin')) {
-										link.setAttribute('crossorigin', 'anonymous');
-									}
-								});
-							});
-						})();
-
 						// Zenith Framework Developer Console
 						if (typeof console !== 'undefined' && console.log) {
 							const zenithStyle = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;';
