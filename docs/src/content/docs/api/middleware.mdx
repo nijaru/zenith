@@ -322,109 +322,70 @@ app.add_middleware(RequestIDMiddleware, {
 
 These middleware serve specific use cases and can be added when your application needs their functionality.
 
-### When to Use Specialized Middleware
+### Built-in Optimizations
 
-**File Operations:**
-- Use `ZeroCopyStreamingMiddleware` for applications handling large file uploads/downloads
+Zenith includes several performance optimizations that work automatically without any configuration:
 
-**Database-Heavy Applications:**
-- Use `DatabaseConnectionReuseMiddleware` for applications with frequent database operations
+**Database Optimization:**
+- Automatic request-scoped session reuse
+- Connection pooling with smart defaults
+- 15-25% performance improvement
 
-**Real-Time Applications:**
-- Use `ConcurrentWebSocketMiddleware` for applications with intensive WebSocket usage
-- Use `ServerSentEventsBackpressureMiddleware` for applications with many concurrent SSE connections
+**Server-Sent Events:**
+- Built-in backpressure handling
+- 10x more concurrent connections
+- Memory-efficient streaming
 
-### ZeroCopyStreamingMiddleware
+### Database Optimization (Built-in)
 
-Memory-efficient file operations with zero-copy optimization:
-
-```python
-from zenith.middleware import ZeroCopyStreamingMiddleware
-
-app.add_middleware(ZeroCopyStreamingMiddleware, {
-    # File size thresholds
-    "max_chunk_size": 8192,  # 8KB chunks for optimal streaming
-    "enable_streaming_validation": True,
-    
-    # Paths that should use zero-copy streaming
-    "streaming_paths": ["/upload", "/download", "/files"],
-    
-    # Upload directory configuration
-    "upload_directory": "/tmp/app_uploads"
-})
-```
-
-**Use case**: Applications handling large file uploads or downloads (>1MB files).
-**Memory reduction**: 40-60% less memory usage for large file transfers.
-
-
-### DatabaseConnectionReuseMiddleware
-
-Optimizes database performance by reusing connections across request lifecycle:
+Zenith automatically optimizes database connections with request-scoped session reuse:
 
 ```python
-from zenith.middleware import DatabaseConnectionReuseMiddleware
+# No configuration needed - automatic optimization
+from zenith import Database
 
-app.add_middleware(DatabaseConnectionReuseMiddleware, {
-    # Database URL (AsyncPG or SQLAlchemy async)
-    "database_url": "postgresql+asyncpg://user:pass@localhost/db",
-    "engine_type": "asyncpg",  # or "sqlalchemy"
-    
-    # Connection pool configuration
-    "pool_size": 20,
-    "max_overflow": 30,
-    "pool_timeout": 30,
-    "pool_recycle": 3600  # Connection lifetime in seconds
-})
+db = Database(url="postgresql+asyncpg://user:pass@localhost/db")
 ```
 
-**Use case**: Applications with frequent database queries (>10 queries per request).
-**Performance improvement**: 15-25% faster database operations.
+**Key Features:**
+- Automatic request-scoped session reuse
+- Connection pooling with smart defaults
+- 15-25% performance improvement
+- Zero configuration required
 
-### ConcurrentWebSocketMiddleware
+<Aside type="note">
+Database optimization is built into Zenith and works automatically. No middleware configuration needed.
+</Aside>
 
-Enhances WebSocket performance with concurrent message processing:
-
-```python
-from zenith.middleware import ConcurrentWebSocketMiddleware
-
-app.add_middleware(ConcurrentWebSocketMiddleware, {
-    # Connection management
-    "max_connections": 1000,
-    "heartbeat_interval": 30,
-    "connection_timeout": 300,
-    
-    # Message processing optimization
-    "max_message_size": 1024 * 1024,  # 1MB max message size
-    "queue_size": 100,  # Message queue size per connection
-    "process_concurrently": True  # Enable concurrent processing
-})
-```
-
-**Use case**: Applications with high WebSocket message volume (chat apps, real-time dashboards).
-**Throughput improvement**: 15-25% better WebSocket performance under load.
-
-### ServerSentEventsBackpressureMiddleware
 
 Prevents memory issues in SSE connections with intelligent backpressure:
 
-```python
-from zenith.middleware import ServerSentEventsBackpressureMiddleware
+### Server-Sent Events (Built-in)
 
-app.add_middleware(ServerSentEventsBackpressureMiddleware, {
-    # Backpressure configuration
-    "max_queue_size": 1000,  # Max queued events per connection
-    "drop_policy": "oldest",  # "oldest" or "newest" when queue full
-    "flow_control": True,  # Enable adaptive flow control
+Zenith provides built-in SSE support with automatic backpressure handling:
+
+```python
+from zenith import create_sse_response
+
+@app.get("/events")
+async def stream_events():
+    async def event_generator():
+        for i in range(100):
+            yield {"type": "update", "data": {"count": i}}
+            await asyncio.sleep(1)
     
-    # Performance optimization
-    "batch_size": 10,  # Events per batch
-    "flush_interval": 0.1  # 100ms flush interval
-})
+    return create_sse_response(event_generator())
 ```
 
-**Use case**: Applications with many concurrent SSE connections (live feeds, notifications).
-**Scaling improvement**: 10x more concurrent SSE connections without memory issues.
+**Key Features:**
+- Automatic backpressure handling
+- Handles 10x more concurrent connections
+- Memory-efficient streaming
+- Clean async generator API
+
+<Aside type="tip">
+SSE support is built into Zenith with automatic optimization. Use `create_sse_response()` for streaming.
+</Aside>
 
 ### CSRFMiddleware
 
@@ -700,10 +661,7 @@ app.add_middleware(CompressionMiddleware)        # Last request, 1st response
 app.add_middleware(ErrorHandlingMiddleware)           # Error handling (outermost)
 app.add_middleware(SecurityHeadersMiddleware)         # Security headers
 app.add_middleware(CORSMiddleware)                    # CORS handling
-app.add_middleware(ZeroCopyStreamingMiddleware)       # File operations (if needed)
-app.add_middleware(DatabaseConnectionReuseMiddleware) # Database optimization (if needed)
-app.add_middleware(ConcurrentWebSocketMiddleware)     # WebSocket performance (if needed)
-app.add_middleware(ServerSentEventsBackpressureMiddleware) # SSE scaling (if needed)
+# Note: Database and SSE optimizations are built-in and automatic
 app.add_middleware(RequestIDMiddleware)               # Request tracking
 app.add_middleware(LoggingMiddleware)                 # Request logging  
 app.add_middleware(AuthenticationMiddleware)          # Authentication

@@ -136,6 +136,16 @@ from zenith.web.static import serve_css_js, serve_images, serve_spa_files
 # ============================================================================
 # WebSocket support
 from zenith.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
+
+# Server-Sent Events with built-in backpressure optimizations
+from zenith.web.sse import (
+    ServerSentEvents,
+    SSEEventManager,
+    SSEConnection,
+    SSEConnectionState,
+    create_sse_response,
+    sse,
+)
 from zenith.zenith import Zenith, create_app
 
 __all__ = [
@@ -210,6 +220,13 @@ __all__ = [
     "WebSocket",
     "WebSocketDisconnect",
     "WebSocketManager",
+    # Server-Sent Events with built-in optimizations
+    "ServerSentEvents",
+    "SSEEventManager",
+    "SSEConnection", 
+    "SSEConnectionState",
+    "create_sse_response",
+    "sse",
     # ========================================================================
     # HTTP EXCEPTIONS
     # ========================================================================

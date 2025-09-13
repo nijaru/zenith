@@ -11,6 +11,14 @@ uv build
 twine upload dist/zenith_web-{version}*
 ```
 
+## Release Gotchas
+**Quick sanity checks before release:**
+- Run tests: `uv run pytest` (all passing?)
+- Version bump: `pyproject.toml` updated?
+- Examples work: `uv run python examples/00-hello-world.py`
+- Docs updated: Removed references to deleted features?
+- No temp files: `ZENITH_BUGS_*.md`, test outputs cleaned up?
+
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
