@@ -107,13 +107,13 @@ async def login(credentials: LoginRequest):
 Apply dependencies to all routes in the router:
 
 ```python
-from zenith import Router, Depends
+from zenith import Router, Inject
 from zenith.auth import get_current_user
 
 # All routes require authentication
 protected_router = Router(
     prefix="/protected",
-    dependencies=[Depends(get_current_user)]
+    dependencies=[Inject(get_current_user)]
 )
 
 @protected_router.get("/profile")
@@ -273,7 +273,7 @@ app.include_router(
     users_router,
     prefix="/api/v1",  # Prepend to existing prefix
     tags=["API", "Users"],  # Additional tags
-    dependencies=[Depends(api_key_auth)]  # Additional dependencies
+    dependencies=[Inject(api_key_auth)]  # Additional dependencies
 )
 
 # Final prefix: /api/v1/users
@@ -386,29 +386,29 @@ async def init_external_services():
 ```python
 # app/routes/users.py
 from zenith import Router
-from app.contexts.users import UserContext
+from app.services.users import UserService
 
 router = Router(prefix="/users", tags=["Users"])
 
 @router.get("/")
-async def list_users(users: UserContext = Depends()):
+async def list_users(users: UserService = Inject()):
     return await users.list_users()
 
 @router.post("/")
 async def create_user(
     user_data: UserCreate,
-    users: UserContext = Depends()
+    users: UserService = Inject()
 ):
     return await users.create_user(user_data)
 
 # app/routes/posts.py
 from zenith import Router
-from app.contexts.posts import PostContext
+from app.services.posts import PostService
 
 router = Router(prefix="/posts", tags=["Posts"])
 
 @router.get("/")
-async def list_posts(posts: PostContext = Depends()):
+async def list_posts(posts: PostService = Inject()):
     return await posts.list_posts()
 
 # app/main.py
@@ -453,18 +453,18 @@ app.include_router(v2.router, prefix="/api")
 ```python
 # app/domains/user/routes.py
 from zenith import Router
-from .context import UserContext
+from .service import UserService
 from .models import User, UserCreate, UserUpdate
 
 router = Router(prefix="/users", tags=["Users"])
 
 @router.get("/", response_model=List[User])
-async def list_users(users: UserContext = Depends()):
+async def list_users(users: UserService = Inject()):
     return await users.list_users()
 
 # app/domains/order/routes.py
 from zenith import Router
-from .context import OrderContext
+from .service import OrderService
 from .models import Order, OrderCreate
 
 router = Router(prefix="/orders", tags=["Orders"])
@@ -472,7 +472,7 @@ router = Router(prefix="/orders", tags=["Orders"])
 @router.post("/", response_model=Order)
 async def create_order(
     order_data: OrderCreate,
-    orders: OrderContext = Depends()
+    orders: OrderService = Inject()
 ):
     return await orders.create_order(order_data)
 

@@ -168,7 +168,7 @@ from zenith.testing import TestClient, MockAuth
 from zenith.auth import get_current_user
 
 @app.get("/profile")
-async def get_profile(user = Depends(get_current_user)):
+async def get_profile(user = Inject(get_current_user)):
     return {"user_id": user.id, "email": user.email}
 
 @pytest.mark.asyncio
@@ -303,7 +303,7 @@ async def test_order_service_with_mocks():
 
 ```python
 import pytest
-from zenith.testing import TestContext
+from zenith.testing import TestService
 from zenith.db import create_engine, SQLModel
 
 @pytest.fixture
@@ -316,7 +316,7 @@ async def test_db():
 
 @pytest.mark.asyncio
 async def test_user_persistence(test_db):
-    async with TestContext(UserContext, db_engine=test_db) as users:
+    async with TestService(UserService, db_engine=test_db) as users:
         # Create user
         user = await users.create_user(UserCreate(
             email="test@example.com",
@@ -378,7 +378,7 @@ import pytest
 from zenith.testing import TestClient
 from app.main import app
 from app.models.user import User
-from app.contexts.users import UserContext
+from app.services.users import UserService
 
 @pytest.fixture
 async def client():
@@ -389,7 +389,7 @@ async def client():
 @pytest.fixture
 async def test_user():
     """Create test user."""
-    async with TestContext(UserContext) as users:
+    async with TestService(UserService) as users:
         user = await users.create_user(UserCreate(
             email="test@example.com",
             name="Test User",
@@ -461,7 +461,7 @@ class TestDataFactory:
 
 @pytest.mark.asyncio
 async def test_with_factory_data():
-    async with TestContext(UserContext) as users:
+    async with TestService(UserService) as users:
         # Create multiple test users
         for _ in range(5):
             user_data = TestDataFactory.create_user_data()
@@ -498,8 +498,8 @@ async def test_error_handling():
             assert response.status_code == 403
 
 @pytest.mark.asyncio
-async def test_context_error_handling():
-    async with TestContext(UserContext) as users:
+async def test_service_error_handling():
+    async with TestService(UserService) as users:
         # Test duplicate email error
         user_data = TestDataFactory.create_user_data()
         await users.create_user(user_data)
@@ -661,7 +661,7 @@ async def setup_test_database():
 ```
 
 <Aside type="tip">
-  **Testing Strategy**: Use unit tests for contexts, integration tests for full workflows, and mocks for external services to create a comprehensive test suite.
+  **Testing Strategy**: Use unit tests for services, integration tests for full workflows, and mocks for external services to create a comprehensive test suite.
 </Aside>
 
 Zenith's testing utilities provide everything you need to thoroughly test your applications, from individual functions to complete user workflows. The async-first design ensures your tests accurately reflect real-world usage patterns.

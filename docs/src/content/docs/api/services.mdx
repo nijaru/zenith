@@ -5,11 +5,11 @@ description: Business logic organization with the Service system
 
 import { Aside } from '@astrojs/starlight/components';
 
-## Context Class
+## Service Class
 
-The Service system is Zenith's approach to organizing business logic separately from web concerns. Contexts provide dependency injection, database access, and service composition.
+The Service system is Zenith's approach to organizing business logic separately from web concerns. Services provide dependency injection, database access, and service composition.
 
-### Basic Context
+### Basic Service
 
 ```python
 from zenith import Service, Inject
@@ -38,20 +38,20 @@ class UserService(Service):
         return result.first()
 ```
 
-### Context with Dependency Injection
+### Service with Dependency Injection
 
 ```python
-from zenith import Service, Inject, Depends
+from zenith import Service, Inject
 from app.services.email import EmailService
 from app.services.storage import StorageService
 
 class UserService(Service):
-    """User context with service dependencies."""
+    """User service with service dependencies."""
     
     def __init__(
         self,
-        email_service: EmailService = Depends(),
-        storage: StorageService = Depends()
+        email_service: EmailService = Inject(),
+        storage: StorageService = Inject()
     ):
         super().__init__()
         self.email_service = email_service
@@ -76,11 +76,11 @@ class UserService(Service):
         return user
 ```
 
-## Context Properties
+## Service Properties
 
 ### Database Session
 
-Every context has access to a database session:
+Every service has access to a database session:
 
 ```python
 class ProductService(Service):
@@ -162,27 +162,27 @@ class ProductService(Service):
         return product
 ```
 
-## Using Contexts in Routes
+## Using Services in Routes
 
 ### Basic Usage
 
 ```python
-from zenith import Router, Depends
-from app.contexts.users import UserContext
+from zenith import Router, Inject
+from app.services.users import UserService
 
 router = Router()
 
 @router.post("/users")
 async def create_user(
     user_data: UserCreate,
-    users: UserContext = Depends()  # Automatic injection
+    users: UserService = Inject()  # Automatic injection
 ) -> User:
     return await users.create_user(user_data)
 
 @router.get("/users/{user_id}")
 async def get_user(
     user_id: int,
-    users: UserContext = Depends()
+    users: UserService = Inject()
 ) -> User:
     user = await users.get_user(user_id)
     if not user:
@@ -190,16 +190,16 @@ async def get_user(
     return user
 ```
 
-### Multiple Contexts
+### Multiple Services
 
 ```python
 @router.post("/orders")
 async def create_order(
     order_data: OrderCreate,
-    current_user: User = Depends(get_current_user),
-    orders: OrderContext = Depends(),
-    inventory: InventoryContext = Depends(),
-    payments: PaymentContext = Depends()
+    current_user: User = Inject(get_current_user),
+    orders: OrderService = Inject(),
+    inventory: InventoryService = Inject(),
+    payments: PaymentService = Inject()
 ) -> Order:
     # Check inventory
     available = await inventory.check_availability(order_data.items)
@@ -226,17 +226,17 @@ async def create_order(
     return order
 ```
 
-## Context Composition
+## Service Composition
 
-### Nested Contexts
+### Nested Services
 
 ```python
 class OrderService(Service):
     def __init__(
         self,
-        users: UserContext = Depends(),
-        products: ProductContext = Depends(),
-        notifications: NotificationContext = Depends()
+        users: UserService = Inject(),
+        products: ProductService = Inject(),
+        notifications: NotificationService = Inject()
     ):
         super().__init__()
         self.users = users
@@ -244,7 +244,7 @@ class OrderService(Service):
         self.notifications = notifications
     
     async def process_order(self, order_data: OrderCreate, user_id: int) -> Order:
-        # Get user (using nested context)
+        # Get user (using nested service)
         user = await self.users.get_user(user_id)
         if not user:
             raise ValueError("User not found")
@@ -266,17 +266,17 @@ class OrderService(Service):
         await self.db.commit()
         await self.db.refresh(order)
         
-        # Send confirmation (using nested context)
+        # Send confirmation (using nested service)
         await self.notifications.send_order_confirmation(user, order)
         
         return order
 ```
 
-### Context Inheritance
+### Service Inheritance
 
 ```python
 class BaseService(Service):
-    """Base context with common functionality."""
+    """Base service with common functionality."""
     
     async def log_action(self, action: str, entity_id: int):
         """Log action for audit trail."""
@@ -295,8 +295,8 @@ class BaseService(Service):
             return False
         return permission in self.current_user.permissions
 
-class UserService(BaseContext):
-    """User context extending base functionality."""
+class UserService(BaseService):
+    """User service extending base functionality."""
     
     async def update_user(self, user_id: int, updates: UserUpdate) -> User:
         # Check permission (inherited method)
@@ -319,7 +319,7 @@ class UserService(BaseContext):
         return user
 ```
 
-## Error Handling in Contexts
+## Error Handling in Services
 
 ```python
 from zenith.exceptions import BusinessLogicError, ValidationError
@@ -382,23 +382,23 @@ class PaymentService(Service):
             raise BusinessLogicError("Payment processing failed") from e
 ```
 
-## Context Configuration
+## Service Configuration
 
-### Global Context Configuration
+### Global Service Configuration
 
 ```python
 from zenith import Zenith
-from app.contexts import UserContext, ProductContext
+from app.services import UserService, ProductService
 
 app = Zenith()
 
-# Configure context dependencies
-app.configure_context(UserContext, {
+# Configure service dependencies
+app.configure_service(UserService, {
     'cache_ttl': 300,
     'audit_enabled': True
 })
 
-app.configure_context(ProductContext, {
+app.configure_service(ProductService, {
     'enable_inventory_sync': True,
     'price_change_notifications': True
 })
@@ -426,15 +426,15 @@ class UserService(Service):
         return user
 ```
 
-## Testing Contexts
+## Testing Services
 
 ```python
-from zenith.testing import TestContext
+from zenith.testing import TestService
 import pytest
 
 @pytest.mark.asyncio
 async def test_user_creation():
-    async with TestContext(UserContext) as users:
+    async with TestService(UserService) as users:
         # Create test user
         user_data = UserCreate(
             email="test@example.com",
@@ -448,12 +448,12 @@ async def test_user_creation():
         assert user.id is not None
 
 @pytest.mark.asyncio
-async def test_user_context_with_mocks():
+async def test_user_service_with_mocks():
     # Mock dependencies
     mock_email_service = Mock()
     mock_storage = Mock()
     
-    async with TestContext(UserContext, {
+    async with TestService(UserService, {
         'email_service': mock_email_service,
         'storage': mock_storage
     }) as users:
@@ -508,15 +508,15 @@ class ProductService(Service):
 ```
 
 <Aside type="tip">
-  **Best Practice**: Keep contexts focused on a single domain (Users, Orders, Products) and use composition when contexts need to interact.
+  **Best Practice**: Keep services focused on a single domain (Users, Orders, Products) and use composition when services need to interact.
 </Aside>
 
-## Context Lifecycle
+## Service Lifecycle
 
-1. **Creation** - Context instantiated with dependencies
+1. **Creation** - Service instantiated with dependencies
 2. **Database Session** - Automatic session management
 3. **Request Binding** - Access to current request/user
 4. **Method Execution** - Business logic execution
 5. **Cleanup** - Automatic resource cleanup
 
-Contexts handle the complete lifecycle automatically, ensuring proper resource management and transaction handling.
+Services handle the complete lifecycle automatically, ensuring proper resource management and transaction handling.

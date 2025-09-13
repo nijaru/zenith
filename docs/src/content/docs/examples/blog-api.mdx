@@ -31,7 +31,7 @@ This example demonstrates building a complete blog API with Zenith, featuring:
       - post.py
       - comment.py
       - category.py
-    - contexts/ Business logic
+    - services/ Business logic
       - \_\_init\_\_.py
       - auth.py
       - posts.py
@@ -515,9 +515,9 @@ class PostsService(Service):
 
 ```python
 # app/routes/auth.py
-from zenith import Router, Depends, HTTPException
+from zenith import Router, Inject, HTTPException
 from zenith.auth import get_current_user
-from app.contexts.auth import AuthContext
+from app.services.auth import AuthService
 from app.models.user import UserCreate, UserLogin, UserResponse
 
 router = Router(prefix="/auth", tags=["Authentication"])
@@ -525,7 +525,7 @@ router = Router(prefix="/auth", tags=["Authentication"])
 @router.post("/register", response_model=dict)
 async def register(
     user_data: UserCreate,
-    auth: AuthContext = Depends()
+    auth: AuthService = Inject()
 ):
     """Register a new user."""
     try:
@@ -542,7 +542,7 @@ async def register(
 @router.post("/login", response_model=dict)
 async def login(
     credentials: UserLogin,
-    auth: AuthContext = Depends()
+    auth: AuthService = Inject()
 ):
     """Login user."""
     try:
@@ -558,7 +558,7 @@ async def login(
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(
-    current_user = Depends(get_current_user)
+    current_user = Inject(get_current_user)
 ):
     """Get current user info."""
     return UserResponse.from_orm(current_user)
@@ -573,9 +573,9 @@ async def logout():
 
 ```python
 # app/routes/posts.py
-from zenith import Router, Depends, HTTPException, Query
+from zenith import Router, Inject, HTTPException, Query
 from zenith.auth import get_current_user
-from app.contexts.posts import PostsContext
+from app.services.posts import PostsService
 from app.models.post import PostCreate, PostUpdate, PostResponse, PostStatus
 from app.models.user import User
 from typing import List, Optional
@@ -591,7 +591,7 @@ async def list_posts(
     author_id: Optional[int] = None,
     search: Optional[str] = None,
     featured: bool = False,
-    posts: PostsContext = Depends()
+    posts: PostsService = Inject()
 ):
     """List posts with filtering and pagination."""
     posts_list = await posts.get_posts(
@@ -608,8 +608,8 @@ async def list_posts(
 @router.post("/", response_model=PostResponse, status_code=201)
 async def create_post(
     post_data: PostCreate,
-    current_user: User = Depends(get_current_user),
-    posts: PostsContext = Depends()
+    current_user: User = Inject(get_current_user),
+    posts: PostsService = Inject()
 ):
     """Create a new post."""
     post = await posts.create_post(post_data, current_user)
@@ -618,7 +618,7 @@ async def create_post(
 @router.get("/{slug}", response_model=PostResponse)
 async def get_post(
     slug: str,
-    posts: PostsContext = Depends()
+    posts: PostsService = Inject()
 ):
     """Get post by slug."""
     post = await posts.get_post_by_slug(slug)
@@ -630,8 +630,8 @@ async def get_post(
 async def update_post(
     post_id: int,
     post_data: PostUpdate,
-    current_user: User = Depends(get_current_user),
-    posts: PostsContext = Depends()
+    current_user: User = Inject(get_current_user),
+    posts: PostsService = Inject()
 ):
     """Update post."""
     try:
@@ -645,8 +645,8 @@ async def update_post(
 @router.delete("/{post_id}", status_code=204)
 async def delete_post(
     post_id: int,
-    current_user: User = Depends(get_current_user),
-    posts: PostsContext = Depends()
+    current_user: User = Inject(get_current_user),
+    posts: PostsService = Inject()
 ):
     """Delete post."""
     try:
@@ -658,8 +658,8 @@ async def delete_post(
 @router.post("/{post_id}/like", status_code=204)
 async def like_post(
     post_id: int,
-    current_user: User = Depends(get_current_user),
-    posts: PostsContext = Depends()
+    current_user: User = Inject(get_current_user),
+    posts: PostsService = Inject()
 ):
     """Like a post."""
     # Implementation for liking posts
@@ -670,7 +670,7 @@ async def like_post(
 
 ```python
 # app/routes/uploads.py
-from zenith import Router, UploadFile, File, Depends, HTTPException
+from zenith import Router, UploadFile, File, Inject, HTTPException
 from zenith.auth import get_current_user
 from app.models.user import User
 import os
@@ -687,7 +687,7 @@ MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 @router.post("/images", response_model=dict)
 async def upload_image(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Inject(get_current_user)
 ):
     """Upload an image file."""
     # Validate file

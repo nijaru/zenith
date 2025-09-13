@@ -13,6 +13,7 @@ from pydantic import BaseModel, ValidationError
 from starlette.requests import Request
 from starlette.responses import Response
 
+from zenith.exceptions import ValidationException
 from zenith.web.responses import OptimizedJSONResponse
 
 from .dependency_resolver import DependencyResolver
@@ -111,14 +112,14 @@ class RouteExecutor:
             if param.default != inspect.Parameter.empty:
                 from .dependencies import (
                     AuthDependency,
-                    ContextDependency,
+                    InjectDependency,
                     FileUploadDependency,
                 )
 
                 # Check if this is a dependency marker
                 is_dependency = isinstance(
                     param.default,
-                    (AuthDependency, ContextDependency, FileUploadDependency),
+                    (AuthDependency, InjectDependency, FileUploadDependency),
                 )
 
                 if is_dependency:
@@ -165,7 +166,7 @@ class RouteExecutor:
                             body_str = body_bytes.decode("utf-8", errors="strict")
                             body = json.loads(body_str)  # Use strict mode (default)
                         except UnicodeDecodeError as e:
-                            raise ValidationError(
+                            raise ValidationException(
                                 f"Invalid UTF-8 encoding in request body: {e!s}"
                             )
                 except Exception as e:
@@ -174,8 +175,8 @@ class RouteExecutor:
                         hasattr(e, "__class__")
                         and e.__class__.__name__ == "JSONDecodeError"
                     ):
-                        raise ValidationError(f"Invalid JSON in request body: {e!s}")
-                    raise ValidationError(f"Failed to parse request body: {e!s}")
+                        raise ValidationException(f"Invalid JSON in request body: {e!s}")
+                    raise ValidationException(f"Failed to parse request body: {e!s}")
                 kwargs[param_name] = param_type.model_validate(body)
                 continue
 

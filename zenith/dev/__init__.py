@@ -6,7 +6,7 @@ Includes interactive shell, code generators, and development utilities.
 
 from .generators import (
     APIGenerator,
-    ContextGenerator,
+    ServiceGenerator,
     ModelGenerator,
     generate_code,
     parse_field_spec,
@@ -20,7 +20,7 @@ __all__ = [
     "run_shell",
     # Generators
     "ModelGenerator",
-    "ContextGenerator",
+    "ServiceGenerator",
     "APIGenerator",
     "parse_field_spec",
     "generate_code",

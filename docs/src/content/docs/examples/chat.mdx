@@ -29,7 +29,7 @@ This example demonstrates building a real-time chat application with Zenith, fea
       - user.py
       - room.py
       - message.py
-    - contexts/
+    - services/
       - chat.py
       - rooms.py
       - presence.py
@@ -657,10 +657,10 @@ class ChatService(Service):
 
 ```python
 # app/routes/websocket.py
-from zenith import Router, WebSocket, WebSocketDisconnect, Depends
+from zenith import Router, WebSocket, WebSocketDisconnect, Inject
 from zenith.auth import get_current_user_ws  # WebSocket auth
 from app.websocket.manager import manager
-from app.contexts.chat import ChatContext
+from app.services.chat import ChatService
 from app.models.message import MessageCreate
 from app.models.user import User
 import json
@@ -672,7 +672,7 @@ router = Router()
 async def websocket_endpoint(
     websocket: WebSocket,
     token: str = Query(),  # Token passed as query param
-    chat: ChatContext = Depends()
+    chat: ChatService = Inject()
 ):
     """WebSocket endpoint for real-time chat."""
     # Authenticate user
@@ -719,7 +719,7 @@ async def handle_websocket_message(
     connection_id: str,
     user: User,
     message_data: dict,
-    chat: ChatContext
+    chat: ChatService
 ):
     """Handle incoming WebSocket messages."""
     message_type = message_data.get("type")

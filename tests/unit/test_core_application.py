@@ -11,7 +11,6 @@ import pytest
 
 from zenith import Service, Zenith
 from zenith.auth import configure_auth
-from zenith.core.routing import Context
 from zenith.testing import TestClient
 
 
@@ -54,12 +53,12 @@ class TestZenithApplication:
                 return {"id": id, "name": "Test User"}
 
         # Register context
-        app.register_context("users", UserContext)
+        app.register_context("users", UserService)
 
-        # Should be registered in the context registry
+        # Should be registered in the service registry
         contexts = app.app.contexts
-        assert "users" in contexts._context_classes
-        assert contexts._context_classes["users"] == UserContext
+        assert "users" in contexts._service_classes
+        assert contexts._service_classes["users"] == UserService
 
     def test_middleware_registration(self):
         """Test middleware registration and ordering."""
@@ -256,10 +255,10 @@ class TestRoutingIntegration:
             def get_data(self):
                 return {"context": "data"}
 
-        app.register_context("test", TestContext)
+        app.register_context("test", TestService)
 
         @app.get("/context-test")
-        async def context_endpoint(ctx: TestContext = Inject()):
+        async def context_endpoint(ctx: TestService = Inject()):
             return ctx.get_data()
 
         async with TestClient(app) as client:
