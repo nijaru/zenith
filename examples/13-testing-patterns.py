@@ -35,7 +35,7 @@ import time
 from datetime import datetime, timedelta
 
 import pytest
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, field_validator
 
 from zenith import Auth, Inject, Service, Zenith
 # Auth is already imported from zenith main module
@@ -62,13 +62,15 @@ class User(BaseModel):
     is_active: bool = True
     created_at: datetime | None = None
 
-    @validator("email")
+    @field_validator("email")
+    @classmethod
     def email_must_be_valid(cls, v):
         if "@" not in v:
             raise ValueError("Invalid email format")
         return v.lower()
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def name_must_not_be_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("Name cannot be empty")

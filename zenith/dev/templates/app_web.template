@@ -2,7 +2,7 @@
 Production-ready web application built with Zenith.
 Demonstrates: Templates, forms, CSRF protection, session management, and modern web best practices.
 """
-from zenith import Zenith, Router, Context, not_found
+from zenith import Zenith, Router, Service, Inject, not_found
 from zenith.db import SQLModel, Field, ZenithSQLModel, create_repository, AsyncSession
 from zenith.performance_optimizations import PerformanceMiddlewareConfig
 from zenith.middleware.security import SecurityHeadersMiddleware, SecurityConfig
@@ -112,10 +112,10 @@ class PagePublic(PageBase):
     updated_at: str
 
 # ============================================================================
-# BUSINESS LOGIC (Context Pattern)
+# BUSINESS LOGIC (Service Pattern)
 # ============================================================================
 
-class PageService(Context):
+class PageService(Service):
     """Service for page operations with clean business logic."""
     
     def __init__(self, container):
@@ -170,7 +170,7 @@ app.register_context("pages", PageService)
 # ============================================================================
 
 @app.get("/")
-async def home(pages: PageService = Context()):
+async def home(pages: PageService = Inject()):
     """Home page with recent content."""
     recent_pages = await pages.list_pages(published_only=True)
     return {
@@ -184,7 +184,7 @@ async def home(pages: PageService = Context()):
     }
 
 @app.get("/page/{slug}")
-async def view_page(slug: str, pages: PageService = Context()):
+async def view_page(slug: str, pages: PageService = Inject()):
     """View a specific page by slug."""
     page = await pages.get_page_by_slug(slug)
     if not page or not page.published:
@@ -192,7 +192,7 @@ async def view_page(slug: str, pages: PageService = Context()):
     return PagePublic.model_validate(page)
 
 @app.get("/pages")
-async def list_pages(pages: PageService = Context()):
+async def list_pages(pages: PageService = Inject()):
     """List all published pages."""
     all_pages = await pages.list_pages(published_only=True)
     return {
@@ -207,13 +207,13 @@ async def list_pages(pages: PageService = Context()):
 api_router = Router(prefix="/api/v1", tags=["api"])
 
 @api_router.get("/pages", response_model=list[PagePublic])
-async def api_list_pages(pages: PageService = Context()) -> list[PagePublic]:
+async def api_list_pages(pages: PageService = Inject()) -> list[PagePublic]:
     """API endpoint for listing pages."""
     all_pages = await pages.list_pages(published_only=True)
     return [PagePublic.model_validate(page) for page in all_pages]
 
 @api_router.get("/pages/{page_id}", response_model=PagePublic)
-async def api_get_page(page_id: int, pages: PageService = Context()) -> PagePublic:
+async def api_get_page(page_id: int, pages: PageService = Inject()) -> PagePublic:
     """API endpoint for getting a specific page."""
     page = await pages.get_page(page_id)
     if not page:

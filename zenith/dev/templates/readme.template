@@ -7,7 +7,7 @@ ${template_description} built with [Zenith Framework](https://zenith-web.dev).
 - **Zero Configuration**: Works out of the box with sensible defaults
 - **Auto Documentation**: OpenAPI/Swagger docs at `/docs`
 - **Type Safety**: Full Pydantic validation and response models
-- **Clean Architecture**: Business logic in Context classes
+- **Clean Architecture**: Business logic in Service classes
 - **Development Friendly**: Hot reload, auto environment detection
 - **Production Ready**: Built-in security, monitoring, performance optimization
 

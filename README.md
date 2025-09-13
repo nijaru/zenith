@@ -46,8 +46,8 @@ class User(BaseModel):
     name: str
     email: str
 
-# Business logic in Context classes
-class UserService(Context):
+# Business logic in Service classes
+class UserService(Service):
     def __init__(self):
         self.users = {}
         self.next_id = 1
@@ -171,7 +171,7 @@ python scripts/run_performance_tests.py --quick
 Complete working examples in the [examples/](examples/) directory:
 
 - [Hello World](examples/00-hello-world.py) - Basic setup
-- [Context System](examples/03-context-system.py) - Business logic organization
+- [Service System](examples/03-context-system.py) - Business logic organization
 - [Security Middleware](examples/11-security-middleware.py) - Production security setup
 - [Background Jobs](examples/05-background-tasks.py) - Task processing
 - [WebSocket Chat](examples/07-websocket-chat.py) - Real-time communication

@@ -13,7 +13,7 @@ Then visit: http://localhost:8002/docs for interactive API
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, EmailStr, field_validator
 
 from zenith import Zenith
 
@@ -27,7 +27,8 @@ class CreateUserRequest(BaseModel):
     age: int
     bio: str | None = None
 
-    @validator("age")
+    @field_validator("age")
+    @classmethod
     def age_must_be_positive(cls, v):
         if v < 0:
             raise ValueError("Age must be positive")
@@ -35,7 +36,8 @@ class CreateUserRequest(BaseModel):
             raise ValueError("Age must be realistic")
         return v
 
-    @validator("name")
+    @field_validator("name")
+    @classmethod
     def name_must_not_be_empty(cls, v):
         if not v.strip():
             raise ValueError("Name cannot be empty")
@@ -142,7 +144,7 @@ async def update_user(user_id: int, updates: UpdateUserRequest) -> UserResponse:
         raise ValueError(f"User with ID {user_id} not found")
 
     # Apply updates (only set fields)
-    update_data = updates.dict(exclude_unset=True)
+    update_data = updates.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         user[field] = value
 

@@ -71,7 +71,7 @@ class UserService(Service):
 @app.post("/users")
 async def create_user(
     user_data: UserCreate,
-    users: UserContext = Depends()
+    users: UserService = Inject()
 ) -> User:
     return await users.create_user(user_data)
 ```
@@ -106,7 +106,7 @@ class ProductService(Service):
     
     async def create_product(self, data: ProductCreate) -> Product:
         """Create a new product."""
-        product = Product(**data.dict())
+        product = Product(**data.model_dump())
         self.db.add(product)
         await self.db.commit()
         await self.db.refresh(product)
@@ -143,9 +143,9 @@ class OrderService(Service):
     
     def __init__(
         self,
-        products: ProductContext = Depends(),
-        payments: PaymentContext = Depends(),
-        notifications: NotificationService = Depends()
+        products: ProductService = Inject(),
+        payments: PaymentService = Inject(),
+        notifications: NotificationService = Inject()
     ):
         super().__init__()
         self.products = products
@@ -225,7 +225,7 @@ class UserRepository:
 class UserService(Service):
     """Business logic layer for users."""
     
-    def __init__(self, repo: UserRepository = Depends()):
+    def __init__(self, repo: UserRepository = Inject()):
         self.repo = repo
     
     async def get_user_by_email(self, email: str) -> User:
@@ -271,7 +271,7 @@ from zenith.testing import TestContext
 @pytest.mark.asyncio
 async def test_user_creation():
     """Test user creation logic."""
-    async with TestContext(UserContext) as users:
+    async with TestContext(UserService) as users:
         # Test data
         user_data = UserCreate(
             email="test@example.com",
@@ -293,7 +293,7 @@ async def test_user_creation():
 @pytest.mark.asyncio
 async def test_duplicate_email():
     """Test that duplicate emails are rejected."""
-    async with TestContext(UserContext) as users:
+    async with TestContext(UserService) as users:
         # Create first user
         await users.create_user(UserCreate(
             email="test@example.com",
@@ -322,11 +322,11 @@ class CheckoutService(Service):
     
     def __init__(
         self,
-        cart: CartContext = Depends(),
-        inventory: InventoryContext = Depends(),
-        payment: PaymentContext = Depends(),
-        shipping: ShippingContext = Depends(),
-        email: EmailContext = Depends()
+        cart: CartService = Inject(),
+        inventory: InventoryService = Inject(),
+        payment: PaymentService = Inject(),
+        shipping: ShippingService = Inject(),
+        email: EmailService = Inject()
     ):
         super().__init__()
         self.cart = cart
@@ -389,10 +389,10 @@ Add cross-cutting concerns to all context methods:
 
 ```python
 class AuditedService(Service):
-    """Base context with audit logging."""
-    
+    """Base service with audit logging."""
+
     async def __call__(self, method_name: str, *args, **kwargs):
-        """Log all context method calls."""
+        """Log all service method calls."""
         start_time = time.time()
         user = self.request.user if hasattr(self.request, 'user') else None
         
@@ -424,28 +424,28 @@ class AuditedService(Service):
 ## Best Practices
 
 <Aside type="tip" title="Service Best Practices">
-  1. **Single Responsibility** - Each context should handle one domain area
-  2. **Business Logic Only** - Keep HTTP concerns out of contexts
-  3. **Dependency Injection** - Use DI for database, services, and other contexts
+  1. **Single Responsibility** - Each service should handle one domain area
+  2. **Business Logic Only** - Keep HTTP concerns out of services
+  3. **Dependency Injection** - Use DI for database, services, and other services
   4. **Error Handling** - Throw domain exceptions, let routes handle HTTP errors
-  5. **Testing** - Test contexts independently from web layer
+  5. **Testing** - Test services independently from web layer
 </Aside>
 
 ### Do's ✅
 
-- Keep contexts focused on a single domain
+- Keep services focused on a single domain
 - Use type hints for all methods
-- Write comprehensive tests for context logic
+- Write comprehensive tests for service logic
 - Use dependency injection for flexibility
 - Document complex business rules
 
 ### Don'ts ❌
 
-- Don't import web framework code in contexts
-- Don't handle HTTP errors in contexts
-- Don't make contexts too large (split if needed)
+- Don't import web framework code in services
+- Don't handle HTTP errors in services
+- Don't make services too large (split if needed)
 - Don't mix different domain concerns
-- Don't bypass contexts for business logic
+- Don't bypass services for business logic
 
 ## Next Steps
 

@@ -12,12 +12,13 @@ from zenith.auth import configure_auth
 from zenith.core.routing import (
     Auth,
     AuthDependency,
-    Context,
-    ContextDependency,
     File,
     FileUploadDependency,
+    Inject,
+    InjectDependency,
     Router,
 )
+from zenith import Service
 from zenith.testing import TestClient
 
 
@@ -97,7 +98,7 @@ class TestRouter:
         """Test dependency injection markers."""
         # Context dependency
         ctx_dep = Inject()
-        assert isinstance(ctx_dep, ContextDependency)
+        assert isinstance(ctx_dep, InjectDependency)
 
         # Auth dependency
         auth_dep = Auth()
@@ -365,6 +366,47 @@ class TestRouterIntegration:
             assert response.status_code == 404
             data = response.json()
             assert "Resource not found" in data["message"]
+
+    async def test_malformed_json_handling(self):
+        """Test handling of malformed JSON in request bodies."""
+        app = Zenith(debug=True)
+        app.add_exception_handling(debug=True)
+
+        class TestModel(BaseModel):
+            name: str
+            value: int
+
+        @app.post("/test-json")
+        async def test_endpoint(data: TestModel):
+            return {"received": data.model_dump()}
+
+        async with TestClient(app) as client:
+            # Test invalid JSON syntax
+            response = await client.post(
+                "/test-json",
+                headers={"Content-Type": "application/json"},
+                content=b'{"name": "test", invalid}'
+            )
+            assert response.status_code == 422
+            data = response.json()
+            assert "Invalid JSON in request body" in data["message"]
+
+            # Test invalid UTF-8 encoding
+            response = await client.post(
+                "/test-json",
+                headers={"Content-Type": "application/json"},
+                content=b'\xff\xfe{"name": "test"}'
+            )
+            assert response.status_code == 422
+            data = response.json()
+            assert "Invalid JSON in request body" in data["message"]
+
+            # Test valid JSON for comparison
+            response = await client.post(
+                "/test-json",
+                json={"name": "test", "value": 123}
+            )
+            assert response.status_code == 200
 
 
 if __name__ == "__main__":
