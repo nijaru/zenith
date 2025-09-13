@@ -9,10 +9,10 @@ separated concerns, and excellent developer experience.
 from .dependencies import (
     Auth,
     AuthDependency,
-    Context,
-    ContextDependency,
     File,
     FileUploadDependency,
+    Inject,
+    InjectDependency,
 )
 from .dependency_resolver import DependencyResolver
 from .executor import RouteExecutor
@@ -50,8 +50,8 @@ __all__ = [
     # Dependencies
     "Auth",
     "AuthDependency",
-    "Context",
-    "ContextDependency",
+    "Inject",
+    "InjectDependency",
     "File",
     "FileUploadDependency",
     # Specs

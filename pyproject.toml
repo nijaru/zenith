@@ -7,7 +7,7 @@ packages = ["zenith"]
 exclude = [
     "docs/**",
     "docs-mkdocs/**",
-    "examples/**", 
+    "examples/**",
     "tests/**",
     "benchmarks/**",
     ".github/**",
@@ -23,7 +23,7 @@ exclude = [
 exclude = [
     "docs/**",
     "docs-mkdocs/**",
-    "examples/**", 
+    "examples/**",
     "tests/**",
     "benchmarks/**",
     ".github/**",
@@ -43,12 +43,12 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.12"
 authors = [
-    {name = "Nick", email = "nijaru7@gmail.com"}
+    {name = "Nick Russo", email = "nijaru7@gmail.com"}
 ]
 keywords = ["web", "framework", "realtime", "liveview", "websockets", "http3", "quic"]
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers", 
+    "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -86,7 +86,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
-    "pytest-asyncio>=0.21.0", 
+    "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "httpx>=0.25.0",
     "ruff>=0.1.6",
@@ -121,7 +121,6 @@ Homepage = "https://github.com/nijaru/zenith"
 Documentation = "https://nijaru.github.io/zenith"
 Repository = "https://github.com/nijaru/zenith.git"
 Issues = "https://github.com/nijaru/zenith/issues"
-Discussions = "https://github.com/nijaru/zenith/discussions"
 
 [dependency-groups]
 dev = [
@@ -138,7 +137,7 @@ line-length = 88
 [tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
-    "W",   # pycodestyle warnings  
+    "W",   # pycodestyle warnings
     "F",   # pyflakes
     "I",   # isort
     "B",   # flake8-bugbear

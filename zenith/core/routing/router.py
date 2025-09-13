@@ -94,7 +94,7 @@ class Router:
         """WebSocket route decorator."""
 
         def decorator(handler: Callable) -> Callable:
-            from zenith.websockets import WebSocket
+            from zenith.web.websockets import WebSocket
 
             async def websocket_endpoint(websocket_raw):
                 websocket = WebSocket(websocket_raw)

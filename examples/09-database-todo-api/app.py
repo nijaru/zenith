@@ -404,7 +404,7 @@ async def shutdown():
 
 
 @auth_router.post("/register", response_model=UserPublic)
-async def register(user_data: UserCreate, users: UserService = Context()) -> UserPublic:
+async def register(user_data: UserCreate, users: UserService = Inject()) -> UserPublic:
     """Register a new user."""
     user = await users.create_user(user_data)
     return UserPublic.model_validate(user)
@@ -412,7 +412,7 @@ async def register(user_data: UserCreate, users: UserService = Context()) -> Use
 
 @auth_router.post("/login", response_model=TokenResponse)
 async def login(
-    credentials: UserLogin, users: UserService = Context()
+    credentials: UserLogin, users: UserService = Inject()
 ) -> TokenResponse:
     """Login and get access token."""
     user = await users.authenticate_user(credentials.email, credentials.password)
@@ -432,7 +432,7 @@ async def login(
 @todos_router.post("/", response_model=TodoPublic)
 async def create_todo(
     todo_data: TodoCreate,
-    todos: TodoService = Context(),
+    todos: TodoService = Inject(),
     current_user=Auth(required=True),
 ) -> TodoPublic:
     """Create a new todo."""
@@ -447,7 +447,7 @@ async def list_todos(
     priority: Priority | None = None,
     limit: int = 100,
     offset: int = 0,
-    todos: TodoService = Context(),
+    todos: TodoService = Inject(),
     current_user=Auth(required=True),
 ) -> list[TodoPublic]:
     """List todos for current user with optional filtering and pagination."""
@@ -458,7 +458,7 @@ async def list_todos(
 
 @todos_router.get("/{todo_id}", response_model=TodoPublic)
 async def get_todo(
-    todo_id: int, todos: TodoService = Context(), current_user=Auth(required=True)
+    todo_id: int, todos: TodoService = Inject(), current_user=Auth(required=True)
 ) -> TodoPublic:
     """Get specific todo by ID."""
     user_id = current_user["id"]
@@ -472,7 +472,7 @@ async def get_todo(
 async def update_todo(
     todo_id: int,
     updates: TodoUpdate,
-    todos: TodoService = Context(),
+    todos: TodoService = Inject(),
     current_user=Auth(required=True),
 ) -> TodoPublic:
     """Update todo with partial data."""
@@ -485,7 +485,7 @@ async def update_todo(
 
 @todos_router.delete("/{todo_id}")
 async def delete_todo(
-    todo_id: int, todos: TodoService = Context(), current_user=Auth(required=True)
+    todo_id: int, todos: TodoService = Inject(), current_user=Auth(required=True)
 ) -> dict:
     """Delete todo by ID."""
     user_id = current_user["id"]

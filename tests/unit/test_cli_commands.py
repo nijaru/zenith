@@ -89,7 +89,7 @@ class TestCodeGenerators:
         assert "contexts/user_context.py" in files
 
         code = files["contexts/user_context.py"]
-        assert "class UserContext(Context):" in code
+        assert "class UserService(Service):" in code
         assert "async def get_all(" in code
         assert "async def get_by_id(" in code
         assert "async def create(" in code

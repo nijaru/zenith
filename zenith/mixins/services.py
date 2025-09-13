@@ -6,14 +6,14 @@ Contains methods for managing services, contexts, databases, and mounting.
 
 from typing import Any
 
-from zenith.core.context import Context
+from zenith.core.service import Service
 from zenith.core.routing import Router
 
 
 class ServicesMixin:
     """Mixin for service registration and mounting methods."""
 
-    def register_context(self, name: str, context_class: type[Context]) -> None:
+    def register_context(self, name: str, context_class: type[Service]) -> None:
         """Register a business context."""
         self.app.register_context(name, context_class)
 

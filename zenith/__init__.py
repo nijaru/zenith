@@ -26,7 +26,7 @@ __author__ = "Nick"
 # BACKGROUND PROCESSING
 # ============================================================================
 # Background tasks
-from zenith.background import BackgroundTasks, background_task
+from zenith.tasks.background import BackgroundTasks, background_task
 
 # Core application components
 from zenith.core.application import Application
@@ -36,20 +36,20 @@ from zenith.core.config import Config
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
 # Base class for business logic services
-from zenith.core.context import Context as Service
+from zenith.core.service import Service
 
 # ============================================================================
 # ROUTING & DEPENDENCY INJECTION
 # ============================================================================
 # Routing system
-# Context marker for dependency injection
-from zenith.core.routing import Auth, Context, File, Router
+from zenith.core.routing import Auth, File, Router
 
 # Dependency markers for clean injection
 from zenith.core.routing.dependencies import (
     AuthDependency,
-    ContextDependency,
     FileUploadDependency,
+    Inject,
+    InjectDependency,
 )
 
 # ============================================================================
@@ -122,9 +122,7 @@ from zenith.sessions import SessionManager, SessionMiddleware
 from zenith.web import (
     OptimizedJSONResponse,
     error_response,
-    health_manager,
     json_response,
-    metrics,
     success_response,
 )
 
@@ -135,7 +133,7 @@ from zenith.web.static import serve_css_js, serve_images, serve_spa_files
 # WEBSOCKETS & REAL-TIME
 # ============================================================================
 # WebSocket support
-from zenith.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
+from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
 
 # Server-Sent Events with built-in backpressure optimizations
 from zenith.web.sse import (
@@ -146,7 +144,7 @@ from zenith.web.sse import (
     create_sse_response,
     sse,
 )
-from zenith.zenith import Zenith, create_app
+from zenith.app import Zenith
 
 __all__ = [
     # ========================================================================
@@ -154,7 +152,6 @@ __all__ = [
     # ========================================================================
     "__version__",
     "Zenith",
-    "create_app",
     "Application",
     "Config",
     # ========================================================================
@@ -162,10 +159,10 @@ __all__ = [
     # ========================================================================
     "Router",
     "Auth",
-    "Context",
+    "Inject",
     "File",
     "AuthDependency",
-    "ContextDependency",
+    "InjectDependency",
     "FileUploadDependency",
     # ========================================================================
     # BUSINESS LOGIC

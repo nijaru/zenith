@@ -35,7 +35,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         app = Zenith()
 
         @app.get("/items/{id}")
-        async def get_item(id: int, items: ItemsContext = Context()) -> dict:
+        async def get_item(id: int, items: ItemsContext = Inject()) -> dict:
             return await items.get_item(id)
     """
     
@@ -242,21 +242,21 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         @self._app_router.get("/health")
         async def health_check():
             """Health check endpoint."""
-            from zenith.web.health import health_endpoint
+            from zenith.monitoring.health import health_endpoint
 
             return await health_endpoint(None)
 
         @self._app_router.get("/ready")
         async def readiness_check():
             """Readiness check endpoint."""
-            from zenith.web.health import readiness_endpoint
+            from zenith.monitoring.health import readiness_endpoint
 
             return await readiness_endpoint(None)
 
         @self._app_router.get("/live")
         async def liveness_check():
             """Liveness check endpoint."""
-            from zenith.web.health import liveness_endpoint
+            from zenith.monitoring.health import liveness_endpoint
 
             return await liveness_endpoint(None)
 
@@ -358,7 +358,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             @self._app_router.get("/metrics")
             async def metrics_endpoint():
                 """Prometheus metrics endpoint."""
-                from zenith.web.metrics import metrics_endpoint as get_metrics
+                from zenith.monitoring.metrics import metrics_endpoint as get_metrics
 
                 content = await get_metrics()
                 return PlainTextResponse(
@@ -633,57 +633,3 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         return f"Zenith(debug={self.config.debug})"
 
 
-# Convenience function for quick app creation
-def create_app(
-    config: Config | None = None,
-    debug: bool = False,
-    add_middleware: bool = True,
-    cors: bool = True,
-    rate_limiting: bool = True,
-    docs: bool = True,
-) -> Zenith:
-    """
-    Create a Zenith application with sensible defaults.
-
-    Args:
-        config: Application configuration
-        debug: Enable debug mode
-        add_middleware: Whether to add essential middleware
-        cors: Whether to add CORS middleware
-        rate_limiting: Whether to add rate limiting
-        docs: Whether to add OpenAPI documentation
-
-    Returns:
-        Configured Zenith application
-    """
-    if config is None:
-        config = Config.from_env()
-        config.debug = debug
-
-    app = Zenith(config=config)
-
-    if add_middleware:
-        # Always add exception handling (essential for production)
-        app.add_exception_handling(debug=debug)
-
-        # Add CORS if requested (usually needed for APIs)
-        if cors:
-            app.add_cors(
-                allow_origins=["*"] if debug else [],  # Restrict in production
-                allow_credentials=not debug,  # More secure in production
-            )
-
-        # Add rate limiting if requested (protect against abuse)
-        if rate_limiting:
-            app.add_rate_limiting(
-                default_limit=10000 if debug else 1000,  # More lenient in debug
-                window_seconds=3600,
-            )
-
-        # Add documentation if requested (developer experience)
-        if docs:
-            app.add_docs(
-                title="Zenith API", description="API built with Zenith framework"
-            )
-
-    return app

@@ -15,7 +15,7 @@ Run with: python examples/18-frontend-serving-dx.py
 
 from pydantic import BaseModel
 
-from zenith import Context, Service, Zenith
+from zenith import Service, Inject, Service, Zenith
 
 app = Zenith(title="Frontend Serving DX Demo")
 
@@ -42,7 +42,7 @@ class UserService(Service):
 
 
 @app.get("/api/users")
-async def get_users(users: UserService = Context()):
+async def get_users(users: UserService = Inject()):
     return await users.get_users()
 
 

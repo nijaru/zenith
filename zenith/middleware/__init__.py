@@ -12,24 +12,9 @@ Provides essential middleware for production applications:
 - Request ID tracking for distributed tracing
 - Response compression (gzip/deflate)
 - Error handling
-- Concurrent middleware processing for improved performance
-- Zero-copy streaming for memory-efficient file operations
-- Database connection reuse optimization
-- WebSocket concurrent processing
-- Server-sent events with backpressure handling
+- Error handling
 """
 
-# Removed combined middleware - violates separation of concerns
-# Use individual AuthMiddleware, RateLimitMiddleware, SecurityMiddleware, RequestIDMiddleware instead
-from .db_connection_reuse import (
-    DatabaseConnectionReuseMiddleware,
-    DatabaseTransactionMiddleware,
-    ConcurrentQueryOptimizer,
-)
-from .sse_backpressure import (
-    ServerSentEventsBackpressureMiddleware,
-    SSEEventManager,
-)
 from .auth import AuthenticationMiddleware
 from .cache import (
     CacheConfig,
@@ -91,12 +76,6 @@ from .security import (
 
 __all__ = [
     "AuthenticationMiddleware",
-    # Core Performance Optimizations (built into standard middleware) 
-    "DatabaseConnectionReuseMiddleware",
-    "DatabaseTransactionMiddleware",
-    "ConcurrentQueryOptimizer",
-    "ServerSentEventsBackpressureMiddleware",
-    "SSEEventManager",
     "CORSConfig",
     "CORSMiddleware",
     "CSRFConfig",

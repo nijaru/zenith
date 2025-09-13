@@ -6,10 +6,10 @@ import pytest
 
 from zenith.core.application import Application
 from zenith.core.config import Config
-from zenith.core.context import Context
+from zenith.core.service import Service
 
 
-class MockTestContext(Context):
+class MockTestService(Service):
     """Test context for testing."""
 
     async def initialize(self):

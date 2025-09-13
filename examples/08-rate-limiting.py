@@ -83,7 +83,7 @@ app.add_middleware(
 # ============================================================================
 
 
-class AuthContext:
+class AuthService:
     def __init__(self, container):
         pass
 
@@ -125,7 +125,7 @@ async def health():
 
 
 @app.post("/login")
-async def login(email: str, password: str, auth: AuthContext = Context()) -> dict:
+async def login(email: str, password: str, auth: AuthContext = Inject()) -> dict:
     """Login endpoint (subject to default rate limits)."""
     user = await auth.authenticate(email, password)
     if not user:

@@ -1,22 +1,22 @@
 """
 Dependency injection components for Zenith routing.
 
-Provides Context, Auth, and File dependency markers for route handlers.
+Provides Inject, Auth, and File dependency markers for route handlers.
 """
 
 from typing import TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
-    from zenith.core.context import Context as BaseContext
+    from zenith.core.service import Service as BaseService
     from zenith.web.files import FileUploadConfig
 
 
-class ContextDependency:
-    """Marker for context dependency injection."""
-    __slots__ = ('context_class',)
+class InjectDependency:
+    """Marker for service dependency injection."""
+    __slots__ = ('service_class',)
 
-    def __init__(self, context_class: type["BaseContext"] | None = None):
-        self.context_class = context_class
+    def __init__(self, service_class: type["BaseService"] | None = None):
+        self.service_class = service_class
 
 
 class AuthDependency:
@@ -41,9 +41,9 @@ class FileUploadDependency:
         self.config = config or {}
 
 
-def Context(context_class: type["BaseContext"] | None = None) -> ContextDependency:
-    """Create a context dependency marker."""
-    return ContextDependency(context_class)
+def Inject(service_class: type["BaseService"] | None = None) -> InjectDependency:
+    """Create a service dependency injection marker."""
+    return InjectDependency(service_class)
 
 
 def Auth(required: bool = True, scopes: list[str] | None = None) -> AuthDependency:

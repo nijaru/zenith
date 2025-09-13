@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from zenith.core.container import DIContainer
-from zenith.core.context import Context
+from zenith.core.service import Service
 from zenith.db import Base, Database
 
 T = TypeVar("T", bound=Context)
@@ -195,7 +195,7 @@ async def test_database(database_url: str = "sqlite+aiosqlite:///:memory:"):
         await engine.dispose()
 
 
-class MockContext(Context):
+class MockService(Service):
     """
     Mock context for testing dependencies.
 
