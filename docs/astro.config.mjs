@@ -28,28 +28,43 @@ export default defineConfig({
 				{
 					tag: 'script',
 					content: `
+						// Fix preload crossorigin issues immediately
+						(function() {
+							const observer = new MutationObserver(function(mutations) {
+								mutations.forEach(function(mutation) {
+									mutation.addedNodes.forEach(function(node) {
+										if (node.nodeType === 1 && node.tagName === 'LINK' &&
+											node.rel === 'modulepreload' && !node.crossOrigin) {
+											node.crossOrigin = 'anonymous';
+										}
+									});
+								});
+							});
+							observer.observe(document.head, { childList: true, subtree: true });
+
+							// Also fix existing preloads
+							document.addEventListener('DOMContentLoaded', function() {
+								const preloads = document.querySelectorAll('link[rel="modulepreload"]');
+								preloads.forEach(link => {
+									if (!link.hasAttribute('crossorigin')) {
+										link.setAttribute('crossorigin', 'anonymous');
+									}
+								});
+							});
+						})();
+
 						// Zenith Framework Developer Console
 						if (typeof console !== 'undefined' && console.log) {
 							const zenithStyle = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;';
 							const versionStyle = 'color: #667eea; font-weight: bold;';
 							const linkStyle = 'color: #764ba2; text-decoration: underline;';
 
-							console.log('%c⚡ Zenith Framework %cv0.2.1', zenithStyle, versionStyle);
+							console.log('%c⚡ Zenith Framework %cv0.2.2', zenithStyle, versionStyle);
 							console.log('🚀 Modern Python web framework with clean architecture');
 							console.log('📚 Docs: %chttps://nijaru.com/zenith', linkStyle);
 							console.log('💻 GitHub: %chttps://github.com/nijaru/zenith', linkStyle);
 							console.log('📦 Install: pip install zenith-web');
 						}
-
-						// Fix preload crossorigin issues
-						document.addEventListener('DOMContentLoaded', function() {
-							const preloads = document.querySelectorAll('link[rel="modulepreload"]');
-							preloads.forEach(link => {
-								if (!link.hasAttribute('crossorigin')) {
-									link.setAttribute('crossorigin', 'anonymous');
-								}
-							});
-						});
 					`,
 				},
 			],
