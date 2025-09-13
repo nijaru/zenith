@@ -87,7 +87,7 @@ class TestContextBasics:
         container.register("events", EventBus())
         ctx = UserContext(container)
 
-        assert isinstance(ctx, BaseContext)
+        assert isinstance(ctx, Service)
         assert hasattr(ctx, "user_service")
         assert hasattr(ctx, "get_user")
         assert hasattr(ctx, "container")
@@ -175,7 +175,7 @@ class TestContextExecution:
         container.register("events", EventBus())
 
         user_ctx = UserContext(container)
-        notif_ctx = NotificationContext(container, user_context=user_ctx)
+        notif_ctx = NotificationService(container, user_context=user_ctx)
 
         # Send welcome email to existing user
         result = await notif_ctx.send_welcome_email(1)
@@ -268,14 +268,14 @@ class TestContextIntegrationWithApp:
         """Test registering contexts in Zenith app."""
         app = Zenith(debug=True)
         app.register_context("users", UserContext)
-        app.register_context("notifications", NotificationContext)
+        app.register_context("notifications", NotificationService)
 
-        # Should be registered in context registry
+        # Should be registered in service registry
         contexts = app.app.contexts
-        assert "users" in contexts._context_classes
-        assert contexts._context_classes["users"] == UserContext
-        assert "notifications" in contexts._context_classes
-        assert contexts._context_classes["notifications"] == NotificationContext
+        assert "users" in contexts._service_classes
+        assert contexts._service_classes["users"] == UserContext
+        assert "notifications" in contexts._service_classes
+        assert contexts._service_classes["notifications"] == NotificationService
 
     async def test_context_injection_in_routes(self):
         """Test context injection in route handlers."""
@@ -379,7 +379,7 @@ class TestContextErrorHandling:
 
         container = DIContainer()
         container.register("events", EventBus())
-        ctx = ErrorContext(container)
+        ctx = ErrorService(container)
 
         # Test ValueError
         with pytest.raises(ValueError, match="Test error"):

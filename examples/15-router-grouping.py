@@ -133,9 +133,9 @@ class OrderService(Service):
 app = Zenith()
 
 # Register contexts
-app.register_context("products", ProductContext)
-app.register_context("users", UserContext)
-app.register_context("orders", OrderContext)
+app.register_context("products", ProductService)
+app.register_context("users", UserService)
+app.register_context("orders", OrderService)
 
 
 # ----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ products_v1 = Router(prefix="/products")  # tags=["products-v1"])
 
 @products_v1.get("/", response_model=list[Product])
 async def list_products_v1(
-    category: str | None = None, products: ProductContext = Inject()
+    category: str | None = None, products: ProductService = Inject()
 ) -> list[Product]:
     """List all products (v1)."""
     return await products.list_products(category)
@@ -159,7 +159,7 @@ async def list_products_v1(
 
 @products_v1.get("/{product_id}", response_model=Product)
 async def get_product_v1(
-    product_id: int, products: ProductContext = Inject()
+    product_id: int, products: ProductService = Inject()
 ) -> Product:
     """Get product by ID (v1)."""
     product = await products.get_product(product_id)
@@ -173,13 +173,13 @@ users_v1 = Router(prefix="/users")  # tags=["users-v1"])
 
 
 @users_v1.get("/", response_model=list[User])
-async def list_users_v1(users: UserContext = Inject()) -> list[User]:
+async def list_users_v1(users: UserService = Inject()) -> list[User]:
     """List all users (v1)."""
     return await users.list_users()
 
 
 @users_v1.get("/{user_id}", response_model=User)
-async def get_user_v1(user_id: int, users: UserContext = Inject()) -> User:
+async def get_user_v1(user_id: int, users: UserService = Inject()) -> User:
     """Get user by ID (v1)."""
     user = await users.get_user(user_id)
     if not user:
@@ -208,7 +208,7 @@ async def list_products_v2(
     category: str | None = None,
     min_price: float | None = None,
     max_price: float | None = None,
-    products: ProductContext = Inject(),
+    products: ProductService = Inject(),
 ) -> list[Product]:
     """List products with advanced filtering (v2)."""
     result = await products.list_products(category)
@@ -224,7 +224,7 @@ async def list_products_v2(
 
 @products_v2.get("/{product_id}", response_model=Product)
 async def get_product_v2(
-    product_id: int, include_related: bool = False, products: ProductContext = Inject()
+    product_id: int, include_related: bool = False, products: ProductService = Inject()
 ) -> dict:
     """Get product with optional related data (v2)."""
     product = await products.get_product(product_id)
@@ -250,7 +250,7 @@ orders_v2 = Router(prefix="/orders")  # tags=["orders-v2"])
 
 @orders_v2.get("/", response_model=list[Order])
 async def list_orders_v2(
-    user_id: int | None = None, orders: OrderContext = Inject()
+    user_id: int | None = None, orders: OrderService = Inject()
 ) -> list[Order]:
     """List orders (v2)."""
     return await orders.list_orders(user_id)
@@ -260,7 +260,7 @@ async def list_orders_v2(
 async def create_order_v2(
     product_id: int,
     quantity: int = 1,
-    orders: OrderContext = Inject(),
+    orders: OrderService = Inject(),
     current_user: dict = Auth(required=False),  # Mock auth for demo
 ) -> Order:
     """Create a new order (v2)."""
@@ -283,9 +283,9 @@ admin = Router(prefix="/admin")  # tags=["admin"])
 
 @admin.get("/stats")
 async def admin_stats(
-    products: ProductContext = Inject(),
-    users: UserContext = Inject(),
-    orders: OrderContext = Inject(),
+    products: ProductService = Inject(),
+    users: UserService = Inject(),
+    orders: OrderService = Inject(),
 ) -> dict:
     """Get admin statistics."""
     return {

@@ -78,4 +78,4 @@ class {self.class_name}Service(Service):
         return True
 '''
 
-        return {f"contexts/{self.variable_name}_context.py": code}
+        return {f"services/{self.variable_name}_service.py": code}

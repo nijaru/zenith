@@ -69,11 +69,11 @@ class TestApplication:
         config.debug = True  # Avoid SECRET_KEY validation in tests
         app = Application(config)
 
-        app.register_context("test_context", MockTestContext)
+        app.register_context("test_context", MockTestService)
 
         # Check that context is registered
-        context_names = app.contexts.list_contexts()
-        assert "test_context" in context_names
+        service_names = app.contexts.list_services()
+        assert "test_context" in service_names
 
     @pytest.mark.asyncio
     async def test_get_context(self):
@@ -82,13 +82,13 @@ class TestApplication:
         config.debug = True  # Avoid SECRET_KEY validation in tests
         app = Application(config)
 
-        app.register_context("test_context", MockTestContext)
+        app.register_context("test_context", MockTestService)
         await app.startup()
 
         try:
             context = await app.get_context("test_context")
 
-            assert isinstance(context, MockTestContext)
+            assert isinstance(context, MockTestService)
             assert hasattr(context, "test_data")
             assert context.test_data == "initialized"
         finally:

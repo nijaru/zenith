@@ -17,7 +17,7 @@ from zenith.web.files import (
     FileUploadConfig,
     FileUploader,
 )
-from zenith.web.health import (
+from zenith.monitoring.health import (
     HealthManager,
     HealthStatus,
     add_health_routes,
@@ -271,7 +271,7 @@ class TestHealthChecks:
         app = Zenith(debug=True)
 
         # Set up health manager with checks
-        from zenith.web.health import health_manager
+        from zenith.monitoring.health import health_manager
 
         health_manager.add_uptime_check(min_uptime=0.0)  # Immediate
 

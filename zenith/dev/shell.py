@@ -22,14 +22,14 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
 
     # Core framework imports
     try:
-        from zenith import Config, Context, Router, Zenith
+        from zenith import Config, Service, Router, Zenith
 
         namespace.update(
             {
                 "Zenith": Zenith,
                 "Config": Config,
                 "Router": Router,
-                "Context": Context,
+                "Service": Service,
             }
         )
     except ImportError as e:
@@ -51,9 +51,23 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
     except ImportError as e:
         import_errors.append(f"Database imports: {e}")
 
+    # Performance monitoring utilities
+    try:
+        from zenith.monitoring.performance import track_performance, profile_block
+
+        namespace.update(
+            {
+                "track_performance": track_performance,
+                "profile_block": profile_block,
+            }
+        )
+    except ImportError as e:
+        import_errors.append(f"Performance imports: {e}")
+
     # Web utilities
     try:
-        from zenith.web import health_manager, metrics
+        from zenith.monitoring.health import health_manager
+        from zenith.web import metrics
 
         namespace.update(
             {
