@@ -90,7 +90,7 @@ class TokenResponse(BaseModel):
 # ============================================================================
 
 
-class UsersContext(Service):
+class UsersService(Service):
     """User management business logic."""
 
     def __init__(self, db: Database):
@@ -234,7 +234,7 @@ async def health_check():
 
 @api.post("/register", response_model=UserResponse)
 async def register(
-    user_data: UserCreate, users: UsersContext = Context()
+    user_data: UserCreate, users: UsersContext = Inject()
 ) -> UserResponse:
     """Register a new user."""
     # Check if user already exists
@@ -259,8 +259,8 @@ async def register(
 @api.post("/login", response_model=TokenResponse)
 async def login(
     credentials: LoginRequest,
-    users: UsersContext = Context(),
-    # Note: session = Context()  # Session dependency injection - requires session modules
+    users: UsersContext = Inject(),
+    # Note: session = Inject()  # Session dependency injection - requires session modules
 ) -> TokenResponse:
     """Login user and return JWT token."""
     # Authenticate user
@@ -298,7 +298,7 @@ async def login(
 
 @api.get("/profile", response_model=UserResponse)
 async def get_profile(
-    current_user=Auth(required=True), users: UsersContext = Context()
+    current_user=Auth(required=True), users: UsersContext = Inject()
 ) -> UserResponse:
     """Get current user's profile."""
     user = await users.get_user(current_user["user_id"])
@@ -310,7 +310,7 @@ async def get_profile(
 
 @api.get("/admin/users")
 async def list_users(
-    current_user=Auth(required=True, scopes=["admin"]), users: UsersContext = Context()
+    current_user=Auth(required=True, scopes=["admin"]), users: UsersContext = Inject()
 ) -> list[UserResponse]:
     """Admin endpoint to list all users."""
     # In a real app, implement pagination and filtering
@@ -334,7 +334,7 @@ async def trigger_cleanup(current_user=Auth(required=True, scopes=["admin"])):
 
 
 @api.get("/session")
-async def get_session_info():  # Note: session = Context() - requires session modules
+async def get_session_info():  # Note: session = Inject() - requires session modules
     """Get current session information."""
     # Note: session functionality requires session modules
     return {

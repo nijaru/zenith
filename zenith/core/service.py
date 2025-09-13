@@ -1,7 +1,7 @@
 """
-Context system for organizing business logic and domain operations.
+Service system for organizing business logic and domain operations.
 
-Contexts provide a way to organize related functionality and maintain
+Services provide a way to organize related functionality and maintain
 clear boundaries between different areas of the application.
 """
 
@@ -15,7 +15,7 @@ from zenith.core.container import DIContainer
 
 
 class EventBus:
-    """Simple event bus for context communication."""
+    """Simple event bus for service communication."""
 
     __slots__ = ("_async_listeners", "_listeners")
 
@@ -59,8 +59,8 @@ class EventBus:
                 await asyncio.gather(*tasks, return_exceptions=True)
 
 
-class Context(ABC):
-    """Base class for business contexts."""
+class Service(ABC):
+    """Base class for business services."""
 
     __slots__ = ("_initialized", "container", "events")
 
@@ -70,13 +70,13 @@ class Context(ABC):
         self._initialized = False
 
     async def initialize(self) -> None:
-        """Initialize the context. Override for custom initialization."""
+        """Initialize the service. Override for custom initialization."""
         if self._initialized:
             return
         self._initialized = True
 
     async def shutdown(self) -> None:
-        """Cleanup context resources. Override for custom cleanup."""
+        """Cleanup service resources. Override for custom cleanup."""
         pass
 
     async def emit(self, event: str, data: Any = None) -> None:
@@ -97,47 +97,47 @@ class Context(ABC):
         return f"{self.__class__.__name__}()"
 
 
-class ContextRegistry:
-    """Registry for managing application contexts."""
+class ServiceRegistry:
+    """Registry for managing application services."""
 
-    __slots__ = ("_context_classes", "_contexts", "container")
+    __slots__ = ("_service_classes", "_services", "container")
 
     def __init__(self, container: DIContainer):
         self.container = container
-        self._contexts: dict[str, Context] = {}
-        self._context_classes: dict[str, type] = {}
+        self._services: dict[str, Service] = {}
+        self._service_classes: dict[str, type] = {}
 
-    def register(self, name: str, context_class: type) -> None:
-        """Register a context class."""
-        self._context_classes[name] = context_class
+    def register(self, name: str, service_class: type) -> None:
+        """Register a service class."""
+        self._service_classes[name] = service_class
 
-    async def get(self, name: str) -> Context:
-        """Get or create a context instance."""
-        if name not in self._contexts:
-            if name not in self._context_classes:
-                raise KeyError(f"Context not registered: {name}")
+    async def get(self, name: str) -> Service:
+        """Get or create a service instance."""
+        if name not in self._services:
+            if name not in self._service_classes:
+                raise KeyError(f"Service not registered: {name}")
 
-            context_class = self._context_classes[name]
-            context = context_class(self.container)
-            await context.initialize()
-            self._contexts[name] = context
+            service_class = self._service_classes[name]
+            service = service_class(self.container)
+            await service.initialize()
+            self._services[name] = service
 
-        return self._contexts[name]
+        return self._services[name]
 
-    async def get_by_type(self, context_type: type) -> Context:
-        """Get a context by its type."""
-        # Find the name for this context type
-        for name, cls in self._context_classes.items():
-            if cls == context_type:
+    async def get_by_type(self, service_type: type) -> Service:
+        """Get a service by its type."""
+        # Find the name for this service type
+        for name, cls in self._service_classes.items():
+            if cls == service_type:
                 return await self.get(name)
-        raise KeyError(f"Context type not registered: {context_type.__name__}")
+        raise KeyError(f"Service type not registered: {service_type.__name__}")
 
     async def shutdown_all(self) -> None:
-        """Shutdown all contexts."""
-        for context in self._contexts.values():
-            await context.shutdown()
-        self._contexts.clear()
+        """Shutdown all services."""
+        for service in self._services.values():
+            await service.shutdown()
+        self._services.clear()
 
-    def list_contexts(self) -> list[str]:
-        """List all registered context names."""
-        return list(self._context_classes.keys())
+    def list_services(self) -> list[str]:
+        """List all registered service names."""
+        return list(self._service_classes.keys())

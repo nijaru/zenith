@@ -3,7 +3,7 @@
 
 This example demonstrates Zenith's unique Context system:
 - Organizing business logic in Context classes
-- Clean dependency injection with Context()
+- Clean dependency injection with Inject()
 - Separation of concerns between routes and business logic
 - Event-driven communication between contexts
 
@@ -13,7 +13,7 @@ Then visit: http://localhost:8003
 
 from datetime import datetime
 
-from zenith import Context, Router, Service, Zenith
+from zenith import Service, Inject, Router, Service, Zenith
 from zenith.db import Field, SQLModel
 
 app = Zenith(debug=True)
@@ -289,7 +289,7 @@ async def root():
 
 @products_router.get("/", response_model=list[Product])
 async def list_products(
-    category: str | None = None, products: ProductService = Context()
+    category: str | None = None, products: ProductService = Inject()
 ) -> list[Product]:
     """List products, optionally filtered by category."""
     return await products.list_products(category)
@@ -297,14 +297,14 @@ async def list_products(
 
 @products_router.post("/", response_model=Product)
 async def create_product(
-    product_data: ProductCreate, products: ProductService = Context()
+    product_data: ProductCreate, products: ProductService = Inject()
 ) -> Product:
     """Create a new product."""
     return await products.create_product(product_data)
 
 
 @products_router.get("/{product_id}", response_model=Product)
-async def get_product(product_id: int, products: ProductService = Context()) -> Product:
+async def get_product(product_id: int, products: ProductService = Inject()) -> Product:
     """Get product by ID."""
     product = await products.get_product(product_id)
     if not product:
@@ -313,7 +313,7 @@ async def get_product(product_id: int, products: ProductService = Context()) -> 
 
 
 @orders_router.get("/", response_model=list[Order])
-async def list_orders(orders: OrderService = Context()) -> list[Order]:
+async def list_orders(orders: OrderService = Inject()) -> list[Order]:
     """List all orders."""
     return await orders.list_orders()
 
@@ -321,15 +321,15 @@ async def list_orders(orders: OrderService = Context()) -> list[Order]:
 @orders_router.post("/", response_model=Order)
 async def create_order(
     order_data: OrderCreate,
-    orders: OrderService = Context(),
-    products: ProductService = Context(),
+    orders: OrderService = Inject(),
+    products: ProductService = Inject(),
 ) -> Order:
     """Create a new order."""
     return await orders.create_order(order_data, products)
 
 
 @analytics_router.get("/")
-async def get_analytics(analytics: AnalyticsService = Context()):
+async def get_analytics(analytics: AnalyticsService = Inject()):
     """Get analytics data showing event tracking."""
     return await analytics.get_stats()
 
@@ -372,7 +372,7 @@ if __name__ == "__main__":
     print()
     print("💡 Key Concepts:")
     print("   • Business logic in Context classes")
-    print("   • Clean dependency injection with Context()")
+    print("   • Clean dependency injection with Inject()")
     print("   • Event-driven communication between contexts")
     print("   • Router grouping for API organization")
     print("   • SQLModel unified models")

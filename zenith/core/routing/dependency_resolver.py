@@ -9,7 +9,7 @@ from typing import Any
 
 from starlette.requests import Request
 
-from .dependencies import AuthDependency, ContextDependency, FileUploadDependency
+from .dependencies import AuthDependency, FileUploadDependency, InjectDependency
 
 
 class DependencyResolver:
@@ -28,7 +28,7 @@ class DependencyResolver:
     ) -> Any:
         """Resolve a dependency based on its marker type."""
 
-        if isinstance(dependency_marker, ContextDependency):
+        if isinstance(dependency_marker, InjectDependency):
             return await self._resolve_context(dependency_marker, param_type, app)
 
         elif isinstance(dependency_marker, AuthDependency):
@@ -41,17 +41,17 @@ class DependencyResolver:
         return None
 
     async def _resolve_context(
-        self, dependency: ContextDependency, param_type: type, app
+        self, dependency: InjectDependency, param_type: type, app
     ) -> Any:
         """Resolve a Context dependency."""
         if not app:
             raise RuntimeError("Router not attached to application")
 
         # Use the specified context class, or infer from parameter type
-        context_class = dependency.context_class or param_type
+        service_class = dependency.service_class or param_type
 
         # Get context instance from the application
-        return await app.contexts.get_by_type(context_class)
+        return await app.contexts.get_by_type(service_class)
 
     async def _resolve_auth(self, dependency: AuthDependency, request: Request) -> Any:
         """Resolve an Auth dependency (current user)."""

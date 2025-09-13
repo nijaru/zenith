@@ -13,7 +13,7 @@ from typing import Any
 
 from zenith.core.config import Config
 from zenith.core.container import DIContainer
-from zenith.core.context import ContextRegistry, EventBus
+from zenith.core.service import EventBus, ServiceRegistry
 from zenith.core.supervisor import (
     ChildSpec,
     RestartStrategy,
@@ -33,7 +33,7 @@ class Application:
         # Core components
         self.container = DIContainer()
         self.supervisor = Supervisor(SupervisorSpec())
-        self.contexts = ContextRegistry(self.container)
+        self.contexts = ServiceRegistry(self.container)
         self.events = EventBus()
 
         # Database setup (convert database_url if it uses postgresql:// to async version)

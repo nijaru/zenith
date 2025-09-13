@@ -49,7 +49,7 @@ class TestZenithApplication:
         """Test context registration and dependency injection setup."""
         app = Zenith(debug=True)
 
-        class UserContext(Service):
+        class UserService(Service):
             async def get_user(self, id: int):
                 return {"id": id, "name": "Test User"}
 
@@ -252,14 +252,14 @@ class TestRoutingIntegration:
         """Test routes using context dependency injection."""
         app = Zenith(debug=True)
 
-        class TestContext(Service):
+        class TestService(Service):
             def get_data(self):
                 return {"context": "data"}
 
         app.register_context("test", TestContext)
 
         @app.get("/context-test")
-        async def context_endpoint(ctx: TestContext = Context()):
+        async def context_endpoint(ctx: TestContext = Inject()):
             return ctx.get_data()
 
         async with TestClient(app) as client:

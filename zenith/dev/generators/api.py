@@ -51,7 +51,7 @@ router = Router(prefix="/{self.table_name}")
 async def get_{self.table_name}(
     limit: int = 100,
     offset: int = 0,
-    {self.variable_name}_context: {context_name} = Context()
+    {self.variable_name}_context: {context_name} = Inject()
 ):
     """Get all {self.table_name}."""
     return await {self.variable_name}_context.get_all(limit=limit, offset=offset)
@@ -60,7 +60,7 @@ async def get_{self.table_name}(
 @router.get("/{{{self.variable_name}_id}}", response_model={model_name})
 async def get_{self.variable_name}(
     {self.variable_name}_id: int,
-    {self.variable_name}_context: {context_name} = Context()
+    {self.variable_name}_context: {context_name} = Inject()
 ):
     """Get {self.variable_name} by ID."""
     obj = await {self.variable_name}_context.get_by_id({self.variable_name}_id)
@@ -72,7 +72,7 @@ async def get_{self.variable_name}(
 @router.post("/", response_model={model_name}, status_code=201)
 async def create_{self.variable_name}(
     data: {create_model},
-    {self.variable_name}_context: {context_name} = Context()
+    {self.variable_name}_context: {context_name} = Inject()
 ):
     """Create new {self.variable_name}."""
     return await {self.variable_name}_context.create(**data.model_dump())
@@ -82,7 +82,7 @@ async def create_{self.variable_name}(
 async def update_{self.variable_name}(
     {self.variable_name}_id: int,
     data: {update_model},
-    {self.variable_name}_context: {context_name} = Context()
+    {self.variable_name}_context: {context_name} = Inject()
 ):
     """Update {self.variable_name}."""
     obj = await {self.variable_name}_context.update(
@@ -97,7 +97,7 @@ async def update_{self.variable_name}(
 @router.delete("/{{{self.variable_name}_id}}", status_code=204)
 async def delete_{self.variable_name}(
     {self.variable_name}_id: int,
-    {self.variable_name}_context: {context_name} = Context()
+    {self.variable_name}_context: {context_name} = Inject()
 ):
     """Delete {self.variable_name}."""
     deleted = await {self.variable_name}_context.delete({self.variable_name}_id)

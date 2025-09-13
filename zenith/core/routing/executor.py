@@ -138,7 +138,7 @@ class RouteExecutor:
                 and param_type.__module__ == "zenith.background"
                 and param_type.__name__ == "BackgroundTasks"
             ):
-                from zenith.background import BackgroundTasks
+                from zenith.tasks.background import BackgroundTasks
 
                 kwargs[param_name] = BackgroundTasks()
                 continue

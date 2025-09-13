@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from zenith import Context, Router, Service, Zenith
+from zenith import Service, Inject, Router, Service, Zenith
 
 
 # Pydantic models
@@ -84,7 +84,7 @@ class TodoStore:
 
 
 # Business logic context
-class TodosContext(Service):
+class TodosService(Service):
     """Business logic for todo management."""
 
     def __init__(self, container):
@@ -138,21 +138,21 @@ api = Router(prefix="/api/v1")
 
 # Routes
 @api.post("/todos")
-async def create_todo(data: TodoCreate, todos: TodosContext = Context()) -> Todo:
+async def create_todo(data: TodoCreate, todos: TodosContext = Inject()) -> Todo:
     """Create a new todo item."""
     return await todos.create_todo(data)
 
 
 @api.get("/todos")
 async def list_todos(
-    completed: bool | None = None, todos: TodosContext = Context()
+    completed: bool | None = None, todos: TodosContext = Inject()
 ) -> list[Todo]:
     """List todos, optionally filtered by completion status."""
     return await todos.list_todos(completed)
 
 
 @api.get("/todos/{todo_id}")
-async def get_todo(todo_id: int, todos: TodosContext = Context()) -> Todo:
+async def get_todo(todo_id: int, todos: TodosContext = Inject()) -> Todo:
     """Get a specific todo item."""
     todo = await todos.get_todo(todo_id)
     if not todo:
@@ -162,7 +162,7 @@ async def get_todo(todo_id: int, todos: TodosContext = Context()) -> Todo:
 
 @api.patch("/todos/{todo_id}")
 async def update_todo(
-    todo_id: int, data: TodoUpdate, todos: TodosContext = Context()
+    todo_id: int, data: TodoUpdate, todos: TodosContext = Inject()
 ) -> Todo:
     """Update a todo item."""
     todo = await todos.update_todo(todo_id, data)
@@ -172,7 +172,7 @@ async def update_todo(
 
 
 @api.delete("/todos/{todo_id}")
-async def delete_todo(todo_id: int, todos: TodosContext = Context()) -> dict:
+async def delete_todo(todo_id: int, todos: TodosContext = Inject()) -> dict:
     """Delete a todo item."""
     deleted = await todos.delete_todo(todo_id)
     if not deleted:

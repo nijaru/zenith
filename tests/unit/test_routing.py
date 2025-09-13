@@ -96,7 +96,7 @@ class TestRouter:
     def test_dependency_markers(self):
         """Test dependency injection markers."""
         # Context dependency
-        ctx_dep = Context()
+        ctx_dep = Inject()
         assert isinstance(ctx_dep, ContextDependency)
 
         # Auth dependency

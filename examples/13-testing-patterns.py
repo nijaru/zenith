@@ -173,7 +173,7 @@ async def root():
 
 @app.get("/users/{user_id}")
 async def get_user(
-    user_id: int, current_user: Auth = Auth(), users: UserService = Context()
+    user_id: int, current_user: Auth = Auth(), users: UserService = Inject()
 ) -> User:
     """Protected endpoint - requires authentication."""
     user = await users.get_user(user_id)
@@ -187,7 +187,7 @@ async def get_user(
 async def create_user(
     user_data: UserCreate,
     current_user: Auth = Auth(),
-    users: UserService = Context(),
+    users: UserService = Inject(),
 ) -> User:
     """Create user endpoint - requires authentication."""
     return await users.create_user(user_data)
@@ -195,7 +195,7 @@ async def create_user(
 
 @app.get("/admin/users")
 async def list_users(
-    current_user: Auth = Auth(scopes=["admin"]), users: UserService = Context()
+    current_user: Auth = Auth(scopes=["admin"]), users: UserService = Inject()
 ) -> list[User]:
     """Admin-only endpoint."""
     return await users.list_users()

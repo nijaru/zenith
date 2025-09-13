@@ -15,7 +15,7 @@ from typing import (
 
 from pydantic import BaseModel
 
-from zenith.core.routing import AuthDependency, ContextDependency, Router, RouteSpec
+from zenith.core.routing import Inject
 
 
 class OpenAPIGenerator:

@@ -10,8 +10,8 @@ import pytest
 
 from zenith import Service, Zenith
 from zenith.core.container import DIContainer
-from zenith.core.context import Context as BaseContext
-from zenith.core.context import EventBus
+from zenith.core.service import Service as BaseContext
+from zenith.core.service import EventBus
 from zenith.core.routing import Context
 
 
@@ -38,7 +38,7 @@ class UserService:
         return self.users[:limit]
 
 
-class UserContext(Service):
+class UserService(Service):
     """Example context for testing."""
 
     def __init__(self, container: DIContainer, user_service: UserService = None):
@@ -62,7 +62,7 @@ class UserContext(Service):
         return "@" in email and "." in email
 
 
-class NotificationContext(Service):
+class NotificationService(Service):
     """Another context for testing inter-context dependencies."""
 
     def __init__(self, container: DIContainer, user_context: UserContext = None):
@@ -283,11 +283,11 @@ class TestContextIntegrationWithApp:
         app.register_context("users", UserContext)
 
         @app.get("/users/{user_id}")
-        async def get_user(user_id: int, ctx: UserContext = Context()):
+        async def get_user(user_id: int, ctx: UserContext = Inject()):
             return await ctx.get_user(user_id)
 
         @app.post("/users")
-        async def create_user(name: str, email: str, ctx: UserContext = Context()):
+        async def create_user(name: str, email: str, ctx: UserContext = Inject()):
             return await ctx.create_user(name, email)
 
         from zenith.testing import TestClient
@@ -367,7 +367,7 @@ class TestContextErrorHandling:
     async def test_context_method_errors(self):
         """Test error handling in context methods."""
 
-        class ErrorContext(Service):
+        class ErrorService(Service):
             def __init__(self, container: DIContainer):
                 super().__init__(container)
 
