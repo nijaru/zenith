@@ -23,6 +23,13 @@ export default defineConfig({
 			credits: false,
 			head: [
 				{
+					tag: 'meta',
+					attrs: {
+						name: 'cf-settings',
+						content: 'rocket_loader:off'
+					}
+				},
+				{
 					tag: 'link',
 					attrs: {
 						rel: 'icon',
@@ -31,6 +38,9 @@ export default defineConfig({
 				},
 				{
 					tag: 'script',
+					attrs: {
+						'data-cfasync': 'false'
+					},
 					content: `
 						// Zenith Framework Developer Console
 						if (typeof console !== 'undefined' && console.log) {
