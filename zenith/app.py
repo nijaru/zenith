@@ -152,7 +152,11 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self.add_middleware(SecurityHeadersMiddleware)
 
         # 5. Rate limiting (fast memory/Redis operations)
-        self.add_middleware(RateLimitMiddleware, default_limits=["100/minute"])
+        from zenith.middleware.rate_limit import RateLimit
+        self.add_middleware(
+            RateLimitMiddleware,
+            default_limits=[RateLimit(requests=100, window=60, per="ip")]
+        )
 
         # 6. Minimal logging 
         if self.config.debug:
