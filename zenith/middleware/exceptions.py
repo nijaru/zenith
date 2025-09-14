@@ -124,11 +124,19 @@ class ExceptionHandlerMiddleware:
     ) -> Response:
         """Handle Zenith framework exceptions."""
 
+        # Use the built-in to_response method for consistent API format
+        if hasattr(exc, 'to_response'):
+            return exc.to_response()
+
+        # Fallback for exceptions that don't have to_response method
         error_response = {
-            "error": getattr(exc, "error_code", "error"),
-            "message": getattr(exc, "message", exc.detail),
-            "status_code": exc.status_code,
+            "detail": getattr(exc, "detail", str(exc)),
         }
+
+        # Add error code if available
+        error_code = getattr(exc, "error_code", None)
+        if error_code:
+            error_response["error_code"] = error_code
 
         # Add details in debug mode or for client errors (4xx)
         details = getattr(exc, "details", None)
