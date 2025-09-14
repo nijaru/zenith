@@ -124,13 +124,24 @@ class SecurityHeadersMiddleware:
 
     def _add_security_headers_asgi(self, response_headers: list) -> None:
         """Add security headers to ASGI response headers list."""
+
+        def _add_or_replace_header(header_name: bytes, header_value: bytes):
+            """Add header or replace existing one with same name."""
+            # Remove existing header with same name (case-insensitive)
+            response_headers[:] = [
+                (name, value) for name, value in response_headers
+                if name.lower() != header_name.lower()
+            ]
+            # Add the new header
+            response_headers.append((header_name, header_value))
+
         # Content Security Policy
         if self.config.csp_policy:
             header_name = b"content-security-policy"
             if self.config.csp_report_only:
                 header_name = b"content-security-policy-report-only"
-            response_headers.append(
-                (header_name, self.config.csp_policy.encode("latin-1"))
+            _add_or_replace_header(
+                header_name, self.config.csp_policy.encode("latin-1")
             )
 
         # HTTP Strict Transport Security
@@ -140,39 +151,37 @@ class SecurityHeadersMiddleware:
                 hsts_value += "; includeSubDomains"
             if self.config.hsts_preload:
                 hsts_value += "; preload"
-            response_headers.append(
-                (b"strict-transport-security", hsts_value.encode("latin-1"))
+            _add_or_replace_header(
+                b"strict-transport-security", hsts_value.encode("latin-1")
             )
 
         # X-Frame-Options
         if self.config.frame_options:
-            response_headers.append(
-                (b"x-frame-options", self.config.frame_options.encode("latin-1"))
+            _add_or_replace_header(
+                b"x-frame-options", self.config.frame_options.encode("latin-1")
             )
 
         # X-Content-Type-Options
         if self.config.content_type_nosniff:
-            response_headers.append((b"x-content-type-options", b"nosniff"))
+            _add_or_replace_header(b"x-content-type-options", b"nosniff")
 
         # X-XSS-Protection
         if self.config.xss_protection:
-            response_headers.append(
-                (b"x-xss-protection", self.config.xss_protection.encode("latin-1"))
+            _add_or_replace_header(
+                b"x-xss-protection", self.config.xss_protection.encode("latin-1")
             )
 
         # Referrer-Policy
         if self.config.referrer_policy:
-            response_headers.append(
-                (b"referrer-policy", self.config.referrer_policy.encode("latin-1"))
+            _add_or_replace_header(
+                b"referrer-policy", self.config.referrer_policy.encode("latin-1")
             )
 
         # Permissions-Policy
         if self.config.permissions_policy:
-            response_headers.append(
-                (
-                    b"permissions-policy",
-                    self.config.permissions_policy.encode("latin-1"),
-                )
+            _add_or_replace_header(
+                b"permissions-policy",
+                self.config.permissions_policy.encode("latin-1"),
             )
 
     def _add_security_headers(self, response: Response) -> None:

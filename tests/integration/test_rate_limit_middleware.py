@@ -447,7 +447,7 @@ class TestRateLimitMiddleware:
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         # Mock the auth token extraction
-        with patch('zenith.auth.extract_user_from_token') as mock_extract:
+        with patch('zenith.auth.jwt.extract_user_from_token') as mock_extract:
             mock_extract.return_value = {"id": "user123", "username": "testuser"}
 
             @app.get("/api/jwt-test")

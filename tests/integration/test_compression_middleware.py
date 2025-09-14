@@ -134,7 +134,8 @@ class TestCompressionBasicFunctionality:
     async def test_no_compression_without_accept_encoding(self, compression_app):
         """Test that responses aren't compressed without Accept-Encoding."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/large")
+            # Explicitly remove Accept-Encoding header to test no compression
+            response = await client.get("/large", headers={"accept-encoding": ""})
 
             assert response.status_code == 200
             assert "content-encoding" not in response.headers

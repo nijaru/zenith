@@ -316,25 +316,26 @@ class TestRoleBasedAccess:
 
     async def test_role_hierarchy(self, auth_app, jwt_secret):
         """Test role hierarchy (admin > moderator > user)."""
-        # Create moderator token
-        moderator_payload = {
-            "id": "mod789",
-            "email": "moderator@example.com",
-            "role": "moderator",
-            "scopes": ["read", "write", "moderate"],
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1)
-        }
-        moderator_token = pyjwt.encode(moderator_payload, jwt_secret, algorithm="HS256")
+        # Create JWT manager
+        from zenith.auth.jwt import JWTManager
+        jwt_manager = JWTManager(secret_key=jwt_secret)
+
+        # Create moderator token using proper JWT manager
+        moderator_token = jwt_manager.create_access_token(
+            user_id="mod789",
+            email="moderator@example.com",
+            role="moderator",
+            scopes=["read", "write", "moderate"]
+        )
 
         # Create endpoint requiring moderator role
         from zenith.middleware.auth import AuthenticationMiddleware, get_current_user, require_role
 
         app = Zenith()
 
-        # Mock JWT manager
-        from zenith.auth.jwt import JWTManager
+        # Set the global JWT manager
         import zenith.auth.jwt
-        zenith.auth.jwt._jwt_manager = JWTManager(secret_key=jwt_secret)
+        zenith.auth.jwt._jwt_manager = jwt_manager
 
         app.add_middleware(AuthenticationMiddleware)
 
@@ -345,11 +346,19 @@ class TestRoleBasedAccess:
             return {"message": "moderator area", "user": user["email"]}
 
         async with TestClient(app) as client:
+            # Create admin token
+            admin_token = jwt_manager.create_access_token(
+                user_id='admin',
+                email='admin@example.com',
+                role='admin'
+            )
+
             # Admin should have access
             response = await client.get("/moderator-area", headers={
-                "Authorization": f"Bearer {auth_app.app.app._jwt_manager.create_token(user_id='admin', email='admin@example.com', role='admin')}"
+                "Authorization": f"Bearer {admin_token}"
             })
-            # Note: This test would need proper token creation
+            assert response.status_code == 200
+            assert response.json()["message"] == "moderator area"
 
             # Moderator should have access
             response = await client.get("/moderator-area", headers={
@@ -358,8 +367,13 @@ class TestRoleBasedAccess:
             assert response.status_code == 200
 
             # User should not have access
+            user_token = jwt_manager.create_access_token(
+                user_id='user123',
+                email='user@example.com',
+                role='user'
+            )
             response = await client.get("/moderator-area", headers={
-                "Authorization": f"Bearer {valid_token}"
+                "Authorization": f"Bearer {user_token}"
             })
             assert response.status_code == 403
 

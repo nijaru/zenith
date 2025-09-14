@@ -134,13 +134,14 @@ class TestZenithApplication:
 
         app.add_exception_handling(debug=True)
 
-        # Should have added exception middleware
-        assert len(app.middleware) == initial_count + 1
+        # Exception middleware is already auto-added, so no count change expected
+        assert len(app.middleware) == initial_count
         from starlette.middleware import Middleware
 
-        assert isinstance(app.middleware[-1], Middleware)
-        middleware_class = app.middleware[-1].cls
-        assert "Exception" in middleware_class.__name__
+        # Check that exception middleware is present (it's first in the stack)
+        assert isinstance(app.middleware[0], Middleware)
+        exception_middleware = app.middleware[0].cls
+        assert "Exception" in exception_middleware.__name__
 
 
 @pytest.mark.asyncio
@@ -298,8 +299,8 @@ class TestApplicationConfiguration:
         initial_debug_count = len(debug_app.middleware)
         debug_app.add_exception_handling()
 
-        # Should add debug exception handler
-        assert len(debug_app.middleware) == initial_debug_count + 1
+        # Exception handler already auto-added, no count change
+        assert len(debug_app.middleware) == initial_debug_count
 
         # Production mode (with proper secret key)
         import os
@@ -309,7 +310,7 @@ class TestApplicationConfiguration:
         initial_prod_count = len(prod_app.middleware)
         prod_app.add_exception_handling()
 
-        assert len(prod_app.middleware) == initial_prod_count + 1
+        assert len(prod_app.middleware) == initial_prod_count
 
     def test_openapi_schema_generation(self):
         """Test OpenAPI schema generation."""
