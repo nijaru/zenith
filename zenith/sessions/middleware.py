@@ -59,7 +59,10 @@ class SessionMiddleware:
         # Load session from cookie
         session = await self._load_session(request)
 
-        # Add session to scope state
+        # Add session to scope for Starlette compatibility
+        scope["session"] = session
+
+        # Also add to state for our own access patterns
         if "state" not in scope:
             scope["state"] = {}
         scope["state"]["session"] = session
@@ -187,11 +190,15 @@ def get_session(request: Request) -> Any:
         user_id = session.get("user_id")
         return {"user_id": user_id}
     """
-    # Try request.state first (for compatibility)
+    # Try Starlette's standard location first
+    if "session" in request.scope:
+        return request.scope["session"]
+
+    # Try request.state for compatibility
     if hasattr(request.state, "session"):
         return request.state.session
 
-    # Fall back to scope state (new ASGI approach)
+    # Fall back to scope state
     return request.scope.get("state", {}).get("session", None)
 
 
@@ -213,10 +220,13 @@ class Session:
         self.required = True
 
     def __call__(self, request: Request) -> Any:
-        # Try request.state first (for compatibility)
-        session = getattr(request.state, "session", None)
+        # Try Starlette's standard location first
+        session = request.scope.get("session")
         if session is None:
-            # Fall back to scope state (new ASGI approach)
+            # Try request.state for compatibility
+            session = getattr(request.state, "session", None)
+        if session is None:
+            # Fall back to scope state
             session = request.scope.get("state", {}).get("session", None)
 
         if not session and self.required:
