@@ -6,10 +6,12 @@ database transaction rollback, and seamless integration with Zenith applications
 """
 
 import asyncio
+from contextlib import asynccontextmanager
 from typing import Any
 
 import httpx
 from starlette.testclient import TestClient as StarletteTestClient
+from starlette.websockets import WebSocketDisconnect
 
 from zenith.auth.jwt import create_access_token
 
@@ -184,6 +186,29 @@ class ZenithTestClient:
         """DELETE request."""
         return await self.request("DELETE", url, headers=headers, **kwargs)
 
+    @asynccontextmanager
+    async def websocket_connect(self, url: str, headers: dict[str, str] | None = None):
+        """
+        Connect to a WebSocket endpoint for testing.
+
+        Example:
+            async with client.websocket_connect('/ws') as websocket:
+                await websocket.send_json({'message': 'hello'})
+                data = await websocket.receive_json()
+        """
+        # Create a test WebSocket client using Starlette's TestClient
+        # We need to use the sync TestClient for WebSocket support
+        test_client = StarletteTestClient(self.app)
+
+        # Prepare headers with auth if needed
+        prepared_headers = self._prepare_headers(headers)
+
+        # Use the websocket context manager from Starlette
+        with test_client.websocket_connect(url, headers=prepared_headers) as websocket:
+            # Create async wrapper for the sync websocket
+            wrapper = AsyncWebSocketTestWrapper(websocket)
+            yield wrapper
+
     # Synchronous compatibility for frameworks that need it
     def sync_request(self, method: str, url: str, **kwargs) -> httpx.Response:
         """Synchronous request wrapper."""
@@ -258,3 +283,38 @@ class SyncTestClient:
 
 # Alias for backward compatibility
 TestClient = ZenithTestClient
+
+
+class AsyncWebSocketTestWrapper:
+    """Async wrapper for Starlette's sync WebSocket test client."""
+
+    def __init__(self, websocket):
+        self._websocket = websocket
+
+    async def send_json(self, data: Any) -> None:
+        """Send JSON data."""
+        self._websocket.send_json(data)
+
+    async def receive_json(self) -> Any:
+        """Receive JSON data."""
+        return self._websocket.receive_json()
+
+    async def send_text(self, data: str) -> None:
+        """Send text data."""
+        self._websocket.send_text(data)
+
+    async def receive_text(self) -> str:
+        """Receive text data."""
+        return self._websocket.receive_text()
+
+    async def send_bytes(self, data: bytes) -> None:
+        """Send binary data."""
+        self._websocket.send_bytes(data)
+
+    async def receive_bytes(self) -> bytes:
+        """Receive binary data."""
+        return self._websocket.receive_bytes()
+
+    async def close(self, code: int = 1000, reason: str | None = None) -> None:
+        """Close the WebSocket connection."""
+        self._websocket.close(code=code, reason=reason)
