@@ -194,7 +194,12 @@ class ResponseCacheMiddleware:
         """Send a cached response via ASGI."""
         # Send response start
         headers = [(b"x-cache", b"HIT")]
-        headers.extend(cached.get("headers", []))
+
+        # Add cached headers but filter out any existing x-cache headers
+        cached_headers = cached.get("headers", [])
+        for header_name, header_value in cached_headers:
+            if header_name.lower() != b"x-cache":
+                headers.append((header_name, header_value))
 
         await send(
             {
