@@ -12,6 +12,17 @@ class MiddlewareMixin:
         """Add middleware to the application."""
         from starlette.middleware import Middleware
 
+        # For CORS middleware, validate configuration early to catch errors
+        if middleware_class.__name__ == 'CORSMiddleware':
+            # Temporarily instantiate to trigger validation (this will raise if invalid)
+            try:
+                # Create a dummy ASGI app for validation
+                dummy_app = lambda scope, receive, send: None
+                middleware_class(dummy_app, **kwargs)
+            except Exception:
+                # Re-raise the validation error
+                raise
+
         # Check for existing middleware of the same class to prevent duplication
         existing_middleware = [mw.cls for mw in self.middleware]
         if middleware_class in existing_middleware:
