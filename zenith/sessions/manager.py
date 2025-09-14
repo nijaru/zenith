@@ -154,7 +154,7 @@ class SessionManager:
         self,
         store: SessionStore,
         cookie_name: str = "session_id",
-        max_age: timedelta = timedelta(days=30),
+        max_age: timedelta | int = timedelta(days=30),
         is_secure: bool = True,
         is_http_only: bool = True,
         same_site: str = "lax",
@@ -167,7 +167,7 @@ class SessionManager:
         Args:
             store: Session storage backend
             cookie_name: Name of session cookie
-            max_age: Session expiration time
+            max_age: Session expiration time (timedelta or seconds as int)
             is_secure: Use secure cookies (HTTPS only)
             is_http_only: HTTP-only cookies (no JS access)
             same_site: SameSite cookie attribute
@@ -176,7 +176,11 @@ class SessionManager:
         """
         self.store = store
         self.cookie_name = cookie_name
-        self.max_age = max_age
+        # Convert int seconds to timedelta for consistency
+        if isinstance(max_age, int):
+            self.max_age = timedelta(seconds=max_age)
+        else:
+            self.max_age = max_age
         self.secure = is_secure
         self.http_only = is_http_only
         self.same_site = same_site
