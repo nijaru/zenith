@@ -12,7 +12,18 @@ class MiddlewareMixin:
         """Add middleware to the application."""
         from starlette.middleware import Middleware
 
-        self.middleware.append(Middleware(middleware_class, **kwargs))
+        # Check for existing middleware of the same class to prevent duplication
+        existing_middleware = [mw.cls for mw in self.middleware]
+        if middleware_class in existing_middleware:
+            # Replace existing middleware with the same class
+            for i, mw in enumerate(self.middleware):
+                if mw.cls == middleware_class:
+                    self.middleware[i] = Middleware(middleware_class, **kwargs)
+                    break
+        else:
+            # Add new middleware
+            self.middleware.append(Middleware(middleware_class, **kwargs))
+
         # Invalidate cached Starlette app so it gets rebuilt with new middleware
         self._starlette_app = None
 
