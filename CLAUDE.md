@@ -19,12 +19,17 @@ twine upload dist/zenith_web-{version}*
 - Docs updated: Removed references to deleted features?
 - No temp files: `ZENITH_BUGS_*.md`, test outputs cleaned up?
 
+**DON'T CREATE RELEASE FILES:**
+- No RELEASE_NOTES_*.md files
+- No CHANGELOG_*.md files
+- No release documentation - just commit, tag, and release
+
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.2.1 - Pydantic v2 compatibility release with Service-based architecture
-- **Performance**: 9,557 req/s simple endpoints, 9,602 req/s JSON endpoints, 70.0% performance retention with middleware  
-- **Test Coverage**: 100% (328 tests passing, 4 skipped)
+- **Status**: v0.2.3 - Critical bug fixes release with comprehensive middleware fixes
+- **Performance**: 8,900+ req/s maintained after middleware fixes
+- **Test Coverage**: 88% (418 tests passing, comprehensive integration coverage)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
 
