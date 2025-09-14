@@ -18,7 +18,7 @@ def get_current_user(request: Request) -> dict[str, Any] | None:
     Does not require authentication.
     """
     # Get user from request state (set by AuthenticationMiddleware)
-    return getattr(request.state, "user", None)
+    return getattr(request.state, "current_user", None)
 
 
 def require_auth(request: Request) -> dict[str, Any]:
