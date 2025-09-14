@@ -26,13 +26,22 @@ class ResponseProcessor:
     """
 
     async def process_response(
-        self, result: Any, request: Request, handler
+        self, result: Any, request: Request, route_spec
     ) -> Response:
         """Process handler result into appropriate Response."""
+        from zenith.core.routing.specs import RouteSpec
+
+        # Get handler from route spec
+        handler = route_spec.handler if isinstance(route_spec, RouteSpec) else route_spec
 
         # If already a Response, return as-is
         if isinstance(result, Response):
             return result
+
+        # Check if route has a specific response_class configured
+        if isinstance(route_spec, RouteSpec) and route_spec.response_class:
+            # Use the specified response class
+            return route_spec.response_class(result)
 
         # Check for content negotiation decorator
         wants_html = self._should_render_html(request, handler)
