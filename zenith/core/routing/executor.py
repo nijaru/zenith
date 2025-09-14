@@ -58,15 +58,17 @@ class RouteExecutor:
     ) -> Response:
         """Execute a route handler with full dependency injection."""
         try:
-            # Prepare handler arguments
-            kwargs = await self._resolve_handler_args(request, route_spec.handler, app)
+            # Prepare handler arguments and track background tasks
+            kwargs, background_tasks = await self._resolve_handler_args_with_bg(
+                request, route_spec.handler, app
+            )
 
             # Execute handler
             result = await route_spec.handler(**kwargs)
 
-            # Process response
+            # Process response with background tasks
             return await self.response_processor.process_response(
-                result, request, route_spec
+                result, request, route_spec, background_tasks
             )
 
         except ValidationError as e:
@@ -77,6 +79,21 @@ class RouteExecutor:
         except Exception:
             # Re-raise for middleware to handle
             raise
+
+    async def _resolve_handler_args_with_bg(
+        self, request: Request, handler, app
+    ) -> tuple[dict[str, Any], Any]:
+        """Resolve handler arguments and return background tasks if any."""
+        kwargs = await self._resolve_handler_args(request, handler, app)
+
+        # Find BackgroundTasks instance if any
+        background_tasks = None
+        for value in kwargs.values():
+            if hasattr(value, '__class__') and value.__class__.__name__ == 'BackgroundTasks':
+                background_tasks = value
+                break
+
+        return kwargs, background_tasks
 
     async def _resolve_handler_args(
         self, request: Request, handler, app
