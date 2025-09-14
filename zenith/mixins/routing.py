@@ -28,6 +28,14 @@ class RoutingMixin:
         """Register a DELETE route."""
         return self._app_router.delete(path, **kwargs)
 
+    def head(self, path: str, **kwargs):
+        """Register a HEAD route."""
+        return self._app_router.head(path, **kwargs)
+
+    def options(self, path: str, **kwargs):
+        """Register an OPTIONS route."""
+        return self._app_router.options(path, **kwargs)
+
     def websocket(self, path: str, **kwargs):
         """Register a WebSocket route."""
         return self._app_router.websocket(path, **kwargs)
