@@ -365,7 +365,7 @@ class TestRouterIntegration:
             response = await client.get("/custom-error")
             assert response.status_code == 404
             data = response.json()
-            assert "Resource not found" in data["message"]
+            assert "Resource not found" in data["detail"]
 
     async def test_malformed_json_handling(self):
         """Test handling of malformed JSON in request bodies."""
@@ -389,7 +389,7 @@ class TestRouterIntegration:
             )
             assert response.status_code == 422
             data = response.json()
-            assert "Invalid JSON in request body" in data["message"]
+            assert "Invalid JSON in request body" in data["detail"]
 
             # Test invalid UTF-8 encoding
             response = await client.post(
@@ -399,7 +399,7 @@ class TestRouterIntegration:
             )
             assert response.status_code == 422
             data = response.json()
-            assert "Invalid JSON in request body" in data["message"]
+            assert "Invalid JSON in request body" in data["detail"]
 
             # Test valid JSON for comparison
             response = await client.post(

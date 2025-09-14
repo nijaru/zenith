@@ -143,7 +143,7 @@ class TestSecurityHeaders:
             csp_report_only=True
         )
 
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -163,7 +163,7 @@ class TestSecurityHeaders:
 
         config = SecurityConfig(hsts_max_age=0)  # Disabled
 
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -181,7 +181,7 @@ class TestSecurityHeaders:
             app = Zenith()
 
             config = SecurityConfig(frame_options=frame_option)
-            app.add_middleware(SecurityHeadersMiddleware)
+            app.add_middleware(SecurityHeadersMiddleware, config=config)
 
             @app.get("/test")
             async def test_endpoint():
@@ -205,7 +205,7 @@ class TestSecurityHeaders:
             content_type_nosniff=False
         )
 
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -280,8 +280,7 @@ class TestTrustedProxyMiddleware:
         """Test that trusted proxy headers are processed."""
         app = Zenith()
 
-        app.add_middleware(TrustedProxyMiddleware, 
-            app=app,
+        app.add_middleware(TrustedProxyMiddleware,
             trusted_proxies=["192.168.1.1"]
         )
 
@@ -293,7 +292,7 @@ class TestTrustedProxyMiddleware:
 
         # Note: Testing proxy middleware fully requires more complex setup
         # to simulate the proxy environment
-        async with TestClient(trusted_proxy_middleware) as client:
+        async with TestClient(app) as client:
             response = await client.get("/test")
             assert response.status_code == 200
 
@@ -301,8 +300,7 @@ class TestTrustedProxyMiddleware:
         """Test that untrusted proxy headers are ignored."""
         app = Zenith()
 
-        app.add_middleware(TrustedProxyMiddleware, 
-            app=app,
+        app.add_middleware(TrustedProxyMiddleware,
             trusted_proxies=["192.168.1.1"]  # Different IP
         )
 
@@ -310,7 +308,7 @@ class TestTrustedProxyMiddleware:
         async def test_endpoint():
             return {"message": "test"}
 
-        async with TestClient(trusted_proxy_middleware) as client:
+        async with TestClient(app) as client:
             response = await client.get("/test")
             assert response.status_code == 200
 
@@ -318,13 +316,13 @@ class TestTrustedProxyMiddleware:
         """Test behavior with no trusted proxies configured."""
         app = Zenith()
 
-        app.add_middleware(TrustedProxyMiddleware, app=app)
+        app.add_middleware(TrustedProxyMiddleware)
 
         @app.get("/test")
         async def test_endpoint():
             return {"message": "test"}
 
-        async with TestClient(trusted_proxy_middleware) as client:
+        async with TestClient(app) as client:
             response = await client.get("/test")
             assert response.status_code == 200
 
@@ -337,7 +335,7 @@ class TestSecurityPresets:
         app = Zenith()
 
         config = get_strict_security_config()
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -360,7 +358,7 @@ class TestSecurityPresets:
         app = Zenith()
 
         config = get_development_security_config()
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -393,7 +391,7 @@ class TestSecurityEdgeCases:
             permissions_policy=None
         )
 
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -466,7 +464,7 @@ class TestSecurityEdgeCases:
             referrer_policy="strict-origin-when-cross-origin"
         )
 
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -490,7 +488,7 @@ class TestSecurityEdgeCases:
         )
 
         config = SecurityConfig(csp_policy=long_csp)
-        app.add_middleware(SecurityHeadersMiddleware)
+        app.add_middleware(SecurityHeadersMiddleware, config=config)
 
         @app.get("/test")
         async def test_endpoint():
@@ -584,13 +582,9 @@ class TestSecurityInStack:
 
         app = Zenith()
 
-        # Add both security and CORS middleware
+        # Add both security and CORS middleware through the app
         app.add_middleware(SecurityHeadersMiddleware)
-        cors_middleware = CORSMiddleware(
-            app=security_middleware,
-            allow_origins=["*"]
-        )
-        app.app = cors_middleware
+        app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
         @app.get("/test")
         async def test_endpoint():
@@ -612,13 +606,9 @@ class TestSecurityInStack:
 
         app = Zenith()
 
-        # Add both security and compression middleware
+        # Add both security and compression middleware through the app
         app.add_middleware(SecurityHeadersMiddleware)
-        compression_middleware = CompressionMiddleware(
-            app=security_middleware,
-            minimum_size=10
-        )
-        app.app = compression_middleware
+        app.add_middleware(CompressionMiddleware, minimum_size=10)
 
         @app.get("/test")
         async def test_endpoint():

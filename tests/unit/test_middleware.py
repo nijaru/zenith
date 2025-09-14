@@ -240,19 +240,19 @@ class TestExceptionMiddleware:
             response = await client.get("/not-found")
             assert response.status_code == 404
             data = response.json()
-            assert "Resource not found" in data["message"]
+            assert "Resource not found" in data["detail"]
 
             # Test AuthenticationException
             response = await client.get("/auth-error")
             assert response.status_code == 401
             data = response.json()
-            assert "Invalid credentials" in data["message"]
+            assert "Invalid credentials" in data["detail"]
 
             # Test AuthorizationException
             response = await client.get("/forbidden")
             assert response.status_code == 403
             data = response.json()
-            assert "Access denied" in data["message"]
+            assert "Access denied" in data["detail"]
 
     async def test_debug_vs_production_mode(self):
         """Test different error responses in debug vs production mode."""
