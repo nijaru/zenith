@@ -7,7 +7,7 @@ Provides persistent session storage using Redis with automatic expiration.
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 
 import redis.asyncio as redis
 
@@ -96,7 +96,9 @@ class RedisSessionStore(SessionStore):
             # Calculate TTL in seconds
             ttl = None
             if session.expires_at:
-                ttl_seconds = (session.expires_at - datetime.utcnow()).total_seconds()
+                # Use timezone-aware datetime for consistency
+                now = datetime.now(UTC) if session.expires_at.tzinfo else datetime.utcnow()
+                ttl_seconds = (session.expires_at - now).total_seconds()
                 if ttl_seconds > 0:
                     ttl = int(ttl_seconds)
                 else:
