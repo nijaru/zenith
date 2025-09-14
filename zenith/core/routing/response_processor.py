@@ -26,7 +26,7 @@ class ResponseProcessor:
     """
 
     async def process_response(
-        self, result: Any, request: Request, route_spec
+        self, result: Any, request: Request, route_spec, background_tasks=None
     ) -> Response:
         """Process handler result into appropriate Response."""
         from zenith.core.routing.specs import RouteSpec
@@ -34,24 +34,35 @@ class ResponseProcessor:
         # Get handler from route spec
         handler = route_spec.handler if isinstance(route_spec, RouteSpec) else route_spec
 
-        # If already a Response, return as-is
+        # If already a Response, add background tasks if needed
         if isinstance(result, Response):
+            if background_tasks:
+                result.background = background_tasks._tasks
             return result
 
         # Check if route has a specific response_class configured
         if isinstance(route_spec, RouteSpec) and route_spec.response_class:
-            # Use the specified response class
-            return route_spec.response_class(result)
+            # Use the specified response class with background tasks
+            response = route_spec.response_class(result)
+            if background_tasks:
+                response.background = background_tasks._tasks
+            return response
 
         # Check for content negotiation decorator
         wants_html = self._should_render_html(request, handler)
 
         # Handle template rendering
         if self._should_use_template(handler, wants_html):
-            return await self._render_template(result, request, handler)
+            response = await self._render_template(result, request, handler)
+            if background_tasks:
+                response.background = background_tasks._tasks
+            return response
 
-        # Default to JSON response
-        return self._create_json_response(result)
+        # Default to JSON response with background tasks
+        response = self._create_json_response(result)
+        if background_tasks:
+            response.background = background_tasks._tasks
+        return response
 
     def _should_render_html(self, request: Request, handler) -> bool:
         """Determine if client wants HTML response."""
