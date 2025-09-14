@@ -186,6 +186,18 @@ class ZenithTestClient:
         """DELETE request."""
         return await self.request("DELETE", url, headers=headers, **kwargs)
 
+    async def head(
+        self, url: str, headers: dict[str, str] | None = None, **kwargs
+    ) -> httpx.Response:
+        """HEAD request."""
+        return await self.request("HEAD", url, headers=headers, **kwargs)
+
+    async def options(
+        self, url: str, headers: dict[str, str] | None = None, **kwargs
+    ) -> httpx.Response:
+        """OPTIONS request."""
+        return await self.request("OPTIONS", url, headers=headers, **kwargs)
+
     @asynccontextmanager
     async def websocket_connect(self, url: str, headers: dict[str, str] | None = None):
         """
@@ -279,6 +291,14 @@ class SyncTestClient:
     def delete(self, url: str, **kwargs):
         """DELETE request."""
         return self.request("DELETE", url, **kwargs)
+
+    def head(self, url: str, **kwargs):
+        """HEAD request."""
+        return self.request("HEAD", url, **kwargs)
+
+    def options(self, url: str, **kwargs):
+        """OPTIONS request."""
+        return self.request("OPTIONS", url, **kwargs)
 
 
 # Alias for backward compatibility

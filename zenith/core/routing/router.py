@@ -92,6 +92,14 @@ class Router:
         """DELETE route decorator."""
         return self.route(path, ["DELETE"], **kwargs)
 
+    def head(self, path: str, **kwargs):
+        """HEAD route decorator."""
+        return self.route(path, ["HEAD"], **kwargs)
+
+    def options(self, path: str, **kwargs):
+        """OPTIONS route decorator."""
+        return self.route(path, ["OPTIONS"], **kwargs)
+
     def websocket(self, path: str, **kwargs):
         """WebSocket route decorator."""
 
