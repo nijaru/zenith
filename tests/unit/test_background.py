@@ -129,8 +129,10 @@ class TestBackgroundTasksIntegration:
             assert response.json() == {"status": "created"}
 
             # Background task should be executed after response
-            # In real implementation, this would be handled by framework
-            assert len(executed) == 0  # Not yet executed
+            # Our fix now properly executes background tasks
+            await asyncio.sleep(0.01)  # Give tasks time to execute
+            assert len(executed) == 1  # Task should have executed
+            assert executed[0] == "email_sent"
 
     @pytest.mark.asyncio
     async def test_background_task_dependency_injection(self):
