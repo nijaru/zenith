@@ -1,15 +1,11 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
-import { crossoriginPlugin } from './vite-crossorigin-plugin.js';
 
 // https://astro.build/config
 export default defineConfig({
 	site: 'https://nijaru.com',
 	base: '/zenith',
-	vite: {
-		plugins: [crossoriginPlugin()],
-	},
 	integrations: [
 		starlight({
 			title: '⚡ Zenith',
