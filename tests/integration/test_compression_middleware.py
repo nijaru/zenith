@@ -324,8 +324,12 @@ class TestCompressionEdgeCases:
         @app.get("/pre-compressed")
         async def pre_compressed():
             from zenith.web.responses import Response
+            # Create actual gzip-compressed content
+            import gzip
+            original_content = "Already compressed content"
+            compressed_content = gzip.compress(original_content.encode('utf-8'))
             return Response(
-                content="Already compressed content",
+                content=compressed_content,
                 headers={"Content-Encoding": "gzip"}
             )
 
@@ -392,7 +396,7 @@ class TestCompressionEdgeCases:
 
         @app.get("/redirect")
         async def redirect_response():
-            from zenith.web.responses import RedirectResponse
+            from starlette.responses import RedirectResponse
             return RedirectResponse(url="/other", status_code=302)
 
         async with TestClient(app) as client:
@@ -540,16 +544,9 @@ class TestCompressionInStack:
 
         app = Zenith()
 
-        # Add both CORS and compression
-        cors_middleware = CORSMiddleware(
-            app=app,
-            allow_origins=["*"]
-        )
-        compression_middleware = CompressionMiddleware(
-            app=cors_middleware,
-            minimum_size=10
-        )
-        app.app = compression_middleware
+        # Add both CORS and compression through the proper middleware system
+        app.add_middleware(CORSMiddleware, allow_origins=["*"])
+        app.add_middleware(CompressionMiddleware, minimum_size=10)
 
         @app.get("/test")
         async def test_endpoint():
