@@ -36,6 +36,7 @@ class RouteSpec:
     middleware: list[Middleware] | None = None
     include_in_schema: bool = True
     response_model: type | None = None
+    response_class: type | None = None  # Custom response class (HTMLResponse, PlainTextResponse, etc.)
     status_code: int = 200
     tags: list[str] | None = None
     summary: str | None = None

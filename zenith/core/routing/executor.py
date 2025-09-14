@@ -66,7 +66,7 @@ class RouteExecutor:
 
             # Process response
             return await self.response_processor.process_response(
-                result, request, route_spec.handler
+                result, request, route_spec
             )
 
         except ValidationError as e:
