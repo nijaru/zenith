@@ -5,13 +5,17 @@ Tests the actual session management in realistic scenarios.
 This middleware had 18% coverage and NO integration tests.
 """
 
-import pytest
 from datetime import timedelta
+
+import pytest
+
 from zenith import Zenith
-from zenith.sessions import SessionMiddleware, SessionManager
-from zenith.sessions import CookieSessionStore, RedisSessionStore
+from zenith.sessions import (
+    CookieSessionStore,
+    SessionManager,
+    SessionMiddleware,
+)
 from zenith.testing import TestClient
-from unittest.mock import AsyncMock, patch
 
 
 @pytest.mark.asyncio

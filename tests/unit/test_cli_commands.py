@@ -8,8 +8,8 @@ import pytest
 
 from zenith.dev.generators import (
     APIGenerator,
-    ServiceGenerator,
     ModelGenerator,
+    ServiceGenerator,
     generate_code,
     parse_field_spec,
 )
@@ -55,8 +55,8 @@ class TestShellCommand:
 
     def test_shell_loads_app(self):
         """Test shell can load application."""
-        with patch("sys.path") as mock_path:
-            namespace = create_shell_namespace(app_path="main.app")
+        with patch("sys.path"):
+            create_shell_namespace(app_path="main.app")
             # Would need actual app to test fully
 
 

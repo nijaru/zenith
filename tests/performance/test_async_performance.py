@@ -8,8 +8,8 @@ import pytest
 from starlette.requests import Request
 
 from zenith import Zenith
-from zenith.tasks.background import BackgroundTasks, TaskQueue
 from zenith.monitoring.performance import cached, track_performance
+from zenith.tasks.background import BackgroundTasks, TaskQueue
 from zenith.testing import TestClient
 
 
@@ -77,7 +77,7 @@ class TestAsyncPerformance:
         cpu_task_ids = []
         start = time.perf_counter()
 
-        for i in range(20):
+        for _i in range(20):
             task_id = await queue.enqueue(cpu_task, 1000)
             cpu_task_ids.append(task_id)
 
@@ -93,7 +93,7 @@ class TestAsyncPerformance:
         io_task_ids = []
         start = time.perf_counter()
 
-        for i in range(10):
+        for _i in range(10):
             task_id = await queue.enqueue(io_task, 0.01)
             io_task_ids.append(task_id)
 
@@ -136,13 +136,13 @@ class TestAsyncPerformance:
         # Benchmark regular function
         start = time.perf_counter()
         for _ in range(1000):
-            result = regular_function()
+            regular_function()
         regular_elapsed = time.perf_counter() - start
 
         # Benchmark monitored function
         start = time.perf_counter()
         for _ in range(1000):
-            result = monitored_function()
+            monitored_function()
         monitored_elapsed = time.perf_counter() - start
 
         overhead_pct = ((monitored_elapsed - regular_elapsed) / regular_elapsed) * 100
@@ -160,7 +160,6 @@ class TestAsyncPerformance:
     @pytest.mark.asyncio
     async def test_caching_performance(self):
         """Test caching performance benefits."""
-        cache_hits = 0
         cache_misses = 0
 
         @cached(ttl=60)
@@ -346,7 +345,7 @@ class TestBackgroundTaskIntegration:
             enqueue_times = []
             task_ids = []
 
-            for i in range(50):
+            for _i in range(50):
                 start = time.perf_counter()
                 response = await client.post("/enqueue", json={"n": 500})
                 elapsed = time.perf_counter() - start

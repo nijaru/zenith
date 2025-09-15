@@ -5,6 +5,7 @@ Provides in-memory and Redis-based response caching for GET requests
 to improve API performance and reduce database load.
 """
 
+import contextlib
 import hashlib
 import time
 from collections import OrderedDict
@@ -297,10 +298,8 @@ class RedisCache:
 
     def delete(self, key: str) -> None:
         """Delete cached item from Redis."""
-        try:
+        with contextlib.suppress(Exception):
             self.redis.delete(f"{self.prefix}{key}")
-        except Exception:
-            pass
 
     def clear(self) -> None:
         """Clear all cached items with prefix."""

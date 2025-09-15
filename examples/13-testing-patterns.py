@@ -332,7 +332,7 @@ class TestUserAPI:
                 created_user = await users.create_user(user_data)
 
                 # Test endpoint
-                response = await client.get(f"/users/{created_user.id}")
+                await client.get(f"/users/{created_user.id}")
 
                 # Might fail due to context isolation, but demonstrates pattern
                 # In real app, you'd have shared database state
@@ -512,7 +512,7 @@ class TestPerformance:
             success_count = 0
             total_time = 0
 
-            for i in range(request_count):
+            for _i in range(request_count):
                 start = time.time()
                 response = await client.get("/")
                 end = time.time()
@@ -546,7 +546,7 @@ class TestErrorHandling:
 
     async def test_validation_errors(self):
         """Test input validation error handling."""
-        async with TestService(UserService) as users:
+        async with TestService(UserService):
             # Test empty name
             with pytest.raises(ValueError, match="Name cannot be empty"):
                 UserCreate(email="test@example.com", name="")
@@ -638,7 +638,7 @@ class TestFactories:
 
             assert len(created_users) == 3
             assert all(user.id is not None for user in created_users)
-            assert len(set(user.email for user in created_users)) == 3  # All unique
+            assert len({user.email for user in created_users}) == 3  # All unique
 
 
 # ============================================================================

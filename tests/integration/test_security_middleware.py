@@ -248,7 +248,7 @@ class TestHTTPSRedirect:
         """Test permanent HTTPS redirect (301)."""
         app = Zenith()
 
-        config = SecurityConfig(force_https=True, force_https_permanent=True)
+        SecurityConfig(force_https=True, force_https_permanent=True)
 
         app.add_middleware(SecurityHeadersMiddleware)
 
@@ -265,7 +265,7 @@ class TestHTTPSRedirect:
         """Test that localhost/testserver is not redirected."""
         app = Zenith()
 
-        config = SecurityConfig(force_https=True)
+        SecurityConfig(force_https=True)
         app.add_middleware(SecurityHeadersMiddleware)
 
         @app.get("/test")
@@ -289,7 +289,6 @@ class TestTrustedProxyMiddleware:
 
         @app.get("/test")
         async def test_endpoint():
-            from starlette.requests import Request
 
             # In a real scenario, we'd access the processed client IP
             return {"message": "test"}
@@ -428,7 +427,6 @@ class TestSecurityEdgeCases:
         app.add_middleware(SecurityHeadersMiddleware)
 
         # Test WebSocket scope (should pass through)
-        websocket_scope = {"type": "websocket", "path": "/ws", "headers": []}
 
         # This would require more complex testing setup to properly test
         # WebSocket handling, but the middleware should pass it through

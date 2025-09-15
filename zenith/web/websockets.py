@@ -271,7 +271,7 @@ class WebSocketManager:
 
         # Remove metadata for connections not in any room
         dead_metadata_keys = []
-        for ws in self.connection_metadata.keys():
+        for ws in self.connection_metadata:
             if ws not in active_connections:
                 dead_metadata_keys.append(ws)
 

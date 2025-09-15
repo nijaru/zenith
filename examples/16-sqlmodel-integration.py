@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import Field, Relationship, SQLModel
 
-from zenith import Service, Inject, Router, Service, Zenith
+from zenith import Inject, Router, Service, Zenith
 from zenith.db.sqlmodel import ZenithSQLModel, create_repository
 
 # ============================================================================
@@ -437,7 +437,7 @@ async def init_db():
                 )
             )
 
-            post2 = await blog.create_post(
+            await blog.create_post(
                 PostCreate(
                     title="Repository Pattern in Python",
                     content="The repository pattern provides clean data access...",

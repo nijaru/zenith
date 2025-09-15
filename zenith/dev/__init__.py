@@ -6,8 +6,8 @@ Includes interactive shell, code generators, and development utilities.
 
 from .generators import (
     APIGenerator,
-    ServiceGenerator,
     ModelGenerator,
+    ServiceGenerator,
     generate_code,
     parse_field_spec,
     write_generated_files,
@@ -15,14 +15,14 @@ from .generators import (
 from .shell import create_shell_namespace, run_shell
 
 __all__ = [
-    # Shell
-    "create_shell_namespace",
-    "run_shell",
+    "APIGenerator",
     # Generators
     "ModelGenerator",
     "ServiceGenerator",
-    "APIGenerator",
-    "parse_field_spec",
+    # Shell
+    "create_shell_namespace",
     "generate_code",
+    "parse_field_spec",
+    "run_shell",
     "write_generated_files",
 ]

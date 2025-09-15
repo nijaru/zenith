@@ -72,7 +72,7 @@ class {self.class_name}(SQLModel, table=True):
     {self.class_name} database model.
     """
     __tablename__ = "{self.table_name}"
-    
+
     id: int | None = Field(default=None, primary_key=True)
 {fields_str}
     created_at: datetime = Field(default_factory=datetime.utcnow)

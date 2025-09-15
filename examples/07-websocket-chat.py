@@ -120,22 +120,22 @@ async def chat_home():
 </head>
 <body>
     <h1>🚀 Zenith WebSocket Chat</h1>
-    
+
     <div>
         <input type="text" id="nameInput" placeholder="Your name" value="User">
         <input type="text" id="roomInput" placeholder="Room name" value="general">
         <button onclick="connect()">Connect</button>
         <button onclick="disconnect()">Disconnect</button>
     </div>
-    
+
     <div id="status">Disconnected</div>
     <div id="chat"></div>
-    
+
     <div>
         <input type="text" id="messageInput" placeholder="Type a message..." disabled>
         <button onclick="sendMessage()" disabled id="sendBtn">Send</button>
     </div>
-    
+
     <div style="margin-top: 20px;">
         <h3>Instructions:</h3>
         <ul>
@@ -152,31 +152,31 @@ let connected = false;
 
 function connect() {
     if (connected) return;
-    
+
     const name = document.getElementById('nameInput').value || 'Anonymous';
     const room = document.getElementById('roomInput').value || 'general';
-    
+
     ws = new WebSocket(`ws://localhost:8007/ws/${room}?name=${encodeURIComponent(name)}`);
-    
+
     ws.onopen = function() {
         connected = true;
         document.getElementById('status').textContent = `Connected to room: ${room}`;
         document.getElementById('messageInput').disabled = false;
         document.getElementById('sendBtn').disabled = false;
     };
-    
+
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
         displayMessage(data);
     };
-    
+
     ws.onclose = function() {
         connected = false;
         document.getElementById('status').textContent = 'Disconnected';
         document.getElementById('messageInput').disabled = true;
         document.getElementById('sendBtn').disabled = true;
     };
-    
+
     ws.onerror = function(error) {
         console.log('WebSocket error:', error);
     };
@@ -191,7 +191,7 @@ function disconnect() {
 function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
-    
+
     if (message && connected) {
         ws.send(JSON.stringify({
             type: 'chat',
@@ -205,9 +205,9 @@ function displayMessage(data) {
     const chat = document.getElementById('chat');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${data.type}`;
-    
+
     const time = new Date(data.timestamp).toLocaleTimeString();
-    
+
     if (data.type === 'chat') {
         messageDiv.innerHTML = `<strong>${data.user}:</strong> ${data.message} <small>(${time})</small>`;
     } else if (data.type === 'system') {
@@ -217,7 +217,7 @@ function displayMessage(data) {
         // Remove typing messages after 3 seconds
         setTimeout(() => messageDiv.remove(), 3000);
     }
-    
+
     chat.appendChild(messageDiv);
     chat.scrollTop = chat.scrollHeight;
 }

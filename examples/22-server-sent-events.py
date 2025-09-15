@@ -35,22 +35,22 @@ HTML_CLIENT = """
     <title>Zenith SSE Demo</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; }
-        #events { 
-            border: 1px solid #ddd; 
-            padding: 10px; 
-            height: 400px; 
+        #events {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 400px;
             overflow-y: auto;
             background: #f5f5f5;
         }
-        .event { 
-            margin: 5px 0; 
-            padding: 5px; 
+        .event {
+            margin: 5px 0;
+            padding: 5px;
             background: white;
             border-radius: 3px;
         }
-        .status { 
-            padding: 10px; 
-            margin: 10px 0; 
+        .status {
+            padding: 10px;
+            margin: 10px 0;
             border-radius: 5px;
         }
         .connected { background: #d4edda; color: #155724; }
@@ -59,53 +59,53 @@ HTML_CLIENT = """
 </head>
 <body>
     <h1>🌊 Zenith Server-Sent Events Demo</h1>
-    
+
     <div id="status" class="status disconnected">Disconnected</div>
-    
+
     <button onclick="connect()">Connect</button>
     <button onclick="disconnect()">Disconnect</button>
     <button onclick="clearEvents()">Clear</button>
-    
+
     <h2>Event Stream:</h2>
     <div id="events"></div>
-    
+
     <script>
         let eventSource = null;
-        
+
         function connect() {
             if (eventSource) {
                 eventSource.close();
             }
-            
+
             eventSource = new EventSource('/events');
-            
+
             eventSource.onopen = function() {
                 updateStatus('Connected', true);
                 addEvent('Connection established', 'system');
             };
-            
+
             eventSource.onerror = function(e) {
                 updateStatus('Disconnected', false);
                 addEvent('Connection error', 'error');
             };
-            
+
             // Handle specific event types
             eventSource.addEventListener('time', function(e) {
                 const data = JSON.parse(e.data);
                 addEvent(`Time update: ${data.current_time}`, 'time');
             });
-            
+
             eventSource.addEventListener('stats', function(e) {
                 const data = JSON.parse(e.data);
                 addEvent(`Stats: ${data.connections} connections, ${data.events_sent} events sent`, 'stats');
             });
-            
+
             eventSource.addEventListener('heartbeat', function(e) {
                 const data = JSON.parse(e.data);
                 addEvent(`Heartbeat #${data.count}`, 'heartbeat');
             });
         }
-        
+
         function disconnect() {
             if (eventSource) {
                 eventSource.close();
@@ -114,13 +114,13 @@ HTML_CLIENT = """
                 addEvent('Disconnected by user', 'system');
             }
         }
-        
+
         function updateStatus(text, connected) {
             const status = document.getElementById('status');
             status.textContent = text;
             status.className = 'status ' + (connected ? 'connected' : 'disconnected');
         }
-        
+
         function addEvent(message, type) {
             const events = document.getElementById('events');
             const event = document.createElement('div');
@@ -129,11 +129,11 @@ HTML_CLIENT = """
             events.appendChild(event);
             events.scrollTop = events.scrollHeight;
         }
-        
+
         function clearEvents() {
             document.getElementById('events').innerHTML = '';
         }
-        
+
         // Auto-connect on load
         window.onload = function() {
             connect();

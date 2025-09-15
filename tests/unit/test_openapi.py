@@ -4,11 +4,7 @@ Tests for OpenAPI specification generator.
 Tests caching functionality, spec generation, and performance optimizations.
 """
 
-import inspect
-from typing import Any
-from unittest.mock import Mock
 
-import pytest
 from pydantic import BaseModel
 
 from zenith.core.routing import Router
@@ -262,7 +258,7 @@ class TestOpenAPIGenerator:
         """Test query parameter detection and documentation."""
         router = Router()
 
-        async def search_users(name: str = None, limit: int = 10):
+        async def search_users(name: str | None = None, limit: int = 10):
             return {"name": name, "limit": limit}
 
         router.routes = [RouteSpec("/users/search", search_users, ["GET"])]
@@ -388,7 +384,7 @@ class TestOpenAPICachePerformance:
     def test_cache_memory_efficiency(self):
         """Test cache memory usage stays bounded."""
         generator = OpenAPIGenerator()
-        initial_cache_size = len(generator._spec_cache)
+        len(generator._spec_cache)
 
         # Generate many different specs to trigger cleanup
         for i in range(60):  # Exceed the 50 entry limit to trigger cleanup

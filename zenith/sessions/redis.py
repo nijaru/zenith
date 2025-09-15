@@ -7,7 +7,7 @@ Provides persistent session storage using Redis with automatic expiration.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
 import redis.asyncio as redis
 

@@ -6,7 +6,6 @@ including gzip/deflate compression, content type filtering, and edge cases.
 """
 
 import gzip
-import json
 import zlib
 
 import pytest
@@ -307,10 +306,10 @@ class TestCompressionEdgeCases:
 
         @app.get("/pre-compressed")
         async def pre_compressed():
-            from zenith.web.responses import Response
-
             # Create actual gzip-compressed content
             import gzip
+
+            from zenith.web.responses import Response
 
             original_content = "Already compressed content"
             compressed_content = gzip.compress(original_content.encode("utf-8"))
@@ -399,11 +398,11 @@ class TestCompressionEdgeCases:
 
         @app.get("/random")
         async def random_data():
-            from zenith.web.responses import Response
-
             # Random data that might not compress well
             import random
             import string
+
+            from zenith.web.responses import Response
 
             random_content = "".join(random.choices(string.ascii_letters, k=500))
             return Response(content=random_content, media_type="text/plain")
@@ -429,8 +428,9 @@ class TestCompressionEdgeCases:
 
     async def test_streaming_response_handling(self):
         """Test compression with streaming responses."""
-        from zenith.web.responses import StreamingResponse
         import asyncio
+
+        from zenith.web.responses import StreamingResponse
 
         app = Zenith()
 

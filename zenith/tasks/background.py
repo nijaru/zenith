@@ -158,7 +158,7 @@ class TaskQueue:
         else:
             return {"status": "not_found"}
 
-    async def get_result(self, task_id: str, timeout_secs: float = None) -> Any:
+    async def get_result(self, task_id: str, timeout_secs: float | None = None) -> Any:
         """
         Wait for task result.
 

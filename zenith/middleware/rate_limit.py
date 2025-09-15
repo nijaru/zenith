@@ -369,10 +369,7 @@ class RateLimitMiddleware:
 
         # Check exempt IPs
         client_ip = self._get_client_ip(request)
-        if client_ip in self.exempt_ips:
-            return True
-
-        return False
+        return client_ip in self.exempt_ips
 
     def _get_applicable_limits(self, request: Request) -> list[RateLimit]:
         """Get rate limits applicable to this request."""
@@ -399,7 +396,7 @@ class RateLimitMiddleware:
         path = request.url.path
         is_endpoint_specific = any(
             path.startswith(endpoint_path)
-            for endpoint_path in self.endpoint_limits.keys()
+            for endpoint_path in self.endpoint_limits
         )
 
         for rate_limit in limits:
@@ -491,7 +488,7 @@ class RateLimitMiddleware:
                 path = scope.get("path", "")
                 is_endpoint_specific = any(
                     path.startswith(endpoint_path)
-                    for endpoint_path in self.endpoint_limits.keys()
+                    for endpoint_path in self.endpoint_limits
                 )
                 # Use the most restrictive limit for headers
                 most_restrictive = min(limits, key=lambda l: l.requests / l.window)
@@ -625,10 +622,7 @@ class RateLimitMiddleware:
 
         # Check exempt IPs
         client_ip = self._get_client_ip_asgi(scope)
-        if client_ip in self.exempt_ips:
-            return True
-
-        return False
+        return client_ip in self.exempt_ips
 
     def _get_applicable_limits_asgi(self, scope: Scope) -> list[RateLimit]:
         """Get rate limits applicable to this ASGI request."""
@@ -655,7 +649,7 @@ class RateLimitMiddleware:
         path = scope.get("path", "")
         is_endpoint_specific = any(
             path.startswith(endpoint_path)
-            for endpoint_path in self.endpoint_limits.keys()
+            for endpoint_path in self.endpoint_limits
         )
 
         for rate_limit in limits:

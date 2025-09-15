@@ -11,7 +11,6 @@ from typing import Any
 
 import httpx
 from starlette.testclient import TestClient as StarletteTestClient
-from starlette.websockets import WebSocketDisconnect
 
 from zenith.auth.jwt import create_access_token
 

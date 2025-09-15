@@ -215,7 +215,7 @@ class MockService(Service):
 
 
 # Convenience functions for common test scenarios
-async def create_test_service(
+async def create_test_service[T: Service](
     service_class: type[T], dependencies: dict[str, Any] | None = None
 ) -> T:
     """

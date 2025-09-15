@@ -66,10 +66,7 @@ async def create_post(user_id: int, title: str, content: str):
 @app.get("/hello/{name}")
 async def hello_custom(name: str, greeting: str | None = None):
     """Personalized greeting with optional query parameter."""
-    if greeting:
-        message = f"{greeting}, {name}!"
-    else:
-        message = f"Hello, {name}!"
+    message = f"{greeting}, {name}!" if greeting else f"Hello, {name}!"
 
     return {"message": message, "name": name, "greeting": greeting}
 

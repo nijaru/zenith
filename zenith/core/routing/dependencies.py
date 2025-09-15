@@ -33,7 +33,7 @@ class AuthDependency:
 class FileUploadDependency:
     """Marker for file upload dependency injection."""
 
-    __slots__ = ("field_name", "config")
+    __slots__ = ("config", "field_name")
 
     def __init__(
         self,

@@ -7,6 +7,8 @@ fair performance comparisons across different scenarios.
 """
 
 import asyncio
+import builtins
+import contextlib
 import json
 import os
 import statistics
@@ -253,16 +255,16 @@ class UserService(BaseService):
         super().__init__(container)
         self.users = {}
         self.counter = 0
-    
+
     async def create_user(self, user_data: UserCreate) -> User:
         self.counter += 1
         user = User(id=self.counter, **user_data.dict())
         self.users[self.counter] = user
         return user
-    
+
     async def get_user(self, user_id: int) -> User:
         return self.users.get(user_id)
-    
+
     async def list_users(self) -> list[User]:
         return list(self.users.values())
 
@@ -488,16 +490,16 @@ class UserService:
     def __init__(self):
         self.users = {}
         self.counter = 0
-    
+
     async def create_user(self, user_data: UserCreate) -> User:
         self.counter += 1
         user = User(id=self.counter, **user_data.dict())
         self.users[self.counter] = user
         return user
-    
+
     async def get_user(self, user_id: int) -> User:
         return self.users.get(user_id)
-    
+
     async def list_users(self) -> list[User]:
         return list(self.users.values())
 
@@ -749,16 +751,16 @@ class UserService:
     def __init__(self):
         self.users = {}
         self.counter = 0
-    
+
     async def create_user(self, user_data: UserCreate) -> User:
         self.counter += 1
         user = User(id=self.counter, **user_data.dict())
         self.users[self.counter] = user
         return user
-    
+
     async def get_user(self, user_id: int) -> User:
         return self.users.get(user_id)
-    
+
     async def list_users(self) -> list[User]:
         return list(self.users.values())
 
@@ -823,7 +825,7 @@ def verify_token(request: Request) -> int:
     auth_header = request.headers.get("authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise NotAuthorizedException(detail="Missing or invalid token")
-    
+
     token = auth_header.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
@@ -1159,10 +1161,8 @@ if __name__ == "__main__":
     def cleanup(self):
         """Clean up temporary files."""
         for file_path in self.temp_files:
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 file_path.unlink()
-            except:
-                pass
 
 
 async def main():

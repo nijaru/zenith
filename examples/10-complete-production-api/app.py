@@ -361,18 +361,18 @@ app.add_docs(
     title="Zenith Complete API",
     description="""
     A complete example showcasing all Zenith framework features:
-    
+
     ## Features
     - 🔐 **JWT Authentication** - Secure token-based auth
     - 📊 **Database Integration** - SQLAlchemy with async support
-    - 🍪 **Session Management** - Redis-backed sessions  
+    - 🍪 **Session Management** - Redis-backed sessions
     - 🔄 **Background Jobs** - Async task processing
     - 🛡️ **Security Middleware** - CORS, rate limiting, security headers
     - 📝 **Auto Documentation** - OpenAPI/Swagger integration
-    
+
     ## Getting Started
     1. Register: `POST /api/v1/register`
-    2. Login: `POST /api/v1/login` 
+    2. Login: `POST /api/v1/login`
     3. Use token in Authorization header: `Bearer <token>`
     """,
     version="1.0.0",

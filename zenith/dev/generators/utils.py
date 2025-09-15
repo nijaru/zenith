@@ -5,8 +5,8 @@ Generator utility functions.
 from pathlib import Path
 
 from .api import APIGenerator
-from .service import ServiceGenerator
 from .model import ModelGenerator
+from .service import ServiceGenerator
 
 
 def parse_field_spec(spec: str) -> dict[str, str]:

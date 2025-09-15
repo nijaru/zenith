@@ -20,7 +20,8 @@ class MiddlewareMixin:
             # Temporarily instantiate to trigger validation (this will raise if invalid)
             try:
                 # Create a dummy ASGI app for validation
-                dummy_app = lambda scope, receive, send: None
+                def dummy_app(scope, receive, send):
+                    return None
                 middleware_class(dummy_app, **kwargs)
             except Exception:
                 # Re-raise the validation error

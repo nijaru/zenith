@@ -40,7 +40,7 @@ class TestMigrationManager:
 
     def test_alembic_config_creation(self, mock_database, temp_migrations_dir):
         """Test Alembic configuration creation."""
-        manager = MigrationManager(mock_database, str(temp_migrations_dir))
+        MigrationManager(mock_database, str(temp_migrations_dir))
 
         alembic_ini_path = temp_migrations_dir / "alembic.ini"
         assert alembic_ini_path.exists()

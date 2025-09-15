@@ -33,9 +33,8 @@ from zenith import Zenith
 from zenith.middleware import (
     AuthenticationMiddleware,
     RateLimitMiddleware,
-    SecurityHeadersMiddleware,
     RequestIDMiddleware,
-    RateLimit,
+    SecurityHeadersMiddleware,
 )
 
 # ============================================================================
@@ -202,8 +201,9 @@ async def metrics_info() -> MiddlewareInfo:
 # ============================================================================
 
 if __name__ == "__main__":
-    import uvicorn
     import asyncio
+
+    import uvicorn
 
     print("🌊 Proper Middleware Architecture Demo")
     print("=" * 65)

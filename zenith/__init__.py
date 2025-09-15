@@ -26,17 +26,11 @@ __author__ = "Nick"
 # BACKGROUND PROCESSING
 # ============================================================================
 # Background tasks
-from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
+from zenith.app import Zenith
 
 # Core application components
 from zenith.core.application import Application
 from zenith.core.config import Config
-
-# ============================================================================
-# BUSINESS LOGIC ORGANIZATION
-# ============================================================================
-# Base class for business logic services
-from zenith.core.service import Service
 
 # ============================================================================
 # ROUTING & DEPENDENCY INJECTION
@@ -51,6 +45,12 @@ from zenith.core.routing.dependencies import (
     Inject,
     InjectDependency,
 )
+
+# ============================================================================
+# BUSINESS LOGIC ORGANIZATION
+# ============================================================================
+# Base class for business logic services
+from zenith.core.service import Service
 
 # ============================================================================
 # DATABASE & MIGRATIONS
@@ -117,6 +117,7 @@ from zenith.middleware import (
 
 # Sessions
 from zenith.sessions import SessionManager, SessionMiddleware
+from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
 
 # Web utilities
 from zenith.web import (
@@ -124,6 +125,16 @@ from zenith.web import (
     error_response,
     json_response,
     success_response,
+)
+
+# Server-Sent Events with built-in backpressure optimizations
+from zenith.web.sse import (
+    ServerSentEvents,
+    SSEConnection,
+    SSEConnectionState,
+    SSEEventManager,
+    create_sse_response,
+    sse,
 )
 
 # Static file and SPA serving (for convenience)
@@ -135,117 +146,106 @@ from zenith.web.static import serve_css_js, serve_images, serve_spa_files
 # WebSocket support
 from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
 
-# Server-Sent Events with built-in backpressure optimizations
-from zenith.web.sse import (
-    ServerSentEvents,
-    SSEEventManager,
-    SSEConnection,
-    SSEConnectionState,
-    create_sse_response,
-    sse,
-)
-from zenith.app import Zenith
-
 __all__ = [
-    # ========================================================================
-    # MAIN FRAMEWORK
-    # ========================================================================
-    "__version__",
-    "Zenith",
     "Application",
-    "Config",
-    # ========================================================================
-    # ROUTING & DEPENDENCY INJECTION
-    # ========================================================================
-    "Router",
+    "AsyncSession",
     "Auth",
-    "Inject",
-    "File",
     "AuthDependency",
-    "InjectDependency",
-    "FileUploadDependency",
+    # Additional middleware exceptions
+    "AuthenticationException",
+    "AuthorizationException",
     # ========================================================================
-    # BUSINESS LOGIC
+    # BACKGROUND PROCESSING
     # ========================================================================
-    "Service",
+    "BackgroundTasks",
+    "BadRequestException",
+    "Base",
+    "CORSMiddleware",
+    "CSRFMiddleware",
+    "CompressionMiddleware",
+    "Config",
+    "ConflictException",
     # ========================================================================
     # DATABASE & MIGRATIONS
     # ========================================================================
     "Database",
-    "Base",
-    "AsyncSession",
-    "MigrationManager",
-    # SQLModel integration
-    "SQLModel",
     "Field",
+    "File",
+    "FileUploadDependency",
+    "ForbiddenException",
+    # ========================================================================
+    # HTTP EXCEPTIONS
+    # ========================================================================
+    "HTTPException",
+    "Inject",
+    "InjectDependency",
+    "InternalServerException",
+    "JobManager",
+    "JobQueue",
+    "MigrationManager",
+    "NotFoundException",
+    "OptimizedJSONResponse",
+    "RateLimitException",
     "Relationship",
-    "ZenithSQLModel",
-    "SQLModelRepository",
-    "create_repository",
     # ========================================================================
     # MIDDLEWARE & UTILITIES
     # ========================================================================
     "RequestIDMiddleware",
     "RequestLoggingMiddleware",
-    "CompressionMiddleware",
+    # ========================================================================
+    # ROUTING & DEPENDENCY INJECTION
+    # ========================================================================
+    "Router",
+    # SQLModel integration
+    "SQLModel",
+    "SQLModelRepository",
+    "SSEConnection",
+    "SSEConnectionState",
+    "SSEEventManager",
     "SecurityHeadersMiddleware",
-    "CORSMiddleware",
-    "CSRFMiddleware",
-    "metrics",
-    "health_manager",
-    "success_response",
-    "error_response",
-    "json_response",
-    "OptimizedJSONResponse",
-    # Static file serving
-    "serve_spa_files",
-    "serve_css_js",
-    "serve_images",
+    # Server-Sent Events with built-in optimizations
+    "ServerSentEvents",
     # ========================================================================
-    # BACKGROUND PROCESSING
+    # BUSINESS LOGIC
     # ========================================================================
-    "BackgroundTasks",
-    "TaskQueue",
-    "background_task",
-    "JobManager",
-    "JobQueue",
-    "Worker",
+    "Service",
     "SessionManager",
     "SessionMiddleware",
+    "TaskQueue",
+    "UnauthorizedException",
+    "ValidationException",
     # ========================================================================
     # WEBSOCKETS & REAL-TIME
     # ========================================================================
     "WebSocket",
     "WebSocketDisconnect",
     "WebSocketManager",
-    # Server-Sent Events with built-in optimizations
-    "ServerSentEvents",
-    "SSEEventManager",
-    "SSEConnection",
-    "SSEConnectionState",
-    "create_sse_response",
-    "sse",
+    "Worker",
+    "Zenith",
+    "ZenithSQLModel",
     # ========================================================================
-    # HTTP EXCEPTIONS
+    # MAIN FRAMEWORK
     # ========================================================================
-    "HTTPException",
-    "BadRequestException",
-    "UnauthorizedException",
-    "ForbiddenException",
-    "NotFoundException",
-    "ConflictException",
-    "ValidationException",
-    "InternalServerException",
-    # Additional middleware exceptions
-    "AuthenticationException",
-    "AuthorizationException",
-    "RateLimitException",
+    "__version__",
+    "background_task",
     # Exception helpers
     "bad_request",
-    "unauthorized",
-    "forbidden",
-    "not_found",
     "conflict",
-    "validation_error",
+    "create_repository",
+    "create_sse_response",
+    "error_response",
+    "forbidden",
+    "health_manager",
     "internal_error",
+    "json_response",
+    "metrics",
+    "not_found",
+    "serve_css_js",
+    "serve_images",
+    # Static file serving
+    "serve_spa_files",
+    "sse",
+    "success_response",
+    "unauthorized",
+    "validation_error",
 ]

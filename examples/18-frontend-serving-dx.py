@@ -15,7 +15,7 @@ Run with: python examples/18-frontend-serving-dx.py
 
 from pydantic import BaseModel
 
-from zenith import Service, Inject, Service, Zenith
+from zenith import Inject, Service, Zenith
 
 app = Zenith(title="Frontend Serving DX Demo")
 

@@ -8,10 +8,7 @@ Accept-Encoding headers and configurable content types.
 import gzip
 import zlib
 from io import BytesIO
-from typing import Any
 
-from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 

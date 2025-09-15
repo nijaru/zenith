@@ -12,15 +12,15 @@ import pytest
 
 from zenith import Auth, File, Zenith
 from zenith.auth import configure_auth
-from zenith.testing import TestClient
-from zenith.web.files import (
-    FileUploadConfig,
-    FileUploader,
-)
 from zenith.monitoring.health import (
     HealthManager,
     HealthStatus,
     add_health_routes,
+)
+from zenith.testing import TestClient
+from zenith.web.files import (
+    FileUploadConfig,
+    FileUploader,
 )
 from zenith.web.responses import (
     error_response,
