@@ -30,7 +30,7 @@ class AuthDependency:
         self.scopes = scopes or []
 
 
-class FileUploadDependency:
+class FileDependency:
     """Marker for file upload dependency injection."""
 
     __slots__ = ("config", "field_name")
@@ -57,6 +57,6 @@ def Auth(required: bool = True, scopes: list[str] | None = None) -> AuthDependen
 def File(
     field_name: str = "file",
     config: Union["FileUploadConfig", dict[str, Any], None] = None,
-) -> FileUploadDependency:
+) -> FileDependency:
     """Create a file upload dependency marker."""
-    return FileUploadDependency(field_name, config)
+    return FileDependency(field_name, config)

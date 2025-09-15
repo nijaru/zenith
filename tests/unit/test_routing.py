@@ -13,7 +13,7 @@ from zenith.core.routing import (
     Auth,
     AuthDependency,
     File,
-    FileUploadDependency,
+    FileDependency,
     Inject,
     InjectDependency,
     Router,
@@ -111,7 +111,7 @@ class TestRouter:
 
         # File dependency
         file_dep = File("upload")
-        assert isinstance(file_dep, FileUploadDependency)
+        assert isinstance(file_dep, FileDependency)
         assert file_dep.field_name == "upload"
 
 

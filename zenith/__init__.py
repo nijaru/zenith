@@ -32,7 +32,7 @@ from zenith.core.config import Config
 from zenith.core.routing import Auth, File, Router
 from zenith.core.routing.dependencies import (
     AuthDependency,
-    FileUploadDependency,
+    FileDependency,
     Inject,
     InjectDependency,
 )
@@ -163,7 +163,7 @@ __all__ = [
     "DatabaseSession",
     "Depends",
     "File",
-    "FileUploadDependency",
+    "FileDependency",
     "Inject",
     "InjectDependency",
     "RequestScoped",

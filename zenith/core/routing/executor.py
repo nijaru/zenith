@@ -132,14 +132,14 @@ class RouteExecutor:
             if param.default != inspect.Parameter.empty:
                 from .dependencies import (
                     AuthDependency,
-                    FileUploadDependency,
+                    FileDependency,
                     InjectDependency,
                 )
 
                 # Check if this is a dependency marker
                 is_dependency = isinstance(
                     param.default,
-                    (AuthDependency, InjectDependency, FileUploadDependency),
+                    (AuthDependency, InjectDependency, FileDependency),
                 )
 
                 if is_dependency:
