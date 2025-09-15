@@ -36,6 +36,7 @@ from pydantic import BaseModel
 
 from zenith import Zenith
 from zenith.jobs import Worker, job, schedule
+from zenith.jobs.manager import get_job_manager
 
 # ============================================================================
 # JOB DEFINITIONS - Using Global Decorators
@@ -105,8 +106,6 @@ async def generate_reports():
 app = Zenith(title="Background Jobs Example", version="1.0.0")
 
 # Get the global job manager (automatically initialized)
-from zenith.jobs.manager import get_job_manager
-
 job_manager = get_job_manager()
 
 

@@ -52,11 +52,11 @@ print("-" * 60)
 
 # Import Zenith after checking libraries
 
-from pydantic import BaseModel
+from pydantic import BaseModel  # noqa: E402
 
-from zenith import Zenith
-from zenith.optimizations import get_optimization_status
-from zenith.testing import TestClient
+from zenith import Zenith  # noqa: E402
+from zenith.optimizations import get_optimization_status  # noqa: E402
+from zenith.testing import TestClient  # noqa: E402
 
 
 # Test data models
