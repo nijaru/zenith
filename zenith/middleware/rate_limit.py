@@ -206,8 +206,8 @@ class RateLimitConfig:
             RateLimit(requests=100, window=60, per="ip"),  # 100/minute
         ]
         self.storage = storage or MemoryRateLimitStorage()
-        self.exempt_paths = exempt_paths or []
-        self.exempt_ips = exempt_ips or ["127.0.0.1", "::1"]
+        self.exempt_paths = exempt_paths if exempt_paths is not None else []
+        self.exempt_ips = exempt_ips if exempt_ips is not None else ["127.0.0.1", "::1"]
         self.error_message = error_message
         self.include_headers = include_headers
 
@@ -512,11 +512,22 @@ class RateLimitMiddleware:
     def _get_user_id_asgi(self, scope: Scope) -> str | None:
         """Extract user ID from ASGI scope (if authenticated)."""
         # Try to get user from scope state (set by auth middleware)
-        state = scope.get("state", {})
-        if "current_user" in state:
-            user = state["current_user"]
-            if user:
-                return str(user.get("id") or user.get("user_id", ""))
+        state = scope.get("state")
+        if not state:
+            return None
+
+        user = None
+
+        # Handle both dictionary and object-based state
+        if isinstance(state, dict):
+            # State is a dictionary (common case)
+            user = state.get("current_user") or state.get("user")
+        else:
+            # State is an object with attributes
+            user = getattr(state, "current_user", None) or getattr(state, "user", None)
+
+        if user:
+            return str(user.get("id") or user.get("user_id", ""))
 
         # Try to extract from JWT token in Authorization header
         headers = dict(scope.get("headers", []))

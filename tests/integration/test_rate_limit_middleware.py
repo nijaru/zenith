@@ -450,7 +450,7 @@ class TestRateLimitMiddleware:
         rate_limits = [RateLimit(requests=2, window=60, per="user")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, exempt_ips=[])  # Don't exempt localhost for testing
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         # Mock the auth token extraction
