@@ -134,29 +134,25 @@ async def main():
 
     # Write results to JSON for GitHub Actions
     import json
-    import time
 
-    results = {
-        "timestamp": time.time(),
-        "benchmarks": [
-            {
-                "name": "Simple endpoint (no middleware)",
-                "unit": "req/s",
-                "value": hello_rps,
-            },
-            {
-                "name": "JSON endpoint (no middleware)",
-                "unit": "req/s",
-                "value": json_rps,
-            },
-            {
-                "name": "Simple endpoint (with middleware)",
-                "unit": "req/s",
-                "value": middleware_rps,
-            },
-            {"name": "Middleware overhead", "unit": "%", "value": overhead_pct},
-        ],
-    }
+    # Format for customBiggerIsBetter expects an array
+    results = [
+        {
+            "name": "Simple endpoint (no middleware)",
+            "unit": "req/s",
+            "value": hello_rps,
+        },
+        {
+            "name": "JSON endpoint (no middleware)",
+            "unit": "req/s",
+            "value": json_rps,
+        },
+        {
+            "name": "Simple endpoint (with middleware)",
+            "unit": "req/s",
+            "value": middleware_rps,
+        },
+    ]
 
     with open("benchmark_results.json", "w") as f:
         json.dump(results, f, indent=2)

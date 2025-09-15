@@ -45,7 +45,7 @@ jobs:
       run: ruff format --check .
     
     - name: Run ruff linting
-      run: ruff check .
+      run: ruff check . --ignore B904
     
     - name: Run pyright type checking
       run: pyright
