@@ -19,7 +19,7 @@ Learn the key middleware and features you'll use in real applications:
 
 - **[04-cors-middleware.py](04-cors-middleware.py)** - 🌐 CORS configuration for web applications
 - **[05-background-tasks.py](05-background-tasks.py)** - ⚡ Async background task processing
-- **[06-file-upload.py](06-file-upload.py)** - 📁 File upload handling with validation
+- **[06-file-upload.py](06-file-upload.py)** - 📁 Enhanced file upload with improved UX and Starlette compatibility
 
 ### **Advanced Features**
 Build sophisticated, production-ready functionality:
@@ -44,11 +44,11 @@ Advanced production patterns for sophisticated applications:
 ### **Modern Patterns** ⭐ **NEW!**
 Latest patterns for modern web development:
 
-- **[15-router-grouping.py](15-router-grouping.py)** - 🗂️ Clean API organization with nested routers and prefixes  
+- **[15-router-grouping.py](15-router-grouping.py)** - 🗂️ Clean API organization with nested routers and prefixes
+- **[16-async-database-scoped.py](16-async-database-scoped.py)** - 🔥 **CRITICAL**: Request-scoped async DB sessions (fixes production crashes)
 - **[16-sqlmodel-integration.py](16-sqlmodel-integration.py)** - 💾 Unified Pydantic + SQLAlchemy models with repository pattern
 - **[17-fullstack-spa.py](17-fullstack-spa.py)** - 🌐 Full-stack SPA serving (React, Vue, SolidJS, Angular)
 - **[18-frontend-serving-dx.py](18-frontend-serving-dx.py)** - ✨ Improved developer experience for frontend serving
-- **[19-asgi-concurrent-optimization.py](19-asgi-concurrent-optimization.py)** - 🌊 Pure ASGI concurrent middleware (20-30% performance improvement)
 
 ## 🚀 Quick Start
 

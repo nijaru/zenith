@@ -1,11 +1,11 @@
 ---
 title: Application API
-description: Zenith application class reference
+description: Zenith application class reference and dependency injection
 ---
 
 ## Zenith Class
 
-The main application class for creating Zenith applications.
+The main application class for creating Zenith applications with production-ready defaults and Service-based architecture.
 
 ### Constructor
 
@@ -87,25 +87,48 @@ app.include_router(router)
 
 #### `add_middleware()`
 
-Add middleware to the application.
+Add middleware to the application with intelligent duplicate handling.
 
 ```python
-from zenith.middleware import CORSMiddleware
+from zenith.middleware import CORSMiddleware, RateLimitMiddleware
 
+# Basic usage (replaces existing by default)
 app.add_middleware(CORSMiddleware, {
     "allow_origins": ["*"],
     "allow_methods": ["*"],
     "allow_headers": ["*"],
 })
+
+# Advanced control
+app.add_middleware(RateLimitMiddleware,
+    requests=100,
+    replace=False,          # Error if already exists
+    allow_duplicates=True   # Allow multiple instances
+)
+
+# Middleware executes in LIFO order (last added runs first)
+app.add_middleware(LoggingMiddleware)    # Runs second
+app.add_middleware(SecurityMiddleware)   # Runs first
 ```
 
 #### `spa()`
 
-Serve a single-page application.
+Serve a single-page application with enhanced configuration.
 
 ```python
-app.spa("dist")  # Serve SPA from dist folder
-app.spa("build", fallback="index.html")  # Custom fallback
+# Basic usage
+app.spa("dist")  # Serve from dist folder with defaults
+
+# Enhanced configuration
+app.spa(
+    "dist",
+    index="app.html",               # Custom index file
+    exclude=["/api/*", "/admin/*"]  # Don't fallback for API routes
+)
+
+# Multiple SPA configuration
+app.spa("admin-dist", path="/admin", index="admin.html")
+app.spa("public-dist", path="/", exclude=["/admin/*", "/api/*"])
 ```
 
 #### `static()`
@@ -182,21 +205,131 @@ app = Zenith(
 )
 ```
 
-### With Database
+### With Request-Scoped Database (Recommended)
 
 ```python
-from zenith import Zenith
-from zenith.db import create_engine
+from zenith import Zenith, DatabaseSession, Service, Inject
+from zenith.db import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
+
+# Request-scoped database session (prevents "Future attached to loop" errors)
+async def get_db():
+    engine = create_async_engine("postgresql://...")
+    SessionLocal = sessionmaker(engine, class_=AsyncSession)
+    async with SessionLocal() as session:
+        yield session
+
+class UserService(Service):
+    async def get_users(self, db: AsyncSession):
+        # Business logic here
+        pass
 
 app = Zenith()
 
-@app.on_event("startup")
-async def startup():
-    app.db = create_engine("postgresql://...")
-    
-@app.on_event("shutdown")
-async def shutdown():
-    await app.db.dispose()
+# Both patterns work (FastAPI-compatible)
+@app.get("/users")
+async def get_users_zenith(
+    db: AsyncSession = DatabaseSession(get_db),  # Zenith style
+    users: UserService = Inject()                 # Service injection
+):
+    return await users.get_users(db)
+
+@app.get("/users-fastapi")
+async def get_users_fastapi(
+    db: AsyncSession = Depends(get_db)            # FastAPI style
+):
+    # Direct database access
+    pass
+```
+
+## Dependency Injection API
+
+### Service Classes
+
+Business logic should be organized in Service classes for clean architecture:
+
+```python
+from zenith import Service, Inject
+
+class UserService(Service):
+    """Business logic for user operations."""
+
+    async def create_user(self, user_data: dict) -> dict:
+        # Auto-injected services are available
+        return {"id": 1, **user_data}
+
+    async def get_user(self, user_id: int) -> dict | None:
+        # Business logic separate from web concerns
+        return {"id": user_id, "name": "John"}
+
+# Usage in routes (automatic dependency injection)
+@app.post("/users")
+async def create_user(
+    user_data: dict,
+    users: UserService = Inject()  # Auto-injected
+) -> dict:
+    return await users.create_user(user_data)
+```
+
+### Request-Scoped Dependencies
+
+For async resources like database connections:
+
+```python
+from zenith import RequestScoped, DatabaseSession, Depends
+
+# Factory function for request-scoped resources
+async def get_db():
+    # Fresh connection per request
+    async with database.session() as session:
+        yield session
+
+# Both syntaxes work
+@app.get("/data1")
+async def handler1(db = RequestScoped(get_db)):  # Zenith explicit
+    pass
+
+@app.get("/data2")
+async def handler2(db = DatabaseSession(get_db)):  # Database-specific
+    pass
+
+@app.get("/data3")
+async def handler3(db = Depends(get_db)):  # FastAPI-compatible
+    pass
+```
+
+### File Upload Enhancement
+
+Enhanced file upload with improved UX:
+
+```python
+from zenith import File
+from zenith.web.files import UploadedFile
+
+@app.post("/upload")
+async def upload_file(file: UploadedFile = File(
+    max_size=5 * 1024 * 1024,  # 5MB
+    allowed_types=["image/jpeg", "image/png", "application/pdf"]
+)) -> dict:
+    # Enhanced API with convenience methods
+    if file.is_image():
+        print("It's an image!")
+
+    extension = file.get_extension()  # ".jpg"
+
+    # Easy file operations
+    final_path = await file.move_to(f"/uploads/{uuid.uuid4()}{extension}")
+
+    # Starlette-compatible read
+    content = await file.read()
+
+    return {
+        "filename": file.filename,
+        "original": file.original_filename,
+        "size": file.size_bytes,
+        "type": file.content_type,
+        "saved_to": str(final_path)
+    }
 ```
 
 ## Type Hints

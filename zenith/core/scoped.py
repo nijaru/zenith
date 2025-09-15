@@ -6,6 +6,7 @@ resources that need to be created per-request.
 """
 
 import asyncio
+import inspect
 from collections.abc import AsyncGenerator, Callable
 from contextvars import ContextVar
 from typing import Any, TypeVar
@@ -67,7 +68,7 @@ class RequestScoped:
         if asyncio.iscoroutinefunction(self.dependency):
             # Async factory
             instance = await self.dependency()
-        elif asyncio.isasyncgenfunction(self.dependency):
+        elif inspect.isasyncgenfunction(self.dependency):
             # Async generator factory (FastAPI-style)
             gen = self.dependency()
             instance = await gen.__anext__()
