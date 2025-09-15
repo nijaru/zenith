@@ -83,7 +83,9 @@ class MetricsCollector:
                 )
             )
 
-    def gauge(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
+    def gauge(
+        self, name: str, value: float, labels: dict[str, str] | None = None
+    ) -> None:
         """
         Set a gauge metric value.
 
@@ -107,7 +109,9 @@ class MetricsCollector:
                 )
             )
 
-    def histogram(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
+    def histogram(
+        self, name: str, value: float, labels: dict[str, str] | None = None
+    ) -> None:
         """
         Record a histogram observation.
 

@@ -395,8 +395,7 @@ class RateLimitMiddleware:
         # Check if this is an endpoint-specific limit
         path = request.url.path
         is_endpoint_specific = any(
-            path.startswith(endpoint_path)
-            for endpoint_path in self.endpoint_limits
+            path.startswith(endpoint_path) for endpoint_path in self.endpoint_limits
         )
 
         for rate_limit in limits:
@@ -648,8 +647,7 @@ class RateLimitMiddleware:
         # Check if this is an endpoint-specific limit
         path = scope.get("path", "")
         is_endpoint_specific = any(
-            path.startswith(endpoint_path)
-            for endpoint_path in self.endpoint_limits
+            path.startswith(endpoint_path) for endpoint_path in self.endpoint_limits
         )
 
         for rate_limit in limits:
