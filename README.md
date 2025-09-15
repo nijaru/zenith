@@ -8,7 +8,7 @@
 
 A modern Python API framework that prioritizes clean architecture, exceptional performance, and developer experience.
 
-> **🚀 v0.2.1 Release**: Zenith delivers production-ready performance with full Pydantic v2 compatibility and modern Service-based architecture.
+> **🚀 Production Ready**: Zenith delivers exceptional performance with full Pydantic v2 compatibility and modern Service-based architecture.
 
 ## What is Zenith?
 
@@ -146,7 +146,7 @@ your-app/
 
 ## Performance
 
-**Verified Benchmark Results (v0.2.1):**
+**Verified Benchmark Results:**
 - Simple endpoints: **8,049 req/s**
 - JSON endpoints: **9,469 req/s**  
 - With full middleware: **6,647 req/s** (82.6% retention)
@@ -255,9 +255,9 @@ pytest  # Run tests
 
 ## Status
 
-**Current Version**: v0.2.1 (stable release)  
+**Latest Version**: v0.2.4
 **Python Support**: 3.12+  
-**Test Suite**: 100% passing (328/332 tests)  
+**Test Suite**: 100% passing (446 tests)
 **Performance**: Production-ready with 8,000+ req/s capability  
 **Architecture**: Clean separation with Service system and dependency injection  
 

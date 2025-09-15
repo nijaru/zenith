@@ -92,6 +92,6 @@ The framework already embodies the qualities of a best-in-class web framework:
 - **Great developer experience**
 
 ---
-*Date: 2025-09-13*
-*Framework Version: 0.2.1*
+*Date: 2025-09-14*
+*Framework Version: 0.2.4*
 *Improvements by: Claude*
