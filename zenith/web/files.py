@@ -36,16 +36,94 @@ class FileUploadConfig(BaseModel):
 
 
 class UploadedFile(BaseModel):
-    """Represents an uploaded file."""
+    """
+    Represents an uploaded file with enhanced UX methods.
+
+    Provides both compatibility with existing code and convenient helpers
+    commonly needed in real applications.
+    """
 
     filename: str
     original_filename: str
-    content_type: str
+    content_type: str | None
     size_bytes: int
     file_path: Path
     url: str | None = None  # URL to access the file
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # Starlette-compatible methods for easier migration
+    async def read(self) -> bytes:
+        """Read the entire file content (Starlette UploadFile compatible)."""
+        with open(self.file_path, "rb") as f:
+            return f.read()
+
+    # Convenience methods for common patterns
+    def get_extension(self) -> str:
+        """Get file extension including the dot (e.g., '.pdf', '.jpg')."""
+        return Path(self.filename).suffix
+
+    def is_image(self) -> bool:
+        """Check if file is an image based on content type."""
+        return self.content_type.startswith("image/") if self.content_type else False
+
+    def is_audio(self) -> bool:
+        """Check if file is audio based on content type."""
+        return self.content_type.startswith("audio/") if self.content_type else False
+
+    def is_video(self) -> bool:
+        """Check if file is video based on content type."""
+        return self.content_type.startswith("video/") if self.content_type else False
+
+    def is_pdf(self) -> bool:
+        """Check if file is a PDF."""
+        return self.content_type == "application/pdf"
+
+    async def copy_to(self, destination: str | Path) -> Path:
+        """
+        Copy file to a new location.
+
+        Args:
+            destination: Target path for the copy
+
+        Returns:
+            Path object of the copied file
+
+        Example:
+            backup_path = await uploaded_file.copy_to("/backups/file.pdf")
+        """
+        import shutil
+
+        destination = Path(destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(self.file_path, destination)
+        return destination
+
+    async def move_to(self, destination: str | Path) -> Path:
+        """
+        Move file to a new location.
+
+        Args:
+            destination: Target path for the move
+
+        Returns:
+            Path object of the moved file
+
+        Example:
+            final_path = await uploaded_file.move_to("/final/location.pdf")
+        """
+        import shutil
+
+        destination = Path(destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(self.file_path, destination)
+
+        # Update our internal path
+        self.file_path = destination
+        return destination
+
+    def __repr__(self) -> str:
+        return f"UploadedFile(filename={self.filename!r}, size={self.size_bytes}, type={self.content_type!r})"
 
 
 class FileUploadError(Exception):

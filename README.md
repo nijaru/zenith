@@ -27,7 +27,8 @@ pip install zenith-web
 ```
 
 ```python
-from zenith import Zenith, Service, Inject
+from zenith import Zenith, Service, Inject, Depends, DatabaseSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from pydantic import BaseModel
 
 app = Zenith()
@@ -51,27 +52,46 @@ class UserService(Service):
     def __init__(self):
         self.users = {}
         self.next_id = 1
-    
+
     async def create_user(self, data: UserCreate) -> User:
         user = User(id=self.next_id, name=data.name, email=data.email)
         self.users[self.next_id] = user
         self.next_id += 1
         return user
-    
+
     async def get_user(self, user_id: int) -> User | None:
         return self.users.get(user_id)
 
-# Clean dependency injection
+# Request-scoped database sessions (FastAPI-compatible)
+engine = create_async_engine("sqlite+aiosqlite:///./test.db")
+AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession)
+
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        yield session
+
+# Clean dependency injection - both syntaxes work
 @app.post("/users", response_model=User)
 async def create_user(user_data: UserCreate, users: UserService = Inject()):
     return await users.create_user(user_data)
 
 @app.get("/users/{user_id}", response_model=User)
-async def get_user(user_id: int, users: UserService = Inject()):
+async def get_user(
+    user_id: int,
+    users: UserService = Inject(),
+    db: AsyncSession = Depends(get_db)  # FastAPI-style
+):
     user = await users.get_user(user_id)
     if not user:
         raise HTTPException(404, "User not found")
     return user
+
+# Alternative database session syntax
+@app.get("/users/db", response_model=list[User])
+async def get_users_from_db(db: AsyncSession = DatabaseSession(get_db)):
+    # db is properly scoped to this request's async context
+    result = await db.execute(select(UserModel))
+    return result.scalars().all()
 ```
 
 Run with:

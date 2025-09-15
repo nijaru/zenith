@@ -8,7 +8,7 @@ Zero-configuration framework with state-of-the-art defaults:
 - Health checks and Prometheus metrics
 - Database migrations with Alembic
 - Type-safe dependency injection
-- Context-driven business logic organization
+- Service-driven business logic organization
 
 Build production-ready APIs with minimal configuration.
 """
@@ -21,24 +21,15 @@ __author__ = "Nick"
 # MAIN FRAMEWORK
 # ============================================================================
 
-# Primary framework class with performance optimizations by default
-# ============================================================================
-# BACKGROUND PROCESSING
-# ============================================================================
-# Background tasks
 from zenith.app import Zenith
-
-# Core application components
 from zenith.core.application import Application
 from zenith.core.config import Config
 
 # ============================================================================
 # ROUTING & DEPENDENCY INJECTION
 # ============================================================================
-# Routing system
-from zenith.core.routing import Auth, File, Router
 
-# Dependency markers for clean injection
+from zenith.core.routing import Auth, File, Router
 from zenith.core.routing.dependencies import (
     AuthDependency,
     FileUploadDependency,
@@ -46,20 +37,19 @@ from zenith.core.routing.dependencies import (
     InjectDependency,
 )
 
-# Request-scoped dependencies for async resources (FastAPI-compatible)
+# Request-scoped dependencies (FastAPI-compatible)
 from zenith.core.scoped import DatabaseSession, Depends, RequestScoped, request_scoped
 
 # ============================================================================
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
-# Base class for business logic services
+
 from zenith.core.service import Service
 
 # ============================================================================
 # DATABASE & MIGRATIONS
 # ============================================================================
-# Database integration
-# SQLModel integration (modern unified models)
+
 from zenith.db import (
     AsyncSession,
     Base,
@@ -71,16 +61,14 @@ from zenith.db import (
     ZenithSQLModel,
     create_repository,
 )
-
-# Migration management
 from zenith.db.migrations import MigrationManager
 
 # ============================================================================
-# HTTP EXCEPTIONS
+# HTTP EXCEPTIONS & ERROR HANDLING
 # ============================================================================
-# Exception classes and helpers
+
 from zenith.exceptions import (
-    # Additional middleware exceptions
+    # Exception classes
     AuthenticationException,
     AuthorizationException,
     BadRequestException,
@@ -102,13 +90,17 @@ from zenith.exceptions import (
     validation_error,
 )
 
-# Job system
+# ============================================================================
+# BACKGROUND PROCESSING & JOBS
+# ============================================================================
+
 from zenith.jobs import JobManager, JobQueue, Worker
+from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
 
 # ============================================================================
-# MIDDLEWARE & UTILITIES
+# MIDDLEWARE
 # ============================================================================
-# Essential middleware (auto-configured in framework)
+
 from zenith.middleware import (
     CompressionMiddleware,
     CORSMiddleware,
@@ -118,11 +110,16 @@ from zenith.middleware import (
     SecurityHeadersMiddleware,
 )
 
-# Sessions
-from zenith.sessions import SessionManager, SessionMiddleware
-from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
+# ============================================================================
+# SESSIONS
+# ============================================================================
 
-# Web utilities
+from zenith.sessions import SessionManager, SessionMiddleware
+
+# ============================================================================
+# WEB UTILITIES & RESPONSES
+# ============================================================================
+
 from zenith.web import (
     OptimizedJSONResponse,
     error_response,
@@ -130,7 +127,7 @@ from zenith.web import (
     success_response,
 )
 
-# Server-Sent Events with built-in backpressure optimizations
+# Server-Sent Events
 from zenith.web.sse import (
     ServerSentEvents,
     SSEConnection,
@@ -140,119 +137,117 @@ from zenith.web.sse import (
     sse,
 )
 
-# Static file and SPA serving (for convenience)
+# Static file serving
 from zenith.web.static import serve_css_js, serve_images, serve_spa_files
 
 # ============================================================================
 # WEBSOCKETS & REAL-TIME
 # ============================================================================
-# WebSocket support
+
 from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
 
+# ============================================================================
+# PUBLIC API - ORGANIZED BY CATEGORY
+# ============================================================================
+
 __all__ = [
+    # Core Framework
+    "__version__",
     "Application",
-    "AsyncSession",
+    "Config",
+    "Zenith",
+
+    # Routing & Dependencies
     "Auth",
     "AuthDependency",
-    # Additional middleware exceptions
-    "AuthenticationException",
-    "AuthorizationException",
-    # ========================================================================
-    # BACKGROUND PROCESSING
-    # ========================================================================
-    "BackgroundTasks",
-    "BadRequestException",
-    "Base",
-    "CORSMiddleware",
-    "CSRFMiddleware",
-    "CompressionMiddleware",
-    "Config",
-    "ConflictException",
-    # ========================================================================
-    # DATABASE & MIGRATIONS
-    # ========================================================================
-    "Database",
     "DatabaseSession",
     "Depends",
-    "Field",
     "File",
     "FileUploadDependency",
-    "ForbiddenException",
-    # ========================================================================
-    # HTTP EXCEPTIONS
-    # ========================================================================
-    "HTTPException",
     "Inject",
     "InjectDependency",
-    "InternalServerException",
-    "JobManager",
-    "JobQueue",
-    "MigrationManager",
-    "NotFoundException",
-    "OptimizedJSONResponse",
-    "RateLimitException",
-    "Relationship",
-    # ========================================================================
-    # MIDDLEWARE & UTILITIES
-    # ========================================================================
-    "RequestIDMiddleware",
-    "RequestLoggingMiddleware",
     "RequestScoped",
-    # ========================================================================
-    # ROUTING & DEPENDENCY INJECTION
-    # ========================================================================
     "Router",
-    # SQLModel integration
+    "request_scoped",
+
+    # Business Logic
+    "Service",
+
+    # Database & Models
+    "AsyncSession",
+    "Base",
+    "Database",
+    "Field",
+    "MigrationManager",
+    "Relationship",
     "SQLModel",
     "SQLModelRepository",
+    "ZenithSQLModel",
+    "create_repository",
+
+    # HTTP Exceptions
+    "AuthenticationException",
+    "AuthorizationException",
+    "BadRequestException",
+    "ConflictException",
+    "ForbiddenException",
+    "HTTPException",
+    "InternalServerException",
+    "NotFoundException",
+    "RateLimitException",
+    "UnauthorizedException",
+    "ValidationException",
+
+    # Exception Helpers
+    "bad_request",
+    "conflict",
+    "forbidden",
+    "internal_error",
+    "not_found",
+    "unauthorized",
+    "validation_error",
+
+    # Background Processing
+    "BackgroundTasks",
+    "JobManager",
+    "JobQueue",
+    "TaskQueue",
+    "Worker",
+    "background_task",
+
+    # Middleware
+    "CompressionMiddleware",
+    "CORSMiddleware",
+    "CSRFMiddleware",
+    "RequestIDMiddleware",
+    "RequestLoggingMiddleware",
+    "SecurityHeadersMiddleware",
+
+    # Sessions
+    "SessionManager",
+    "SessionMiddleware",
+
+    # Web Responses & Utilities
+    "OptimizedJSONResponse",
+    "error_response",
+    "json_response",
+    "success_response",
+
+    # Server-Sent Events
     "SSEConnection",
     "SSEConnectionState",
     "SSEEventManager",
-    "SecurityHeadersMiddleware",
-    # Server-Sent Events with built-in optimizations
     "ServerSentEvents",
-    # ========================================================================
-    # BUSINESS LOGIC
-    # ========================================================================
-    "Service",
-    "SessionManager",
-    "SessionMiddleware",
-    "TaskQueue",
-    "UnauthorizedException",
-    "ValidationException",
-    # ========================================================================
-    # WEBSOCKETS & REAL-TIME
-    # ========================================================================
+    "create_sse_response",
+    "sse",
+
+    # Static File Serving
+    "serve_css_js",
+    "serve_images",
+    "serve_spa_files",
+
+    # WebSockets
     "WebSocket",
     "WebSocketDisconnect",
     "WebSocketManager",
-    "Worker",
-    "Zenith",
-    "ZenithSQLModel",
-    # ========================================================================
-    # MAIN FRAMEWORK
-    # ========================================================================
-    "__version__",
-    "background_task",
-    # Exception helpers
-    "bad_request",
-    "conflict",
-    "create_repository",
-    "create_sse_response",
-    "error_response",
-    "forbidden",
-    "health_manager",
-    "internal_error",
-    "json_response",
-    "metrics",
-    "not_found",
-    "request_scoped",
-    "serve_css_js",
-    "serve_images",
-    # Static file serving
-    "serve_spa_files",
-    "sse",
-    "success_response",
-    "unauthorized",
-    "validation_error",
 ]
