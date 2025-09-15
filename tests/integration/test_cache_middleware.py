@@ -7,7 +7,7 @@ This middleware had 19% coverage and NO integration tests.
 
 import pytest
 import time
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from zenith import Zenith
 from zenith.middleware.cache import CacheConfig, ResponseCacheMiddleware, MemoryCache, RedisCache
 from zenith.testing import TestClient
@@ -128,7 +128,8 @@ class TestCacheMiddleware:
 
         @app.get("/api/error")
         async def error():
-            return {"error": "not found"}, 404
+            from starlette.responses import JSONResponse
+            return JSONResponse({"error": "not found"}, status_code=404)
 
         async with TestClient(app) as client:
             # 200 OK should be cached
@@ -302,16 +303,16 @@ class TestCacheMiddleware:
             response3 = await client.get("/api/item/3")
             assert response3.headers.get("x-cache") == "MISS"
 
-            # Item 1 should be evicted (cache miss)
-            response1_evicted = await client.get("/api/item/1")
-            assert response1_evicted.headers.get("x-cache") == "MISS"
-
             # Item 2 and 3 should still be cached
             response2_still = await client.get("/api/item/2")
             assert response2_still.headers.get("x-cache") == "HIT"
 
             response3_still = await client.get("/api/item/3")
             assert response3_still.headers.get("x-cache") == "HIT"
+
+            # Item 1 should be evicted (cache miss) - test this last to avoid re-caching
+            response1_evicted = await client.get("/api/item/1")
+            assert response1_evicted.headers.get("x-cache") == "MISS"
 
 
 @pytest.mark.asyncio
@@ -421,8 +422,8 @@ class TestRedisCacheIntegration:
     @patch('zenith.middleware.cache.RedisCache')
     async def test_redis_cache_integration(self, mock_redis_cache_class):
         """Test cache middleware with mocked Redis backend."""
-        # Mock Redis cache instance
-        mock_cache = AsyncMock()
+        # Mock Redis cache instance (RedisCache methods are synchronous)
+        mock_cache = MagicMock()
         mock_cache.get.return_value = None  # No cached data initially
         mock_cache.set.return_value = None
         mock_redis_cache_class.return_value = mock_cache
@@ -432,7 +433,7 @@ class TestRedisCacheIntegration:
         # Use Redis cache
         cache_config = CacheConfig(
             use_redis=True,
-            redis_client=AsyncMock(),  # Mock Redis client
+            redis_client=MagicMock(),  # Mock Redis client
             default_ttl=300
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)

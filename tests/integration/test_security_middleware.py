@@ -511,7 +511,7 @@ class TestSecurityUtilities:
 
         # Test basic XSS vectors
         assert sanitize_html_input("<script>alert('xss')</script>") == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;&#x2F;script&gt;"
-        assert sanitize_html_input('"><img src=x onerror=alert(1)>') == "&#x27;&gt;&lt;img src=x onerror=alert(1)&gt;"
+        assert sanitize_html_input('"><img src=x onerror=alert(1)>') == "&quot;&gt;&lt;img src=x onerror=alert(1)&gt;"
         assert sanitize_html_input("javascript:alert('xss')") == "javascript:alert(&#x27;xss&#x27;)"
         assert sanitize_html_input("") == ""
         assert sanitize_html_input("normal text") == "normal text"

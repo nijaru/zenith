@@ -292,8 +292,13 @@ class RateLimitMiddleware:
     def _get_user_id(self, request: Request) -> str | None:
         """Extract user ID from request (if authenticated)."""
         # Try to get user from request state (set by auth middleware)
+        user = None
         if hasattr(request.state, "user"):
             user = request.state.user
+        elif hasattr(request.state, "current_user"):
+            user = request.state.current_user
+
+        if user:
             return str(user.get("id") or user.get("user_id", ""))
 
         # Try to extract from JWT token in Authorization header

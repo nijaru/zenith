@@ -331,8 +331,15 @@ def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
         if parsed.scheme not in allowed_schemes:
             return False
 
+        # Check for empty netloc (no host specified)
+        if not parsed.netloc:
+            return False
+
         # Check for localhost/private IP ranges (basic check)
         hostname = parsed.hostname
+        netloc = parsed.netloc
+
+        # Check hostname if available
         if hostname:
             if hostname in ["localhost", "127.0.0.1", "::1"]:
                 return False
@@ -342,6 +349,33 @@ def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
                 hostname.startswith("192.168.")
                 or hostname.startswith("10.")
                 or hostname.startswith("172.")
+            ):
+                return False
+
+        # For IPv6 addresses, hostname might be None, so check netloc too
+        if netloc:
+            # Handle IPv6 addresses properly
+            if netloc.startswith('[') and ']:' in netloc:
+                # IPv6 with port: [::1]:8080 -> ::1
+                netloc_host = netloc.split(']:')[0][1:]
+            elif netloc.startswith('[') and netloc.endswith(']'):
+                # IPv6 without port: [::1] -> ::1
+                netloc_host = netloc[1:-1]
+            elif ':' in netloc and not any(netloc.startswith(prefix) for prefix in ['192.168.', '10.', '172.']):
+                # Likely IPv6 address without brackets (e.g., ::1)
+                netloc_host = netloc
+            else:
+                # IPv4 address with port: 127.0.0.1:8080 -> 127.0.0.1
+                netloc_host = netloc.split(':')[0]
+
+            if netloc_host in ["localhost", "127.0.0.1", "::1"]:
+                return False
+
+            # Check for private IP ranges in netloc too
+            if (
+                netloc_host.startswith("192.168.")
+                or netloc_host.startswith("10.")
+                or netloc_host.startswith("172.")
             ):
                 return False
 
