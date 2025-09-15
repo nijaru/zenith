@@ -13,7 +13,7 @@ class MiddlewareMixin:
         from starlette.middleware import Middleware
 
         # For CORS middleware, validate configuration early to catch errors
-        if middleware_class.__name__ == 'CORSMiddleware':
+        if hasattr(middleware_class, '__name__') and middleware_class.__name__ == 'CORSMiddleware':
             # Temporarily instantiate to trigger validation (this will raise if invalid)
             try:
                 # Create a dummy ASGI app for validation
