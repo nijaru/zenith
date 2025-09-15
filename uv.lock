@@ -1528,6 +1528,7 @@ benchmark = [
     { name = "fastapi" },
 ]
 dev = [
+    { name = "aiosqlite" },
     { name = "httpx" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1582,6 +1583,7 @@ provides-extras = ["benchmark", "compression", "dev", "http3", "performance"]
 [package.metadata.requires-dev]
 benchmark = [{ name = "fastapi", specifier = ">=0.116.1" }]
 dev = [
+    { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },
     { name = "pytest-cov", specifier = ">=6.3.0" },
