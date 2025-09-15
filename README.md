@@ -17,7 +17,7 @@ Zenith is a modern Python API framework designed for building production-ready a
 - **Type-safe by design** - Full Pydantic integration with automatic validation
 - **Clean architecture** - Business logic organized in Service classes, separate from web concerns
 - **Zero-configuration defaults** - Production middleware, monitoring, and security built-in
-- **Performance focused** - 8,000+ req/s with async-first architecture and Python optimizations
+- **Performance focused** - 9,600+ req/s with async-first architecture and Python optimizations
 - **Full-stack ready** - Serve APIs alongside SPAs with comprehensive middleware stack
 
 ## Quick Start
@@ -120,8 +120,8 @@ uvicorn main:app --reload
 - Automatic request correlation IDs
 
 ### ⚡ **High Performance**
-- **8,000+ req/s** on modern hardware
-- **82.6% middleware retention** with full production stack
+- **9,600+ req/s** on modern hardware
+- **70% middleware retention** with full production stack
 - Async-first architecture with Python 3.12+ optimizations
 - Comprehensive performance monitoring built-in
 
@@ -167,9 +167,9 @@ your-app/
 ## Performance
 
 **Verified Benchmark Results:**
-- Simple endpoints: **8,049 req/s**
-- JSON endpoints: **9,469 req/s**  
-- With full middleware: **6,647 req/s** (82.6% retention)
+- Simple endpoints: **9,557 req/s**
+- JSON endpoints: **9,602 req/s**
+- With full middleware: **6,694 req/s** (70% retention)
 
 Run your own benchmarks:
 ```bash
@@ -276,10 +276,10 @@ pytest  # Run tests
 
 ## Status
 
-**Latest Version**: v0.2.4
-**Python Support**: 3.12+  
-**Test Suite**: 100% passing (446 tests)
-**Performance**: Production-ready with 8,000+ req/s capability  
+**Latest Version**: v0.2.6
+**Python Support**: 3.12+
+**Test Suite**: 100% passing (471 tests)
+**Performance**: Production-ready with 9,600+ req/s capability  
 **Architecture**: Clean separation with Service system and dependency injection  
 
 Zenith is production-ready with comprehensive middleware, performance optimizations, and clean architecture patterns for modern Python applications.

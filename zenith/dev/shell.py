@@ -66,13 +66,13 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
 
     # Web utilities
     try:
-        from zenith.monitoring.health import health_manager
-        from zenith.web import metrics
+        from zenith.web.health import health_check
+        from zenith.web.metrics import metrics_handler
 
         namespace.update(
             {
-                "metrics": metrics,
-                "health_manager": health_manager,
+                "health_check": health_check,
+                "metrics_handler": metrics_handler,
             }
         )
     except ImportError as e:
@@ -106,8 +106,6 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
     # Try to import models and contexts from current project
     try:
         # Import all models if they exist
-        from pathlib import Path
-
         models_path = Path.cwd() / "models"
         if models_path.exists():
             sys.path.insert(0, str(Path.cwd()))
@@ -148,18 +146,7 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
     namespace["create_task"] = asyncio.create_task
     namespace["gather"] = asyncio.gather
 
-    # Add performance profiling utilities
-    try:
-        from zenith.performance import profile_block, track_performance
-
-        namespace.update(
-            {
-                "track_performance": track_performance,
-                "profile_block": profile_block,
-            }
-        )
-    except ImportError:
-        pass
+    # Performance utilities already imported above, skip duplicate
 
     if import_errors:
         print("⚠️  Some imports failed:")
@@ -186,9 +173,9 @@ def run_shell(app_path: str | None = None, use_ipython: bool = True) -> None:
     # Print what's available
     print("📦 Available imports:")
     categories = {
-        "Framework": ["Zenith", "Config", "Router", "Context"],
+        "Framework": ["Zenith", "Config", "Router", "Service"],
         "Database": ["Database", "SQLModel", "Field", "MigrationManager"],
-        "Web": ["metrics", "health_manager"],
+        "Web": ["health_check", "metrics_handler"],
         "Async": ["run", "create_task", "gather"],
         "Profiling": ["track_performance", "profile_block"],
     }
@@ -208,7 +195,7 @@ def run_shell(app_path: str | None = None, use_ipython: bool = True) -> None:
             "Zenith",
             "Config",
             "Router",
-            "Context",
+            "Service",
             "Database",
             "SQLModel",
             "Field",
