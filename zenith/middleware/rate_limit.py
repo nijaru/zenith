@@ -490,7 +490,9 @@ class RateLimitMiddleware:
                     for endpoint_path in self.endpoint_limits
                 )
                 # Use the most restrictive limit for headers
-                most_restrictive = min(limits, key=lambda limit: limit.requests / limit.window)
+                most_restrictive = min(
+                    limits, key=lambda limit: limit.requests / limit.window
+                )
                 key = self._get_rate_limit_key_asgi(
                     scope, most_restrictive, is_endpoint_specific
                 )
