@@ -95,7 +95,7 @@ class AuthService:
         return None
 
 
-app.register_context("authcontext", AuthContext)
+app.register_service(AuthService)
 
 
 # ============================================================================
@@ -125,7 +125,7 @@ async def health():
 
 
 @app.post("/login")
-async def login(email: str, password: str, auth: AuthContext = Inject()) -> dict:
+async def login(email: str, password: str, auth: AuthService = Inject()) -> dict:
     """Login endpoint (subject to default rate limits)."""
     user = await auth.authenticate(email, password)
     if not user:
