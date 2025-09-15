@@ -13,6 +13,8 @@ twine upload dist/zenith_web-{version}*
 
 ## Release Gotchas
 **Quick sanity checks before release:**
+- Dependencies updated: `uv run pip list --outdated` (check for updates)
+- Security scan: `uv run pip-audit` (no vulnerabilities?)
 - Run tests: `uv run pytest` (all passing?)
 - Version bump: `pyproject.toml` updated?
 - Examples work: `uv run python examples/00-hello-world.py`
@@ -27,7 +29,7 @@ twine upload dist/zenith_web-{version}*
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.2.4 - Production-ready with comprehensive middleware and test fixes
+- **Status**: v0.2.5 - Latest dependencies with Pydantic 2.11.9+ and enhanced security
 - **Performance**: 9,500+ req/s with optimized middleware stack
 - **Test Coverage**: 100% integration tests (446 tests passing)
 - **CLI**: `zen` command for development tools

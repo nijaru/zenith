@@ -59,7 +59,6 @@ classifiers = [
 
 dependencies = [
     "uvicorn[standard]>=0.24.0",
-    "starlette>=0.32.0",
     "websockets>=12.0",
     "jinja2>=3.1.0",
     "sqlalchemy>=2.0.0",
@@ -67,7 +66,6 @@ dependencies = [
     "asyncpg>=0.29.0",
     "aiosqlite>=0.19.0",
     "redis>=5.0.0",
-    "pydantic[email]>=2.5.0",
     "sqlmodel>=0.0.22",
     "structlog>=23.0.0",
     "click>=8.1.0",
@@ -81,6 +79,8 @@ dependencies = [
     "prometheus-client>=0.22.1",
     "greenlet>=3.2.4",
     "psutil>=7.0.0",
+    "pydantic>=2.11.9",
+    "starlette>=0.32.0",
 ]
 
 [project.optional-dependencies]
@@ -123,6 +123,9 @@ Repository = "https://github.com/nijaru/zenith.git"
 Issues = "https://github.com/nijaru/zenith/issues"
 
 [dependency-groups]
+benchmark = [
+    "fastapi>=0.116.1",
+]
 dev = [
     "httpx>=0.28.1",
     "pytest-asyncio>=1.1.0",
