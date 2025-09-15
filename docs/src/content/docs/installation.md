@@ -198,7 +198,7 @@ docker-compose up -d
 ### Import Errors
 
 If you get import errors, ensure:
-- Python 3.11+ is being used
+- Python 3.12+ is being used
 - Virtual environment is activated
 - Zenith is installed in the current environment
 
