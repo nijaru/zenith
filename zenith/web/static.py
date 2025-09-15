@@ -144,42 +144,82 @@ def create_static_route(
 
 
 class SPAStaticFiles(ZenithStaticFiles):
-    """Static files handler with SPA fallback support."""
+    """
+    Static files handler with SPA fallback support.
 
-    def __init__(self, config: StaticFileConfig, fallback: str = "index.html"):
+    Supports custom index files and path exclusion patterns.
+    """
+
+    def __init__(
+        self,
+        config: StaticFileConfig,
+        index: str = "index.html",
+        exclude: list[str] | None = None,
+    ):
+        """
+        Initialize SPA static files handler.
+
+        Args:
+            config: Static file configuration
+            index: The index file to serve (default: "index.html")
+            exclude: Path patterns to exclude from SPA fallback (e.g., ["/api/*", "/admin/*"])
+        """
         super().__init__(config)
-        self.fallback = fallback
+        self.index = index
+        self.exclude_patterns = exclude or []
+
+    def _should_fallback(self, path: str) -> bool:
+        """Check if the path should use SPA fallback."""
+        # Don't fallback for excluded patterns
+        for pattern in self.exclude_patterns:
+            if pattern.endswith("*"):
+                # Wildcard pattern
+                prefix = pattern[:-1]
+                if path.startswith(prefix):
+                    return False
+            elif path == pattern or path.startswith(pattern + "/"):
+                # Exact match or prefix match
+                return False
+        return True
 
     async def get_response(self, path: str, scope: dict) -> Response:
-        """Get response for a path, falling back to index.html for SPAs."""
+        """Get response for a path, falling back to index file for SPAs."""
         try:
             # Try to get the actual file first
             response = await super().get_response(path, scope)
-            # If we get a 404, try the fallback
-            if response.status_code == 404:
-                # Try to serve the fallback file (usually index.html)
-                fallback_path = "" if self.fallback == "index.html" else self.fallback
-                response = await super().get_response(fallback_path, scope)
+
+            # If we get a 404 and should fallback, serve the index file
+            if response.status_code == 404 and self._should_fallback(path):
+                # Serve the index file
+                index_path = "" if self.index == "index.html" else self.index
+                response = await super().get_response(index_path, scope)
+
             return response
         except Exception:
-            # If anything fails, try to serve the fallback
-            try:
-                fallback_path = "" if self.fallback == "index.html" else self.fallback
-                return await super().get_response(fallback_path, scope)
-            except Exception:
-                # If even the fallback fails, return 404
-                return Response(status_code=404)
+            # If anything fails, try to serve the index file if appropriate
+            if self._should_fallback(path):
+                try:
+                    index_path = "" if self.index == "index.html" else self.index
+                    return await super().get_response(index_path, scope)
+                except Exception:
+                    pass
+            # Return 404 if we shouldn't fallback or fallback failed
+            return Response(status_code=404)
 
 
 def serve_spa_files(
-    directory: str = "dist", fallback: str = "index.html", **config_kwargs
+    directory: str = "dist",
+    index: str = "index.html",
+    exclude: list[str] | None = None,
+    **config_kwargs
 ) -> SPAStaticFiles:
     """
     Serve Single Page Application files with fallback support.
 
     Args:
         directory: Directory containing SPA files
-        fallback: Fallback file for client-side routing
+        index: Index file to serve for client-side routing (default: "index.html")
+        exclude: Path patterns to exclude from SPA fallback (e.g., ["/api/*", "/admin/*"])
         **config_kwargs: Additional configuration options
 
     Returns:
@@ -188,7 +228,8 @@ def serve_spa_files(
     Example:
         app.mount("/", serve_spa_files(
             "dist",
-            fallback="index.html",
+            index="app.html",
+            exclude=["/api/*", "/admin/*"],
             max_age=300  # 5 minutes for SPA files
         ))
     """
@@ -198,7 +239,7 @@ def serve_spa_files(
         **config_kwargs,
     )
 
-    return SPAStaticFiles(config, fallback=fallback)
+    return SPAStaticFiles(config, index=index, exclude=exclude)
 
 
 # Convenience functions for common static file patterns

@@ -83,7 +83,12 @@ class ServicesMixin:
         self._static_mounts.append(static_mount)
 
     def spa(
-        self, framework_or_directory: str | None = None, path: str = "/", **config
+        self,
+        framework_or_directory: str | None = None,
+        path: str = "/",
+        index: str = "index.html",
+        exclude: list[str] | None = None,
+        **config
     ) -> None:
         """
         Serve a Single Page Application with intelligent defaults.
@@ -91,13 +96,16 @@ class ServicesMixin:
         Args:
             framework_or_directory: Framework ("react", "vue", "solidjs") or directory path
             path: URL path to mount SPA (default: "/")
+            index: Index file to serve (default: "index.html")
+            exclude: Path patterns to exclude from SPA fallback (e.g., ["/api/*"])
             **config: Additional configuration (max_age, etc.)
 
         Examples:
-            app.spa()              # Auto-detect dist/ or build/
-            app.spa("dist")        # Serve from dist/
-            app.spa("react")       # React (uses build/)
-            app.spa("solidjs")     # SolidJS (uses dist/)
+            app.spa()                                    # Auto-detect dist/ or build/
+            app.spa("dist")                             # Serve from dist/
+            app.spa("react")                            # React (uses build/)
+            app.spa("dist", index="app.html")           # Custom index file
+            app.spa("dist", exclude=["/api/*"])         # Exclude API routes
         """
         from pathlib import Path
 
@@ -127,7 +135,12 @@ class ServicesMixin:
             # Treat as directory path
             directory = framework_or_directory
 
-        spa_app = serve_spa_files(directory, **config)
+        spa_app = serve_spa_files(
+            directory=directory,
+            index=index,
+            exclude=exclude,
+            **config
+        )
         self.mount(path, spa_app)
 
     def static(
