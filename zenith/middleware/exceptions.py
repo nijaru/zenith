@@ -125,7 +125,7 @@ class ExceptionHandlerMiddleware:
         """Handle Zenith framework exceptions."""
 
         # Use the built-in to_response method for consistent API format
-        if hasattr(exc, 'to_response'):
+        if hasattr(exc, "to_response"):
             return exc.to_response()
 
         # Fallback for exceptions that don't have to_response method

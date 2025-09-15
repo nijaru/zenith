@@ -13,7 +13,8 @@ if TYPE_CHECKING:
 
 class InjectDependency:
     """Marker for service dependency injection."""
-    __slots__ = ('service_class',)
+
+    __slots__ = ("service_class",)
 
     def __init__(self, service_class: type["BaseService"] | None = None):
         self.service_class = service_class
@@ -21,7 +22,8 @@ class InjectDependency:
 
 class AuthDependency:
     """Marker for authentication dependency injection."""
-    __slots__ = ('required', 'scopes')
+
+    __slots__ = ("required", "scopes")
 
     def __init__(self, required: bool = True, scopes: list[str] | None = None):
         self.required = required
@@ -30,7 +32,8 @@ class AuthDependency:
 
 class FileUploadDependency:
     """Marker for file upload dependency injection."""
-    __slots__ = ('field_name', 'config')
+
+    __slots__ = ("field_name", "config")
 
     def __init__(
         self,

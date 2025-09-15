@@ -38,19 +38,19 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         async def get_item(id: int, items: ItemsContext = Inject()) -> dict:
             return await items.get_item(id)
     """
-    
+
     class _DatabaseSessionMiddleware:
         """Built-in database session middleware for automatic request-scoped connection reuse."""
-        
+
         def __init__(self, app, database):
             self.app = app
             self.database = database
-        
+
         async def __call__(self, scope, receive, send):
             if scope["type"] != "http":
                 await self.app(scope, receive, send)
                 return
-                
+
             # Automatically provide request-scoped database session
             async with self.database.request_scoped_session(scope):
                 await self.app(scope, receive, send)
@@ -153,12 +153,13 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # 5. Rate limiting (fast memory/Redis operations)
         from zenith.middleware.rate_limit import RateLimit
+
         self.add_middleware(
             RateLimitMiddleware,
-            default_limits=[RateLimit(requests=100, window=60, per="ip")]
+            default_limits=[RateLimit(requests=100, window=60, per="ip")],
         )
 
-        # 6. Minimal logging 
+        # 6. Minimal logging
         if self.config.debug:
             self.add_middleware(RequestLoggingMiddleware)
 
@@ -631,5 +632,3 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
     def __repr__(self) -> str:
         return f"Zenith(debug={self.config.debug})"
-
-

@@ -70,7 +70,7 @@ __all__ = [
     "serve_uploads",
     "set_cookie_response",
     "SSEConnection",
-    "SSEConnectionState", 
+    "SSEConnectionState",
     "SSEEventManager",
     "ServerSentEvents",
     "sse",

@@ -411,9 +411,7 @@ async def register(user_data: UserCreate, users: UserService = Inject()) -> User
 
 
 @auth_router.post("/login", response_model=TokenResponse)
-async def login(
-    credentials: UserLogin, users: UserService = Inject()
-) -> TokenResponse:
+async def login(credentials: UserLogin, users: UserService = Inject()) -> TokenResponse:
     """Login and get access token."""
     user = await users.authenticate_user(credentials.email, credentials.password)
     if not user:

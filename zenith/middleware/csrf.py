@@ -345,6 +345,7 @@ class CSRFMiddleware:
 
         # Try form data for POST requests
         from zenith.core.patterns import HTTP_POST
+
         if request.method == HTTP_POST:
             try:
                 form_data = await request.form()

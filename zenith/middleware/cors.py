@@ -163,6 +163,7 @@ class CORSMiddleware:
 
         # Handle preflight requests (OPTIONS method with specific headers)
         from zenith.core.patterns import HTTP_OPTIONS
+
         if scope["method"] == HTTP_OPTIONS and origin:
             # Check if this is actually a preflight request
             request_method_header = headers.get(b"access-control-request-method")

@@ -9,7 +9,12 @@ import pytest
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 from zenith import Zenith
-from zenith.middleware.cache import CacheConfig, ResponseCacheMiddleware, MemoryCache, RedisCache
+from zenith.middleware.cache import (
+    CacheConfig,
+    ResponseCacheMiddleware,
+    MemoryCache,
+    RedisCache,
+)
 from zenith.testing import TestClient
 
 
@@ -70,6 +75,7 @@ class TestCacheMiddleware:
 
             # Wait for cache to expire
             import asyncio
+
             await asyncio.sleep(1.5)
 
             # Third request after expiration - cache MISS
@@ -85,7 +91,7 @@ class TestCacheMiddleware:
 
         cache_config = CacheConfig(
             cache_methods=["GET", "HEAD"],  # Don't cache POST
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -107,10 +113,16 @@ class TestCacheMiddleware:
 
             # POST should NOT be cached
             response3 = await client.post("/api/item")
-            assert "x-cache" not in response3.headers or response3.headers.get("x-cache") != "HIT"
+            assert (
+                "x-cache" not in response3.headers
+                or response3.headers.get("x-cache") != "HIT"
+            )
 
             response4 = await client.post("/api/item")
-            assert "x-cache" not in response4.headers or response4.headers.get("x-cache") != "HIT"
+            assert (
+                "x-cache" not in response4.headers
+                or response4.headers.get("x-cache") != "HIT"
+            )
 
     async def test_status_code_filtering(self):
         """Test that only configured status codes are cached."""
@@ -118,7 +130,7 @@ class TestCacheMiddleware:
 
         cache_config = CacheConfig(
             cache_status_codes=[200],  # Only cache 200 OK
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -129,6 +141,7 @@ class TestCacheMiddleware:
         @app.get("/api/error")
         async def error():
             from starlette.responses import JSONResponse
+
             return JSONResponse({"error": "not found"}, status_code=404)
 
         async with TestClient(app) as client:
@@ -154,7 +167,7 @@ class TestCacheMiddleware:
 
         cache_config = CacheConfig(
             cache_paths=["/api/cached"],  # Only cache this path
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -187,7 +200,7 @@ class TestCacheMiddleware:
 
         cache_config = CacheConfig(
             ignore_paths=["/api/dynamic"],  # Don't cache this path
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -220,7 +233,7 @@ class TestCacheMiddleware:
 
         cache_config = CacheConfig(
             ignore_query_params=["timestamp"],  # Ignore timestamp param
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -248,7 +261,7 @@ class TestCacheMiddleware:
 
         cache_config = CacheConfig(
             vary_headers=["Authorization"],  # Vary cache by auth header
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -259,14 +272,20 @@ class TestCacheMiddleware:
 
         async with TestClient(app) as client:
             # First user
-            response1 = await client.get("/api/user-data", headers={"Authorization": "Bearer user1"})
+            response1 = await client.get(
+                "/api/user-data", headers={"Authorization": "Bearer user1"}
+            )
             assert response1.headers.get("x-cache") == "MISS"
 
-            response2 = await client.get("/api/user-data", headers={"Authorization": "Bearer user1"})
+            response2 = await client.get(
+                "/api/user-data", headers={"Authorization": "Bearer user1"}
+            )
             assert response2.headers.get("x-cache") == "HIT"
 
             # Different user - should be cache MISS (different cache key)
-            response3 = await client.get("/api/user-data", headers={"Authorization": "Bearer user2"})
+            response3 = await client.get(
+                "/api/user-data", headers={"Authorization": "Bearer user2"}
+            )
             assert response3.headers.get("x-cache") == "MISS"
 
     async def test_memory_cache_lru_eviction(self):
@@ -276,7 +295,7 @@ class TestCacheMiddleware:
         # Small cache size for testing eviction
         cache_config = CacheConfig(
             max_cache_items=2,  # Only cache 2 items
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -324,12 +343,16 @@ class TestMemoryCache:
         cache = MemoryCache(max_size=3)
 
         # Test set and get
-        cache.set("key1", {
-            "content": b"data1",
-            "media_type": "application/json",
-            "headers": [],
-            "status_code": 200
-        }, ttl=300)
+        cache.set(
+            "key1",
+            {
+                "content": b"data1",
+                "media_type": "application/json",
+                "headers": [],
+                "status_code": 200,
+            },
+            ttl=300,
+        )
 
         item = cache.get("key1")
         assert item is not None
@@ -344,18 +367,23 @@ class TestMemoryCache:
         cache = MemoryCache()
 
         # Set with very short TTL
-        cache.set("expire_key", {
-            "content": b"expires",
-            "media_type": "application/json",
-            "headers": [],
-            "status_code": 200
-        }, ttl=1)
+        cache.set(
+            "expire_key",
+            {
+                "content": b"expires",
+                "media_type": "application/json",
+                "headers": [],
+                "status_code": 200,
+            },
+            ttl=1,
+        )
 
         # Should be available immediately
         assert cache.get("expire_key") is not None
 
         # Wait for expiration
         import asyncio
+
         await asyncio.sleep(1.5)
 
         # Should be expired
@@ -369,7 +397,7 @@ class TestMemoryCache:
             "content": b"data",
             "media_type": "application/json",
             "headers": [],
-            "status_code": 200
+            "status_code": 200,
         }
 
         # Fill cache
@@ -396,14 +424,14 @@ class TestMemoryCache:
             "content": b"original",
             "media_type": "application/json",
             "headers": [],
-            "status_code": 200
+            "status_code": 200,
         }
 
         data2 = {
             "content": b"updated",
             "media_type": "application/json",
             "headers": [],
-            "status_code": 200
+            "status_code": 200,
         }
 
         # Set initial value
@@ -419,7 +447,7 @@ class TestMemoryCache:
 class TestRedisCacheIntegration:
     """Test Redis cache backend integration."""
 
-    @patch('zenith.middleware.cache.RedisCache')
+    @patch("zenith.middleware.cache.RedisCache")
     async def test_redis_cache_integration(self, mock_redis_cache_class):
         """Test cache middleware with mocked Redis backend."""
         # Mock Redis cache instance (RedisCache methods are synchronous)
@@ -434,7 +462,7 @@ class TestRedisCacheIntegration:
         cache_config = CacheConfig(
             use_redis=True,
             redis_client=MagicMock(),  # Mock Redis client
-            default_ttl=300
+            default_ttl=300,
         )
         app.add_middleware(ResponseCacheMiddleware, config=cache_config)
 
@@ -513,9 +541,9 @@ class TestCacheConfiguration:
         @app.get("/api/custom")
         async def custom_response():
             from starlette.responses import Response
+
             return Response(
-                content=f"Custom response at {time.time()}",
-                media_type="text/custom"
+                content=f"Custom response at {time.time()}", media_type="text/custom"
             )
 
         async with TestClient(app) as client:

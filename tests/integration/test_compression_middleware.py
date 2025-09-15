@@ -34,12 +34,14 @@ def basic_app():
     @app.get("/text")
     async def text_response():
         from zenith.web.responses import Response
+
         large_text = "This is a large text response. " * 100
         return Response(content=large_text, media_type="text/plain")
 
     @app.get("/image")
     async def image_response():
         from zenith.web.responses import Response
+
         # Simulate binary image data
         image_data = b"fake_image_data" * 100
         return Response(content=image_data, media_type="image/png")
@@ -47,6 +49,7 @@ def basic_app():
     @app.get("/html")
     async def html_response():
         from zenith.web.responses import Response
+
         html_content = "<html><body>" + "Content " * 200 + "</body></html>"
         return Response(content=html_content, media_type="text/html")
 
@@ -66,8 +69,8 @@ def compression_app():
             "text/html",
             "text/plain",
             "text/css",
-            "application/javascript"
-        }
+            "application/javascript",
+        },
     )
 
     @app.get("/small")
@@ -83,12 +86,14 @@ def compression_app():
     @app.get("/text")
     async def text_response():
         from zenith.web.responses import Response
+
         large_text = "This is a large text response. " * 100
         return Response(content=large_text, media_type="text/plain")
 
     @app.get("/image")
     async def image_response():
         from zenith.web.responses import Response
+
         # Simulate binary image data
         image_data = b"fake_image_data" * 100
         return Response(content=image_data, media_type="image/png")
@@ -104,7 +109,7 @@ def custom_compression_app():
     config = CompressionConfig(
         minimum_size=50,
         compressible_types={"application/json", "text/plain"},
-        exclude_paths={"/no-compression"}
+        exclude_paths={"/no-compression"},
     )
 
     app.add_middleware(CompressionMiddleware, config=config)
@@ -120,10 +125,8 @@ def custom_compression_app():
     @app.get("/text")
     async def text_response():
         from zenith.web.responses import Response
-        return Response(
-            content="Text content " * 20,
-            media_type="text/plain"
-        )
+
+        return Response(content="Text content " * 20, media_type="text/plain")
 
     return app
 
@@ -146,9 +149,7 @@ class TestCompressionBasicFunctionality:
     async def test_gzip_compression_with_accept_encoding(self, compression_app):
         """Test gzip compression when client accepts it."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/large", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/large", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # TestClient automatically handles decompression, so check headers
@@ -164,9 +165,9 @@ class TestCompressionBasicFunctionality:
     async def test_deflate_compression(self, compression_app):
         """Test deflate compression when gzip not available."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/large", headers={
-                "Accept-Encoding": "deflate"
-            })
+            response = await client.get(
+                "/large", headers={"Accept-Encoding": "deflate"}
+            )
 
             assert response.status_code == 200
             assert response.headers["content-encoding"] == "deflate"
@@ -176,9 +177,9 @@ class TestCompressionBasicFunctionality:
     async def test_prefer_gzip_over_deflate(self, compression_app):
         """Test that gzip is preferred when both are available."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/large", headers={
-                "Accept-Encoding": "gzip, deflate"
-            })
+            response = await client.get(
+                "/large", headers={"Accept-Encoding": "gzip, deflate"}
+            )
 
             assert response.status_code == 200
             assert response.headers["content-encoding"] == "gzip"
@@ -186,9 +187,7 @@ class TestCompressionBasicFunctionality:
     async def test_small_response_not_compressed(self, compression_app):
         """Test that small responses are not compressed."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/small", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/small", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # Should not be compressed due to size
@@ -201,9 +200,7 @@ class TestCompressionContentTypes:
     async def test_json_compression(self, compression_app):
         """Test JSON response compression."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/large", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/large", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             assert response.headers["content-encoding"] == "gzip"
@@ -211,9 +208,7 @@ class TestCompressionContentTypes:
     async def test_text_compression(self, compression_app):
         """Test text response compression."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/text", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/text", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             assert response.headers["content-encoding"] == "gzip"
@@ -221,9 +216,7 @@ class TestCompressionContentTypes:
     async def test_image_not_compressed(self, compression_app):
         """Test that image responses are not compressed."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/image", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/image", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # Image should not be compressed
@@ -233,15 +226,11 @@ class TestCompressionContentTypes:
         """Test custom compressible content types."""
         async with TestClient(custom_compression_app) as client:
             # JSON should be compressed
-            response = await client.get("/test", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
             assert response.headers["content-encoding"] == "gzip"
 
             # Text should be compressed
-            response = await client.get("/text", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/text", headers={"Accept-Encoding": "gzip"})
             assert response.headers["content-encoding"] == "gzip"
 
 
@@ -252,8 +241,9 @@ class TestCompressionConfiguration:
         """Test minimum size threshold configuration."""
         app = Zenith()
 
-        app.add_middleware(CompressionMiddleware,
-            minimum_size=1000  # Higher threshold
+        app.add_middleware(
+            CompressionMiddleware,
+            minimum_size=1000,  # Higher threshold
         )
 
         @app.get("/medium")
@@ -262,9 +252,7 @@ class TestCompressionConfiguration:
             return {"data": "content " * 50}  # Less than 1000 bytes
 
         async with TestClient(app) as client:
-            response = await client.get("/medium", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/medium", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # Should not be compressed due to minimum size
@@ -274,15 +262,13 @@ class TestCompressionConfiguration:
         """Test path exclusion from compression."""
         async with TestClient(custom_compression_app) as client:
             # Regular path should be compressed
-            response = await client.get("/test", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
             assert response.headers["content-encoding"] == "gzip"
 
             # Excluded path should not be compressed
-            response = await client.get("/no-compression", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get(
+                "/no-compression", headers={"Accept-Encoding": "gzip"}
+            )
             assert "content-encoding" not in response.headers
 
     async def test_config_object_vs_parameters(self):
@@ -295,14 +281,12 @@ class TestCompressionConfiguration:
             app=app1,
             minimum_size=200,
             compressible_types={"text/plain"},
-            exclude_paths={"/skip"}
+            exclude_paths={"/skip"},
         )
 
         # Using config object
         config = CompressionConfig(
-            minimum_size=200,
-            compressible_types={"text/plain"},
-            exclude_paths={"/skip"}
+            minimum_size=200, compressible_types={"text/plain"}, exclude_paths={"/skip"}
         )
         middleware2 = CompressionMiddleware(app=app2, config=config)
 
@@ -324,19 +308,20 @@ class TestCompressionEdgeCases:
         @app.get("/pre-compressed")
         async def pre_compressed():
             from zenith.web.responses import Response
+
             # Create actual gzip-compressed content
             import gzip
+
             original_content = "Already compressed content"
-            compressed_content = gzip.compress(original_content.encode('utf-8'))
+            compressed_content = gzip.compress(original_content.encode("utf-8"))
             return Response(
-                content=compressed_content,
-                headers={"Content-Encoding": "gzip"}
+                content=compressed_content, headers={"Content-Encoding": "gzip"}
             )
 
         async with TestClient(app) as client:
-            response = await client.get("/pre-compressed", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get(
+                "/pre-compressed", headers={"Accept-Encoding": "gzip"}
+            )
 
             assert response.status_code == 200
             # Should not re-compress
@@ -351,15 +336,16 @@ class TestCompressionEdgeCases:
         @app.get("/no-transform")
         async def no_transform():
             from zenith.web.responses import Response
+
             return Response(
                 content="Content that should not be transformed" * 10,
-                headers={"Cache-Control": "no-transform"}
+                headers={"Cache-Control": "no-transform"},
             )
 
         async with TestClient(app) as client:
-            response = await client.get("/no-transform", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get(
+                "/no-transform", headers={"Accept-Encoding": "gzip"}
+            )
 
             assert response.status_code == 200
             # Should not be compressed due to no-transform
@@ -374,15 +360,11 @@ class TestCompressionEdgeCases:
         @app.get("/error")
         async def error_response():
             from zenith.web.responses import Response
-            return Response(
-                content="Error message " * 50,
-                status_code=400
-            )
+
+            return Response(content="Error message " * 50, status_code=400)
 
         async with TestClient(app) as client:
-            response = await client.get("/error", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/error", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 400
             # Error responses should not be compressed
@@ -397,12 +379,13 @@ class TestCompressionEdgeCases:
         @app.get("/redirect")
         async def redirect_response():
             from starlette.responses import RedirectResponse
+
             return RedirectResponse(url="/other", status_code=302)
 
         async with TestClient(app) as client:
-            response = await client.get("/redirect", headers={
-                "Accept-Encoding": "gzip"
-            }, follow_redirects=False)
+            response = await client.get(
+                "/redirect", headers={"Accept-Encoding": "gzip"}, follow_redirects=False
+            )
 
             assert response.status_code == 302
             # Redirect responses should not be compressed
@@ -417,16 +400,16 @@ class TestCompressionEdgeCases:
         @app.get("/random")
         async def random_data():
             from zenith.web.responses import Response
+
             # Random data that might not compress well
             import random
             import string
-            random_content = ''.join(random.choices(string.ascii_letters, k=500))
+
+            random_content = "".join(random.choices(string.ascii_letters, k=500))
             return Response(content=random_content, media_type="text/plain")
 
         async with TestClient(app) as client:
-            response = await client.get("/random", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/random", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # Might or might not be compressed depending on whether it reduces size
@@ -435,9 +418,7 @@ class TestCompressionEdgeCases:
     async def test_content_length_header_updated(self, compression_app):
         """Test that Content-Length header is updated for compressed responses."""
         async with TestClient(compression_app) as client:
-            response = await client.get("/large", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/large", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             if "content-encoding" in response.headers:
@@ -465,9 +446,7 @@ class TestCompressionEdgeCases:
             return StreamingResponse(generate_data(), media_type="text/plain")
 
         async with TestClient(app) as client:
-            response = await client.get("/stream", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/stream", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # StreamingResponse handling might differ
@@ -478,23 +457,23 @@ class TestCompressionEdgeCases:
         """Test that content type matching is case insensitive."""
         app = Zenith()
 
-        app.add_middleware(CompressionMiddleware,
-            minimum_size=10,
-            compressible_types={"text/plain"}
+        app.add_middleware(
+            CompressionMiddleware, minimum_size=10, compressible_types={"text/plain"}
         )
 
         @app.get("/mixed-case")
         async def mixed_case_content_type():
             from zenith.web.responses import Response
+
             return Response(
                 content="Content with mixed case content-type " * 10,
-                media_type="TEXT/PLAIN"  # Mixed case
+                media_type="TEXT/PLAIN",  # Mixed case
             )
 
         async with TestClient(app) as client:
-            response = await client.get("/mixed-case", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get(
+                "/mixed-case", headers={"Accept-Encoding": "gzip"}
+            )
 
             assert response.status_code == 200
             # Should still be compressed despite case difference
@@ -553,12 +532,14 @@ class TestCompressionInStack:
             return {"data": "content " * 50}
 
         async with TestClient(app) as client:
-            response = await client.get("/test", headers={
-                "Accept-Encoding": "gzip",
-                "Origin": "https://example.com"
-            })
+            response = await client.get(
+                "/test",
+                headers={"Accept-Encoding": "gzip", "Origin": "https://example.com"},
+            )
 
             assert response.status_code == 200
             # Should have both compression and CORS headers
             assert response.headers["content-encoding"] == "gzip"
-            assert response.headers["access-control-allow-origin"] == "https://example.com"
+            assert (
+                response.headers["access-control-allow-origin"] == "https://example.com"
+            )

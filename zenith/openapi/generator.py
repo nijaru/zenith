@@ -52,22 +52,22 @@ class OpenAPIGenerator:
 
     # Simple in-memory cache for generated specs
     _spec_cache: dict[str, dict] = {}
-    
-    def _get_cache_key(self, routers: list['Router']) -> str:
+
+    def _get_cache_key(self, routers: list["Router"]) -> str:
         """Create simple string cache key from router structure."""
         route_sigs = []
         for router in routers:
             for route_spec in router.routes:
                 sig = f"{route_spec.path}:{','.join(sorted(route_spec.methods))}:{route_spec.handler.__name__}"
                 route_sigs.append(sig)
-        
+
         routes_hash = hash(tuple(sorted(route_sigs)))
         config_hash = hash((self.title, self.version, self.description))
         return f"{routes_hash}_{config_hash}"
 
-    def generate_spec(self, routers: list['Router']) -> dict[str, Any]:
+    def generate_spec(self, routers: list["Router"]) -> dict[str, Any]:
         """Generate complete OpenAPI 3.0 specification with caching."""
-        
+
         # Check cache first for performance optimization
         cache_key = self._get_cache_key(routers)
         if cache_key in self._spec_cache:
@@ -92,7 +92,7 @@ class OpenAPIGenerator:
 
         # Cache the result for future use (25-40% speedup for repeated calls)
         self._spec_cache[cache_key] = spec.copy()
-        
+
         # Simple cache size management (LRU-like behavior)
         if len(self._spec_cache) > 50:  # Keep cache bounded
             # Remove oldest entries
@@ -150,6 +150,7 @@ class OpenAPIGenerator:
 
                 # Handle Pydantic models (request body)
                 from zenith.core.patterns import METHODS_WITH_BODY
+
                 if (
                     inspect.isclass(param_type)
                     and issubclass(param_type, BaseModel)
@@ -337,7 +338,7 @@ class OpenAPIGenerator:
 
 
 def generate_openapi_spec(
-    routers: list['Router'],
+    routers: list["Router"],
     title: str = "Zenith API",
     version: str = "1.0.0",
     description: str = "API built with Zenith framework",

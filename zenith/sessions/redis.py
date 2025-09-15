@@ -97,7 +97,11 @@ class RedisSessionStore(SessionStore):
             ttl = None
             if session.expires_at:
                 # Use timezone-aware datetime for consistency
-                now = datetime.now(UTC) if session.expires_at.tzinfo else datetime.utcnow()
+                now = (
+                    datetime.now(UTC)
+                    if session.expires_at.tzinfo
+                    else datetime.utcnow()
+                )
                 ttl_seconds = (session.expires_at - now).total_seconds()
                 if ttl_seconds > 0:
                     ttl = int(ttl_seconds)

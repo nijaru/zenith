@@ -93,8 +93,9 @@ class MemoryRateLimitStorage(RateLimitStorage):
                     # If still at max capacity after removing expired, remove oldest
                     if len(self._storage) >= self._max_entries:
                         # Remove oldest entry (by expiration time)
-                        oldest_key = min(self._storage.keys(),
-                                       key=lambda k: self._storage[k][1])
+                        oldest_key = min(
+                            self._storage.keys(), key=lambda k: self._storage[k][1]
+                        )
                         self._storage.pop(oldest_key, None)
 
                 self._storage[key] = (1, expires_at)
@@ -324,7 +325,10 @@ class RateLimitMiddleware:
         return None
 
     def _get_rate_limit_key(
-        self, request: Request, rate_limit: RateLimit, is_endpoint_specific: bool = False
+        self,
+        request: Request,
+        rate_limit: RateLimit,
+        is_endpoint_specific: bool = False,
     ) -> str:
         """Generate rate limit key based on limit type."""
         path = request.url.path
@@ -491,7 +495,9 @@ class RateLimitMiddleware:
                 )
                 # Use the most restrictive limit for headers
                 most_restrictive = min(limits, key=lambda l: l.requests / l.window)
-                key = self._get_rate_limit_key_asgi(scope, most_restrictive, is_endpoint_specific)
+                key = self._get_rate_limit_key_asgi(
+                    scope, most_restrictive, is_endpoint_specific
+                )
                 current = await self.storage.get_count(key)
 
                 response_headers = list(message.get("headers", []))

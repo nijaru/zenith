@@ -23,14 +23,16 @@ class TestSessionMiddleware:
         app = Zenith()
 
         # Add session middleware
-        session_store = CookieSessionStore(secret_key="test-secret-key-that-is-long-enough-for-session-testing")
+        session_store = CookieSessionStore(
+            secret_key="test-secret-key-that-is-long-enough-for-session-testing"
+        )
         session_manager = SessionManager(
             store=session_store,
             cookie_name="session",
             max_age=timedelta(hours=1),
             is_secure=False,  # For testing
             is_http_only=True,
-            same_site="lax"
+            same_site="lax",
         )
         app.add_middleware(SessionMiddleware, session_manager=session_manager)
 
@@ -44,7 +46,7 @@ class TestSessionMiddleware:
         async def get_session(request):
             return {
                 "user_id": request.session.get("user_id"),
-                "username": request.session.get("username")
+                "username": request.session.get("username"),
             }
 
         async with TestClient(app) as client:
@@ -83,12 +85,11 @@ class TestSessionMiddleware:
         """Test session cookie security attributes."""
         app = Zenith()
 
-        session_store = CookieSessionStore(secret_key="test-secret-key-that-is-long-enough-for-session-testing")
+        session_store = CookieSessionStore(
+            secret_key="test-secret-key-that-is-long-enough-for-session-testing"
+        )
         session_manager = SessionManager(
-            store=session_store,
-            is_secure=True,
-            is_http_only=True,
-            same_site="strict"
+            store=session_store, is_secure=True, is_http_only=True, same_site="strict"
         )
         app.add_middleware(SessionMiddleware, session_manager=session_manager)
 
@@ -111,10 +112,11 @@ class TestSessionMiddleware:
         """Test session middleware with custom cookie name."""
         app = Zenith()
 
-        session_store = CookieSessionStore(secret_key="test-secret-key-that-is-long-enough-for-session-testing")
+        session_store = CookieSessionStore(
+            secret_key="test-secret-key-that-is-long-enough-for-session-testing"
+        )
         session_manager = SessionManager(
-            store=session_store,
-            cookie_name="custom_session_id"
+            store=session_store, cookie_name="custom_session_id"
         )
         app.add_middleware(SessionMiddleware, session_manager=session_manager)
 
@@ -142,8 +144,12 @@ class TestSessionStoreIntegration:
         app = Zenith()
 
         # Use memory store explicitly
-        store = CookieSessionStore(secret_key="test-secret-key-that-is-long-enough-for-session-testing")
-        session_manager = SessionManager(store=store, is_secure=False)  # For testing over HTTP
+        store = CookieSessionStore(
+            secret_key="test-secret-key-that-is-long-enough-for-session-testing"
+        )
+        session_manager = SessionManager(
+            store=store, is_secure=False
+        )  # For testing over HTTP
         app.add_middleware(SessionMiddleware, session_manager=session_manager)
 
         @app.get("/set/{value}")

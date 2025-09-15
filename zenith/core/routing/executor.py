@@ -89,7 +89,10 @@ class RouteExecutor:
         # Find BackgroundTasks instance if any
         background_tasks = None
         for value in kwargs.values():
-            if hasattr(value, '__class__') and value.__class__.__name__ == 'BackgroundTasks':
+            if (
+                hasattr(value, "__class__")
+                and value.__class__.__name__ == "BackgroundTasks"
+            ):
                 background_tasks = value
                 break
 
@@ -192,7 +195,9 @@ class RouteExecutor:
                         hasattr(e, "__class__")
                         and e.__class__.__name__ == "JSONDecodeError"
                     ):
-                        raise ValidationException(f"Invalid JSON in request body: {e!s}")
+                        raise ValidationException(
+                            f"Invalid JSON in request body: {e!s}"
+                        )
                     raise ValidationException(f"Failed to parse request body: {e!s}")
                 kwargs[param_name] = param_type.model_validate(body)
                 continue

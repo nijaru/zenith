@@ -11,14 +11,14 @@ Key Architecture Principles:
 - Clean, maintainable architecture
 - No forced coupling of unrelated functionality
 
-Prerequisites: 
+Prerequisites:
     None - uses standard middleware
 
 Run with: python examples/19-proper-middleware-architecture.py
 Visit: http://localhost:8019
 
 Endpoints:
-- GET  /                     - Public endpoint 
+- GET  /                     - Public endpoint
 - GET  /protected            - Protected endpoint (auth required)
 - GET  /admin               - Admin endpoint (auth + rate limiting demo)
 - GET  /metrics             - Middleware information
@@ -33,7 +33,7 @@ from zenith import Zenith
 from zenith.middleware import (
     AuthenticationMiddleware,
     RateLimitMiddleware,
-    SecurityHeadersMiddleware, 
+    SecurityHeadersMiddleware,
     RequestIDMiddleware,
     RateLimit,
 )
@@ -57,12 +57,12 @@ app.add_middleware(
     SecurityHeadersMiddleware,
     config={
         "content_type_nosniff": True,
-        "frame_deny": True, 
+        "frame_deny": True,
         "xss_protection": True,
         "custom_headers": {
             "X-Architecture": "Proper-Separation-Of-Concerns",
-        }
-    }
+        },
+    },
 )
 
 # 2. Request ID Middleware - Adds unique request identifiers
@@ -71,7 +71,7 @@ app.add_middleware(
     config={
         "request_id_header": "X-Request-ID",
         "response_id_header": "X-Request-ID",
-    }
+    },
 )
 
 # 3. Authentication Middleware - Handles JWT authentication
@@ -80,31 +80,34 @@ app.add_middleware(
     public_paths=["/", "/metrics", "/docs", "/redoc", "/openapi.json"],
 )
 
-# 4. Rate Limiting Middleware - Handles request rate limiting 
+# 4. Rate Limiting Middleware - Handles request rate limiting
 app.add_middleware(
     RateLimitMiddleware,
     config={
         "default_limits": ["10/minute"],  # 10 requests per minute per IP
         "exempt_paths": ["/", "/metrics", "/docs", "/redoc", "/openapi.json"],
-    }
+    },
 )
 
 # ============================================================================
 # MODELS
 # ============================================================================
 
+
 class MiddlewareInfo(BaseModel):
     """Middleware information."""
-    
+
     request_id: str
     processing_time_ms: float
     middleware_stack: list[str]
     architecture_principles: list[str]
     timestamp: str
 
+
 # ============================================================================
 # ENDPOINTS
 # ============================================================================
+
 
 @app.get("/")
 async def home():
@@ -116,41 +119,43 @@ async def home():
             "Individual middleware responsibilities",
             "Independent configuration",
             "No forced coupling",
-            "Maintainable architecture"
+            "Maintainable architecture",
         ],
         "endpoints": {
             "/": "Public homepage",
             "/protected": "Requires authentication",
             "/admin": "Requires auth + demonstrates rate limiting",
-            "/metrics": "Middleware information"
+            "/metrics": "Middleware information",
         },
         "architecture_benefits": [
             "Each middleware handles one concern",
-            "Can configure middleware independently", 
+            "Can configure middleware independently",
             "Easy to test individual components",
-            "Flexible and maintainable"
-        ]
+            "Flexible and maintainable",
+        ],
     }
+
 
 @app.get("/protected")
 async def protected_route():
     """
     Protected endpoint demonstrating authentication middleware.
-    
+
     Requires valid JWT token in Authorization header.
     """
     return {
         "message": "Access granted to protected resource",
         "architecture": "Individual AuthenticationMiddleware",
         "benefit": "Can use authentication without being forced to use rate limiting",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+
 
 @app.get("/admin")
 async def admin_route():
     """
     Admin endpoint demonstrating both auth and rate limiting.
-    
+
     This shows how the two middleware work together while remaining separate.
     Try accessing this multiple times quickly to see rate limiting.
     """
@@ -159,8 +164,9 @@ async def admin_route():
         "architecture": "Separate AuthenticationMiddleware + RateLimitMiddleware",
         "benefit": "Each middleware configured independently",
         "rate_limit_info": "10 requests per minute per IP",
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
+
 
 @app.get("/metrics")
 async def metrics_info() -> MiddlewareInfo:
@@ -171,24 +177,25 @@ async def metrics_info() -> MiddlewareInfo:
     processing_start = time.time()
     await asyncio.sleep(0.001)  # Small delay to simulate processing
     processing_time = (time.time() - processing_start) * 1000
-    
+
     return MiddlewareInfo(
         request_id="generated-by-request-id-middleware",
         processing_time_ms=round(processing_time, 2),
         middleware_stack=[
             "SecurityHeadersMiddleware",
-            "RequestIDMiddleware", 
+            "RequestIDMiddleware",
             "AuthenticationMiddleware",
-            "RateLimitMiddleware"
+            "RateLimitMiddleware",
         ],
         architecture_principles=[
             "Separation of concerns",
             "Single responsibility per middleware",
             "Independent configuration",
-            "No forced coupling"
+            "No forced coupling",
         ],
-        timestamp=datetime.now().isoformat()
+        timestamp=datetime.now().isoformat(),
     )
+
 
 # ============================================================================
 # APPLICATION STARTUP
@@ -197,13 +204,13 @@ async def metrics_info() -> MiddlewareInfo:
 if __name__ == "__main__":
     import uvicorn
     import asyncio
-    
+
     print("🌊 Proper Middleware Architecture Demo")
     print("=" * 65)
     print()
     print("🏗️ Architecture Principles:")
     print("   • Separation of concerns")
-    print("   • Individual middleware responsibilities") 
+    print("   • Individual middleware responsibilities")
     print("   • Independent configuration")
     print("   • No forced coupling")
     print()
@@ -217,5 +224,5 @@ if __name__ == "__main__":
     print()
     print("💡 Benefits: Individual middleware can be configured, tested,")
     print("   and maintained independently without forced coupling.")
-    
+
     uvicorn.run(app, host="0.0.0.0", port=8019)

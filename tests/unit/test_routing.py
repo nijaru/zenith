@@ -385,7 +385,7 @@ class TestRouterIntegration:
             response = await client.post(
                 "/test-json",
                 headers={"Content-Type": "application/json"},
-                content=b'{"name": "test", invalid}'
+                content=b'{"name": "test", invalid}',
             )
             assert response.status_code == 422
             data = response.json()
@@ -395,7 +395,7 @@ class TestRouterIntegration:
             response = await client.post(
                 "/test-json",
                 headers={"Content-Type": "application/json"},
-                content=b'\xff\xfe{"name": "test"}'
+                content=b'\xff\xfe{"name": "test"}',
             )
             assert response.status_code == 422
             data = response.json()
@@ -403,8 +403,7 @@ class TestRouterIntegration:
 
             # Test valid JSON for comparison
             response = await client.post(
-                "/test-json",
-                json={"name": "test", "value": 123}
+                "/test-json", json={"name": "test", "value": 123}
             )
             assert response.status_code == 200
 
