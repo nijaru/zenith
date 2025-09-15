@@ -9,6 +9,7 @@ import pytest
 import asyncio
 import time
 from unittest.mock import AsyncMock, patch
+from starlette.middleware.base import BaseHTTPMiddleware
 from zenith import Zenith
 from zenith.middleware.rate_limit import (
     RateLimit, RateLimitConfig, RateLimitMiddleware,
@@ -209,18 +210,24 @@ class TestRateLimitMiddleware:
         """Test per-user rate limiting with authentication."""
         app = Zenith()
 
-        rate_limits = [RateLimit(requests=2, window=60, per="user")]
-        # Remove auto-added rate limiting middleware to avoid conflicts
-        app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits)
-        app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
-
-        @app.get("/api/user-limited")
-        async def user_limited(request):
-            # Mock user authentication by setting request state
+        # Add middleware to mock user authentication FIRST (it will run last in the chain)
+        async def mock_auth_middleware(request, call_next):
             user_id = request.headers.get("X-User-ID")
             if user_id:
                 request.state.current_user = {"id": user_id, "username": f"user_{user_id}"}
+            response = await call_next(request)
+            return response
+
+        app.add_middleware(BaseHTTPMiddleware, dispatch=mock_auth_middleware)
+
+        rate_limits = [RateLimit(requests=2, window=60, per="user")]
+        # Remove auto-added rate limiting middleware to avoid conflicts
+        app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, exempt_ips=[])  # Don't exempt localhost for testing
+        app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
+
+        @app.get("/api/user-limited")
+        async def user_limited():
             return {"user_endpoint": True}
 
         async with TestClient(app) as client:
@@ -447,7 +454,7 @@ class TestRateLimitMiddleware:
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         # Mock the auth token extraction
-        with patch('zenith.auth.jwt.extract_user_from_token') as mock_extract:
+        with patch('zenith.auth.extract_user_from_token') as mock_extract:
             mock_extract.return_value = {"id": "user123", "username": "testuser"}
 
             @app.get("/api/jwt-test")

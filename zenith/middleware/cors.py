@@ -161,12 +161,16 @@ class CORSMiddleware:
         origin_bytes = headers.get(b"origin")
         origin = origin_bytes.decode("latin-1") if origin_bytes else None
 
-        # Handle preflight requests (OPTIONS method)
+        # Handle preflight requests (OPTIONS method with specific headers)
         from zenith.core.patterns import HTTP_OPTIONS
         if scope["method"] == HTTP_OPTIONS and origin:
-            response = self._handle_preflight_asgi(scope, origin)
-            await response(scope, receive, send)
-            return
+            # Check if this is actually a preflight request
+            request_method_header = headers.get(b"access-control-request-method")
+            if request_method_header:
+                # This is a preflight request
+                response = self._handle_preflight_asgi(scope, origin)
+                await response(scope, receive, send)
+                return
 
         # Wrap send to add CORS headers to response
         async def send_wrapper(message):
