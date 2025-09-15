@@ -10,7 +10,7 @@ from .dependencies import (
     Auth,
     AuthDependency,
     File,
-    FileUploadDependency,
+    FileDependency,
     Inject,
     InjectDependency,
 )
@@ -46,7 +46,7 @@ __all__ = [
     "AuthDependency",
     "DependencyResolver",
     "File",
-    "FileUploadDependency",
+    "FileDependency",
     # Specs
     "HTTPMethod",
     "Inject",

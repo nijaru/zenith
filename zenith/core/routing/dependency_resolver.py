@@ -10,7 +10,7 @@ from typing import Any
 from starlette.requests import Request
 
 from ..scoped import RequestScoped
-from .dependencies import AuthDependency, FileUploadDependency, InjectDependency
+from .dependencies import AuthDependency, FileDependency, InjectDependency
 
 
 class DependencyResolver:
@@ -39,7 +39,7 @@ class DependencyResolver:
         elif isinstance(dependency_marker, AuthDependency):
             return await self._resolve_auth(dependency_marker, request)
 
-        elif isinstance(dependency_marker, FileUploadDependency):
+        elif isinstance(dependency_marker, FileDependency):
             return await self._resolve_file_upload(dependency_marker, request)
 
         # Not a recognized dependency marker
@@ -82,7 +82,7 @@ class DependencyResolver:
             raise
 
     async def _resolve_file_upload(
-        self, dependency: FileUploadDependency, request: Request
+        self, dependency: FileDependency, request: Request
     ) -> Any:
         """Resolve a File upload dependency."""
         from zenith.web.files import handle_file_upload
