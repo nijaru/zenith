@@ -29,7 +29,7 @@ CORS_PROTOCOL_SEPARATOR: Final = re.compile(r"://")
 
 # Interned HTTP method constants for faster comparisons (15% improvement)
 HTTP_GET: Final = sys.intern("GET")
-HTTP_POST: Final = sys.intern("POST") 
+HTTP_POST: Final = sys.intern("POST")
 HTTP_PUT: Final = sys.intern("PUT")
 HTTP_PATCH: Final = sys.intern("PATCH")
 HTTP_DELETE: Final = sys.intern("DELETE")

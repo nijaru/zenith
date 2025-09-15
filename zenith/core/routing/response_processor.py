@@ -32,7 +32,9 @@ class ResponseProcessor:
         from zenith.core.routing.specs import RouteSpec
 
         # Get handler from route spec
-        handler = route_spec.handler if isinstance(route_spec, RouteSpec) else route_spec
+        handler = (
+            route_spec.handler if isinstance(route_spec, RouteSpec) else route_spec
+        )
 
         # If already a Response, add background tasks if needed
         if isinstance(result, Response):

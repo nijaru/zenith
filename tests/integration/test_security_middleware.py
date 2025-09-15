@@ -68,7 +68,7 @@ def custom_security_app():
         referrer_policy="strict-origin-when-cross-origin",
         permissions_policy="geolocation=(), microphone=(), camera=()",
         force_https=True,
-        force_https_permanent=True
+        force_https_permanent=True,
     )
 
     app.add_middleware(SecurityHeadersMiddleware, config=config)
@@ -85,10 +85,7 @@ def https_redirect_app():
     """App with HTTPS redirect enabled."""
     app = Zenith()
 
-    config = SecurityConfig(
-        force_https=True,
-        force_https_permanent=False
-    )
+    config = SecurityConfig(force_https=True, force_https_permanent=False)
 
     app.add_middleware(SecurityHeadersMiddleware, config=config)
 
@@ -125,23 +122,31 @@ class TestSecurityHeaders:
 
             # Check custom headers
             assert "content-security-policy" in response.headers
-            assert response.headers["content-security-policy"] == "default-src 'self'; script-src 'self' 'unsafe-inline'"
+            assert (
+                response.headers["content-security-policy"]
+                == "default-src 'self'; script-src 'self' 'unsafe-inline'"
+            )
 
-            assert response.headers["strict-transport-security"] == "max-age=63072000; includeSubDomains; preload"
+            assert (
+                response.headers["strict-transport-security"]
+                == "max-age=63072000; includeSubDomains; preload"
+            )
             assert response.headers["x-frame-options"] == "DENY"
             assert response.headers["x-content-type-options"] == "nosniff"
             assert response.headers["x-xss-protection"] == "1; mode=block"
-            assert response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
-            assert response.headers["permissions-policy"] == "geolocation=(), microphone=(), camera=()"
+            assert (
+                response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
+            )
+            assert (
+                response.headers["permissions-policy"]
+                == "geolocation=(), microphone=(), camera=()"
+            )
 
     async def test_csp_report_only_mode(self):
         """Test CSP in report-only mode."""
         app = Zenith()
 
-        config = SecurityConfig(
-            csp_policy="default-src 'self'",
-            csp_report_only=True
-        )
+        config = SecurityConfig(csp_policy="default-src 'self'", csp_report_only=True)
 
         app.add_middleware(SecurityHeadersMiddleware, config=config)
 
@@ -155,7 +160,10 @@ class TestSecurityHeaders:
             assert response.status_code == 200
             assert "content-security-policy-report-only" in response.headers
             assert "content-security-policy" not in response.headers
-            assert response.headers["content-security-policy-report-only"] == "default-src 'self'"
+            assert (
+                response.headers["content-security-policy-report-only"]
+                == "default-src 'self'"
+            )
 
     async def test_hsts_disabled(self):
         """Test HSTS disabled configuration."""
@@ -202,7 +210,7 @@ class TestSecurityHeaders:
             xss_protection=None,
             referrer_policy=None,
             permissions_policy=None,
-            content_type_nosniff=False
+            content_type_nosniff=False,
         )
 
         app.add_middleware(SecurityHeadersMiddleware, config=config)
@@ -240,10 +248,7 @@ class TestHTTPSRedirect:
         """Test permanent HTTPS redirect (301)."""
         app = Zenith()
 
-        config = SecurityConfig(
-            force_https=True,
-            force_https_permanent=True
-        )
+        config = SecurityConfig(force_https=True, force_https_permanent=True)
 
         app.add_middleware(SecurityHeadersMiddleware)
 
@@ -280,13 +285,12 @@ class TestTrustedProxyMiddleware:
         """Test that trusted proxy headers are processed."""
         app = Zenith()
 
-        app.add_middleware(TrustedProxyMiddleware,
-            trusted_proxies=["192.168.1.1"]
-        )
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["192.168.1.1"])
 
         @app.get("/test")
         async def test_endpoint():
             from starlette.requests import Request
+
             # In a real scenario, we'd access the processed client IP
             return {"message": "test"}
 
@@ -300,8 +304,9 @@ class TestTrustedProxyMiddleware:
         """Test that untrusted proxy headers are ignored."""
         app = Zenith()
 
-        app.add_middleware(TrustedProxyMiddleware,
-            trusted_proxies=["192.168.1.1"]  # Different IP
+        app.add_middleware(
+            TrustedProxyMiddleware,
+            trusted_proxies=["192.168.1.1"],  # Different IP
         )
 
         @app.get("/test")
@@ -347,7 +352,9 @@ class TestSecurityPresets:
             assert response.status_code == 200
             # Check strict configuration
             assert "content-security-policy" in response.headers
-            assert "63072000" in response.headers["strict-transport-security"]  # 2 years
+            assert (
+                "63072000" in response.headers["strict-transport-security"]
+            )  # 2 years
             assert "includeSubDomains" in response.headers["strict-transport-security"]
             assert "preload" in response.headers["strict-transport-security"]
             assert response.headers["x-frame-options"] == "DENY"
@@ -388,7 +395,7 @@ class TestSecurityEdgeCases:
             content_type_nosniff=False,
             xss_protection=None,
             referrer_policy=None,
-            permissions_policy=None
+            permissions_policy=None,
         )
 
         app.add_middleware(SecurityHeadersMiddleware, config=config)
@@ -409,7 +416,7 @@ class TestSecurityEdgeCases:
                 "x-content-type-options",
                 "x-xss-protection",
                 "referrer-policy",
-                "permissions-policy"
+                "permissions-policy",
             ]
             for header_name in security_header_names:
                 assert header_name not in response.headers
@@ -421,11 +428,7 @@ class TestSecurityEdgeCases:
         app.add_middleware(SecurityHeadersMiddleware)
 
         # Test WebSocket scope (should pass through)
-        websocket_scope = {
-            "type": "websocket",
-            "path": "/ws",
-            "headers": []
-        }
+        websocket_scope = {"type": "websocket", "path": "/ws", "headers": []}
 
         # This would require more complex testing setup to properly test
         # WebSocket handling, but the middleware should pass it through
@@ -439,12 +442,13 @@ class TestSecurityEdgeCases:
         @app.get("/custom-headers")
         async def custom_headers_endpoint():
             from zenith.web.responses import Response
+
             return Response(
                 content='{"message": "test"}',
                 headers={
                     "Custom-Header": "value",
-                    "X-Frame-Options": "SAMEORIGIN"  # This should be overridden
-                }
+                    "X-Frame-Options": "SAMEORIGIN",  # This should be overridden
+                },
             )
 
         async with TestClient(app) as client:
@@ -461,7 +465,7 @@ class TestSecurityEdgeCases:
 
         config = SecurityConfig(
             csp_policy="default-src 'self'; script-src 'self'",
-            referrer_policy="strict-origin-when-cross-origin"
+            referrer_policy="strict-origin-when-cross-origin",
         )
 
         app.add_middleware(SecurityHeadersMiddleware, config=config)
@@ -510,9 +514,18 @@ class TestSecurityUtilities:
         from zenith.middleware.security import sanitize_html_input
 
         # Test basic XSS vectors
-        assert sanitize_html_input("<script>alert('xss')</script>") == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;&#x2F;script&gt;"
-        assert sanitize_html_input('"><img src=x onerror=alert(1)>') == "&quot;&gt;&lt;img src=x onerror=alert(1)&gt;"
-        assert sanitize_html_input("javascript:alert('xss')") == "javascript:alert(&#x27;xss&#x27;)"
+        assert (
+            sanitize_html_input("<script>alert('xss')</script>")
+            == "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;&#x2F;script&gt;"
+        )
+        assert (
+            sanitize_html_input('"><img src=x onerror=alert(1)>')
+            == "&quot;&gt;&lt;img src=x onerror=alert(1)&gt;"
+        )
+        assert (
+            sanitize_html_input("javascript:alert('xss')")
+            == "javascript:alert(&#x27;xss&#x27;)"
+        )
         assert sanitize_html_input("") == ""
         assert sanitize_html_input("normal text") == "normal text"
 
@@ -591,14 +604,16 @@ class TestSecurityInStack:
             return {"message": "test"}
 
         async with TestClient(app) as client:
-            response = await client.get("/test", headers={
-                "Origin": "https://example.com"
-            })
+            response = await client.get(
+                "/test", headers={"Origin": "https://example.com"}
+            )
 
             assert response.status_code == 200
             # Should have both security and CORS headers
             assert response.headers["x-content-type-options"] == "nosniff"
-            assert response.headers["access-control-allow-origin"] == "https://example.com"
+            assert (
+                response.headers["access-control-allow-origin"] == "https://example.com"
+            )
 
     async def test_security_with_compression_middleware(self):
         """Test security middleware working with compression."""
@@ -615,9 +630,7 @@ class TestSecurityInStack:
             return {"data": "content " * 50}
 
         async with TestClient(app) as client:
-            response = await client.get("/test", headers={
-                "Accept-Encoding": "gzip"
-            })
+            response = await client.get("/test", headers={"Accept-Encoding": "gzip"})
 
             assert response.status_code == 200
             # Should have both security headers and compression

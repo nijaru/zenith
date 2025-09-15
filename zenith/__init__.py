@@ -221,7 +221,7 @@ __all__ = [
     # Server-Sent Events with built-in optimizations
     "ServerSentEvents",
     "SSEEventManager",
-    "SSEConnection", 
+    "SSEConnection",
     "SSEConnectionState",
     "create_sse_response",
     "sse",

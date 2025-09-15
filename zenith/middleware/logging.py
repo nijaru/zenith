@@ -272,6 +272,7 @@ class RequestLoggingMiddleware:
             data["headers"] = dict(request.headers)
 
         from zenith.core.patterns import METHODS_WITH_BODY
+
         if self.include_body and request.method in METHODS_WITH_BODY:
             try:
                 body = await request.body()

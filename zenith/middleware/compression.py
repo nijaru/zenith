@@ -115,7 +115,9 @@ class CompressionMiddleware:
             return
 
         # Variables to capture response data
-        should_compress = None  # None = not decided, True = compress, False = passthrough
+        should_compress = (
+            None  # None = not decided, True = compress, False = passthrough
+        )
         response_status = 200
         response_headers = {}
         response_body = b""

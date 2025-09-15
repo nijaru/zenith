@@ -38,6 +38,7 @@ import pytest
 from pydantic import BaseModel, EmailStr, field_validator
 
 from zenith import Auth, Inject, Service, Zenith
+
 # Auth is already imported from zenith main module
 from zenith.testing import (
     TestClient,

@@ -20,7 +20,7 @@ from zenith.testing import TestClient
 class TestRedisSessionStore:
     """Test Redis session store backend."""
 
-    @patch('redis.asyncio.from_url')
+    @patch("redis.asyncio.from_url")
     async def test_redis_session_basic_operations(self, mock_redis_from_url):
         """Test basic Redis session operations - save, load, delete."""
         # Mock Redis client
@@ -39,7 +39,7 @@ class TestRedisSessionStore:
         session = Session(
             session_id="test123",
             data={"user_id": 456, "username": "testuser"},
-            expires_at=datetime.now(UTC) + timedelta(hours=1)
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
 
         # Test save
@@ -62,12 +62,15 @@ class TestRedisSessionStore:
 
         await store.close()
 
-    @patch('redis.asyncio.from_url')
+    @patch("redis.asyncio.from_url")
     async def test_redis_session_health_check(self, mock_redis_from_url):
         """Test Redis session store health check."""
         mock_redis = AsyncMock()
         mock_redis.ping.return_value = True
-        mock_redis.keys.return_value = [b'zenith:session:sess1', b'zenith:session:sess2']
+        mock_redis.keys.return_value = [
+            b"zenith:session:sess1",
+            b"zenith:session:sess2",
+        ]
         mock_redis_from_url.return_value = mock_redis
 
         store = RedisSessionStore("redis://localhost:6379/1")
@@ -82,7 +85,7 @@ class TestRedisSessionStore:
 
         await store.close()
 
-    @patch('redis.asyncio.from_url')
+    @patch("redis.asyncio.from_url")
     async def test_redis_session_middleware_integration(self, mock_redis_from_url):
         """Test Redis session store integrated with session middleware."""
         # Mock Redis

@@ -73,7 +73,7 @@ class TestCSRFMiddleware:
             response = await client.post(
                 "/protected",
                 json={"data": "test"},
-                headers={"X-CSRF-Token": csrf_token}
+                headers={"X-CSRF-Token": csrf_token},
             )
             assert response.status_code == 200
             assert response.json()["message"] == "success"
@@ -116,7 +116,7 @@ class TestCSRFMiddleware:
 
         csrf_config = CSRFConfig(
             secret_key="test-secret-key-that-is-long-enough-for-csrf-testing",
-            header_name="X-Custom-CSRF-Token"
+            header_name="X-Custom-CSRF-Token",
         )
         app.add_middleware(CSRFMiddleware, config=csrf_config)
 
@@ -149,7 +149,7 @@ class TestCSRFMiddleware:
             response = await client.post(
                 "/protected",
                 json={"data": "test"},
-                headers={"X-Custom-CSRF-Token": csrf_token}
+                headers={"X-Custom-CSRF-Token": csrf_token},
             )
             assert response.status_code == 200
 
@@ -171,7 +171,7 @@ class TestCSRFMiddleware:
             response = await client.post(
                 "/protected",
                 json={"data": "test"},
-                headers={"X-CSRF-Token": "invalid-token-12345"}
+                headers={"X-CSRF-Token": "invalid-token-12345"},
             )
             assert response.status_code == 403
             assert "CSRF" in response.text
@@ -182,7 +182,7 @@ class TestCSRFMiddleware:
 
         csrf_config = CSRFConfig(
             secret_key="test-secret-key-that-is-long-enough-for-csrf-testing",
-            exempt_paths=["/api/webhook"]
+            exempt_paths=["/api/webhook"],
         )
         app.add_middleware(CSRFMiddleware, config=csrf_config)
 
@@ -197,14 +197,10 @@ class TestCSRFMiddleware:
         async with TestClient(app) as client:
             # Exempt path should work without CSRF token
             webhook_response = await client.post(
-                "/api/webhook",
-                json={"data": "webhook"}
+                "/api/webhook", json={"data": "webhook"}
             )
             assert webhook_response.status_code == 200
 
             # Protected path should still require token
-            protected_response = await client.post(
-                "/protected",
-                json={"data": "test"}
-            )
+            protected_response = await client.post("/protected", json={"data": "test"})
             assert protected_response.status_code == 403

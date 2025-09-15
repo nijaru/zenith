@@ -129,7 +129,8 @@ class SecurityHeadersMiddleware:
             """Add header or replace existing one with same name."""
             # Remove existing header with same name (case-insensitive)
             response_headers[:] = [
-                (name, value) for name, value in response_headers
+                (name, value)
+                for name, value in response_headers
                 if name.lower() != header_name.lower()
             ]
             # Add the new header
@@ -221,7 +222,6 @@ class SecurityHeadersMiddleware:
         # Permissions-Policy
         if self.config.permissions_policy:
             response.headers["permissions-policy"] = self.config.permissions_policy
-
 
 
 class TrustedProxyMiddleware:
@@ -355,18 +355,20 @@ def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
         # For IPv6 addresses, hostname might be None, so check netloc too
         if netloc:
             # Handle IPv6 addresses properly
-            if netloc.startswith('[') and ']:' in netloc:
+            if netloc.startswith("[") and "]:" in netloc:
                 # IPv6 with port: [::1]:8080 -> ::1
-                netloc_host = netloc.split(']:')[0][1:]
-            elif netloc.startswith('[') and netloc.endswith(']'):
+                netloc_host = netloc.split("]:")[0][1:]
+            elif netloc.startswith("[") and netloc.endswith("]"):
                 # IPv6 without port: [::1] -> ::1
                 netloc_host = netloc[1:-1]
-            elif ':' in netloc and not any(netloc.startswith(prefix) for prefix in ['192.168.', '10.', '172.']):
+            elif ":" in netloc and not any(
+                netloc.startswith(prefix) for prefix in ["192.168.", "10.", "172."]
+            ):
                 # Likely IPv6 address without brackets (e.g., ::1)
                 netloc_host = netloc
             else:
                 # IPv4 address with port: 127.0.0.1:8080 -> 127.0.0.1
-                netloc_host = netloc.split(':')[0]
+                netloc_host = netloc.split(":")[0]
 
             if netloc_host in ["localhost", "127.0.0.1", "::1"]:
                 return False

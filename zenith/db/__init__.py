@@ -44,9 +44,15 @@ class Database:
     15-25% performance improvement.
     """
 
-    def __init__(self, url: str, echo: bool = False, pool_size: int = 20, 
-                 max_overflow: int = 30, pool_timeout: int = 30, 
-                 pool_recycle: int = 3600):
+    def __init__(
+        self,
+        url: str,
+        echo: bool = False,
+        pool_size: int = 20,
+        max_overflow: int = 30,
+        pool_timeout: int = 30,
+        pool_recycle: int = 3600,
+    ):
         """
         Initialize database connection with optimized settings.
 
@@ -81,7 +87,7 @@ class Database:
             expire_on_commit=False,
         )
 
-    @asynccontextmanager 
+    @asynccontextmanager
     async def session(self, scope: dict = None) -> AsyncGenerator[AsyncSession, None]:
         """
         Create a database session with automatic request-scoped reuse.
@@ -103,7 +109,7 @@ class Database:
             # Reuse existing request-scoped session
             yield scope["db_session"]
             return
-            
+
         # Create new session
         async with self.async_session() as session:
             try:
@@ -114,18 +120,20 @@ class Database:
                 raise
             finally:
                 await session.close()
-    
+
     @asynccontextmanager
-    async def request_scoped_session(self, scope: dict) -> AsyncGenerator[AsyncSession, None]:
+    async def request_scoped_session(
+        self, scope: dict
+    ) -> AsyncGenerator[AsyncSession, None]:
         """
         Create a request-scoped database session for web requests.
-        
+
         This session is stored in the ASGI scope and reused across
         all database operations within the same HTTP request.
-        
+
         Args:
             scope: ASGI scope dictionary
-            
+
         Usage:
             # In middleware or dependency injection
             async with db.request_scoped_session(scope) as session:
@@ -134,9 +142,9 @@ class Database:
         """
         if "db_session" in scope:
             # Session already exists for this request
-            yield scope["db_session"] 
+            yield scope["db_session"]
             return
-            
+
         async with self.async_session() as session:
             try:
                 # Store session in request scope for reuse
