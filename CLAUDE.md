@@ -1,15 +1,37 @@
 # Zenith - AI Assistant Context
 *Comprehensive context for AI assistants working with the Zenith Python web framework*
 
-## Publishing to PyPI
+## Release Strategy
+**Dual Release Approach** (following Python framework conventions like FastAPI, Django):
+
+### PyPI Release (Primary - for users)
 **IMPORTANT**: Use `twine` for PyPI uploads, not `uv publish`:
 ```bash
-# Build the package
+# Build and upload to PyPI
 uv build
-
-# Upload to PyPI using twine
 twine upload dist/zenith_web-{version}*
 ```
+
+### GitHub Release (Secondary - for developers/changelog)
+```bash
+# Create GitHub release with detailed changelog
+gh release create v{version} --title "v{version}: Brief Description" \
+  --notes "## What's New
+- Feature descriptions
+- Bug fixes
+- Breaking changes (if any)
+
+Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{version}"
+```
+
+**Release Decision Matrix:**
+- ✅ **Major/minor releases** (0.x.0, x.0.0): Always both PyPI + GitHub
+- ✅ **Critical patches**: Both (for maximum visibility)
+- ⚖️ **Regular patches**: PyPI required, GitHub optional (developer judgment)
+
+**Purpose split:**
+- **PyPI**: User installation (`pip install zenith-web`)
+- **GitHub**: Developer communication, changelog, contributor recognition
 
 ## Release Gotchas
 **Quick sanity checks before release:**
