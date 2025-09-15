@@ -19,6 +19,13 @@ export default defineConfig({
 			credits: false,
 			head: [
 				{
+					tag: 'meta',
+					attrs: {
+						name: 'cf-settings',
+						content: 'rocket_loader:off'
+					}
+				},
+				{
 					tag: 'link',
 					attrs: {
 						rel: 'icon',
@@ -27,6 +34,9 @@ export default defineConfig({
 				},
 				{
 					tag: 'script',
+					attrs: {
+						'data-cfasync': 'false'
+					},
 					content: `
 						// Zenith Framework Developer Console
 						if (typeof console !== 'undefined' && console.log) {
@@ -34,22 +44,12 @@ export default defineConfig({
 							const versionStyle = 'color: #667eea; font-weight: bold;';
 							const linkStyle = 'color: #764ba2; text-decoration: underline;';
 
-							console.log('%c⚡ Zenith Framework %cv0.2.1', zenithStyle, versionStyle);
+							console.log('%c⚡ Zenith Framework %cv0.2.2', zenithStyle, versionStyle);
 							console.log('🚀 Modern Python web framework with clean architecture');
 							console.log('📚 Docs: %chttps://nijaru.com/zenith', linkStyle);
 							console.log('💻 GitHub: %chttps://github.com/nijaru/zenith', linkStyle);
 							console.log('📦 Install: pip install zenith-web');
 						}
-
-						// Fix preload crossorigin issues
-						document.addEventListener('DOMContentLoaded', function() {
-							const preloads = document.querySelectorAll('link[rel="modulepreload"]');
-							preloads.forEach(link => {
-								if (!link.hasAttribute('crossorigin')) {
-									link.setAttribute('crossorigin', 'anonymous');
-								}
-							});
-						});
 					`,
 				},
 			],
