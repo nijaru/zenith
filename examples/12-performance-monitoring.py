@@ -114,7 +114,7 @@ async def memory_health_check() -> bool:
     try:
         memory = psutil.virtual_memory()
         return memory.percent < 90  # Unhealthy if > 90% memory usage
-    except:
+    except Exception:
         return False
 
 
@@ -334,7 +334,7 @@ async def prometheus_metrics():
         for metric, value in resources.items():
             if isinstance(value, (int, float)):
                 additional_metrics.append(f"system_{metric} {value}")
-    except:
+    except Exception:
         pass
 
     # Cache metrics
