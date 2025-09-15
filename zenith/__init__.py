@@ -46,6 +46,9 @@ from zenith.core.routing.dependencies import (
     InjectDependency,
 )
 
+# Request-scoped dependencies for async resources (FastAPI-compatible)
+from zenith.core.scoped import DatabaseSession, Depends, RequestScoped, request_scoped
+
 # ============================================================================
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
@@ -169,6 +172,8 @@ __all__ = [
     # DATABASE & MIGRATIONS
     # ========================================================================
     "Database",
+    "DatabaseSession",
+    "Depends",
     "Field",
     "File",
     "FileUploadDependency",
@@ -192,6 +197,7 @@ __all__ = [
     # ========================================================================
     "RequestIDMiddleware",
     "RequestLoggingMiddleware",
+    "RequestScoped",
     # ========================================================================
     # ROUTING & DEPENDENCY INJECTION
     # ========================================================================
@@ -240,6 +246,7 @@ __all__ = [
     "json_response",
     "metrics",
     "not_found",
+    "request_scoped",
     "serve_css_js",
     "serve_images",
     # Static file serving

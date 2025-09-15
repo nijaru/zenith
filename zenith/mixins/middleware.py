@@ -2,6 +2,32 @@
 Middleware configuration mixin for Zenith applications.
 
 Contains all methods related to adding and configuring middleware.
+
+Middleware Execution Order:
+---------------------------
+Middleware in Zenith follows the "onion" model - middleware added LAST executes FIRST
+for requests and LAST for responses:
+
+    Request flow:  Client -> Middleware3 -> Middleware2 -> Middleware1 -> Handler
+    Response flow: Handler -> Middleware1 -> Middleware2 -> Middleware3 -> Client
+
+Example:
+    app.add_middleware(AuthMiddleware)       # Added 1st, executes 3rd
+    app.add_middleware(RateLimitMiddleware)  # Added 2nd, executes 2nd
+    app.add_middleware(LoggingMiddleware)    # Added 3rd, executes 1st
+
+This means LoggingMiddleware sees all requests first and all responses last.
+
+Best Practice Order:
+1. Logging/Monitoring (add last, executes first)
+2. Security Headers (add second-to-last)
+3. Rate Limiting (add in middle)
+4. Authentication (add in middle)
+5. Business Logic Middleware (add early)
+6. Error Handling (add first, executes last)
+
+Note: Some middleware like CORS must be added early in the stack to handle
+preflight requests before authentication middleware.
 """
 
 
@@ -9,8 +35,17 @@ class MiddlewareMixin:
     """Mixin for middleware configuration methods."""
 
     def add_middleware(self, middleware_class, **kwargs) -> None:
-        """Add middleware to the application."""
+        """
+        Add middleware to the application.
+
+        By default, prevents duplicate middleware. Use replace=True to replace existing middleware
+        of the same type, or allow_duplicates=True to explicitly allow duplicates.
+        """
         from starlette.middleware import Middleware
+
+        # Extract control flags from kwargs
+        replace = kwargs.pop("replace", True)  # Default to replacing
+        allow_duplicates = kwargs.pop("allow_duplicates", False)
 
         # For CORS middleware, validate configuration early to catch errors
         if (
@@ -28,14 +63,23 @@ class MiddlewareMixin:
                 # Re-raise the validation error
                 raise
 
-        # Check for existing middleware of the same class to prevent duplication
+        # Check for existing middleware of the same class
         existing_middleware = [mw.cls for mw in self.middleware]
-        if middleware_class in existing_middleware:
-            # Replace existing middleware with the same class
-            for i, mw in enumerate(self.middleware):
-                if mw.cls == middleware_class:
-                    self.middleware[i] = Middleware(middleware_class, **kwargs)
-                    break
+        middleware_exists = middleware_class in existing_middleware
+
+        if middleware_exists and not allow_duplicates:
+            if replace:
+                # Replace existing middleware with the same class
+                for i, mw in enumerate(self.middleware):
+                    if mw.cls == middleware_class:
+                        self.middleware[i] = Middleware(middleware_class, **kwargs)
+                        break
+            else:
+                # Raise error if duplicate middleware and not replacing
+                raise ValueError(
+                    f"Middleware {middleware_class.__name__} already exists. "
+                    f"Use replace=True to replace it or allow_duplicates=True to add another instance."
+                )
         else:
             # Add new middleware
             self.middleware.append(Middleware(middleware_class, **kwargs))

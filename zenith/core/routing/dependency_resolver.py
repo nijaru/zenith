@@ -9,6 +9,7 @@ from typing import Any
 
 from starlette.requests import Request
 
+from ..scoped import RequestScoped
 from .dependencies import AuthDependency, FileUploadDependency, InjectDependency
 
 
@@ -20,6 +21,7 @@ class DependencyResolver:
     - Context injection (business logic contexts)
     - Authentication injection (current user, scopes)
     - File upload injection (uploaded files)
+    - Request-scoped dependencies (database sessions, etc.)
     - Custom dependency patterns
     """
 
@@ -28,7 +30,10 @@ class DependencyResolver:
     ) -> Any:
         """Resolve a dependency based on its marker type."""
 
-        if isinstance(dependency_marker, InjectDependency):
+        if isinstance(dependency_marker, RequestScoped):
+            return await dependency_marker.get_or_create(request)
+
+        elif isinstance(dependency_marker, InjectDependency):
             return await self._resolve_context(dependency_marker, param_type, app)
 
         elif isinstance(dependency_marker, AuthDependency):
