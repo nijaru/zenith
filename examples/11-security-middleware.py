@@ -185,9 +185,7 @@ def describe_security_headers() -> SecurityHeaders:
         "X-Request-ID": "Unique identifier for request tracing",
     }
 
-    return SecurityHeaders(
-        headers=dict(headers_info.items()), description=headers_info
-    )
+    return SecurityHeaders(headers=dict(headers_info.items()), description=headers_info)
 
 
 # ============================================================================

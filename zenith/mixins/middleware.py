@@ -22,6 +22,7 @@ class MiddlewareMixin:
                 # Create a dummy ASGI app for validation
                 def dummy_app(scope, receive, send):
                     return None
+
                 middleware_class(dummy_app, **kwargs)
             except Exception:
                 # Re-raise the validation error

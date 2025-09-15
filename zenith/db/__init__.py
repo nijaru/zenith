@@ -88,7 +88,9 @@ class Database:
         )
 
     @asynccontextmanager
-    async def session(self, scope: dict | None = None) -> AsyncGenerator[AsyncSession, None]:
+    async def session(
+        self, scope: dict | None = None
+    ) -> AsyncGenerator[AsyncSession, None]:
         """
         Create a database session with automatic request-scoped reuse.
 

@@ -289,7 +289,6 @@ class TestTrustedProxyMiddleware:
 
         @app.get("/test")
         async def test_endpoint():
-
             # In a real scenario, we'd access the processed client IP
             return {"message": "test"}
 

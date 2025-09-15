@@ -178,9 +178,7 @@ class ServerSentEvents:
                 stream_task = tg.create_task(
                     self._process_events_concurrent(connection, event_generator)
                 )
-                tg.create_task(
-                    self._monitor_connection_backpressure(connection)
-                )
+                tg.create_task(self._monitor_connection_backpressure(connection))
 
                 # Stream events with backpressure control
                 async for formatted_event in self._generate_sse_stream(

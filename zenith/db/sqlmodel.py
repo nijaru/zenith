@@ -128,7 +128,9 @@ class ZenithSQLModel(SQLModel):
     )
 
 
-def create_repository[T: SQLModel](session: AsyncSession, model: type[T]) -> SQLModelRepository[T]:
+def create_repository[T: SQLModel](
+    session: AsyncSession, model: type[T]
+) -> SQLModelRepository[T]:
     """
     Factory function to create repository instances.
 
