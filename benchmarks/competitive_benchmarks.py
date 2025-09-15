@@ -948,7 +948,7 @@ if __name__ == "__main__":
                     async with session.get(f"{url}/health") as response:
                         if response.status == 200:
                             return
-            except:
+            except Exception:
                 pass
 
             await asyncio.sleep(0.5)
@@ -1045,10 +1045,10 @@ if __name__ == "__main__":
                         async with session.get(f"{base_url}{path}") as response:
                             if response.status < 500:
                                 endpoints.append(path)
-                    except:
+                    except Exception:
                         pass
                 return endpoints
-        except:
+        except Exception:
             return ["/"]
 
     def get_system_metrics(self, process: subprocess.Popen) -> tuple[float, float]:
@@ -1060,7 +1060,7 @@ if __name__ == "__main__":
             memory_mb = p.memory_info().rss / 1024 / 1024
             cpu_percent = p.cpu_percent(interval=1)
             return memory_mb, cpu_percent
-        except:
+        except Exception:
             return 0.0, 0.0
 
     def get_available_port(self) -> int:

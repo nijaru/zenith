@@ -116,8 +116,8 @@ users_service = UsersService()
 
 @app.on_startup
 async def startup():
-    await users_context.initialize()
-    app.dependency_overrides[UsersContext] = lambda: users_context
+    await users_service.initialize()
+    app.dependency_overrides[UsersService] = lambda: users_service
 
 
 # Routes
