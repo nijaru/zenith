@@ -45,7 +45,7 @@ jobs:
     - name: Install dependencies (cached)
       run: |
         python -m pip install --upgrade pip
-        pip install -e ".[test]"
+        pip install -e ".[dev]"
     
     - name: Critical tests only
       env:
