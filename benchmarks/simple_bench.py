@@ -142,24 +142,20 @@ async def main():
             {
                 "name": "Simple endpoint (no middleware)",
                 "unit": "req/s",
-                "value": hello_rps
+                "value": hello_rps,
             },
             {
                 "name": "JSON endpoint (no middleware)",
                 "unit": "req/s",
-                "value": json_rps
+                "value": json_rps,
             },
             {
                 "name": "Simple endpoint (with middleware)",
                 "unit": "req/s",
-                "value": middleware_rps
+                "value": middleware_rps,
             },
-            {
-                "name": "Middleware overhead",
-                "unit": "%",
-                "value": overhead_pct
-            }
-        ]
+            {"name": "Middleware overhead", "unit": "%", "value": overhead_pct},
+        ],
     }
 
     with open("benchmark_results.json", "w") as f:
