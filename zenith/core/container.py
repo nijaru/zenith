@@ -9,8 +9,18 @@ import inspect
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
+from contextvars import ContextVar
 
 T = TypeVar("T")
+
+# Context variable to store the current database session
+try:
+    from sqlalchemy.ext.asyncio import AsyncSession
+    _current_db_session: ContextVar[AsyncSession | None] = ContextVar('current_db_session', default=None)
+    _HAS_SQLALCHEMY = True
+except ImportError:
+    _current_db_session = None
+    _HAS_SQLALCHEMY = False
 
 
 class DIContainer:
@@ -182,3 +192,77 @@ class DIContainer:
             yield self
         finally:
             await self.shutdown()
+
+
+# Database session management functions
+def set_current_db_session(session) -> None:
+    """Set the current database session in the context."""
+    if _HAS_SQLALCHEMY and _current_db_session:
+        _current_db_session.set(session)
+
+
+def get_current_db_session():
+    """Get the current database session from the context."""
+    if _HAS_SQLALCHEMY and _current_db_session:
+        return _current_db_session.get()
+    return None
+
+
+async def get_db_session():
+    """
+    Get the current database session for use with ZenithModel.
+
+    This function is used by ZenithModel to access the database session.
+    It first tries to get the session from the context (set during web requests),
+    and falls back to creating a new session if needed.
+
+    Returns:
+        AsyncSession: The database session to use
+
+    Raises:
+        RuntimeError: If no session is available and no database is configured
+    """
+    if not _HAS_SQLALCHEMY:
+        raise RuntimeError("SQLAlchemy not installed. Install with: uv add sqlalchemy[asyncio]")
+
+    # First try to get from context (web request context)
+    session = get_current_db_session()
+    if session is not None:
+        return session
+
+    # Fall back to creating a new session from the default database
+    # This requires the Database instance to be registered in the container
+    # or available through some other mechanism
+    try:
+        # Import here to avoid circular imports
+        from ..db import Database
+
+        # Try to get database from container or global state
+        # This is a fallback for cases where models are used outside web requests
+        # In practice, applications should ensure sessions are properly set
+        db = _get_default_database()
+        async with db.session() as new_session:
+            return new_session
+    except Exception as e:
+        raise RuntimeError(
+            f"No database session available in context and cannot create new session: {e}. "
+            "Ensure you're using ZenithModel within a web request context, "
+            "or manually set the database session with set_current_db_session()."
+        ) from e
+
+
+def _get_default_database():
+    """
+    Get the default database instance.
+
+    This is a helper function to get the database when no session
+    is available in the context. Applications can override this
+    behavior by setting up proper session management.
+    """
+    # This would typically be set up during application initialization
+    # For now, we'll raise an error with helpful guidance
+    raise RuntimeError(
+        "No database session available. "
+        "Ensure you're using ZenithModel within a web request context, "
+        "or manually set the database session with set_current_db_session()."
+    )
