@@ -87,10 +87,17 @@ class MemoryRateLimitStorage(RateLimitStorage):
             expires_at = current_time + window
 
             if key not in self._storage:
-                self._storage[key] = (1, expires_at)
-                # Perform size-based cleanup if needed
-                if len(self._storage) > self._max_entries:
+                # Perform size-based cleanup if needed (before adding new entry)
+                if len(self._storage) >= self._max_entries:
                     await self._cleanup_expired()
+                    # If still at max capacity after removing expired, remove oldest
+                    if len(self._storage) >= self._max_entries:
+                        # Remove oldest entry (by expiration time)
+                        oldest_key = min(self._storage.keys(),
+                                       key=lambda k: self._storage[k][1])
+                        self._storage.pop(oldest_key, None)
+
+                self._storage[key] = (1, expires_at)
                 return 1
 
             count, old_expires_at = self._storage[key]
@@ -316,12 +323,17 @@ class RateLimitMiddleware:
 
         return None
 
-    def _get_rate_limit_key(self, request: Request, rate_limit: RateLimit) -> str:
+    def _get_rate_limit_key(
+        self, request: Request, rate_limit: RateLimit, is_endpoint_specific: bool = False
+    ) -> str:
         """Generate rate limit key based on limit type."""
         path = request.url.path
 
         if rate_limit.per == "ip":
             client_ip = self._get_client_ip(request)
+            # Include path in key for endpoint-specific limits
+            if is_endpoint_specific:
+                return f"ip:{client_ip}:{path}:{rate_limit.window}"
             return f"ip:{client_ip}:{rate_limit.window}"
 
         elif rate_limit.per == "user":
@@ -329,7 +341,12 @@ class RateLimitMiddleware:
             if not user_id:
                 # Fall back to IP if no user
                 client_ip = self._get_client_ip(request)
+                if is_endpoint_specific:
+                    return f"ip:{client_ip}:{path}:{rate_limit.window}"
                 return f"ip:{client_ip}:{rate_limit.window}"
+            # Include path in key for endpoint-specific limits
+            if is_endpoint_specific:
+                return f"user:{user_id}:{path}:{rate_limit.window}"
             return f"user:{user_id}:{rate_limit.window}"
 
         elif rate_limit.per == "endpoint":
@@ -374,8 +391,15 @@ class RateLimitMiddleware:
         Returns:
             (allowed, violated_limit, current_count, limit_count)
         """
+        # Check if this is an endpoint-specific limit
+        path = request.url.path
+        is_endpoint_specific = any(
+            path.startswith(endpoint_path)
+            for endpoint_path in self.endpoint_limits.keys()
+        )
+
         for rate_limit in limits:
-            key = self._get_rate_limit_key(request, rate_limit)
+            key = self._get_rate_limit_key(request, rate_limit, is_endpoint_specific)
             current_count = await self.storage.increment(key, rate_limit.window)
 
             if current_count > rate_limit.requests:
@@ -459,9 +483,15 @@ class RateLimitMiddleware:
                 and self.include_headers
                 and limits
             ):
+                # Check if this is an endpoint-specific limit
+                path = scope.get("path", "")
+                is_endpoint_specific = any(
+                    path.startswith(endpoint_path)
+                    for endpoint_path in self.endpoint_limits.keys()
+                )
                 # Use the most restrictive limit for headers
                 most_restrictive = min(limits, key=lambda l: l.requests / l.window)
-                key = self._get_rate_limit_key_asgi(scope, most_restrictive)
+                key = self._get_rate_limit_key_asgi(scope, most_restrictive, is_endpoint_specific)
                 current = await self.storage.get_count(key)
 
                 response_headers = list(message.get("headers", []))
@@ -547,12 +577,17 @@ class RateLimitMiddleware:
 
         return None
 
-    def _get_rate_limit_key_asgi(self, scope: Scope, rate_limit: RateLimit) -> str:
+    def _get_rate_limit_key_asgi(
+        self, scope: Scope, rate_limit: RateLimit, is_endpoint_specific: bool = False
+    ) -> str:
         """Generate rate limit key based on limit type for ASGI requests."""
         path = scope.get("path", "")
 
         if rate_limit.per == "ip":
             client_ip = self._get_client_ip_asgi(scope)
+            # Include path in key for endpoint-specific limits
+            if is_endpoint_specific:
+                return f"ip:{client_ip}:{path}:{rate_limit.window}"
             return f"ip:{client_ip}:{rate_limit.window}"
 
         elif rate_limit.per == "user":
@@ -560,7 +595,12 @@ class RateLimitMiddleware:
             if not user_id:
                 # Fall back to IP if no user
                 client_ip = self._get_client_ip_asgi(scope)
+                if is_endpoint_specific:
+                    return f"ip:{client_ip}:{path}:{rate_limit.window}"
                 return f"ip:{client_ip}:{rate_limit.window}"
+            # Include path in key for endpoint-specific limits
+            if is_endpoint_specific:
+                return f"user:{user_id}:{path}:{rate_limit.window}"
             return f"user:{user_id}:{rate_limit.window}"
 
         elif rate_limit.per == "endpoint":
@@ -605,8 +645,15 @@ class RateLimitMiddleware:
         Returns:
             (allowed, violated_limit, current_count, limit_count)
         """
+        # Check if this is an endpoint-specific limit
+        path = scope.get("path", "")
+        is_endpoint_specific = any(
+            path.startswith(endpoint_path)
+            for endpoint_path in self.endpoint_limits.keys()
+        )
+
         for rate_limit in limits:
-            key = self._get_rate_limit_key_asgi(scope, rate_limit)
+            key = self._get_rate_limit_key_asgi(scope, rate_limit, is_endpoint_specific)
             current_count = await self.storage.increment(key, rate_limit.window)
 
             if current_count > rate_limit.requests:

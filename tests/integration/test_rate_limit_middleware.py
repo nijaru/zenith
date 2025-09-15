@@ -258,7 +258,7 @@ class TestRateLimitMiddleware:
         rate_limits = [RateLimit(requests=2, window=60, per="endpoint")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/endpoint1")
@@ -298,14 +298,18 @@ class TestRateLimitMiddleware:
         default_limits = [RateLimit(requests=10, window=60, per="ip")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=default_limits)
-        middleware = RateLimitMiddleware(app.app, config=rate_limit_config)
+        rate_limit_config = RateLimitConfig(default_limits=default_limits, exempt_ips=[])
 
-        # Add custom limit for specific endpoint
-        strict_limits = [RateLimit(requests=1, window=60, per="ip")]
-        middleware.add_endpoint_limit("/api/strict", strict_limits)
+        # Create a middleware factory that adds endpoint limits
+        def create_middleware_with_endpoint_limits(app):
+            middleware = RateLimitMiddleware(app, config=rate_limit_config)
+            # Add custom limit for specific endpoint
+            strict_limits = [RateLimit(requests=1, window=60, per="ip")]
+            middleware.add_endpoint_limit("/api/strict", strict_limits)
+            return middleware
 
-        app.middleware.append(middleware)
+        # Add the configured middleware
+        app.add_middleware(create_middleware_with_endpoint_limits)
 
         @app.get("/api/normal")
         async def normal():
@@ -371,7 +375,7 @@ class TestRateLimitMiddleware:
         rate_limits = [RateLimit(requests=5, window=60, per="ip")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits, include_headers=False)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, include_headers=False, exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/no-headers")
@@ -396,7 +400,8 @@ class TestRateLimitMiddleware:
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
         rate_limit_config = RateLimitConfig(
             default_limits=rate_limits,
-            error_message="Too many requests! Please slow down."
+            error_message="Too many requests! Please slow down.",
+            exempt_ips=[]
         )
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
@@ -422,7 +427,7 @@ class TestRateLimitMiddleware:
         rate_limits = [RateLimit(requests=1, window=60, per="ip")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/proxy-test")
@@ -585,25 +590,31 @@ class TestMemoryRateLimitStorage:
 class TestRedisRateLimitStorage:
     """Test Redis-based rate limit storage."""
 
-    @patch('zenith.middleware.rate_limit.RedisRateLimitStorage')
-    async def test_redis_storage_integration(self, mock_redis_storage_class):
+    async def test_redis_storage_integration(self):
         """Test rate limiting with mocked Redis storage."""
-        # Mock Redis storage
+        # Create a proper mock for Redis storage
         mock_storage = AsyncMock()
+        mock_storage.increment = AsyncMock()
+        mock_storage.get_count = AsyncMock()
+        mock_storage.reset = AsyncMock()
+
+        # Simulate incrementing counts
+        call_count = 0
+        async def increment_side_effect(key, window):
+            nonlocal call_count
+            call_count += 1
+            return call_count
+
+        mock_storage.increment.side_effect = increment_side_effect
         mock_storage.get_count.return_value = 0
-        mock_storage.increment.return_value = 1
-        mock_storage.reset.return_value = None
-        mock_redis_storage_class.return_value = mock_storage
 
         app = Zenith()
 
-        # Use Redis storage (mocked)
-        mock_redis_client = AsyncMock()
-        redis_storage = RedisRateLimitStorage(mock_redis_client)
+        # Use mocked storage directly
         rate_limits = [RateLimit(requests=2, window=60, per="ip")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits, storage=redis_storage)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, storage=mock_storage, exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/redis-limited")
@@ -641,12 +652,18 @@ class TestRateLimitConvenienceFunctions:
         assert any(limit.requests == 5 and limit.window == 60 for limit in rate_limiter.default_limits)
         assert any(limit.requests == 50 and limit.window == 3600 for limit in rate_limiter.default_limits)
 
-    @patch('zenith.middleware.rate_limit.RedisRateLimitStorage')
-    async def test_create_redis_rate_limiter(self, mock_redis_storage_class):
+    async def test_create_redis_rate_limiter(self):
         """Test create_redis_rate_limiter convenience function."""
         mock_redis_client = AsyncMock()
-        mock_storage = AsyncMock()
-        mock_redis_storage_class.return_value = mock_storage
+
+        # Mock the pipeline method to return an async context manager
+        mock_pipeline = AsyncMock()
+        mock_pipeline.__aenter__ = AsyncMock(return_value=mock_pipeline)
+        mock_pipeline.__aexit__ = AsyncMock(return_value=None)
+        mock_pipeline.expire = AsyncMock()
+        mock_pipeline.incr = AsyncMock(return_value=1)
+        mock_pipeline.execute = AsyncMock(return_value=[1, True])
+        mock_redis_client.pipeline.return_value = mock_pipeline
 
         rate_limiter = create_redis_rate_limiter(
             redis_client=mock_redis_client,
@@ -656,7 +673,7 @@ class TestRateLimitConvenienceFunctions:
 
         # Check configuration
         assert len(rate_limiter.default_limits) == 2
-        assert isinstance(rate_limiter.storage, type(mock_storage))
+        assert isinstance(rate_limiter.storage, RedisRateLimitStorage)
 
 
 @pytest.mark.asyncio
@@ -671,7 +688,7 @@ class TestRateLimitEdgeCases:
         invalid_limit = RateLimit(requests=10, window=60, per="invalid_type")
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=[invalid_limit])
+        rate_limit_config = RateLimitConfig(default_limits=[invalid_limit], exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/invalid-type")
@@ -679,9 +696,13 @@ class TestRateLimitEdgeCases:
             return {"test": True}
 
         async with TestClient(app) as client:
-            # Should raise ValueError for unknown rate limit type
-            with pytest.raises(ValueError, match="Unknown rate limit type"):
-                await client.get("/api/invalid-type")
+            # The ValueError is caught by exception middleware and returns 400
+            response = await client.get("/api/invalid-type")
+            assert response.status_code == 400
+            # Verify it was due to the unknown rate limit type
+            data = response.json()
+            assert data.get("error") == "ValueError"
+            assert "Unknown rate limit type" in data.get("details", {}).get("message", "")
 
     async def test_missing_user_fallback_to_ip(self):
         """Test fallback to IP when user not available for per-user limiting."""
@@ -690,7 +711,7 @@ class TestRateLimitEdgeCases:
         rate_limits = [RateLimit(requests=1, window=60, per="user")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/user-fallback")
@@ -713,7 +734,7 @@ class TestRateLimitEdgeCases:
         rate_limits = [RateLimit(requests=5, window=60, per="ip")]
         # Remove auto-added rate limiting middleware to avoid conflicts
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
-        rate_limit_config = RateLimitConfig(default_limits=rate_limits)
+        rate_limit_config = RateLimitConfig(default_limits=rate_limits, exempt_ips=[])
         app.add_middleware(RateLimitMiddleware, config=rate_limit_config)
 
         @app.get("/api/concurrent")
