@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 def validate_response_type(result: Any, return_type: type) -> Any:
     """Validate response against return type hint."""
-    if not return_type or return_type == type(None):
+    if not return_type or return_type is type(None):
         return result
 
     # Handle Optional types (T | None)

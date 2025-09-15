@@ -14,14 +14,10 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from zenith.exceptions import ZenithException
+
 # Get logger
 logger = logging.getLogger("zenith.exceptions")
-
-
-# Import unified exceptions from main module
-from zenith.exceptions import (
-    ZenithException,
-)
 
 
 class ExceptionHandlerMiddleware:

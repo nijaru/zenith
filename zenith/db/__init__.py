@@ -203,10 +203,10 @@ class Database:
 
 
 # Import migration system
-from .migrations import MigrationManager, create_migration_manager
+from .migrations import MigrationManager, create_migration_manager  # noqa: E402
 
 # Import SQLModel integration
-from .sqlmodel import (
+from .sqlmodel import (  # noqa: E402
     Field,
     Relationship,
     SQLModel,

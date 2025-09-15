@@ -155,7 +155,7 @@ def create_repository[T: SQLModel](
 
 
 # Re-export SQLModel components for convenience
-from sqlmodel import Field, Relationship, Session, SQLModel, select
+from sqlmodel import Field, Relationship, Session, SQLModel, select  # noqa: E402, F811
 
 __all__ = [
     "Field",

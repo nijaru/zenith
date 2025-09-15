@@ -132,6 +132,40 @@ async def main():
     else:
         print("⚠️  Performance: Below expectations (<500 req/s)")
 
+    # Write results to JSON for GitHub Actions
+    import json
+    import time
+
+    results = {
+        "timestamp": time.time(),
+        "benchmarks": [
+            {
+                "name": "Simple endpoint (no middleware)",
+                "unit": "req/s",
+                "value": hello_rps
+            },
+            {
+                "name": "JSON endpoint (no middleware)",
+                "unit": "req/s",
+                "value": json_rps
+            },
+            {
+                "name": "Simple endpoint (with middleware)",
+                "unit": "req/s",
+                "value": middleware_rps
+            },
+            {
+                "name": "Middleware overhead",
+                "unit": "%",
+                "value": overhead_pct
+            }
+        ]
+    }
+
+    with open("benchmark_results.json", "w") as f:
+        json.dump(results, f, indent=2)
+    print("\n✅ Results written to benchmark_results.json")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
