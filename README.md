@@ -126,7 +126,7 @@ uvicorn main:app --reload
 - Comprehensive performance monitoring built-in
 
 ### 🛠️ **Developer Experience**
-- Interactive CLI with code generation: `zen generate api users`
+- Interactive CLI with development tools: `zen dev`, `zen routes`, `zen shell`
 - Built-in testing framework with `TestClient`
 - Hot reload development server
 - Comprehensive error handling and debugging
@@ -203,22 +203,23 @@ Complete working examples in the [examples/](examples/) directory:
 # Create new project
 zen new my-api
 
-# Development server with hot reload  
-zen server --reload
+# Development server with hot reload
+zen dev --open
+
+# Production server
+zen serve --workers 4
 
 # Interactive shell with app context
 zen shell
 
-# Code generation
-zen generate api users "User UserCreate UserUpdate"
-zen generate model Product "name:str price:float"
+# Debug and inspect routes
+zen routes
 
-# Database migrations
-zen db migrate "add users table"
-zen db upgrade
+# Application information
+zen info
 
 # Testing
-zen test --coverage
+zen test --verbose
 ```
 
 ## Installation
