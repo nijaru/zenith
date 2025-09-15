@@ -76,8 +76,8 @@ class Database:
         self.pool_recycle = pool_recycle
 
         # Store engines per event loop - this is the KEY FIX
-        self._engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
-        self._session_makers: WeakKeyDictionary[asyncio.AbstractEventLoop, async_sessionmaker] = WeakKeyDictionary()
+        self._loop_engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
+        self._loop_sessions: WeakKeyDictionary[asyncio.AbstractEventLoop, async_sessionmaker] = WeakKeyDictionary()
 
     @property
     def engine(self) -> AsyncEngine:
@@ -89,7 +89,7 @@ class Database:
         """
         loop = asyncio.get_event_loop()
 
-        if loop not in self._engines:
+        if loop not in self._loop_engines:
             # Create new engine for this event loop
             # SQLite doesn't support pool configuration
             if self.url.startswith("sqlite"):
@@ -107,9 +107,9 @@ class Database:
                     pool_recycle=self.pool_recycle,
                     pool_pre_ping=True,  # Verify connections before using
                 )
-            self._engines[loop] = engine
+            self._loop_engines[loop] = engine
 
-        return self._engines[loop]
+        return self._loop_engines[loop]
 
     @property
     def async_session(self) -> async_sessionmaker:
@@ -118,16 +118,16 @@ class Database:
         """
         loop = asyncio.get_event_loop()
 
-        if loop not in self._session_makers:
+        if loop not in self._loop_sessions:
             # Create session maker for this event loop's engine
             session_maker = async_sessionmaker(
                 bind=self.engine,  # Uses the loop-specific engine
                 class_=AsyncSession,
                 expire_on_commit=False,
             )
-            self._session_makers[loop] = session_maker
+            self._loop_sessions[loop] = session_maker
 
-        return self._session_makers[loop]
+        return self._loop_sessions[loop]
 
     @asynccontextmanager
     async def session(
@@ -232,10 +232,10 @@ class Database:
 
     async def close(self) -> None:
         """Close all database connections across all event loops."""
-        for engine in self._engines.values():
+        for engine in self._loop_engines.values():
             await engine.dispose()
-        self._engines.clear()
-        self._session_makers.clear()
+        self._loop_engines.clear()
+        self._loop_sessions.clear()
 
     async def health_check(self) -> bool:
         """Check if database is accessible."""
