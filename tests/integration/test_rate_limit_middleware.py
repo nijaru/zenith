@@ -5,17 +5,19 @@ Tests the actual rate limiting behavior in realistic scenarios.
 This middleware had 51% coverage but lacked integration tests.
 """
 
-import pytest
 import asyncio
 import time
 from unittest.mock import AsyncMock, patch
+
+import pytest
 from starlette.middleware.base import BaseHTTPMiddleware
+
 from zenith import Zenith
 from zenith.middleware.rate_limit import (
+    MemoryRateLimitStorage,
     RateLimit,
     RateLimitConfig,
     RateLimitMiddleware,
-    MemoryRateLimitStorage,
     RedisRateLimitStorage,
     create_rate_limiter,
     create_redis_rate_limiter,
@@ -208,7 +210,7 @@ class TestRateLimitMiddleware:
 
         async with TestClient(app) as client:
             # All requests should succeed due to IP exemption
-            for i in range(5):
+            for _i in range(5):
                 response = await client.get("/api/test")
                 assert response.status_code == 200
                 # Exempt IPs shouldn't get rate limit headers

@@ -5,7 +5,6 @@ Analyzes routes, type hints, and Pydantic models to automatically
 generate comprehensive API documentation.
 """
 
-import functools
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +18,7 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel
 
-from zenith.core.routing import Inject, InjectDependency, AuthDependency, RouteSpec
+from zenith.core.routing import AuthDependency, InjectDependency, RouteSpec
 
 
 class OpenAPIGenerator:

@@ -18,7 +18,6 @@ from zenith.core.routing import (
     InjectDependency,
     Router,
 )
-from zenith import Service
 from zenith.testing import TestClient
 
 

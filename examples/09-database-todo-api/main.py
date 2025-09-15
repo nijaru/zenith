@@ -16,7 +16,7 @@ from sqlalchemy import Boolean, DateTime, Integer, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from zenith import Service, Inject, Router, Service, Zenith
+from zenith import Inject, Router, Service, Zenith
 from zenith.db import Base, Database
 
 

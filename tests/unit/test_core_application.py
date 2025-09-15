@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from zenith import Service, Zenith, Inject
+from zenith import Inject, Service, Zenith
 from zenith.auth import configure_auth
 from zenith.testing import TestClient
 

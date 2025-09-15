@@ -13,7 +13,7 @@ Then visit: http://localhost:8003
 
 from datetime import datetime
 
-from zenith import Service, Inject, Router, Service, Zenith
+from zenith import Inject, Router, Service, Zenith
 from zenith.db import Field, SQLModel
 
 app = Zenith(debug=True)

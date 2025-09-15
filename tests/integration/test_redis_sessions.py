@@ -5,14 +5,16 @@ Tests the Redis session backend in realistic scenarios.
 This component had 20% coverage and NO integration tests.
 """
 
-import pytest
 import time
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from zenith import Zenith
+from zenith.sessions import SessionMiddleware
 from zenith.sessions.manager import Session, SessionManager
 from zenith.sessions.redis import RedisSessionStore
-from zenith.sessions import SessionMiddleware
 from zenith.testing import TestClient
 
 

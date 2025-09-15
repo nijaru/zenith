@@ -58,11 +58,11 @@ class ZenithJSONEncoder(json.JSONEncoder):
     def default(self, obj: Any) -> Any:
         """Convert non-JSON-serializable objects."""
         # Datetime types
-        if isinstance(obj, datetime) or isinstance(obj, date) or isinstance(obj, time):
+        if isinstance(obj, (datetime, date, time)):
             return obj.isoformat()
 
         # Numeric types
-        elif isinstance(obj, Decimal) or isinstance(obj, UUID) or isinstance(obj, Path):
+        elif isinstance(obj, (Decimal, UUID, Path)):
             return str(obj)
 
         # Enums

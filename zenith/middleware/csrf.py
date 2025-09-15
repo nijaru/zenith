@@ -322,7 +322,7 @@ class CSRFMiddleware:
 
     async def _send_csrf_error(self, send: Send, error_message: str) -> None:
         """Send CSRF error response."""
-        response_body = f'{{"error": "{error_message}"}}'.encode("utf-8")
+        response_body = f'{{"error": "{error_message}"}}'.encode()
 
         await send(
             {

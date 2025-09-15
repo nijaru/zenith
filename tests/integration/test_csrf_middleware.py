@@ -6,6 +6,7 @@ This middleware had 16% coverage and NO integration tests.
 """
 
 import pytest
+
 from zenith import Zenith
 from zenith.middleware.csrf import CSRFConfig, CSRFMiddleware
 from zenith.testing import TestClient

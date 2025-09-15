@@ -6,8 +6,8 @@ Contains methods for managing services, contexts, databases, and mounting.
 
 from typing import Any
 
-from zenith.core.service import Service
 from zenith.core.routing import Router
+from zenith.core.service import Service
 
 
 class ServicesMixin:
@@ -49,7 +49,7 @@ class ServicesMixin:
             "database", self.database.health_check, timeout=5.0, critical=True
         )
 
-    def mount(self, path: str, app, name: str = None) -> None:
+    def mount(self, path: str, app, name: str | None = None) -> None:
         """Mount a sub-application or static files at the given path."""
         from starlette.routing import Mount
 
@@ -83,7 +83,7 @@ class ServicesMixin:
         self._static_mounts.append(static_mount)
 
     def spa(
-        self, framework_or_directory: str = None, path: str = "/", **config
+        self, framework_or_directory: str | None = None, path: str = "/", **config
     ) -> None:
         """
         Serve a Single Page Application with intelligent defaults.

@@ -206,7 +206,7 @@ async def test_rate_limits():
     async with aiohttp.ClientSession() as session:
         # Test public endpoint
         tasks = []
-        for i in range(15):  # Exceed 10/minute limit
+        for _i in range(15):  # Exceed 10/minute limit
             tasks.append(session.get("http://localhost:8008/public"))
 
         responses = await asyncio.gather(*tasks, return_exceptions=True)

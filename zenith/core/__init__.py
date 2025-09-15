@@ -11,7 +11,7 @@ from zenith.core.supervisor import Supervisor
 __all__ = [
     "Application",
     "Config",
-    "Service",
     "DIContainer",
+    "Service",
     "Supervisor",
 ]

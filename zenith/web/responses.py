@@ -351,10 +351,7 @@ def negotiate_response(data: Any, accept_header: str = "application/json") -> Re
             content = f"<pre>{data!s}</pre>"
         return html_response(content)
     elif "text/plain" in accept_header:
-        if isinstance(data, dict | list):
-            content = _json_dumps(data)
-        else:
-            content = str(data)
+        content = _json_dumps(data) if isinstance(data, dict | list) else str(data)
         return Response(content, media_type="text/plain")
     else:
         # Default to JSON

@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from zenith import Service, Inject, Router, Service, Zenith
+from zenith import Inject, Router, Service, Zenith
 
 
 # Pydantic models

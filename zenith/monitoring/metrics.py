@@ -58,7 +58,7 @@ class MetricsCollector:
         self._lock = Lock()
 
     def counter(
-        self, name: str, value: float = 1.0, labels: dict[str, str] = None
+        self, name: str, value: float = 1.0, labels: dict[str, str] | None = None
     ) -> None:
         """
         Increment a counter metric.
@@ -83,7 +83,7 @@ class MetricsCollector:
                 )
             )
 
-    def gauge(self, name: str, value: float, labels: dict[str, str] = None) -> None:
+    def gauge(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
         """
         Set a gauge metric value.
 
@@ -107,7 +107,7 @@ class MetricsCollector:
                 )
             )
 
-    def histogram(self, name: str, value: float, labels: dict[str, str] = None) -> None:
+    def histogram(self, name: str, value: float, labels: dict[str, str] | None = None) -> None:
         """
         Record a histogram observation.
 
@@ -137,7 +137,7 @@ class MetricsCollector:
                 )
             )
 
-    def timer(self, name: str, labels: dict[str, str] = None):
+    def timer(self, name: str, labels: dict[str, str] | None = None):
         """
         Context manager for timing operations.
 
@@ -152,7 +152,7 @@ class MetricsCollector:
         return TimerContext(self, name, labels or {})
 
     def timing(
-        self, name: str, duration_seconds: float, labels: dict[str, str] = None
+        self, name: str, duration_seconds: float, labels: dict[str, str] | None = None
     ) -> None:
         """
         Record a timing metric.
@@ -188,7 +188,7 @@ class MetricsCollector:
             }
 
     def get_histogram_stats(
-        self, name: str, labels: dict[str, str] = None
+        self, name: str, labels: dict[str, str] | None = None
     ) -> dict[str, float]:
         """Get statistics for a histogram metric."""
         labels = labels or {}

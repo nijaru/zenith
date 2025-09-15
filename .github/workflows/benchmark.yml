@@ -32,8 +32,6 @@ jobs:
     - name: Run performance benchmarks
       run: |
         python benchmarks/simple_bench.py
-        python benchmarks/middleware_bench.py
-        python benchmarks/memory_bench.py
     
     - name: Store benchmark results
       uses: benchmark-action/github-action-benchmark@v1

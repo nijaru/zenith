@@ -88,7 +88,7 @@ class Database:
         )
 
     @asynccontextmanager
-    async def session(self, scope: dict = None) -> AsyncGenerator[AsyncSession, None]:
+    async def session(self, scope: dict | None = None) -> AsyncGenerator[AsyncSession, None]:
         """
         Create a database session with automatic request-scoped reuse.
 
@@ -218,15 +218,15 @@ __all__ = [
     "AsyncSession",
     "Base",
     "Database",
+    "Field",
     "MigrationManager",
+    "Relationship",
+    # SQLModel components
+    "SQLModel",
+    "SQLModelRepository",
+    "ZenithSQLModel",
     "async_sessionmaker",
     "create_async_engine",
     "create_migration_manager",
-    # SQLModel components
-    "SQLModel",
-    "Field",
-    "Relationship",
-    "ZenithSQLModel",
-    "SQLModelRepository",
     "create_repository",
 ]

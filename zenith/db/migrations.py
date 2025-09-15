@@ -30,7 +30,7 @@ class MigrationManager:
         self,
         database: Database,
         migrations_dir: str = "migrations",
-        script_location: str = None,
+        script_location: str | None = None,
     ):
         """
         Initialize migration manager.
@@ -89,7 +89,7 @@ version_locations = %(here)s/versions
 output_encoding = utf-8
 
 # Database URL (will be set programmatically)
-sqlalchemy.url = 
+sqlalchemy.url =
 
 [post_write_hooks]
 # Hooks for code formatters
@@ -313,7 +313,7 @@ else:
         """Get current database revision."""
         try:
             # This is a bit tricky with async engines, need to use sync approach
-            script = ScriptDirectory.from_config(self.alembic_cfg)
+            ScriptDirectory.from_config(self.alembic_cfg)
 
             def get_current(connection):
                 context = MigrationContext.configure(connection)

@@ -28,24 +28,24 @@ class {self.class_name}Service(Service):
     """
     Business logic for {model_name} operations.
     """
-    
+
     def __init__(self, db: AsyncSession):
         self.db = db
-    
+
     async def get_all(self, limit: int = 100, offset: int = 0) -> list[{model_name}]:
         """Get all {self.table_name}."""
         result = await self.db.execute(
             select({model_name}).limit(limit).offset(offset)
         )
         return result.scalars().all()
-    
+
     async def get_by_id(self, id: int) -> {model_name} | None:
         """Get {self.variable_name} by ID."""
         result = await self.db.execute(
             select({model_name}).where({model_name}.id == id)
         )
         return result.scalar_one_or_none()
-    
+
     async def create(self, **data) -> {model_name}:
         """Create new {self.variable_name}."""
         obj = {model_name}(**data)
@@ -53,26 +53,26 @@ class {self.class_name}Service(Service):
         await self.db.commit()
         await self.db.refresh(obj)
         return obj
-    
+
     async def update(self, id: int, **data) -> {model_name} | None:
         """Update {self.variable_name}."""
         obj = await self.get_by_id(id)
         if not obj:
             return None
-        
+
         for key, value in data.items():
             setattr(obj, key, value)
-        
+
         await self.db.commit()
         await self.db.refresh(obj)
         return obj
-    
+
     async def delete(self, id: int) -> bool:
         """Delete {self.variable_name}."""
         obj = await self.get_by_id(id)
         if not obj:
             return False
-        
+
         await self.db.delete(obj)
         await self.db.commit()
         return True

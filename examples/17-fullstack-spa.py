@@ -37,7 +37,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-from zenith import Service, Inject, Service, Zenith
+from zenith import Inject, Service, Zenith
 from zenith.web.static import serve_css_js, serve_images
 
 app = Zenith(
@@ -280,7 +280,7 @@ def setup_frontend_serving():
             <head>
                 <title>Zenith Full-Stack App</title>
                 <style>
-                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                            max-width: 800px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; }
                     .api-example { background: #f5f5f5; padding: 1rem; border-radius: 8px; }
                     code { background: #e1e1e1; padding: 0.2em 0.4em; border-radius: 3px; }
@@ -295,30 +295,30 @@ def setup_frontend_serving():
                     <li><code>dist/</code> - General build output</li>
                     <li><code>public/</code> - Static files</li>
                 </ul>
-                
+
                 <h2>API Endpoints</h2>
                 <div class="api-example">
                     <p><strong>Users:</strong></p>
                     <p>GET <a href="/api/users">/api/users</a> - List all users</p>
                     <p>GET <a href="/api/users/1">/api/users/1</a> - Get user by ID</p>
                     <p>POST /api/users - Create user</p>
-                    
+
                     <p><strong>Tasks:</strong></p>
                     <p>GET <a href="/api/users/1/tasks">/api/users/1/tasks</a> - User's tasks</p>
                     <p>POST /api/tasks - Create task</p>
                     <p>PATCH /api/tasks/1 - Update task</p>
-                    
+
                     <p><strong>Documentation:</strong></p>
                     <p><a href="/docs">📖 API Documentation</a></p>
                 </div>
-                
+
                 <h2>Frontend Examples</h2>
                 <p>Here are fetch examples for your frontend:</p>
                 <div class="api-example">
                     <pre><code>// Fetch users
 const users = await fetch('/api/users').then(r => r.json());
 
-// Create user  
+// Create user
 const newUser = await fetch('/api/users', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -347,7 +347,7 @@ def setup_static_assets():
         ("uploads", "serve_uploads", 3600),  # Uploads: 1 hour
     ]
 
-    for dir_name, serve_func, max_age in static_configs:
+    for dir_name, _serve_func, max_age in static_configs:
         if Path(dir_name).exists():
             # Use Zenith's clean static serving API
             app.mount_static(f"/{dir_name}", dir_name, max_age=max_age)

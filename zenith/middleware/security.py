@@ -5,13 +5,12 @@ Provides comprehensive security headers, CSRF protection,
 and other security enhancements.
 """
 
-import hashlib
 import hmac
 import secrets
 from urllib.parse import urlparse
 
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
+from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 
@@ -100,10 +99,7 @@ class SecurityHeadersMiddleware:
 
         # Skip for test client and localhost
         server = scope.get("server")
-        if server and server[0] in ("testserver", "127.0.0.1", "localhost"):
-            return False
-
-        return True
+        return not (server and server[0] in ("testserver", "127.0.0.1", "localhost"))
 
     def _build_https_url(self, scope: Scope) -> str:
         """Build HTTPS URL from scope."""

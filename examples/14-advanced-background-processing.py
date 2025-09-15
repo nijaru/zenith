@@ -3,7 +3,7 @@
 
 This example demonstrates sophisticated background job processing:
 - Redis-backed job queues with persistence
-- Retry logic with exponential backoff for failed jobs  
+- Retry logic with exponential backoff for failed jobs
 - Job scheduling with cron-like expressions
 - Multi-worker processes with supervision
 - Comprehensive job status tracking and monitoring
@@ -11,17 +11,17 @@ This example demonstrates sophisticated background job processing:
 
 Prerequisites:
     pip install redis
-    
+
 Setup:
     # Start Redis first:
     redis-server
-    
+
     # In one terminal, start the worker:
     python examples/14-advanced-background-processing.py worker
-    
+
     # In another terminal, start the API:
     python examples/14-advanced-background-processing.py
-    
+
     # Submit jobs via API:
     curl -X POST http://localhost:8014/jobs/email \
          -H "Content-Type: application/json" \

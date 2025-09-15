@@ -165,7 +165,7 @@ class BenchmarkRunner:
                     tasks.append(asyncio.create_task(make_request()))
 
                 # Wait for some to complete
-                done, tasks = await asyncio.wait(
+                _done, tasks = await asyncio.wait(
                     tasks, timeout=0.1, return_when=asyncio.FIRST_COMPLETED
                 )
                 tasks = list(tasks)

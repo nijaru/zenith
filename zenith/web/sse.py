@@ -18,9 +18,10 @@ import json
 import logging
 import time
 import weakref
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, AsyncGenerator, Callable, Dict, Optional, Set
+from typing import Any
 
 from starlette.responses import StreamingResponse
 
@@ -59,8 +60,8 @@ class SSEConnection:
     adaptive_throttling: bool = True
 
     # Connection metadata
-    subscribed_channels: Set[str] = field(default_factory=set)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    subscribed_channels: set[str] = field(default_factory=set)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ServerSentEvents:
@@ -106,7 +107,7 @@ class ServerSentEvents:
         self._connections: weakref.WeakValueDictionary[str, SSEConnection] = (
             weakref.WeakValueDictionary()
         )
-        self._event_channels: Dict[str, Set[str]] = {}  # channel -> connection_ids
+        self._event_channels: dict[str, set[str]] = {}  # channel -> connection_ids
 
         # Performance statistics
         self._stats = {
@@ -120,8 +121,8 @@ class ServerSentEvents:
 
     def stream_response(
         self,
-        event_generator: AsyncGenerator[Dict[str, Any], None],
-        headers: Dict[str, str] = None,
+        event_generator: AsyncGenerator[dict[str, Any], None],
+        headers: dict[str, str] | None = None,
     ) -> StreamingResponse:
         """
         Create StreamingResponse for Server-Sent Events with backpressure optimization.
@@ -153,7 +154,7 @@ class ServerSentEvents:
         )
 
     async def _stream_events_with_backpressure(
-        self, event_generator: AsyncGenerator[Dict[str, Any], None]
+        self, event_generator: AsyncGenerator[dict[str, Any], None]
     ) -> AsyncGenerator[str, None]:
         """Stream events with intelligent backpressure handling and concurrent processing."""
         # Create connection for tracking
@@ -177,7 +178,7 @@ class ServerSentEvents:
                 stream_task = tg.create_task(
                     self._process_events_concurrent(connection, event_generator)
                 )
-                monitor_task = tg.create_task(
+                tg.create_task(
                     self._monitor_connection_backpressure(connection)
                 )
 
@@ -198,8 +199,8 @@ class ServerSentEvents:
     async def _process_events_concurrent(
         self,
         connection: SSEConnection,
-        event_generator: AsyncGenerator[Dict[str, Any], None],
-    ) -> AsyncGenerator[Dict[str, Any], None]:
+        event_generator: AsyncGenerator[dict[str, Any], None],
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Process events with concurrent handling and flow control."""
         event_queue: asyncio.Queue = asyncio.Queue(maxsize=100)
 
@@ -246,7 +247,7 @@ class ServerSentEvents:
                     connection.events_queued = max(0, connection.events_queued - 1)
                     yield event
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Allow state checks during quiet periods
                     continue
 
@@ -374,7 +375,7 @@ class ServerSentEvents:
         )
         connection._last_buffer_update = current_time
 
-    def _format_sse_message(self, event: Dict[str, Any]) -> str:
+    def _format_sse_message(self, event: dict[str, Any]) -> str:
         """Format event as Server-Sent Events message."""
         lines = []
 
@@ -392,10 +393,7 @@ class ServerSentEvents:
 
         # Add data (can be multiple lines)
         data = event.get("data", {})
-        if isinstance(data, dict):
-            data_str = json.dumps(data)
-        else:
-            data_str = str(data)
+        data_str = json.dumps(data) if isinstance(data, dict) else str(data)
 
         # Handle multi-line data
         for line in data_str.split("\n"):
@@ -458,7 +456,7 @@ class ServerSentEvents:
 
         return f"sse_{int(time.time() * 1000)}_{str(uuid.uuid4())[:8]}"
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get SSE performance statistics and monitoring data."""
         return {
             **self._stats,
@@ -496,18 +494,18 @@ class SSEEventManager:
         self.sse = sse_instance or ServerSentEvents()
 
     async def create_event_stream(
-        self, event_generator: AsyncGenerator[Dict[str, Any], None]
+        self, event_generator: AsyncGenerator[dict[str, Any], None]
     ):
         """Create optimized event stream response."""
         return self.sse.stream_response(event_generator)
 
-    def get_connection_count(self, channel: str = None) -> int:
+    def get_connection_count(self, channel: str | None = None) -> int:
         """Get connection count for channel or total."""
         if channel:
             return len(self.sse._event_channels.get(channel, set()))
         return len(self.sse._connections)
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get comprehensive performance statistics."""
         return self.sse.get_statistics()
 
@@ -517,7 +515,7 @@ sse = ServerSentEvents()
 
 
 def create_sse_response(
-    event_generator: AsyncGenerator[Dict[str, Any], None],
+    event_generator: AsyncGenerator[dict[str, Any], None],
 ) -> StreamingResponse:
     """
     Create Server-Sent Events response with built-in backpressure optimizations.
@@ -544,10 +542,10 @@ def create_sse_response(
 
 
 __all__ = [
-    "ServerSentEvents",
-    "SSEEventManager",
     "SSEConnection",
     "SSEConnectionState",
-    "sse",
+    "SSEEventManager",
+    "ServerSentEvents",
     "create_sse_response",
+    "sse",
 ]

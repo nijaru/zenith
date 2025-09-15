@@ -22,7 +22,7 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
 
     # Core framework imports
     try:
-        from zenith import Config, Service, Router, Zenith
+        from zenith import Config, Router, Service, Zenith
 
         namespace.update(
             {
@@ -53,7 +53,7 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
 
     # Performance monitoring utilities
     try:
-        from zenith.monitoring.performance import track_performance, profile_block
+        from zenith.monitoring.performance import profile_block, track_performance
 
         namespace.update(
             {

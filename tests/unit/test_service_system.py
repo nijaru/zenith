@@ -10,9 +10,8 @@ import pytest
 
 from zenith import Service, Zenith
 from zenith.core.container import DIContainer
-from zenith.core.service import Service as BaseService
-from zenith.core.service import EventBus
 from zenith.core.routing.dependencies import Inject
+from zenith.core.service import EventBus
 
 
 class UserService:

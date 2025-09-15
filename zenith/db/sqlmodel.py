@@ -5,7 +5,7 @@ Provides seamless integration between SQLModel and Zenith's database system,
 enabling unified Pydantic + SQLAlchemy models for clean architecture.
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import ConfigDict
 from sqlalchemy import delete, select, update
@@ -15,7 +15,7 @@ from sqlmodel import Field, SQLModel
 T = TypeVar("T", bound=SQLModel)
 
 
-class SQLModelRepository(Generic[T]):
+class SQLModelRepository[T: SQLModel]:
     """
     Generic repository for SQLModel entities.
 
@@ -128,7 +128,7 @@ class ZenithSQLModel(SQLModel):
     )
 
 
-def create_repository(session: AsyncSession, model: type[T]) -> SQLModelRepository[T]:
+def create_repository[T: SQLModel](session: AsyncSession, model: type[T]) -> SQLModelRepository[T]:
     """
     Factory function to create repository instances.
 

@@ -258,7 +258,7 @@ class TestBasicPerformance:
 
                 # Create and execute concurrent requests
                 tasks = [make_request() for _ in range(concurrency)]
-                responses = await asyncio.gather(*tasks)
+                await asyncio.gather(*tasks)
 
                 elapsed = time.perf_counter() - start
                 rps = concurrency / elapsed

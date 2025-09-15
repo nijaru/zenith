@@ -41,25 +41,25 @@ class LiveViewRouter(Router):
 
 
 __all__ = [
-    # Core classes
-    "Router",
-    "LiveViewRouter",
-    "RouteExecutor",
-    "DependencyResolver",
-    "ResponseProcessor",
     # Dependencies
     "Auth",
     "AuthDependency",
-    "Inject",
-    "InjectDependency",
+    "DependencyResolver",
     "File",
     "FileUploadDependency",
     # Specs
     "HTTPMethod",
+    "Inject",
+    "InjectDependency",
+    "LiveViewRouter",
+    "ResponseProcessor",
+    "RouteExecutor",
     "RouteSpec",
-    # Utilities
-    "validate_response_type",
+    # Core classes
+    "Router",
     "create_route_name",
     "extract_route_tags",
     "normalize_path",
+    # Utilities
+    "validate_response_type",
 ]

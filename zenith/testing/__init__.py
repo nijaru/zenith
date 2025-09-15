@@ -7,15 +7,15 @@ and utilities for database transaction rollback and authentication mocking.
 
 from .auth import create_test_token, create_test_user, mock_auth
 from .client import SyncTestClient, TestClient
-from .service import TestService, test_database
 from .fixtures import TestDatabase, test_app
+from .service import TestService, test_database
 
 __all__ = [
+    "SyncTestClient",
     # Core testing classes
     "TestClient",
-    "SyncTestClient",
-    "TestService",
     "TestDatabase",
+    "TestService",
     "create_test_token",
     # Authentication testing
     "create_test_user",

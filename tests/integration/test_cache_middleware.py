@@ -5,15 +5,16 @@ Tests the actual response caching in realistic scenarios.
 This middleware had 19% coverage and NO integration tests.
 """
 
-import pytest
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from zenith import Zenith
 from zenith.middleware.cache import (
     CacheConfig,
-    ResponseCacheMiddleware,
     MemoryCache,
-    RedisCache,
+    ResponseCacheMiddleware,
 )
 from zenith.testing import TestClient
 

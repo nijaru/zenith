@@ -258,8 +258,8 @@ class TestMetricsPerformance:
                 assert len(lines) > 0
 
                 # Check for Prometheus format patterns
-                has_help = any(line.startswith("# HELP") for line in lines)
-                has_type = any(line.startswith("# TYPE") for line in lines)
+                any(line.startswith("# HELP") for line in lines)
+                any(line.startswith("# TYPE") for line in lines)
                 has_metrics = any(
                     not line.startswith("#") and line.strip() for line in lines
                 )

@@ -10,10 +10,10 @@ from pathlib import Path
 
 
 def run_performance_tests(
-    test_pattern: str = None,
+    test_pattern: str | None = None,
     include_slow: bool = False,
     verbose: bool = False,
-    output_file: str = None,
+    output_file: str | None = None,
 ):
     """Run performance tests with specified options."""
 
@@ -124,7 +124,7 @@ def main():
 Examples:
   %(prog)s                          # Run all performance tests (excluding slow)
   %(prog)s --slow                   # Run all performance tests (including slow)
-  %(prog)s -k middleware            # Run only middleware performance tests  
+  %(prog)s -k middleware            # Run only middleware performance tests
   %(prog)s -k "not memory"          # Skip memory-related tests
   %(prog)s --quick                  # Run quick benchmark
   %(prog)s --output results.txt     # Save output to file

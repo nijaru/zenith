@@ -186,7 +186,7 @@ def describe_security_headers() -> SecurityHeaders:
     }
 
     return SecurityHeaders(
-        headers={k: v for k, v in headers_info.items()}, description=headers_info
+        headers=dict(headers_info.items()), description=headers_info
     )
 
 
