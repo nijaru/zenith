@@ -18,14 +18,26 @@ Zenith combines the best ideas from modern web frameworks with Python's ecosyste
 
 ## Key Features
 
-### 🏗️ **Context System**
-Organize your business logic in contexts, keeping domain concerns separate from HTTP handling:
+### 🏗️ **Service Architecture**
+Organize your business logic in Services, keeping domain concerns separate from HTTP handling:
 
 ```python
+from zenith import Service, Inject
+
 class UserService(Service):
     async def create_user(self, data: UserCreate) -> User:
         # Business logic stays here, not in route handlers
-        return await self.users.create(data)
+        user = User(**data.model_dump())
+        # Validation, saving, etc.
+        return user
+
+# Auto-injected in routes
+@app.post("/users")
+async def create_user(
+    data: UserCreate,
+    users: UserService = Inject()  # Automatic dependency injection
+):
+    return await users.create_user(data)
 ```
 
 ### 🔒 **Type-Safe by Default**  
@@ -85,10 +97,18 @@ Zenith is great for:
 
 Unlike other Python frameworks, Zenith provides:
 
-- **Context-Driven Architecture** - Inspired by Phoenix, Elixir's premier framework
+- **Service-Driven Architecture** - Clean business logic organization with dependency injection
+- **Request-Scoped Dependencies** - Prevents async crashes with proper resource management
+- **FastAPI Compatibility** - Use `Depends()` syntax for easy migration
+- **Enhanced File Uploads** - Starlette-compatible with convenience methods
 - **Zero-Configuration Defaults** - Production middleware enabled out-of-the-box
-- **Comprehensive Testing** - Built-in utilities for testing contexts and endpoints
+- **Comprehensive Testing** - Built-in utilities for testing services and endpoints
 - **Modern Python Features** - Leverages Python 3.12+ for optimal performance
+
+### 🚨 **Critical Production Features (v0.2.6)**
+- **Request-scoped database sessions** - No more "Future attached to loop" crashes
+- **Service auto-registration** - Automatic dependency injection for clean code
+- **Intelligent middleware** - Duplicate prevention with configurable behavior
 
 ## Ready to Get Started?
 

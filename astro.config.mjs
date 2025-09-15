@@ -44,7 +44,7 @@ export default defineConfig({
 							const versionStyle = 'color: #667eea; font-weight: bold;';
 							const linkStyle = 'color: #764ba2; text-decoration: underline;';
 
-							console.log('%c⚡ Zenith Framework %cv0.2.2', zenithStyle, versionStyle);
+							console.log('%c⚡ Zenith Framework %cv0.2.6', zenithStyle, versionStyle);
 							console.log('🚀 Modern Python web framework with clean architecture');
 							console.log('📚 Docs: %chttps://nijaru.com/zenith', linkStyle);
 							console.log('💻 GitHub: %chttps://github.com/nijaru/zenith', linkStyle);
@@ -77,7 +77,8 @@ export default defineConfig({
 					label: 'Core Concepts',
 					collapsed: false,
 					items: [
-						{ label: 'Service System', link: '/concepts/services' },
+						{ label: 'Service Architecture', link: '/concepts/services' },
+						{ label: 'Dependency Injection', link: '/concepts/dependency-injection' },
 						{ label: 'Routing', link: '/concepts/routing' },
 						{ label: 'Middleware', link: '/concepts/middleware' },
 						{ label: 'Database', link: '/concepts/database' },
@@ -85,8 +86,18 @@ export default defineConfig({
 					],
 				},
 				{
-					label: 'Examples',
+					label: 'Guides',
 					collapsed: false,
+					items: [
+						{ label: 'CLI Tools', link: '/guides/cli' },
+						{ label: 'File Uploads', link: '/guides/file-uploads' },
+						{ label: 'Testing', link: '/guides/testing' },
+						{ label: 'Deployment', link: '/guides/deployment' },
+					],
+				},
+				{
+					label: 'Examples',
+					collapsed: true,
 					items: [
 						{ label: 'Hello World', link: '/examples/hello-world' },
 						{ label: 'Basic Routing', link: '/examples/basic-routing' },
@@ -99,10 +110,10 @@ export default defineConfig({
 				},
 				{
 					label: 'API Reference',
-					collapsed: false,
+					collapsed: true,
 					items: [
 						{ label: 'Application', link: '/api/application' },
-						{ label: 'Service', link: '/api/service' },
+						{ label: 'Services', link: '/api/services' },
 						{ label: 'Router', link: '/api/router' },
 						{ label: 'Middleware', link: '/api/middleware' },
 						{ label: 'Testing', link: '/api/testing' },
