@@ -260,6 +260,9 @@ from .sqlmodel import (  # noqa: E402
     create_repository,
 )
 
+# Import Rails-like models
+from .models import ZenithModel, QueryBuilder  # noqa: E402
+
 # Export commonly used components
 __all__ = [
     "AsyncSession",
@@ -267,10 +270,12 @@ __all__ = [
     "Database",
     "Field",
     "MigrationManager",
+    "QueryBuilder",
     "Relationship",
     # SQLModel components
     "SQLModel",
     "SQLModelRepository",
+    "ZenithModel",
     "ZenithSQLModel",
     "async_sessionmaker",
     "create_async_engine",
