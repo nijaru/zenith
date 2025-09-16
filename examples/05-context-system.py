@@ -2,7 +2,7 @@
 🏗️ Modern Database Patterns - Modern Business Logic
 
 This example demonstrates Zenith's Modern DX features:
-- ZenithModel with Database database operations
+- Enhanced Model with database operations
 - Enhanced dependency injection with clean shortcuts
 - Modern query patterns and automatic session management
 - Zero-config setup with intelligent defaults
@@ -17,7 +17,7 @@ from typing import Optional
 
 from zenith import Zenith, Router
 from zenith import Session
-from zenith.db import ZenithModel, Field
+from zenith.db import Model, Field
 
 # 🎯 Zero-config setup - just works!
 app = Zenith(debug=True)
@@ -26,7 +26,7 @@ app = Zenith(debug=True)
 # MODERN MODELS - ActiveRecord-Style Database Operations
 # ============================================================================
 
-class Product(ZenithModel, table=True):
+class Product(Model, table=True):
     """Modern Product model with database operations."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -36,7 +36,7 @@ class Product(ZenithModel, table=True):
     stock: int = Field(ge=0, description="Stock quantity")
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
-class Order(ZenithModel, table=True):
+class Order(Model, table=True):
     """Modern Order model with database operations."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -108,7 +108,7 @@ async def root():
             "orders": "/api/v1/orders",
         },
         "features": [
-            "ZenithModel with Modern patterns",
+            "Enhanced Model with clean patterns",
             "Router grouping",
             "Enhanced dependency injection",
             "Automatic 404 handling",
@@ -192,7 +192,7 @@ async def health():
     return {
         "status": "healthy",
         "example": "03-rails-like-patterns",
-        "patterns": ["Modern DX", "ZenithModel", "Router grouping", "Enhanced DI"],
+        "patterns": ["Modern DX", "Enhanced Model", "Router grouping", "Enhanced DI"],
     }
 
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
     print("   GET /api/v1/products/1")
     print()
     print("💡 Modern DX Features:")
-    print("   • ZenithModel with database operations")
+    print("   • Enhanced Model with database operations")
     print("   • Product.where(category='Electronics').order_by('-created_at').all()")
     print("   • Product.find_or_404(id) - automatic 404 handling")
     print("   • Product.create(**data) - no session management")

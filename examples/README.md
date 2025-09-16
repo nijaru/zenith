@@ -131,7 +131,7 @@ The `archive/` directory contains experimental and testing examples that showcas
 
 ### **🎯 Modern SQLModel API** (Example 09)
 - Unified Pydantic + SQLAlchemy models with `SQLModel`
-- `ZenithSQLModel` base class with auto-configuration
+- Enhanced `Model` base class with better defaults
 - Repository pattern with `create_repository()`
 - Type-safe database operations throughout
 - Modern async patterns with dependency injection

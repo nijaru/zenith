@@ -2,7 +2,7 @@
 Modern Developer Experience Example - Showcasing v0.3.0 Improvements
 
 This example demonstrates the new patterns in Zenith v0.3.0:
-- ZenithModel with intuitive query methods
+- Enhanced Model with intuitive query methods
 - Enhanced dependency injection shortcuts
 - Zero-configuration auto-setup
 - Dramatically reduced boilerplate
@@ -21,7 +21,7 @@ from zenith import Zenith
 from zenith import Session
 from zenith import Auth
 from zenith.core import is_development
-from zenith.db import ZenithModel
+from zenith.db import Model
 
 # Set up a test database for the example
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///modern_dx_example.db")
@@ -35,8 +35,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///modern_dx_example.db"
 app = Zenith()
 
 
-# 📋 Modern Models with ZenithModel
-class User(ZenithModel, table=True):
+# 📋 Modern Models with Enhanced Model
+class User(Model, table=True):
     """User model with Modern convenience methods."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -46,7 +46,7 @@ class User(ZenithModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
 
-class Post(ZenithModel, table=True):
+class Post(Model, table=True):
     """Blog post model."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -212,7 +212,7 @@ async def setup_database():
 
     print("✅ Database tables created successfully")
     print("🎯 Modern DX patterns are ready to use!")
-    print("📝 Try the endpoints to see ZenithModel in action")
+    print("📝 Try the endpoints to see Enhanced Model in action")
 
 
 if __name__ == "__main__":
