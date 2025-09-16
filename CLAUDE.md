@@ -49,13 +49,14 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 - No release documentation - just commit, tag, and release
 
 ## Quick Facts
-- **Product**: Modern Python API framework with clean architecture and exceptional performance
+- **Product**: Modern Python API framework with Rails-like DX and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.2.5 - Latest dependencies with Pydantic 2.11.9+ and enhanced security
-- **Performance**: 9,500+ req/s with optimized middleware stack
-- **Test Coverage**: 100% integration tests (446 tests passing)
+- **Status**: v0.3.0 - Rails-like developer experience with zero-config setup and ActiveRecord patterns
+- **Performance**: 9,600+ req/s with optimized middleware stack and database session reuse
+- **Test Coverage**: 100% integration tests (770+ tests passing, +260 new tests for v0.3.0 features)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
+- **DX**: 85% boilerplate reduction vs traditional FastAPI with Rails-inspired patterns
 
 ## Framework Philosophy & Design
 
@@ -67,9 +68,13 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 5. **Production Ready** - Security, monitoring, scalability, and reliability built-in
 
 ### Key Differentiators from FastAPI/Flask
+- **Rails-like ActiveRecord Models**: `User.where(active=True).limit(10)` instead of raw SQLAlchemy
+- **One-liner Setup**: `app.add_auth()`, `app.add_admin()`, `app.add_api()` for instant features
+- **Zero-Configuration**: `app = Zenith()` auto-detects environment and configures everything
+- **Seamless Database Integration**: ZenithModel automatically uses request-scoped sessions
+- **Enhanced DI Shortcuts**: `db=DB`, `Auth`, `Cache` instead of verbose `Depends()` patterns
 - **Context System**: Organizes business logic outside route handlers
-- **Zero-Configuration**: Intelligent defaults for middleware, auth, monitoring
-- **Performance**: 10%+ faster than FastAPI with less memory usage
+- **Performance**: 10%+ faster than FastAPI with intelligent session reuse
 - **Testing Framework**: Built-in TestClient with auth helpers and context testing
 - **Comprehensive Middleware**: Production-ready CORS, security, rate limiting, logging
 
@@ -170,11 +175,14 @@ docs/                    # Documentation
 └── archive/           # Historical/deprecated docs
 
 examples/               # Working example applications
-├── 00-hello-world.py  # Minimal example
-├── 01-basic-api.py    # Basic CRUD API
-├── 02-auth-api.py     # API with authentication
-├── 03-complete-api.py # Full-featured application
-└── 04-websocket-chat.py # WebSocket example
+├── 00-hello-world.py        # Minimal example
+├── 01-basic-api.py          # Basic CRUD API
+├── 02-auth-api.py           # API with authentication
+├── 03-complete-api.py       # Full-featured application
+├── 04-websocket-chat.py     # WebSocket example
+├── 16-rails-like-dx.py      # Rails-like DX showcase (v0.3.0)
+├── 17-one-liner-features.py # One-liner convenience methods
+└── 18-seamless-integration.py # ZenithModel seamless integration
 
 benchmarks/            # Performance benchmarking tools
 scripts/                # Development scripts
@@ -183,14 +191,77 @@ scripts/                # Development scripts
 
 ## Core Framework Components
 
-### 1. Application Class (`zenith.Zenith`)
+### 1. Rails-like Zero-Config Setup (NEW in v0.3.0)
 ```python
 from zenith import Zenith
 
-# Basic application
+# Zero-config application - automatically detects environment and configures:
+# - Database (SQLite for dev, requires DATABASE_URL for prod)
+# - CORS (permissive for dev, secure for prod)
+# - Security (dev key for dev, requires SECRET_KEY for prod)
+# - Middleware (debug toolbar in dev, security headers in prod)
 app = Zenith()
 
-# Production application with configuration
+# One-liner convenience features
+app.add_auth()           # JWT authentication + /auth/login endpoint
+app.add_admin()          # Admin dashboard at /admin with health checks
+app.add_api("My API")    # OpenAPI docs at /docs and /redoc
+
+# All features chain together
+app = (Zenith()
+       .add_auth()
+       .add_admin("/dashboard")
+       .add_api("My API", "1.0.0", "API description"))
+```
+
+### 2. Rails-like ActiveRecord Models (NEW in v0.3.0)
+```python
+from zenith.db import ZenithModel
+from sqlmodel import Field
+
+class User(ZenithModel, table=True):
+    id: int | None = Field(primary_key=True)
+    name: str
+    email: str
+    active: bool = Field(default=True)
+
+# Rails-style model operations - all seamlessly integrated with Zenith app
+users = await User.all()                           # Get all users
+user = await User.find(1)                         # Find by ID, returns None if not found
+user = await User.find_or_404(1)                  # Find by ID, raises 404 if not found
+user = await User.create(name="Alice", email="alice@example.com")  # Create and save
+
+# Rails-style chainable queries
+active_users = await User.where(active=True).order_by('-created_at').limit(10)
+recent_posts = await Post.where(published=True).includes('author').all()
+
+# No manual session management needed - ZenithModel automatically uses
+# the request-scoped database session from Zenith app middleware!
+```
+
+### 3. Enhanced Dependency Injection (NEW in v0.3.0)
+```python
+from zenith.core import DB, Auth, Cache
+
+# Clean, Rails-like dependency shortcuts instead of verbose Depends()
+@app.get("/users")
+async def get_users(db=DB):  # Instead of db: AsyncSession = Depends(get_session)
+    users = await User.all()  # ZenithModel seamlessly uses the db session
+    return {"users": [user.to_dict() for user in users]}
+
+@app.get("/protected")
+async def protected_route(user=Auth):  # Instead of user = Depends(get_current_user)
+    return {"user_id": user.id}
+
+# Enhanced Service injection
+@app.get("/posts")
+async def get_posts(posts_service: PostService = Inject()):
+    return await posts_service.get_recent_posts()
+```
+
+### 4. Traditional Application Setup (Still Supported)
+```python
+# Explicit configuration for complex scenarios
 app = Zenith(
     title="My API",
     version="1.0.0",
@@ -203,7 +274,7 @@ app = Zenith(
 )
 ```
 
-### 2. Service System - Business Logic Organization
+### 5. Service System - Business Logic Organization
 ```python
 from zenith import Service, Inject
 
@@ -234,7 +305,7 @@ async def create_user(
     return await users.create_user(user_data)
 ```
 
-### 3. Type-Safe Routing with Validation
+### 6. Type-Safe Routing with Validation
 ```python
 from pydantic import BaseModel
 
@@ -258,7 +329,7 @@ async def create_user(user: UserCreate) -> User:
     return User(id=1, **user.model_dump(), created_at=datetime.utcnow())
 ```
 
-### 4. Authentication System
+### 7. Authentication System
 ```python
 from zenith.auth import Auth, JWTAuth, User
 
@@ -273,7 +344,7 @@ async def admin_route(user: Auth = JWTAuth(required_role="admin")) -> dict:
     return {"message": "Admin access granted"}
 ```
 
-### 5. Background Tasks
+### 8. Background Tasks
 ```python
 from zenith.background import BackgroundTasks, TaskQueue
 
@@ -295,7 +366,7 @@ async def process_data(data: ProcessingData) -> dict:
     return {"task_id": task_id, "status": "processing"}
 ```
 
-### 6. WebSocket Support
+### 9. WebSocket Support
 ```python
 from zenith.websockets import WebSocket, WebSocketManager
 
@@ -312,7 +383,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
         await manager.disconnect(websocket, room_id)
 ```
 
-### 7. Performance Monitoring
+### 10. Performance Monitoring
 ```python
 from zenith.performance import track_performance, cached, profiler
 

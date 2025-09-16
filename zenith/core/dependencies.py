@@ -10,7 +10,12 @@ from __future__ import annotations
 from typing import Annotated, Any, AsyncGenerator, Callable, TypeVar
 from collections.abc import Awaitable
 
-from fastapi import Depends
+try:
+    from fastapi import Depends
+except ImportError:
+    # FastAPI not available, create a dummy Depends for type compatibility
+    def Depends(dependency: Callable[..., Any]) -> Any:
+        return dependency
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .container import get_db_session, set_current_db_session
