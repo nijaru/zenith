@@ -338,8 +338,33 @@ class TestCompleteRailsLikeDXWorkflow:
                       .add_admin()
                       .add_api("Rails-like API", "1.0.0"))
 
-                # Create tables
+                # Create tables for test models
                 await app.app.database.create_all()
+
+                # Manually create integration tables since they're not part of the main models
+                from sqlalchemy import text
+                async with app.app.database.session() as session:
+                    await session.execute(text("""
+                        CREATE TABLE IF NOT EXISTS integration_users (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            name VARCHAR(100) NOT NULL,
+                            email VARCHAR NOT NULL UNIQUE,
+                            active BOOLEAN DEFAULT TRUE,
+                            created_at DATETIME NOT NULL
+                        )
+                    """))
+                    await session.execute(text("""
+                        CREATE TABLE IF NOT EXISTS integration_posts (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            title VARCHAR(200) NOT NULL,
+                            content TEXT NOT NULL,
+                            published BOOLEAN DEFAULT FALSE,
+                            user_id INTEGER NOT NULL,
+                            created_at DATETIME NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES integration_users(id)
+                        )
+                    """))
+                    await session.commit()
 
                 # 2. Rails-like model operations in routes
                 @app.get("/users")
@@ -354,7 +379,8 @@ class TestCompleteRailsLikeDXWorkflow:
 
                 @app.get("/users/active")
                 async def get_active_users():
-                    users = await IntegrationUser.where(active=True).order_by('-created_at').limit(5)
+                    query = await IntegrationUser.where(active=True)
+                    users = await query.order_by('-created_at').limit(5).all()
                     return {"users": [user.to_dict() for user in users]}
 
                 @app.get("/users/{user_id}")
@@ -489,10 +515,10 @@ class TestBackwardsCompatibility:
 
     def test_existing_service_patterns_preserved(self):
         """Test existing Service patterns aren't broken by new features."""
-        from zenith.core.service import Service
+        from zenith.core.dependencies import Service
 
         # Old Service pattern should still work
-        @Service
+        @Service()
         class TraditionalService:
             def get_data(self):
                 return "traditional"
@@ -500,3 +526,7 @@ class TestBackwardsCompatibility:
         # Should still be instantiable
         service = TraditionalService()
         assert service.get_data() == "traditional"
+
+        # Check that service metadata was added
+        assert hasattr(TraditionalService, '_zenith_service')
+        assert TraditionalService._zenith_service is True

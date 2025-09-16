@@ -261,7 +261,7 @@ class TestConvenienceMethodsErrorHandling:
             with pytest.raises(ImportError):
                 app.add_auth()
 
-    async def test_admin_health_handles_database_errors(self, app):
+    async def test_admin_health_handles_database_errors(self):
         """Test admin health endpoint handles database errors gracefully."""
         app = Zenith(config=Config(
             secret_key="test-secret-key-for-testing-32-chars",
