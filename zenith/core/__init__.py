@@ -24,7 +24,6 @@ from zenith.core.container import DIContainer
 from zenith.core.dependencies import (
     Session,
     Auth,
-    Cache,
     DatabaseContext,
     Inject,
     Request,
@@ -39,7 +38,6 @@ __all__ = [
     "Application",
     "Auth",
     "AutoConfig",
-    "Cache",
     "Config",
     "DIContainer",
     "DatabaseContext",

@@ -13,7 +13,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from starlette.datastructures import UploadFile
 
-from zenith import File, Zenith
+from zenith import File, IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, MB, Zenith
 from zenith.exceptions import HTTPException
 from zenith.web.files import UploadedFile
 
@@ -65,8 +65,9 @@ def get_file_type(file: UploadedFile | UploadFile) -> str:
 
 @app.post("/upload/modern", response_model=FileInfo)
 async def upload_modern(file: UploadedFile = File(
-    max_size=10 * 1024 * 1024,  # 10MB
-    allowed_types=["image/jpeg", "image/png", "audio/mpeg", "audio/wav", "application/pdf"]
+    max_size="10MB",
+    allowed_types=IMAGE_TYPES + AUDIO_TYPES + ["application/pdf"],
+    allowed_extensions=[".jpg", ".png", ".mp3", ".wav", ".pdf"]
 )) -> FileInfo:
     """
     Modern file upload using enhanced UploadedFile API.
@@ -94,17 +95,13 @@ async def upload_modern(file: UploadedFile = File(
 
 
 @app.post("/upload/image")
-async def upload_image(file: UploadFile = File()) -> FileInfo:
-    """Upload a single image file (traditional approach for comparison)."""
-    # Validate file type
-    ext = Path(file.filename).suffix.lower()
-    if ext not in ALLOWED_IMAGES:
-        raise HTTPException(400, f"Invalid image type. Allowed: {', '.join(ALLOWED_IMAGES)}")
+async def upload_image(file: UploadFile = File(
+    max_size="5MB",
+    allowed_types=IMAGE_TYPES
+)) -> FileInfo:
+    """Upload a single image file with automatic validation."""
 
-    # Validate file size (5MB max)
     contents = await file.read()
-    if len(contents) > 5 * 1024 * 1024:
-        raise HTTPException(413, "File too large. Maximum size: 5MB")
 
     # Save file
     save_path = UPLOAD_DIR / f"image_{file.filename}"
@@ -122,14 +119,11 @@ async def upload_image(file: UploadFile = File()) -> FileInfo:
 
 
 @app.post("/upload/document")
-async def upload_document(file: UploadFile = File()) -> FileInfo:
-    """Upload a document file."""
-    # Validate file type
-    ext = Path(file.filename).suffix.lower()
-    if ext not in ALLOWED_DOCUMENTS:
-        raise ValueError(
-            f"Invalid document type. Allowed: {', '.join(ALLOWED_DOCUMENTS)}"
-        )
+async def upload_document(file: UploadFile = File(
+    max_size="20MB",
+    allowed_types=DOCUMENT_TYPES
+)) -> FileInfo:
+    """Upload a document file with automatic validation."""
 
     # Read and save
     contents = await file.read()
@@ -146,7 +140,10 @@ async def upload_document(file: UploadFile = File()) -> FileInfo:
 
 
 @app.post("/upload/multiple")
-async def upload_multiple(files: list[UploadFile] = File()) -> list[FileInfo]:
+async def upload_multiple(files: list[UploadFile] = File(
+    max_size="10MB",
+    allowed_types=IMAGE_TYPES + DOCUMENT_TYPES
+)) -> list[FileInfo]:
     """Upload multiple files at once."""
     results = []
 
@@ -171,15 +168,14 @@ async def upload_multiple(files: list[UploadFile] = File()) -> list[FileInfo]:
 
 @app.post("/upload/profile")
 async def upload_profile(
-    username: str, bio: str | None = None, avatar: UploadFile = File()
+    username: str,
+    bio: str | None = None,
+    avatar: UploadFile = File(max_size="2MB", allowed_types=IMAGE_TYPES)
 ) -> dict:
     """Upload profile with avatar image (mixed form data)."""
-    # Validate avatar
-    ext = Path(avatar.filename).suffix.lower()
-    if ext not in ALLOWED_IMAGES:
-        raise ValueError("Avatar must be an image file")
 
     # Save avatar
+    ext = Path(avatar.filename).suffix.lower()
     contents = await avatar.read()
     avatar_path = UPLOAD_DIR / f"avatar_{username}{ext}"
     with open(avatar_path, "wb") as f:
@@ -246,4 +242,4 @@ if __name__ == "__main__":
     print()
     print('  # Traditional API:')
     print('  curl -X POST -F "file=@image.jpg" http://localhost:8006/upload/image')
-    uvicorn.run("file_upload_example:app", host="127.0.0.1", port=8006, reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=8006, reload=True)

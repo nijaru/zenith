@@ -1,10 +1,10 @@
 """
-🏗️ Rails-like Database Patterns - Modern Business Logic
+🏗️ Modern Database Patterns - Modern Business Logic
 
-This example demonstrates Zenith's Rails-like DX features:
-- ZenithModel with ActiveRecord-style database operations
+This example demonstrates Zenith's Modern DX features:
+- ZenithModel with Database database operations
 - Enhanced dependency injection with clean shortcuts
-- Rails-like query patterns and automatic session management
+- Modern query patterns and automatic session management
 - Zero-config setup with intelligent defaults
 
 Run with: python examples/03-context-system.py
@@ -23,11 +23,11 @@ from zenith.db import ZenithModel, Field
 app = Zenith(debug=True)
 
 # ============================================================================
-# RAILS-LIKE MODELS - ActiveRecord-Style Database Operations
+# MODERN MODELS - ActiveRecord-Style Database Operations
 # ============================================================================
 
 class Product(ZenithModel, table=True):
-    """Rails-like Product model with ActiveRecord patterns."""
+    """Modern Product model with database operations."""
 
     id: Optional[int] = Field(primary_key=True)
     name: str = Field(min_length=1, max_length=200, description="Product name")
@@ -37,7 +37,7 @@ class Product(ZenithModel, table=True):
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
 class Order(ZenithModel, table=True):
-    """Rails-like Order model with ActiveRecord patterns."""
+    """Modern Order model with database operations."""
 
     id: Optional[int] = Field(primary_key=True)
     product_id: int = Field(description="ID of the product being ordered")
@@ -92,13 +92,13 @@ orders_router = Router(prefix="/orders")
 
 @app.get("/")
 async def root():
-    """API overview showcasing Rails-like DX and Router grouping."""
+    """API overview showcasing Modern DX and Router grouping."""
     return {
-        "message": "Rails-like Database Patterns 🏗️",
-        "concept": "ActiveRecord-style database operations with zero-config setup",
+        "message": "Modern Database Patterns 🏗️",
+        "concept": "Database database operations with zero-config setup",
         "benefits": [
             "85% less boilerplate code",
-            "Rails-like query patterns: User.where().order_by().limit()",
+            "Modern query patterns: User.where().order_by().limit()",
             "Automatic session management",
             "Enhanced dependency injection with DB shortcut",
             "Zero-config setup with intelligent defaults",
@@ -108,7 +108,7 @@ async def root():
             "orders": "/api/v1/orders",
         },
         "features": [
-            "ZenithModel with Rails-like patterns",
+            "ZenithModel with Modern patterns",
             "Router grouping",
             "Enhanced dependency injection",
             "Automatic 404 handling",
@@ -117,26 +117,26 @@ async def root():
 
 
 # ============================================================================
-# API ROUTES WITH RAILS-LIKE DATABASE OPERATIONS
+# API ROUTES WITH MODERN DATABASE OPERATIONS
 # ============================================================================
 
 @products_router.get("/", response_model=list[Product])
 async def list_products(category: str | None = None, session=Session) -> list[Product]:
-    """List products with Rails-like query patterns."""
+    """List products with Modern query patterns."""
     if category:
-        # Rails-style: Product.where(category=category)
+        # Clean: Product.where(category=category)
         query = await Product.where(category=category)
         products = await query.order_by('-created_at').all()
     else:
-        # Rails-style: Product.all() - get all products
+        # Clean: Product.all() - get all products
         products = await Product.order_by('-created_at').all()
     return products
 
 
 @products_router.post("/", response_model=Product)
 async def create_product(product_data: dict, session=Session) -> Product:
-    """Create product using Rails-like patterns."""
-    # Rails-style: Product.create() - no session management!
+    """Create product using Modern patterns."""
+    # Clean: Product.create() - no session management!
     product = await Product.create(**product_data)
     return product
 
@@ -144,26 +144,26 @@ async def create_product(product_data: dict, session=Session) -> Product:
 @products_router.get("/{product_id}", response_model=Product)
 async def get_product(product_id: int, session=Session) -> Product:
     """Get product by ID with automatic 404 handling."""
-    # Rails-style: automatic 404 if not found
+    # Clean: automatic 404 if not found
     product = await Product.find_or_404(product_id)
     return product
 
 
 @orders_router.get("/", response_model=list[Order])
 async def list_orders(session=Session) -> list[Order]:
-    """List all orders with Rails-like patterns."""
-    # Rails-style: Order.all() with automatic ordering
+    """List all orders with Modern patterns."""
+    # Clean: Order.all() with automatic ordering
     orders = await Order.order_by('-created_at').all()
     return orders
 
 
 @orders_router.post("/", response_model=Order)
 async def create_order(order_data: dict, session=Session) -> Order:
-    """Create order with Rails-like business logic."""
+    """Create order with Modern business logic."""
     product_id = order_data["product_id"]
     quantity = order_data["quantity"]
 
-    # Rails-style: Product.find_or_404()
+    # Clean: Product.find_or_404()
     product = await Product.find_or_404(product_id)
 
     # Check stock
@@ -173,7 +173,7 @@ async def create_order(order_data: dict, session=Session) -> Order:
     # Calculate total
     total = product.price * quantity
 
-    # Rails-style: Order.create()
+    # Clean: Order.create()
     order = await Order.create(
         product_id=product_id,
         quantity=quantity,
@@ -192,7 +192,7 @@ async def health():
     return {
         "status": "healthy",
         "example": "03-rails-like-patterns",
-        "patterns": ["Rails-like DX", "ZenithModel", "Router grouping", "Enhanced DI"],
+        "patterns": ["Modern DX", "ZenithModel", "Router grouping", "Enhanced DI"],
     }
 
 
@@ -208,10 +208,10 @@ api_v1.include_router(orders_router)
 app.include_router(api_v1)
 
 if __name__ == "__main__":
-    print("🏗️ Starting Rails-like Database Patterns Example")
+    print("🏗️ Starting Modern Database Patterns Example")
     print("📍 Server will start at: http://localhost:8003")
     print()
-    print("🧪 Try these Rails-like requests:")
+    print("🧪 Try these Modern requests:")
     print("   GET /api/v1/products")
     print("   GET /api/v1/products?category=Electronics")
     print(
@@ -221,8 +221,8 @@ if __name__ == "__main__":
     print("   GET /api/v1/orders")
     print("   GET /api/v1/products/1")
     print()
-    print("💡 Rails-like DX Features:")
-    print("   • ZenithModel with ActiveRecord patterns")
+    print("💡 Modern DX Features:")
+    print("   • ZenithModel with database operations")
     print("   • Product.where(category='Electronics').order_by('-created_at').all()")
     print("   • Product.find_or_404(id) - automatic 404 handling")
     print("   • Product.create(**data) - no session management")

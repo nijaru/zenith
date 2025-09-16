@@ -2,7 +2,7 @@
 Tests for enhanced dependency injection shortcuts - Rails-like DX.
 
 Tests for:
-- Session, Auth, Cache, Request shortcuts
+- Session, Auth, Request shortcuts
 - Service decorator and injection
 - Context managers for manual resolution
 """
@@ -11,12 +11,12 @@ import pytest
 from unittest.mock import Mock, AsyncMock, patch
 
 from zenith.core.dependencies import (
-    Session, Auth, Cache, Request,
+    Session, Auth, Request,
     Inject,
-    get_database_session, get_auth_user, get_cache_client, get_current_request_dependency,
+    get_database_session, get_auth_user, get_current_request_dependency,
     DatabaseContext, ServiceContext,
-    resolve_db, resolve_auth, resolve_cache,
-    AuthenticatedUser, CacheClient, HttpRequest
+    resolve_db, resolve_auth,
+    AuthenticatedUser, HttpRequest
 )
 from zenith.core.container import set_current_db_session
 
@@ -35,10 +35,6 @@ class TestDependencyShortcuts:
         assert hasattr(Auth, 'dependency')
         assert Auth.dependency == get_auth_user
 
-    def test_cache_shortcut_is_fastapi_depends(self):
-        """Test Cache shortcut is properly configured Depends."""
-        assert hasattr(Cache, 'dependency')
-        assert Cache.dependency == get_cache_client
 
     def test_request_shortcut_is_fastapi_depends(self):
         """Test Request shortcut is properly configured Depends."""
@@ -75,11 +71,6 @@ class TestDependencyFunctions:
         # Without request context, auth user is None
         assert user is None
 
-    async def test_get_cache_client_mock(self):
-        """Test cache client dependency function returns mock cache."""
-        cache = await get_cache_client()
-
-        assert isinstance(cache, dict)  # Mock implementation returns empty dict
 
     async def test_get_current_request_without_context(self):
         """Test current request dependency function returns None without context."""
@@ -133,7 +124,6 @@ class TestTypeAliases:
         """Test that type aliases are defined."""
         # These should be importable and usable for type hints
         assert AuthenticatedUser is not None
-        assert CacheClient is not None
         assert HttpRequest is not None
 
 
@@ -155,11 +145,6 @@ class TestManualResolution:
         # Without request context, auth user is None
         assert user is None
 
-    def test_resolve_cache(self):
-        """Test manual cache client resolution."""
-        cache = resolve_cache()
-
-        assert isinstance(cache, dict)
 
 
 class TestDatabaseContext:
@@ -254,10 +239,9 @@ class TestDependencyIntegration:
         # This should work in route definitions
         async def example_route(
             session: AsyncSession = Session,
-            user = Auth,
-            cache = Cache
+            user = Auth
         ):
-            return {"session": session, "user": user, "cache": cache}
+            return {"session": session, "user": user}
 
         # Function should be properly annotated
         hints = get_type_hints(example_route)

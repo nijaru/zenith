@@ -28,9 +28,13 @@ from zenith.core.config import Config
 # Rails-like dependency shortcuts - these are pre-configured Depends objects
 from zenith.core.dependencies import (
     Session,  # Database session shortcut (the one true way)
+    Auth,  # Authentication dependency (the one true way)
     CurrentUser,  # Current authenticated user
-    Cache,  # Cache client shortcut
+    File,  # File upload dependency with validation
     Request,  # Request object shortcut
+    # File upload constants for better DX
+    IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, VIDEO_TYPES, ARCHIVE_TYPES,
+    MB, GB, KB,  # Size constants
 )
 
 # ============================================================================
@@ -38,8 +42,6 @@ from zenith.core.dependencies import (
 # ============================================================================
 from zenith.core.routing import Router
 from zenith.core.routing.dependencies import (
-    Auth,  # Auth dependency function for custom requirements
-    File,  # File dependency function for uploads
     Inject,  # Service injection
 )
 
@@ -47,13 +49,15 @@ from zenith.core.routing.dependencies import (
 from zenith.core.scoped import Depends, RequestScoped, request_scoped
 
 # ============================================================================
-# BACKGROUND TASK MANAGEMENT
+# BACKGROUND PROCESSING (SIMPLIFIED)
 # ============================================================================
 from zenith.background import (
-    BackgroundTaskManager,  # Simple async task management with automatic cleanup
     JobQueue,  # Comprehensive job queue with persistence and retry
     Job,  # Job data model
     JobStatus,  # Job status enum
+)
+from zenith.tasks.background import (
+    BackgroundTasks,  # Simple tasks that run after response is sent
     background_task,  # Decorator for background task functions
 )
 
@@ -133,10 +137,8 @@ from zenith.exceptions import (
     validation_error,
 )
 
-# ============================================================================
-# BACKGROUND PROCESSING & JOBS (LEGACY)
-# ============================================================================
-from zenith.jobs import JobManager, RedisJobQueue, Worker
+# Note: Legacy job systems (JobManager, RedisJobQueue, Worker) have been removed
+# Use BackgroundTasks for simple tasks or JobQueue for comprehensive job processing
 
 # ============================================================================
 # MIDDLEWARE
@@ -154,7 +156,6 @@ from zenith.middleware import (
 # SESSIONS
 # ============================================================================
 from zenith.sessions import SessionManager, SessionMiddleware
-from zenith.tasks.background import BackgroundTasks, TaskQueue
 
 # ============================================================================
 # WEB UTILITIES & RESPONSES
@@ -207,20 +208,21 @@ __all__ = [
     "Session",           # Database session shortcut (the one true way)
     "Auth",              # Authentication dependency
     "CurrentUser",       # Current authenticated user
-    "Cache",             # Cache client shortcut
+    "File",              # File upload dependency with validation
     "Request",           # Request object shortcut
     "Inject",            # Service injection
-    "File",              # File dependency function for uploads
+    # File upload helpers
+    "IMAGE_TYPES", "DOCUMENT_TYPES", "AUDIO_TYPES", "VIDEO_TYPES", "ARCHIVE_TYPES",
+    "MB", "GB", "KB",
     # Request-scoped dependencies
     "Depends",
     "RequestScoped",
-    # Background Processing
-    "BackgroundTaskManager",
-    "JobQueue",
-    "Job",
-    "JobStatus",
-    "background_task",
-    "BackgroundTasks",
+    # Background Processing (Simplified API)
+    "BackgroundTasks",   # Simple tasks that run after response
+    "JobQueue",          # Comprehensive job processing with retry
+    "Job",               # Job data model
+    "JobStatus",         # Job status enum
+    "background_task",   # Decorator for background task functions
     # HTTP Exceptions
     "AuthenticationException",
     "AuthorizationException",
@@ -258,11 +260,7 @@ __all__ = [
     # Sessions
     "SessionManager",
     "SessionMiddleware",
-    # Jobs & Background Processing
-    "JobManager",
-    "RedisJobQueue",
-    "Worker",
-    "TaskQueue",
+# Note: Legacy job systems removed for API clarity
     # Database Migrations
     "MigrationManager",
     "create_repository",
