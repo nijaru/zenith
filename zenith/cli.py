@@ -26,34 +26,12 @@ def main():
 
 
 @main.command()
-@click.option("--app", default=None, help="Import path to application (e.g., main.app)")
-@click.option(
-    "--no-ipython",
-    is_flag=True,
-    default=False,
-    help="Use standard Python shell instead of IPython",
-)
-def shell(app: str | None, no_ipython: bool):
-    """Start interactive Python shell with Zenith context."""
-    from zenith.dev.shell import run_shell
-
-    run_shell(app_path=app, use_ipython=not no_ipython)
-
-
-@main.command()
 @click.argument("path", default=".")
 @click.option("--name", help="Application name")
-@click.option(
-    "--template",
-    type=click.Choice(["api", "fullstack"], case_sensitive=False),
-    default="api",
-    help="Project template",
-)
-def new(path: str, name: str | None, template: str):
+def new(path: str, name: str | None):
     """Create a new Zenith application with best practices."""
-    from zenith.dev.templates import TemplateManager
+    import secrets
 
-    manager = TemplateManager()
     project_path = Path(path).resolve()
 
     if not name:
@@ -61,19 +39,154 @@ def new(path: str, name: str | None, template: str):
 
     click.echo(f"🚀 Creating new Zenith app: {name}")
     click.echo(f"📁 Path: {project_path}")
-    click.echo(f"📋 Template: {template}")
 
-    manager.create_project(
-        project_path=project_path,
-        project_name=name,
-        template_name=template,
-    )
+    # Create project directory
+    project_path.mkdir(exist_ok=True)
+
+    # Generate secure secret key
+    secret_key = secrets.token_urlsafe(32)
+
+    # Create main app.py
+    app_py_content = f'''"""
+{name} - Zenith API application.
+"""
+
+from zenith import Zenith
+
+# Create your Zenith app
+app = Zenith()
+
+
+@app.get("/")
+async def root():
+    """API root endpoint."""
+    return {{"message": "Welcome to {name} API!", "status": "running"}}
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {{"status": "healthy", "service": "{name}"}}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+'''
+
+    # Create .env file
+    env_content = f'''# Environment variables for {name}
+SECRET_KEY={secret_key}
+DEBUG=true
+
+# Database (uncomment and configure as needed)
+# DATABASE_URL=sqlite:///./app.db
+
+# Redis (uncomment if using caching/sessions)
+# REDIS_URL=redis://localhost:6379
+'''
+
+    # Create requirements.txt
+    requirements_content = '''zenith-web>=0.3.0
+uvicorn[standard]>=0.20.0
+'''
+
+    # Create .gitignore
+    gitignore_content = '''# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+'''
+
+    # Create README.md
+    readme_content = f'''# {name}
+
+A modern API built with [Zenith](https://zenith-python.org).
+
+## Quick Start
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Start development server:
+   ```bash
+   zen dev
+   ```
+
+3. Visit http://localhost:8000 to see your API!
+
+## API Endpoints
+
+- `GET /` - API root
+- `GET /health` - Health check
+- `GET /docs` - Interactive API documentation
+
+## Project Structure
+
+- `app.py` - Main application file
+- `.env` - Environment variables (configure your secrets here)
+- `requirements.txt` - Python dependencies
+
+## Next Steps
+
+- Add your business logic and models
+- Configure database connection in `.env`
+- Add authentication with `app.add_auth()`
+- Deploy to production
+
+## Learn More
+
+- [Zenith Documentation](https://zenith-python.org)
+- [API Examples](https://zenith-python.org/examples)
+'''
+
+    # Write all files
+    files_to_create = [
+        ("app.py", app_py_content),
+        (".env", env_content),
+        ("requirements.txt", requirements_content),
+        (".gitignore", gitignore_content),
+        ("README.md", readme_content),
+    ]
+
+    for filename, content in files_to_create:
+        file_path = project_path / filename
+        file_path.write_text(content.strip())
+        click.echo(f"  ✓ {filename}")
 
     click.echo("\n✅ Project created successfully!")
     click.echo("\nNext steps:")
     click.echo(f"  cd {project_path.name}")
-    click.echo("  zen dev                 # Start development server")
-    click.echo("  zen routes              # View available routes")
+    click.echo("  pip install -r requirements.txt")
+    click.echo("  zen dev                         # Start development server")
 
 
 @main.command("dev")
@@ -81,8 +194,14 @@ def new(path: str, name: str | None, template: str):
 @click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
 @click.option("--app", default=None, help="Import path to app (e.g., src.api.app:app)")
 @click.option("--open", is_flag=True, help="Open browser after start")
-def dev(host: str, port: int, app: str | None, open: bool):
+@click.option("--testing", is_flag=True, help="Enable testing mode (disables rate limiting)")
+def dev(host: str, port: int, app: str | None, open: bool, testing: bool):
     """Start development server with hot reload."""
+    if testing:
+        import os
+        os.environ["ZENITH_TESTING"] = "true"
+        click.echo("🧪 Testing mode enabled - rate limiting and other test-interfering middleware disabled")
+
     _run_server(host, port, reload=True, workers=1, open_browser=open, app_path=app)
 
 
@@ -96,29 +215,8 @@ def serve(host: str, port: int, workers: int, reload: bool):
     _run_server(host, port, reload=reload, workers=workers)
 
 
-# Shortcuts
-@main.command("d")
-@click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
-@click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
-@click.option("--open", is_flag=True, help="Open browser after start")
-def d(host: str, port: int, open: bool):
-    """Shortcut for 'dev' command."""
-    _run_server(host, port, reload=True, workers=1, open_browser=open)
-
-
-@main.command("s")
-@click.option("--host", "-h", default="0.0.0.0", help="Host to bind to")
-@click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
-@click.option("--workers", "-w", default=4, type=int, help="Number of workers")
-@click.option("--reload", is_flag=True, help="Enable reload (development)")
-def s(host: str, port: int, workers: int, reload: bool):
-    """Shortcut for 'serve' command."""
-    _run_server(host, port, reload=reload, workers=workers)
-
-
 def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, open_browser: bool = False, app_path: str | None = None):
     """Internal function to run uvicorn server."""
-    from pathlib import Path
     import importlib.util
     import os
 
@@ -218,12 +316,37 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
         click.echo("   • src/app.py, src/api/app.py, src/main.py")
         click.echo("   • app/main.py, api/app.py")
         click.echo("")
-        click.echo("💡 Solutions:")
-        click.echo("   1. Create main.py with: from src.api.app import app")
-        click.echo("   2. Use zen dev --app=src.api.app:app")
-        click.echo("   3. Create new app: zen new .")
+        click.echo("💡 Quick solutions:")
+        click.echo("   1. Specify explicitly: zen dev --app=my_module:app")
+        click.echo("   2. Create main.py: from src.api.app import app")
+        click.echo("   3. Generate new app: zen new .")
         click.echo("")
-        click.echo("📖 See: https://zenith-python.org/cli#app-discovery")
+        click.echo("🧪 For testing: zen dev --testing --app=your.module:app")
+        click.echo("")
+        click.echo("📁 Current directory contents:")
+        cwd = Path.cwd()
+        py_files = list(cwd.glob("*.py"))
+        if py_files:
+            for py_file in py_files[:5]:  # Show up to 5 Python files
+                click.echo(f"   • {py_file.name}")
+            if len(py_files) > 5:
+                click.echo(f"   • ... and {len(py_files) - 5} more .py files")
+        else:
+            click.echo("   • No .py files found")
+
+        subdirs_with_py = []
+        for subdir in ["src", "app", "api"]:
+            subdir_path = cwd / subdir
+            if subdir_path.exists() and subdir_path.is_dir():
+                py_files_in_subdir = list(subdir_path.glob("*.py"))
+                if py_files_in_subdir:
+                    subdirs_with_py.append(f"{subdir}/ ({len(py_files_in_subdir)} .py files)")
+
+        if subdirs_with_py:
+            click.echo("   Subdirectories with Python files:")
+            for subdir_info in subdirs_with_py:
+                click.echo(f"   • {subdir_info}")
+
         sys.exit(1)
 
     if reload:
@@ -266,110 +389,6 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
         subprocess.run(cmd)
     except KeyboardInterrupt:
         click.echo("\n👋 Server stopped")
-
-
-@main.command()
-def routes():
-    """Show all registered routes in the application."""
-    import importlib
-    from pathlib import Path
-
-    # Find and import the app
-    app_module = None
-    for filename in ["app.py", "main.py", "application.py"]:
-        if Path(filename).exists():
-            module_name = filename.replace(".py", "")
-            try:
-                app_module = importlib.import_module(module_name)
-                break
-            except ImportError as e:
-                click.echo(f"❌ Error importing {module_name}: {e}")
-
-    if not app_module:
-        click.echo("❌ No app module found or importable")
-        return
-
-    # Get the app instance
-    app = getattr(app_module, "app", None)
-    if not app:
-        click.echo("❌ No 'app' variable found in module")
-        return
-
-    # Display routes
-    click.echo("\n📍 Registered Routes:")
-    click.echo("─" * 60)
-
-    if hasattr(app, "routes"):
-        for route in app.routes:
-            methods = ", ".join(route.methods) if hasattr(route, "methods") else "N/A"
-            path = route.path if hasattr(route, "path") else "N/A"
-            name = route.name if hasattr(route, "name") else "unnamed"
-            click.echo(f"{methods:<10} {path:<30} {name}")
-    else:
-        click.echo("❌ Cannot access routes from app object")
-
-
-@main.command()
-@click.option("--verbose", "-v", is_flag=True, help="Verbose output")
-@click.option("--failfast", "-f", is_flag=True, help="Stop on first failure")
-def test(verbose: bool, failfast: bool):
-    """Run application tests."""
-    cmd = ["python", "-m", "pytest"]
-
-    if verbose:
-        cmd.append("-v")
-    if failfast:
-        cmd.append("-x")
-
-    click.echo("🧪 Running tests...")
-    result = subprocess.run(cmd)
-
-    if result.returncode == 0:
-        click.echo("✅ All tests passed!")
-    else:
-        click.echo("❌ Tests failed")
-
-    sys.exit(result.returncode)
-
-
-@main.command()
-def version():
-    """Show Zenith version."""
-    from zenith import __version__
-    click.echo(f"Zenith {__version__}")
-
-
-@main.command()
-def info():
-    """Show application information."""
-    import sys
-    from pathlib import Path
-
-    click.echo("🔍 Zenith Application Information:")
-    click.echo("─" * 40)
-    click.echo(f"Zenith version: {__version__}")
-    click.echo(f"Python version: {sys.version.split()[0]}")
-    click.echo(f"Working directory: {Path.cwd()}")
-
-    # Check for app files
-    app_files = []
-    for filename in ["app.py", "main.py", "application.py"]:
-        if Path(filename).exists():
-            app_files.append(filename)
-
-    if app_files:
-        click.echo(f"App files found: {', '.join(app_files)}")
-    else:
-        click.echo("❌ No app files found (app.py, main.py, application.py)")
-
-    # Check for common config files
-    config_files = []
-    for filename in ["pyproject.toml", "requirements.txt", ".env"]:
-        if Path(filename).exists():
-            config_files.append(filename)
-
-    if config_files:
-        click.echo(f"Config files: {', '.join(config_files)}")
 
 
 if __name__ == "__main__":

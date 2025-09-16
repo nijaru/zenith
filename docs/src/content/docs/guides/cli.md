@@ -1,24 +1,48 @@
 ---
 title: CLI Tools
-description: Zenith's command-line interface for development and deployment
+description: Zenith's streamlined command-line interface for development and deployment
 ---
 
 # Zenith CLI Tools
 
-The `zen` command provides essential tools for developing, testing, and deploying Zenith applications. All commands are designed to be reliable, fast, and provide excellent developer experience.
+The `zen` command provides essential tools for developing and deploying Zenith applications. The CLI has been streamlined to focus on the most valuable, reliable commands that developers use daily.
 
 ## Quick Reference
 
 ```bash
+zen new <path>             # Create new Zenith application
 zen dev                    # Start development server (hot reload)
 zen serve                  # Start production server
-zen routes                 # Show all registered routes
-zen shell                  # Interactive Python shell with app context
-zen test                   # Run application tests
-zen info                   # Show application information
-zen version                # Show Zenith version
-zen new <path>             # Create new Zenith application
+zen --version              # Show Zenith version
 ```
+
+## Project Creation
+
+### `zen new` - Create New Application
+
+Create a new Zenith application with modern best practices:
+
+```bash
+zen new my-app                      # Create in ./my-app/
+zen new .                          # Create in current directory
+zen new /path/to/app --name MyAPI  # Specify name explicitly
+```
+
+**Generated structure:**
+```
+my-app/
+├── app.py                    # Application entry point with sample endpoints
+├── .env                     # Environment variables (with generated secret key)
+├── requirements.txt         # Python dependencies
+├── .gitignore              # Git ignore rules
+└── README.md               # Quick start documentation
+```
+
+**Generated app.py includes:**
+- Basic Zenith application setup
+- Sample API endpoints (`/` and `/health`)
+- Production-ready configuration examples
+- Clear documentation and next steps
 
 ## Development Commands
 
@@ -31,48 +55,65 @@ zen dev                              # Start on 127.0.0.1:8000
 zen dev --host 0.0.0.0              # Bind to all interfaces
 zen dev --port 3000                 # Use custom port
 zen dev --open                      # Open browser automatically
+zen dev --app src.api.app:app       # Specify app import path
+zen dev --testing                   # Enable testing mode
 ```
 
 **Features:**
 - **Hot reload** - Automatically restarts on file changes
 - **File watching** - Watches `.py`, `.html`, `.css`, `.js` files
+- **Intelligent app discovery** - Finds your app automatically
+- **Testing mode** - Disables rate limiting for test suites
 - **Interactive logs** - Real-time request logging
-- **Health endpoints** - `/health` and `/health/detailed` available
-- **API documentation** - Automatic `/docs` endpoint
+- **Health endpoints** - `/health` and `/docs` available automatically
 
-**Shortcut:** `zen d` (alias for `zen dev`)
+### Testing Mode
 
-**Auto-detection:** Looks for app files in this order:
-1. `app.py`
-2. `main.py`
-3. `application.py`
-
-### `zen shell` - Interactive Shell
-
-Start an interactive Python shell with your application context loaded:
+The `--testing` flag is crucial for test suites that make multiple rapid requests:
 
 ```bash
-zen shell                           # Use IPython if available
-zen shell --no-ipython             # Force standard Python shell
-zen shell --app main.app           # Specify app import path
+# Development with testing mode (disables rate limiting)
+zen dev --testing
+
+# For test scripts and CI/CD
+ZENITH_TESTING=true zen dev
 ```
 
-**Features:**
-- **App context** - Your application is automatically imported
-- **IPython support** - Enhanced shell with syntax highlighting
-- **Database access** - Pre-configured database connections
-- **Service access** - All services are available for testing
+**Why testing mode?**
+- Disables rate limiting middleware that can cause `429 Too Many Requests` errors in tests
+- Automatically enabled when `ZENITH_TESTING=true` environment variable is set
+- Safe for production (only affects rate limiting, not security features)
 
-**Example session:**
-```python
->>> # App is automatically loaded
->>> app
-<zenith.core.application.Zenith object>
+### App Discovery
 
->>> # Test services directly
->>> from myapp.services import UserService
->>> users = UserService()
->>> await users.get_all()
+The CLI automatically discovers your application:
+
+**Search strategy:**
+1. **Explicit app path** (if provided): `--app src.api.app:app`
+2. **Common app files**: `app.py`, `main.py`, `application.py`
+3. **Nested structures**: `src/app.py`, `src/api/app.py`, `app/main.py`
+
+**Enhanced error messages:**
+```bash
+❌ No Zenith app found
+
+🔍 Searched for:
+   • app.py, main.py, application.py (with 'app' variable)
+   • src/app.py, src/api/app.py, src/main.py
+   • app/main.py, api/app.py
+
+💡 Quick solutions:
+   1. Specify explicitly: zen dev --app=my_module:app
+   2. Create main.py: from src.api.app import app
+   3. Generate new app: zen new .
+
+🧪 For testing: zen dev --testing --app=your.module:app
+
+📁 Current directory contents:
+   • main.py
+   • config.py
+   Subdirectories with Python files:
+   • src/ (5 .py files)
 ```
 
 ## Production Commands
@@ -86,17 +127,15 @@ zen serve                           # Start with 4 workers on 0.0.0.0:8000
 zen serve --workers 8              # Use 8 worker processes
 zen serve --host 127.0.0.1         # Bind to localhost only
 zen serve --port 80                 # Use port 80
-zen serve --reload                  # Enable reload (development)
+zen serve --reload                  # Enable reload (development mode)
 ```
 
 **Features:**
-- **Multi-process** - Automatic worker scaling
+- **Multi-process** - Automatic worker scaling based on CPU cores
 - **Production logging** - Structured logs with access logs
 - **Performance optimized** - Optimized for high throughput
 - **Health checks** - Built-in health monitoring
 - **Graceful shutdown** - Proper signal handling
-
-**Shortcut:** `zen s` (alias for `zen serve`)
 
 **Production Example:**
 ```bash
@@ -105,161 +144,54 @@ zen serve --host 0.0.0.0 --port 8000 --workers 4
 
 # Behind reverse proxy
 zen serve --host 127.0.0.1 --port 8000 --workers 8
-```
 
-## Inspection Commands
-
-### `zen routes` - Route Inspection
-
-Display all registered routes in your application:
-
-```bash
-zen routes
-```
-
-**Output example:**
-```
-📍 Registered Routes:
-────────────────────────────────────────────────────────────
-GET, HEAD    /                              homepage
-POST         /users                         create_user
-GET          /users/{user_id}               get_user
-PUT          /users/{user_id}               update_user
-DELETE       /users/{user_id}               delete_user
-GET          /health                        health_check
-GET          /docs                          swagger_ui
-```
-
-**Features:**
-- **Method display** - Shows all HTTP methods
-- **Path patterns** - Includes path parameters
-- **Route names** - Function or endpoint names
-- **Auto-discovery** - Finds routes from your app automatically
-
-### `zen info` - Application Information
-
-Show comprehensive application information:
-
-```bash
-zen info
-```
-
-**Output example:**
-```
-🔍 Zenith Application Information:
-────────────────────────────────────────
-Zenith version: 0.2.6
-Python version: 3.12.0
-Working directory: /Users/dev/my-zenith-app
-App files found: app.py
-Config files: pyproject.toml, .env
-```
-
-**Features:**
-- **Environment details** - Python and Zenith versions
-- **File detection** - Shows discovered app and config files
-- **Directory info** - Current working directory
-- **Health status** - Basic application health
-
-## Testing Commands
-
-### `zen test` - Test Runner
-
-Run your application's test suite:
-
-```bash
-zen test                            # Run all tests
-zen test --verbose                  # Verbose output
-zen test --failfast                 # Stop on first failure
-```
-
-**Features:**
-- **pytest integration** - Uses pytest test runner
-- **Automatic discovery** - Finds tests in standard locations
-- **Coverage support** - Compatible with coverage tools
-- **Parallel execution** - Supports pytest-xdist
-
-**Test organization:**
-```
-your-app/
-├── tests/
-│   ├── test_users.py
-│   ├── test_auth.py
-│   └── integration/
-│       └── test_api.py
-├── app.py
-└── pyproject.toml
-```
-
-## Project Management
-
-### `zen new` - Create New Application
-
-Create a new Zenith application with best practices:
-
-```bash
-zen new my-app                      # Create in ./my-app/
-zen new .                          # Create in current directory
-zen new /path/to/app --name MyAPI  # Specify name explicitly
-zen new my-api --template api      # API-only template
-zen new my-site --template fullstack # Full-stack template
-```
-
-**Templates:**
-- **`api`** (default) - API-focused application
-- **`fullstack`** - Complete web application with frontend
-
-**Generated structure:**
-```
-my-app/
-├── app.py                    # Application entry point
-├── services/                 # Business logic
-├── models/                   # Pydantic models
-├── tests/                    # Test suite
-├── pyproject.toml           # Dependencies
-├── .env.example             # Environment template
-└── README.md                # Documentation
-```
-
-### `zen version` - Version Information
-
-Show the installed Zenith version:
-
-```bash
-zen version
+# Container deployment
+zen serve --host 0.0.0.0 --port 8000 --workers 2
 ```
 
 ## Common Workflows
 
-### Development Workflow
+### New Project Workflow
 ```bash
 # Create new project
 zen new my-api
 cd my-api
 
+# Install dependencies
+pip install -r requirements.txt
+
 # Start development
 zen dev --open
 
-# In another terminal - inspect routes
-zen routes
-
-# Test your code
-zen test
+# The generated app includes:
+# - GET / (API root with welcome message)
+# - GET /health (health check)
+# - GET /docs (automatic OpenAPI documentation)
 ```
 
-### Debugging Workflow
+### Development Workflow
 ```bash
-# Check application info
-zen info
+# Start development server
+zen dev
 
-# Interactive debugging
-zen shell
+# For rapid testing (disables rate limiting)
+zen dev --testing
 
-# View all routes
-zen routes
+# Custom configuration
+zen dev --host 0.0.0.0 --port 3000 --app src.main:app
+```
 
-# Run tests
-zen test --verbose
+### Testing Workflow
+```bash
+# Enable testing mode for test suites
+ZENITH_TESTING=true python -m pytest
+
+# Or in development server
+zen dev --testing
+
+# Testing mode prevents these common errors:
+# - 429 Too Many Requests from rate limiting
+# - Middleware interference with test isolation
 ```
 
 ### Production Deployment
@@ -269,34 +201,42 @@ zen serve --workers 1 --reload
 
 # Production deployment
 zen serve --host 0.0.0.0 --port 8000 --workers 4
+
+# With environment variables
+SECRET_KEY=your-secret zen serve --workers 4
 ```
 
 ## Configuration
 
-### Environment Detection
+### Environment Variables
 
-The CLI automatically detects your application by looking for:
+The CLI respects these environment variables:
 
-1. **App files** (in order): `app.py`, `main.py`, `application.py`
-2. **App variable**: `app` (the Zenith application instance)
-3. **Working directory**: Current directory where you run the command
+- **`ZENITH_TESTING`** - Enables testing mode (disables rate limiting)
+- **`SECRET_KEY`** - Application secret key
+- **`DATABASE_URL`** - Database connection string
+- **`DEBUG`** - Enable debug mode
 
-### Custom App Paths
+### App Path Resolution
 
-For non-standard setups, specify the app import path:
+For non-standard setups, use explicit app paths:
 
 ```bash
-zen shell --app mypackage.application:app
+# Module notation
+zen dev --app mypackage.application:app
 zen dev --app src.main:application
+
+# For complex structures
+zen dev --app project.apps.api:create_app
 ```
 
 ### Configuration Files
 
 The CLI respects these configuration files:
 
-- **`.env`** - Environment variables
+- **`.env`** - Environment variables (automatically generated by `zen new`)
+- **`requirements.txt`** - Python dependencies
 - **`pyproject.toml`** - Project configuration
-- **`pytest.ini`** - Test configuration
 
 ## Troubleshooting
 
@@ -315,19 +255,39 @@ python -m zenith.cli --version
 pip install --force-reinstall zenith-web
 ```
 
-### App Not Found
+### App Discovery Issues
 
 If CLI can't find your app:
 
 ```bash
-# Check current directory has app.py, main.py, or application.py
-ls *.py
+# Use explicit app path
+zen dev --app myfile:myapp
 
 # Check app variable exists
 grep "app = " *.py
 
-# Use explicit app path
-zen routes --app myfile:myapp
+# Verify app file syntax
+python -m py_compile app.py
+
+# Create main.py wrapper for complex structures
+echo "from src.api.app import app" > main.py
+```
+
+### Testing Issues
+
+If tests fail with rate limiting errors:
+
+```bash
+# Enable testing mode
+zen dev --testing
+
+# Or set environment variable
+export ZENITH_TESTING=true
+zen dev
+
+# In pytest configuration (conftest.py)
+import os
+os.environ["ZENITH_TESTING"] = "true"
 ```
 
 ### Development Server Issues
@@ -341,40 +301,46 @@ lsof -i :8000
 # Use different port
 zen dev --port 8001
 
-# Check app file syntax
-python -m py_compile app.py
+# Check app file imports
+python -c "from app import app; print('✅ App loads successfully')"
 ```
 
-### Shell Import Issues
+## Migration from Previous Versions
 
-If shell can't import your app:
+If upgrading from earlier Zenith versions, note that these commands have been removed for simplicity:
 
-```bash
-# Check Python path
-zen shell --app main.app
+- `zen routes` → Use `/docs` endpoint in your browser
+- `zen shell` → Use standard Python REPL or IPython
+- `zen test` → Use `pytest` directly
+- `zen info` → Use `zen --version` and standard Python tools
+- `zen d` / `zen s` → Use full command names for clarity
 
-# Verify app file
-python -c "from main import app; print(app)"
-```
+**Why simplified?**
+- Focus on high-value commands used daily
+- Reduce maintenance burden and potential bugs
+- Clearer, more predictable CLI interface
+- Better error messages and app discovery
 
 ## Tips & Best Practices
 
-### Performance
-- Use `zen serve` for production (multiple workers)
-- Use `zen dev` only for development (single worker, reload enabled)
-- Monitor with `/health/detailed` endpoint
-
 ### Development
+- Use `zen dev --testing` when running test suites
 - Use `zen dev --open` to automatically open browser
-- Use `zen shell` for interactive testing and debugging
-- Use `zen routes` to verify your API structure
+- Set up `.env` file for consistent local configuration
 
 ### Testing
-- Run `zen test` before committing code
-- Use `zen test --failfast` for quick feedback
-- Combine with coverage tools: `coverage run -m pytest`
+- Always enable testing mode: `ZENITH_TESTING=true`
+- Use explicit app paths in CI/CD: `zen dev --app src.main:app`
+- Create wrapper files for complex app structures
 
 ### Production
 - Always use `zen serve` with multiple workers
 - Set appropriate `--host` and `--port` for your environment
-- Use reverse proxy (nginx) for static files and SSL
+- Use environment variables for secrets, not command-line arguments
+- Use reverse proxy (nginx/traefik) for static files and SSL
+
+### Performance
+- Use `zen serve` for production (multiple workers)
+- Use `zen dev` only for development (single worker, reload enabled)
+- Monitor with `/health` endpoint
+- Consider container orchestration for scaling
