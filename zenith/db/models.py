@@ -18,11 +18,13 @@ from pydantic import BaseModel
 
 # Avoid circular imports by importing only when needed
 # from ..web.responses import JSONResponse  # Not needed yet
+from ..exceptions import HTTPException
 
 
-class NotFoundError(Exception):
+class NotFoundError(HTTPException):
     """Exception raised when a database record is not found."""
-    pass
+    def __init__(self, detail: str = "Resource not found"):
+        super().__init__(status_code=404, detail=detail)
 
 
 __all__ = ["ZenithModel", "QueryBuilder"]
