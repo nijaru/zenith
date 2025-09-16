@@ -298,7 +298,7 @@ async def login(
 
 @api.get("/profile", response_model=UserResponse)
 async def get_profile(
-    current_user=Auth(required=True), users: UsersContext = Inject()
+    current_user=Auth, users: UsersContext = Inject()
 ) -> UserResponse:
     """Get current user's profile."""
     user = await users.get_user(current_user["user_id"])
@@ -310,7 +310,7 @@ async def get_profile(
 
 @api.get("/admin/users")
 async def list_users(
-    current_user=Auth(required=True, scopes=["admin"]), users: UsersContext = Inject()
+    current_user=Auth, users: UsersContext = Inject()
 ) -> list[UserResponse]:
     """Admin endpoint to list all users."""
     # In a real app, implement pagination and filtering
@@ -327,7 +327,7 @@ async def list_users(
 
 
 @api.post("/admin/cleanup")
-async def trigger_cleanup(current_user=Auth(required=True, scopes=["admin"])):
+async def trigger_cleanup(current_user=Auth):
     """Manually trigger cleanup job."""
     job_id = await cleanup_expired_sessions.delay()
     return {"message": "Cleanup job queued", "job_id": job_id}

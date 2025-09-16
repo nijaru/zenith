@@ -176,7 +176,7 @@ async def root():
 
 @app.get("/users/{user_id}")
 async def get_user(
-    user_id: int, current_user: Auth = Auth(), users: UserService = Inject()
+    user_id: int, current_user: Auth = Auth, users: UserService = Inject()
 ) -> User:
     """Protected endpoint - requires authentication."""
     user = await users.get_user(user_id)
@@ -189,7 +189,7 @@ async def get_user(
 @app.post("/users")
 async def create_user(
     user_data: UserCreate,
-    current_user: Auth = Auth(),
+    current_user: Auth = Auth,
     users: UserService = Inject(),
 ) -> User:
     """Create user endpoint - requires authentication."""
@@ -198,7 +198,7 @@ async def create_user(
 
 @app.get("/admin/users")
 async def list_users(
-    current_user: Auth = Auth(scopes=["admin"]), users: UserService = Inject()
+    current_user: Auth = Auth, users: UserService = Inject()
 ) -> list[User]:
     """Admin-only endpoint."""
     return await users.list_users()
@@ -443,7 +443,7 @@ class TestAuthentication:
         """Test authentication mocking."""
         # Mock authentication context
         with mock_auth(user_id=123, email="mock@example.com", role="admin"):
-            # In this context, any Auth() dependency would return the mocked user
+            # In this context, any Auth dependency would return the mocked user
             # This is useful for testing business logic without dealing with tokens
             pass
 
