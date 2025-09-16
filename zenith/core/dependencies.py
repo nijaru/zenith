@@ -14,8 +14,9 @@ try:
     from fastapi import Depends
 except ImportError:
     # FastAPI not available, create a dummy Depends for type compatibility
-    def Depends(dependency: Callable[..., Any]) -> Any:
-        return dependency
+    class Depends:
+        def __init__(self, dependency: Callable[..., Any]):
+            self.dependency = dependency
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .container import get_db_session, set_current_db_session

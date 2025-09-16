@@ -65,10 +65,11 @@ class Environment(str, Enum):
 
         # Domain-based detection
         server_name = os.getenv("SERVER_NAME", "")
-        if any(prod in server_name for prod in ["api.", "prod", ".com", ".org", ".net"]):
-            return cls.PRODUCTION
-        elif any(stage in server_name for stage in ["stage", "staging", "test"]):
+        # Check staging patterns first since staging domains often have .com/.org/etc
+        if any(stage in server_name for stage in ["stage", "staging", "test"]):
             return cls.STAGING
+        elif any(prod in server_name for prod in ["api.", "prod", ".com", ".org", ".net"]):
+            return cls.PRODUCTION
 
         # File-based detection
         if os.path.exists("/.dockerenv"):
