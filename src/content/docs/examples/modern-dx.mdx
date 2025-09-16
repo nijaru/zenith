@@ -1,0 +1,74 @@
+---
+title: Modern Developer Experience
+description: Zero-config setup with Rails-like patterns and 85% less boilerplate
+---
+
+import { Aside, FileTree } from '@astrojs/starlight/components';
+
+## Overview
+
+Zenith v0.3.0 introduces a modern developer experience with zero-configuration setup, intuitive APIs, and dramatic reduction in boilerplate code. This example showcases the key improvements.
+
+## Key Features
+
+### Zero-Config Application
+
+```python
+from zenith import Zenith
+
+# Zero-config application - automatically detects environment and configures:
+# - Database (SQLite for dev, requires DATABASE_URL for prod)
+# - CORS (permissive for dev, secure for prod)
+# - Security (dev key for dev, requires SECRET_KEY for prod)
+# - Middleware (debug toolbar in dev, security headers in prod)
+app = Zenith()
+```
+
+### Modern Database Models
+
+```python
+from zenith.db import ZenithModel
+from sqlmodel import Field
+
+class User(ZenithModel, table=True):
+    id: int | None = Field(primary_key=True)
+    name: str
+    email: str = Field(unique=True)
+    active: bool = Field(default=True)
+
+# Modern query methods - no session management!
+users = await User.all()
+user = await User.find(1)
+user = await User.find_or_404(1)  # Auto 404 handling
+user = await User.create(name="Alice", email="alice@example.com")
+
+# Chainable queries
+active_users = await User.where(active=True).order_by('-created_at').limit(10)
+```
+
+### Enhanced Dependency Injection
+
+```python
+from zenith import Session
+
+@app.get("/users")
+async def get_users(session=Session):  # Clean shortcut
+    """No more verbose Depends() patterns!"""
+    users = await User.where(active=True).all()
+    return {"users": [u.to_dict() for u in users]}
+```
+
+## Complete Example
+
+Run the example: `python examples/03-modern-developer-experience.py`
+
+This demonstrates:
+- Zero-config setup
+- Modern model operations  
+- Enhanced dependency injection
+- Automatic 404 handling
+- 85% less boilerplate
+
+<Aside type="tip">
+  **Migration Tip**: Moving from FastAPI? Simply replace `Depends()` with our shortcuts and enjoy cleaner code with better performance!
+</Aside>

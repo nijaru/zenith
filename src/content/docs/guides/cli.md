@@ -1,348 +1,380 @@
 ---
 title: CLI Tools
-description: Zenith command-line tools for development productivity
+description: Zenith's command-line interface for development and deployment
 ---
 
-# CLI Tools
+# Zenith CLI Tools
 
-Zenith provides a comprehensive CLI for development productivity, inspired by Rails, Django, and Phoenix.
+The `zen` command provides essential tools for developing, testing, and deploying Zenith applications. All commands are designed to be reliable, fast, and provide excellent developer experience.
 
-## Installation
-
-The `zen` command is available after installing Zenith:
+## Quick Reference
 
 ```bash
-pip install zenith-web
-zen --help
+zen dev                    # Start development server (hot reload)
+zen serve                  # Start production server
+zen routes                 # Show all registered routes
+zen shell                  # Interactive Python shell with app context
+zen test                   # Run application tests
+zen info                   # Show application information
+zen version                # Show Zenith version
+zen new <path>             # Create new Zenith application
 ```
 
-## Development Server
+## Development Commands
 
-### `zen dev` - Hot Reload Development Server
+### `zen dev` - Development Server
 
-**The best way to develop** - automatic reloading when files change:
+Start a development server with hot reload enabled:
 
 ```bash
-zen dev                    # Start with hot reload
-zen dev --port 3000        # Custom port
-zen dev --host 0.0.0.0     # Bind to all interfaces
-zen dev --open             # Open browser automatically
+zen dev                              # Start on 127.0.0.1:8000
+zen dev --host 0.0.0.0              # Bind to all interfaces
+zen dev --port 3000                 # Use custom port
+zen dev --open                      # Open browser automatically
 ```
 
 **Features:**
-- ✅ **Hot reload** - Automatic restarts on file changes
-- ✅ **Fast startup** - Optimized development mode
-- ✅ **Error display** - Clear error messages in terminal
-- ✅ **Auto-discovery** - Finds your app automatically
+- **Hot reload** - Automatically restarts on file changes
+- **File watching** - Watches `.py`, `.html`, `.css`, `.js` files
+- **Interactive logs** - Real-time request logging
+- **Health endpoints** - `/health` and `/health/detailed` available
+- **API documentation** - Automatic `/docs` endpoint
 
-### `zen serve` - Production Server
+**Shortcut:** `zen d` (alias for `zen dev`)
 
-For production or when you don't need hot reload:
-
-```bash
-zen serve                  # Production mode
-zen serve --reload         # Development mode (same as zen dev)
-zen serve --workers 4      # Multiple workers
-```
-
-## Project Creation
-
-### `zen new` - Create New Application
-
-Scaffold a new Zenith application with best practices:
-
-```bash
-zen new myapi              # Create new project
-zen new myapi --template api   # API-only template
-zen new myapi --template fullstack  # Full-stack template
-```
-
-**Generated structure:**
-```
-myapi/
-├── app/
-│   ├── __init__.py
-│   ├── main.py           # Application setup
-│   ├── models/           # Pydantic models
-│   ├── services/         # Business logic
-│   └── routes/           # Route handlers
-├── tests/                # Test suite
-├── requirements.txt      # Dependencies
-├── .env.example          # Environment variables
-└── README.md             # Documentation
-```
-
-## Code Generation
-
-### `zen g` - Generate Code
-
-Generate boilerplate code following best practices:
-
-```bash
-zen g service User         # Generate UserService
-zen g model User           # Generate User model
-zen g routes users         # Generate user routes
-zen g test UserService     # Generate service tests
-```
-
-**Service generation:**
-```bash
-zen g service User
-```
-Creates `app/services/user_service.py`:
-```python
-from zenith import Service, Inject
-
-class UserService(Service):
-    """Business logic for user operations."""
-
-    async def create_user(self, user_data: dict) -> dict:
-        # TODO: Implement user creation
-        pass
-
-    async def get_user(self, user_id: int) -> dict | None:
-        # TODO: Implement user retrieval
-        pass
-```
-
-## Database Management
-
-### `zen db` - Database Operations
-
-Manage database migrations and schema:
-
-```bash
-zen db init                # Initialize migrations
-zen db migrate "add users" # Create new migration
-zen db upgrade             # Apply pending migrations
-zen db downgrade           # Rollback last migration
-zen db current             # Show current revision
-zen db history             # Show migration history
-zen db stamp head          # Mark as up to date
-```
-
-**Example migration workflow:**
-```bash
-# Initial setup
-zen db init
-
-# Create migration for users table
-zen db migrate "add users table"
-
-# Apply the migration
-zen db upgrade
-
-# Check status
-zen db current
-```
-
-## Debugging & Inspection
-
-### `zen routes` - Show All Routes
-
-View all registered routes in your application:
-
-```bash
-zen routes                 # Show all routes
-zen routes --format table  # Table format
-zen routes --format json   # JSON output
-```
-
-**Output:**
-```
-Method  Path              Handler              Name
-GET     /                 main.hello_world     hello_world
-POST    /users            users.create_user    create_user
-GET     /users/{id}       users.get_user       get_user
-PUT     /users/{id}       users.update_user    update_user
-DELETE  /users/{id}       users.delete_user    delete_user
-```
-
-### `zen info` - Application Information
-
-Show application configuration and environment:
-
-```bash
-zen info                   # Basic info
-zen info --detailed        # Detailed configuration
-zen info --env             # Environment variables
-```
+**Auto-detection:** Looks for app files in this order:
+1. `app.py`
+2. `main.py`
+3. `application.py`
 
 ### `zen shell` - Interactive Shell
 
-Start Python shell with application context loaded:
+Start an interactive Python shell with your application context loaded:
 
 ```bash
-zen shell                  # Start interactive shell
+zen shell                           # Use IPython if available
+zen shell --no-ipython             # Force standard Python shell
+zen shell --app main.app           # Specify app import path
 ```
 
-**In the shell:**
+**Features:**
+- **App context** - Your application is automatically imported
+- **IPython support** - Enhanced shell with syntax highlighting
+- **Database access** - Pre-configured database connections
+- **Service access** - All services are available for testing
+
+**Example session:**
 ```python
->>> app  # Your Zenith application
->>> from app.services import UserService
+>>> # App is automatically loaded
+>>> app
+<zenith.core.application.Zenith object>
+
+>>> # Test services directly
+>>> from myapp.services import UserService
 >>> users = UserService()
->>> # Test your code interactively
+>>> await users.get_all()
 ```
 
-## Testing
+## Production Commands
 
-### `zen test` - Run Tests
+### `zen serve` - Production Server
 
-Run your application tests:
+Start a production-ready server with multiple workers:
 
 ```bash
-zen test                   # Run all tests
-zen test tests/test_user.py  # Run specific file
-zen test -v                # Verbose output
-zen test --coverage        # With coverage report
-zen test --parallel        # Parallel execution
+zen serve                           # Start with 4 workers on 0.0.0.0:8000
+zen serve --workers 8              # Use 8 worker processes
+zen serve --host 127.0.0.1         # Bind to localhost only
+zen serve --port 80                 # Use port 80
+zen serve --reload                  # Enable reload (development)
 ```
 
-## Utilities
+**Features:**
+- **Multi-process** - Automatic worker scaling
+- **Production logging** - Structured logs with access logs
+- **Performance optimized** - Optimized for high throughput
+- **Health checks** - Built-in health monitoring
+- **Graceful shutdown** - Proper signal handling
+
+**Shortcut:** `zen s` (alias for `zen serve`)
+
+**Production Example:**
+```bash
+# Production deployment
+zen serve --host 0.0.0.0 --port 8000 --workers 4
+
+# Behind reverse proxy
+zen serve --host 127.0.0.1 --port 8000 --workers 8
+```
+
+## Inspection Commands
+
+### `zen routes` - Route Inspection
+
+Display all registered routes in your application:
+
+```bash
+zen routes
+```
+
+**Output example:**
+```
+📍 Registered Routes:
+────────────────────────────────────────────────────────────
+GET, HEAD    /                              homepage
+POST         /users                         create_user
+GET          /users/{user_id}               get_user
+PUT          /users/{user_id}               update_user
+DELETE       /users/{user_id}               delete_user
+GET          /health                        health_check
+GET          /docs                          swagger_ui
+```
+
+**Features:**
+- **Method display** - Shows all HTTP methods
+- **Path patterns** - Includes path parameters
+- **Route names** - Function or endpoint names
+- **Auto-discovery** - Finds routes from your app automatically
+
+### `zen info` - Application Information
+
+Show comprehensive application information:
+
+```bash
+zen info
+```
+
+**Output example:**
+```
+🔍 Zenith Application Information:
+────────────────────────────────────────
+Zenith version: 0.2.6
+Python version: 3.12.0
+Working directory: /Users/dev/my-zenith-app
+App files found: app.py
+Config files: pyproject.toml, .env
+```
+
+**Features:**
+- **Environment details** - Python and Zenith versions
+- **File detection** - Shows discovered app and config files
+- **Directory info** - Current working directory
+- **Health status** - Basic application health
+
+## Testing Commands
+
+### `zen test` - Test Runner
+
+Run your application's test suite:
+
+```bash
+zen test                            # Run all tests
+zen test --verbose                  # Verbose output
+zen test --failfast                 # Stop on first failure
+```
+
+**Features:**
+- **pytest integration** - Uses pytest test runner
+- **Automatic discovery** - Finds tests in standard locations
+- **Coverage support** - Compatible with coverage tools
+- **Parallel execution** - Supports pytest-xdist
+
+**Test organization:**
+```
+your-app/
+├── tests/
+│   ├── test_users.py
+│   ├── test_auth.py
+│   └── integration/
+│       └── test_api.py
+├── app.py
+└── pyproject.toml
+```
+
+## Project Management
+
+### `zen new` - Create New Application
+
+Create a new Zenith application with best practices:
+
+```bash
+zen new my-app                      # Create in ./my-app/
+zen new .                          # Create in current directory
+zen new /path/to/app --name MyAPI  # Specify name explicitly
+zen new my-api --template api      # API-only template
+zen new my-site --template fullstack # Full-stack template
+```
+
+**Templates:**
+- **`api`** (default) - API-focused application
+- **`fullstack`** - Complete web application with frontend
+
+**Generated structure:**
+```
+my-app/
+├── app.py                    # Application entry point
+├── services/                 # Business logic
+├── models/                   # Pydantic models
+├── tests/                    # Test suite
+├── pyproject.toml           # Dependencies
+├── .env.example             # Environment template
+└── README.md                # Documentation
+```
 
 ### `zen version` - Version Information
 
+Show the installed Zenith version:
+
 ```bash
-zen version                # Show Zenith version
-zen --version              # Same as above
+zen version
 ```
 
-### Shortcuts
+## Common Workflows
 
-Common commands have short aliases:
-
+### Development Workflow
 ```bash
-zen d                      # Same as zen dev
-zen s                      # Same as zen serve
-zen g                      # Same as zen generate
+# Create new project
+zen new my-api
+cd my-api
+
+# Start development
+zen dev --open
+
+# In another terminal - inspect routes
+zen routes
+
+# Test your code
+zen test
+```
+
+### Debugging Workflow
+```bash
+# Check application info
+zen info
+
+# Interactive debugging
+zen shell
+
+# View all routes
+zen routes
+
+# Run tests
+zen test --verbose
+```
+
+### Production Deployment
+```bash
+# Test production server locally
+zen serve --workers 1 --reload
+
+# Production deployment
+zen serve --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ## Configuration
 
-### Project Configuration
+### Environment Detection
 
-Zenith looks for configuration in these files:
-- `zenith.toml` - Project configuration
-- `.env` - Environment variables
-- `pyproject.toml` - Python project settings
+The CLI automatically detects your application by looking for:
 
-**Example `zenith.toml`:**
-```toml
-[zenith]
-app = "app.main:app"       # Application location
-debug = true               # Development mode
-port = 8000               # Default port
+1. **App files** (in order): `app.py`, `main.py`, `application.py`
+2. **App variable**: `app` (the Zenith application instance)
+3. **Working directory**: Current directory where you run the command
 
-[zenith.database]
-url = "postgresql://..."   # Database URL
-auto_migrate = true       # Auto-apply migrations
+### Custom App Paths
 
-[zenith.testing]
-parallel = true           # Run tests in parallel
-coverage = true           # Generate coverage
-```
+For non-standard setups, specify the app import path:
 
-## Development Workflow
-
-### Recommended Development Flow
-
-1. **Create project:**
-   ```bash
-   zen new myapi
-   cd myapi
-   ```
-
-2. **Start development server:**
-   ```bash
-   zen dev
-   ```
-
-3. **Generate code as needed:**
-   ```bash
-   zen g service User
-   zen g model User
-   zen g routes users
-   ```
-
-4. **Set up database:**
-   ```bash
-   zen db init
-   zen db migrate "initial schema"
-   zen db upgrade
-   ```
-
-5. **Check routes:**
-   ```bash
-   zen routes
-   ```
-
-6. **Run tests:**
-   ```bash
-   zen test
-   ```
-
-### Hot Reload Tips
-
-**What triggers hot reload:**
-- ✅ Python file changes (`.py`)
-- ✅ Configuration changes (`zenith.toml`, `.env`)
-- ✅ Template changes (if using templates)
-
-**What doesn't trigger reload:**
-- ❌ Static file changes (use separate static server)
-- ❌ Database schema changes (run migrations manually)
-
-**Best practices:**
-- Use `zen dev` for all development
-- Keep terminal visible to see errors
-- Save files to trigger reload
-- Check logs for startup errors
-
-## Productivity Tips
-
-### 1. Use Aliases
-
-Add to your shell profile:
 ```bash
-alias zd="zen dev"
-alias zr="zen routes"
-alias zt="zen test"
-alias zs="zen shell"
+zen shell --app mypackage.application:app
+zen dev --app src.main:application
 ```
 
-### 2. Auto-completion
+### Configuration Files
 
-Enable shell completion:
+The CLI respects these configuration files:
+
+- **`.env`** - Environment variables
+- **`pyproject.toml`** - Project configuration
+- **`pytest.ini`** - Test configuration
+
+## Troubleshooting
+
+### Command Not Found
+
+If `zen` command is not available:
+
 ```bash
-# For bash
-eval "$(zen --completion bash)"
+# Check installation
+pip show zenith-web
 
-# For zsh
-eval "$(zen --completion zsh)"
+# Alternative command
+python -m zenith.cli --version
 
-# For fish
-zen --completion fish | source
+# Reinstall if needed
+pip install --force-reinstall zenith-web
 ```
 
-### 3. Environment Management
+### App Not Found
 
-Use `.env` files for configuration:
+If CLI can't find your app:
+
 ```bash
-# .env.development
-DEBUG=true
-DATABASE_URL=sqlite:///dev.db
-SECRET_KEY=dev-secret
+# Check current directory has app.py, main.py, or application.py
+ls *.py
 
-# .env.production
-DEBUG=false
-DATABASE_URL=postgresql://...
-SECRET_KEY=prod-secret
+# Check app variable exists
+grep "app = " *.py
+
+# Use explicit app path
+zen routes --app myfile:myapp
 ```
 
-Load with:
+### Development Server Issues
+
+If development server won't start:
+
 ```bash
-zen dev --env .env.development
-zen serve --env .env.production
+# Check for port conflicts
+lsof -i :8000
+
+# Use different port
+zen dev --port 8001
+
+# Check app file syntax
+python -m py_compile app.py
 ```
 
-The Zenith CLI provides everything you need for productive development!
+### Shell Import Issues
+
+If shell can't import your app:
+
+```bash
+# Check Python path
+zen shell --app main.app
+
+# Verify app file
+python -c "from main import app; print(app)"
+```
+
+## Tips & Best Practices
+
+### Performance
+- Use `zen serve` for production (multiple workers)
+- Use `zen dev` only for development (single worker, reload enabled)
+- Monitor with `/health/detailed` endpoint
+
+### Development
+- Use `zen dev --open` to automatically open browser
+- Use `zen shell` for interactive testing and debugging
+- Use `zen routes` to verify your API structure
+
+### Testing
+- Run `zen test` before committing code
+- Use `zen test --failfast` for quick feedback
+- Combine with coverage tools: `coverage run -m pytest`
+
+### Production
+- Always use `zen serve` with multiple workers
+- Set appropriate `--host` and `--port` for your environment
+- Use reverse proxy (nginx) for static files and SSL

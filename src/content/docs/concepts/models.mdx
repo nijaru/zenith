@@ -1,0 +1,639 @@
+---
+title: ZenithModel - Rails-like Database Patterns
+description: ActiveRecord-style database operations with automatic session management
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## What is ZenithModel?
+
+ZenithModel brings Rails-inspired ActiveRecord patterns to Python, providing an intuitive way to work with databases that eliminates boilerplate and makes database operations as natural as they are in Rails.
+
+<Aside type="note">
+  **ZenithModel combines** SQLModel's type safety with Rails-like convenience methods and automatic session management.
+</Aside>
+
+## Why Rails-like Database Patterns?
+
+### Traditional Approach (Verbose FastAPI/SQLAlchemy)
+
+```python
+# ❌ Verbose database operations with manual session management
+@app.get("/users")
+async def get_users(
+    active: bool = True,
+    db: AsyncSession = Depends(get_database_session)
+):
+    # Manual query building
+    stmt = select(User).where(User.active == active).order_by(User.id.desc()).limit(10)
+    result = await db.execute(stmt)
+    users = result.scalars().all()
+
+    # Manual serialization
+    return {"users": [{"id": user.id, "name": user.name, "email": user.email} for user in users]}
+
+@app.post("/users")
+async def create_user(
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_database_session)
+):
+    # Manual object creation and session management
+    user = User(**user_data.model_dump())
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return {"user": {"id": user.id, "name": user.name, "email": user.email}}
+```
+
+### Zenith Approach (Rails-like DX)
+
+```python
+# ✅ Rails-like database operations with automatic session management
+@app.get("/users")
+async def get_users(active: bool = True, db=DB):
+    # Rails-style chaining: User.where().order_by().limit()
+    query = await User.where(active=active)
+    users = await query.order_by('-id').limit(10).all()
+    return {"users": [user.to_dict() for user in users]}
+
+@app.post("/users")
+async def create_user(user_data: dict, db=DB):
+    # Rails-style: User.create() - no session management!
+    user = await User.create(**user_data)
+    return {"user": user.to_dict()}
+```
+
+## Creating Models
+
+### Basic Model
+
+```python
+from zenith.db import ZenithModel
+from sqlmodel import Field
+from typing import Optional
+
+class User(ZenithModel, table=True):
+    """User model with Rails-like capabilities."""
+
+    id: Optional[int] = Field(primary_key=True)
+    name: str = Field(max_length=100)
+    email: str = Field(unique=True)
+    active: bool = Field(default=True)
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+```
+
+### Model with Relationships
+
+```python
+class Post(ZenithModel, table=True):
+    """Blog post with Rails-like relationships."""
+
+    id: Optional[int] = Field(primary_key=True)
+    title: str = Field(max_length=200)
+    content: str
+    author_id: int = Field(foreign_key="user.id")
+    published: bool = Field(default=False)
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
+    # Rails-like relationship access
+    @property
+    def author(self) -> Optional[User]:
+        """Get the post author."""
+        return self.get_related('author_id', User)
+
+    @property
+    def comments(self) -> List['Comment']:
+        """Get all comments for this post."""
+        return self.has_many('post_id', Comment)
+
+class Comment(ZenithModel, table=True):
+    """Comment model."""
+
+    id: Optional[int] = Field(primary_key=True)
+    content: str
+    post_id: int = Field(foreign_key="post.id")
+    author_id: int = Field(foreign_key="user.id")
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+```
+
+## Rails-like Query Patterns
+
+### Basic Queries
+
+```python
+# Find by ID with automatic 404
+user = await User.find_or_404(123)
+
+# Find by ID (returns None if not found)
+user = await User.find(123)
+
+# Get first record
+user = await User.first()
+
+# Get all records
+users = await User.all()
+
+# Count records
+count = await User.count()
+
+# Check if record exists
+exists = await User.exists(email="test@example.com")
+```
+
+### Where Clauses (Rails-style)
+
+```python
+# Simple where clause
+active_users = await User.where(active=True).all()
+
+# Multiple conditions
+query = await User.where(active=True, role="admin")
+admin_users = await query.all()
+
+# Complex conditions
+from sqlmodel import and_, or_
+
+recent_posts = await Post.where(
+    and_(Post.published == True, Post.created_at > datetime.now() - timedelta(days=7))
+).all()
+
+# String-based where (for complex SQL)
+power_users = await User.where("post_count > 10 AND active = true").all()
+```
+
+### Ordering and Limiting
+
+```python
+# Order by column (ascending)
+users = await User.order_by('name').all()
+
+# Order by column (descending) - Rails style with '-'
+users = await User.order_by('-created_at').all()
+
+# Multiple order columns
+users = await User.order_by('-created_at', 'name').all()
+
+# Limit results
+users = await User.limit(10).all()
+
+# Offset results (pagination)
+users = await User.offset(20).limit(10).all()
+
+# Chain operations (Rails-style)
+query = await User.where(active=True)
+recent_users = await query.order_by('-created_at').limit(5).all()
+```
+
+### Advanced Querying
+
+```python
+# Select specific columns
+users = await User.select('id', 'name', 'email').all()
+
+# Join with other tables
+posts_with_authors = await Post.joins('author').where(User.active == True).all()
+
+# Include related records (eager loading)
+posts = await Post.includes('author', 'comments').all()
+
+# Group by
+user_stats = await Post.group_by('author_id').select('author_id', 'COUNT(*) as post_count').all()
+
+# Having clause
+prolific_authors = await Post.group_by('author_id').having('COUNT(*) > 5').all()
+```
+
+## Creating and Updating Records
+
+### Creating Records
+
+```python
+# Rails-style: Model.create()
+user = await User.create(
+    name="Alice Johnson",
+    email="alice@example.com",
+    active=True
+)
+
+# Batch create
+users = await User.create_many([
+    {"name": "Bob", "email": "bob@example.com"},
+    {"name": "Carol", "email": "carol@example.com"},
+])
+
+# Create with validation
+try:
+    user = await User.create(name="", email="invalid-email")
+except ValidationError as e:
+    print(f"Validation failed: {e}")
+```
+
+### Updating Records
+
+```python
+# Update single record
+user = await User.find_or_404(123)
+await user.update(name="New Name", active=False)
+
+# Bulk update (Rails-style)
+await User.where(active=False).update(status="inactive")
+
+# Update with computed values
+await Post.where(published=True).update(
+    updated_at=datetime.utcnow(),
+    view_count=Post.view_count + 1
+)
+
+# Update or create (upsert)
+user = await User.find_or_create(
+    email="unique@example.com",
+    defaults={"name": "New User", "active": True}
+)
+```
+
+### Deleting Records
+
+```python
+# Delete single record
+user = await User.find_or_404(123)
+await user.destroy()
+
+# Bulk delete
+await User.where(active=False).delete()
+
+# Soft delete (if you have a deleted_at column)
+await user.soft_delete()
+
+# Restore soft deleted
+await user.restore()
+```
+
+## Validation and Callbacks
+
+### Model Validation
+
+```python
+class User(ZenithModel, table=True):
+    name: str = Field(max_length=100, min_length=2)
+    email: str = Field(regex=r'^[^@]+@[^@]+\.[^@]+$')
+    age: int = Field(ge=13, le=120)  # Age between 13 and 120
+
+    @validator('email')
+    def validate_email_unique(cls, v, values):
+        """Ensure email is unique."""
+        if cls.exists(email=v):
+            raise ValueError('Email already exists')
+        return v
+
+    @validator('name')
+    def validate_name_format(cls, v):
+        """Ensure name is properly formatted."""
+        if not v.replace(' ', '').isalpha():
+            raise ValueError('Name must contain only letters and spaces')
+        return v.title()
+```
+
+### Model Callbacks
+
+```python
+class Post(ZenithModel, table=True):
+    title: str
+    slug: str = Field(default="")
+    content: str
+    published: bool = Field(default=False)
+    published_at: Optional[datetime] = None
+
+    async def before_save(self):
+        """Rails-like before_save callback."""
+        # Auto-generate slug from title
+        if not self.slug:
+            self.slug = self.title.lower().replace(' ', '-')
+
+        # Set published timestamp
+        if self.published and not self.published_at:
+            self.published_at = datetime.utcnow()
+
+    async def after_create(self):
+        """Rails-like after_create callback."""
+        # Send notification after creating post
+        await NotificationService.send_new_post_notification(self)
+
+    async def before_destroy(self):
+        """Rails-like before_destroy callback."""
+        # Clean up related data
+        await Comment.where(post_id=self.id).delete()
+```
+
+## Scopes and Class Methods
+
+### Model Scopes
+
+```python
+class User(ZenithModel, table=True):
+    name: str
+    email: str
+    active: bool = Field(default=True)
+    role: str = Field(default="user")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @classmethod
+    async def active(cls):
+        """Scope for active users."""
+        return await cls.where(active=True)
+
+    @classmethod
+    async def admins(cls):
+        """Scope for admin users."""
+        return await cls.where(role="admin")
+
+    @classmethod
+    async def recent(cls, days: int = 7):
+        """Scope for recently created users."""
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        return await cls.where(cls.created_at > cutoff)
+
+# Usage
+active_users = await User.active().order_by('-created_at').all()
+recent_admins = await User.admins().recent().all()
+```
+
+### Class Methods
+
+```python
+class User(ZenithModel, table=True):
+    email: str
+    password_hash: str
+
+    @classmethod
+    async def find_by_email(cls, email: str) -> Optional['User']:
+        """Find user by email address."""
+        query = await cls.where(email=email)
+        return await query.first()
+
+    @classmethod
+    async def authenticate(cls, email: str, password: str) -> Optional['User']:
+        """Authenticate user with email and password."""
+        user = await cls.find_by_email(email)
+        if user and user.verify_password(password):
+            return user
+        return None
+
+    def verify_password(self, password: str) -> bool:
+        """Verify password against hash."""
+        return bcrypt.checkpw(password.encode(), self.password_hash.encode())
+```
+
+## Serialization and API Integration
+
+### Automatic Serialization
+
+```python
+class User(ZenithModel, table=True):
+    name: str
+    email: str
+    password_hash: str = Field(exclude=True)  # Never serialize passwords
+    created_at: datetime
+
+    def to_dict(self, include_private: bool = False) -> dict:
+        """Convert to dictionary with optional private fields."""
+        data = super().to_dict()
+
+        if not include_private:
+            # Remove private fields
+            data.pop('password_hash', None)
+
+        # Format dates
+        if 'created_at' in data:
+            data['created_at'] = data['created_at'].isoformat()
+
+        return data
+
+    def to_api_dict(self) -> dict:
+        """API-specific serialization."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'created_at': self.created_at.isoformat(),
+            'profile_url': f'/users/{self.id}'
+        }
+
+# Usage in routes
+@app.get("/users")
+async def list_users(db=DB):
+    users = await User.active().order_by('-created_at').limit(10).all()
+    return {"users": [user.to_dict() for user in users]}
+```
+
+## Testing ZenithModel
+
+### Model Testing
+
+```python
+import pytest
+from zenith.testing import TestContext
+
+@pytest.mark.asyncio
+async def test_user_creation():
+    """Test user creation with validation."""
+    async with TestContext() as ctx:
+        # Create user
+        user = await User.create(
+            name="Test User",
+            email="test@example.com",
+            active=True
+        )
+
+        # Assertions
+        assert user.id is not None
+        assert user.name == "Test User"
+        assert user.email == "test@example.com"
+        assert user.active is True
+        assert user.created_at is not None
+
+@pytest.mark.asyncio
+async def test_user_queries():
+    """Test Rails-like query patterns."""
+    async with TestContext() as ctx:
+        # Create test data
+        await User.create_many([
+            {"name": "Alice", "email": "alice@example.com", "active": True},
+            {"name": "Bob", "email": "bob@example.com", "active": False},
+            {"name": "Carol", "email": "carol@example.com", "active": True}
+        ])
+
+        # Test where clause
+        active_users = await User.where(active=True).all()
+        assert len(active_users) == 2
+
+        # Test ordering
+        users_by_name = await User.order_by('name').all()
+        assert users_by_name[0].name == "Alice"
+
+        # Test find_or_404
+        user = await User.find_or_404(active_users[0].id)
+        assert user is not None
+
+        # Test non-existent user
+        with pytest.raises(HTTPException) as exc_info:
+            await User.find_or_404(999)
+        assert exc_info.value.status_code == 404
+
+@pytest.mark.asyncio
+async def test_model_callbacks():
+    """Test model callbacks and validation."""
+    async with TestContext() as ctx:
+        # Test before_save callback
+        post = await Post.create(
+            title="Test Post",
+            content="This is a test post"
+        )
+
+        # Slug should be auto-generated
+        assert post.slug == "test-post"
+
+        # Test published timestamp
+        await post.update(published=True)
+        assert post.published_at is not None
+```
+
+## Advanced Patterns
+
+### Model Inheritance
+
+```python
+class BaseModel(ZenithModel):
+    """Base model with common fields."""
+
+    id: Optional[int] = Field(primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    async def before_save(self):
+        """Update timestamp before saving."""
+        self.updated_at = datetime.utcnow()
+
+class User(BaseModel, table=True):
+    """User inherits common fields."""
+    name: str
+    email: str
+
+class Post(BaseModel, table=True):
+    """Post inherits common fields."""
+    title: str
+    content: str
+```
+
+### Custom Query Builder
+
+```python
+class UserQueryBuilder:
+    """Custom query builder for complex user queries."""
+
+    def __init__(self, model_class):
+        self.model_class = model_class
+        self._query = None
+
+    async def active(self):
+        """Filter active users."""
+        self._query = await self.model_class.where(active=True)
+        return self
+
+    async def by_role(self, role: str):
+        """Filter by role."""
+        if self._query:
+            self._query = await self._query.where(role=role)
+        else:
+            self._query = await self.model_class.where(role=role)
+        return self
+
+    async def recent(self, days: int = 7):
+        """Filter recent users."""
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        if self._query:
+            self._query = await self._query.where(self.model_class.created_at > cutoff)
+        else:
+            self._query = await self.model_class.where(self.model_class.created_at > cutoff)
+        return self
+
+    async def all(self):
+        """Execute query and return all results."""
+        return await self._query.all() if self._query else await self.model_class.all()
+
+# Usage
+class User(ZenithModel, table=True):
+    @classmethod
+    def query(cls):
+        return UserQueryBuilder(cls)
+
+# Complex query building
+recent_active_admins = await User.query().active().by_role("admin").recent().all()
+```
+
+## Best Practices
+
+<Aside type="tip" title="ZenithModel Best Practices">
+  1. **Use type hints** - Full type safety with Optional, datetime, etc.
+  2. **Leverage scopes** - Create reusable query scopes for common patterns
+  3. **Implement callbacks** - Use before_save, after_create for automatic behavior
+  4. **Test thoroughly** - Test models independently from API endpoints
+  5. **Use validation** - Pydantic validators for data integrity
+</Aside>
+
+### Do's ✅
+
+- Use Rails-like query chaining for readability
+- Implement model callbacks for automatic behavior
+- Create scopes for frequently used queries
+- Use `find_or_404()` for automatic error handling
+- Test models with TestContext for isolation
+
+### Don'ts ❌
+
+- Don't mix database logic with route handlers
+- Don't forget to handle validation errors
+- Don't bypass model methods for raw SQL (unless necessary)
+- Don't create overly complex single queries
+- Don't ignore the automatic session management
+
+## Migration from SQLAlchemy
+
+### Before (Raw SQLAlchemy)
+
+```python
+# Complex session management
+async def get_active_users(db: AsyncSession):
+    stmt = select(User).where(User.active == True).order_by(User.created_at.desc()).limit(10)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+async def create_user(user_data: dict, db: AsyncSession):
+    user = User(**user_data)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+```
+
+### After (ZenithModel)
+
+```python
+# Rails-like simplicity
+async def get_active_users():
+    query = await User.where(active=True)
+    return await query.order_by('-created_at').limit(10).all()
+
+async def create_user(user_data: dict):
+    return await User.create(**user_data)
+```
+
+## Next Steps
+
+- Learn about [Enhanced Dependency Injection](/concepts/dependency-injection)
+- Explore [Real-world Examples](https://github.com/nijaru/zenith/tree/main/examples)
+- See [API Testing](/api/testing) with ZenithModel
+
+---
+
+**Rails-like database operations in Python** - ZenithModel brings the productivity of ActiveRecord to the performance and type safety of modern Python! 🎉
