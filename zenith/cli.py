@@ -79,10 +79,11 @@ def new(path: str, name: str | None, template: str):
 @main.command("dev")
 @click.option("--host", "-h", default="127.0.0.1", help="Host to bind to")
 @click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
+@click.option("--app", default=None, help="Import path to app (e.g., src.api.app:app)")
 @click.option("--open", is_flag=True, help="Open browser after start")
-def dev(host: str, port: int, open: bool):
+def dev(host: str, port: int, app: str | None, open: bool):
     """Start development server with hot reload."""
-    _run_server(host, port, reload=True, workers=1, open_browser=open)
+    _run_server(host, port, reload=True, workers=1, open_browser=open, app_path=app)
 
 
 @main.command("serve")
@@ -115,24 +116,114 @@ def s(host: str, port: int, workers: int, reload: bool):
     _run_server(host, port, reload=reload, workers=workers)
 
 
-def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, open_browser: bool = False):
+def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, open_browser: bool = False, app_path: str | None = None):
     """Internal function to run uvicorn server."""
     from pathlib import Path
+    import importlib.util
+    import os
 
-    # Find the app file
-    app_file = None
+    # Enhanced app discovery
+    app_module = None
     app_var = "app"
 
-    for filename in ["app.py", "main.py", "application.py"]:
-        if Path(filename).exists():
-            app_file = filename.replace(".py", "")
-            break
+    # Strategy 0: Use explicit app path if provided
+    if app_path:
+        if ':' in app_path:
+            app_module, app_var = app_path.split(':', 1)
+        else:
+            app_module = app_path
+            app_var = "app"
+        click.echo(f"🎯 Using explicit app path: {app_module}:{app_var}")
+    else:
+        # Strategy 1: Check for common app files and discover app variable
+        discovery_patterns = [
+            ("app.py", "app"),
+            ("main.py", "app"),
+            ("application.py", "app"),
+            ("application.py", "application"),
+        ]
 
-    if not app_file:
-        click.echo("❌ No Zenith app file found")
-        click.echo("   Looking for: app.py, main.py, or application.py")
-        click.echo("   💡 Create a new app: zen new .")
-        click.echo("   💡 Or ensure your app file is named correctly")
+        for filename, var_name in discovery_patterns:
+            if Path(filename).exists():
+                # Try to discover the actual app variable by importing the module
+                try:
+                    module_name = filename.replace(".py", "")
+                    spec = importlib.util.spec_from_file_location(module_name, filename)
+                    if spec and spec.loader:
+                        module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(module)
+
+                        # Check if the expected variable exists and is a Zenith app
+                        if hasattr(module, var_name):
+                            attr = getattr(module, var_name)
+                            if hasattr(attr, '__class__') and 'Zenith' in str(type(attr)):
+                                app_module = module_name
+                                app_var = var_name
+                                break
+                            # Also try to find any Zenith app in the module
+                            for attr_name in dir(module):
+                                if not attr_name.startswith('_'):
+                                    attr = getattr(module, attr_name)
+                                    if hasattr(attr, '__class__') and 'Zenith' in str(type(attr)):
+                                        app_module = module_name
+                                        app_var = attr_name
+                                        break
+                        if app_module:
+                            break
+                except Exception:
+                    # If import fails, fall back to filename-based discovery
+                    app_module = filename.replace(".py", "")
+                    break
+
+    # Strategy 2: Look for nested app structures (like src/api/app.py)
+    if not app_module:
+        common_paths = [
+            "src/app.py",
+            "src/api/app.py",
+            "src/main.py",
+            "app/main.py",
+            "api/app.py"
+        ]
+
+        for path_str in common_paths:
+            path = Path(path_str)
+            if path.exists():
+                try:
+                    # Convert path to module notation: src/api/app.py -> src.api.app
+                    module_path = str(path.with_suffix('')).replace('/', '.')
+                    spec = importlib.util.spec_from_file_location(module_path.split('.')[-1], path)
+                    if spec and spec.loader:
+                        module = importlib.util.module_from_spec(spec)
+                        # Add the parent directory to sys.path temporarily
+                        parent_dir = str(path.parent.parent.absolute()) if len(path.parts) > 1 else str(Path.cwd())
+                        if parent_dir not in sys.path:
+                            sys.path.insert(0, parent_dir)
+
+                        spec.loader.exec_module(module)
+
+                        if hasattr(module, 'app'):
+                            attr = getattr(module, 'app')
+                            if hasattr(attr, '__class__') and 'Zenith' in str(type(attr)):
+                                app_module = module_path
+                                app_var = 'app'
+                                break
+                except Exception:
+                    continue
+
+    if not app_module:
+        click.echo("❌ No Zenith app found")
+        click.echo("")
+        click.echo("🔍 Searched for:")
+        click.echo("   • app.py, main.py, application.py (with 'app' variable)")
+        click.echo("   • src/app.py, src/api/app.py, src/main.py")
+        click.echo("   • app/main.py, api/app.py")
+        click.echo("")
+        click.echo("💡 Solutions:")
+        click.echo("   1. Create main.py with: from src.api.app import app")
+        click.echo("   2. Use zen dev --app=src.api.app:app")
+        click.echo("   3. Create new app: zen new .")
+        click.echo("")
+        click.echo("📖 See: https://zenith-python.org/cli#app-discovery")
         sys.exit(1)
 
     if reload:
@@ -140,7 +231,7 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
         click.echo("🔄 Hot reload enabled - edit files to see changes instantly!")
         cmd = [
             "uvicorn",
-            f"{app_file}:{app_var}",
+            f"{app_module}:{app_var}",
             f"--host={host}",
             f"--port={port}",
             "--reload",
@@ -155,7 +246,7 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
         click.echo(f"👥 Workers: {workers}")
         cmd = [
             "uvicorn",
-            f"{app_file}:{app_var}",
+            f"{app_module}:{app_var}",
             f"--host={host}",
             f"--port={port}",
             f"--workers={workers}",
