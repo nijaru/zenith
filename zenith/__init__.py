@@ -27,8 +27,8 @@ from zenith.core.config import Config
 
 # Rails-like dependency shortcuts - these are pre-configured Depends objects
 from zenith.core.dependencies import (
-    DB,  # Database session shortcut
-    DatabaseSession,  # Same as DB, addresses WealthScope naming conflict feedback
+    DB,  # Database session shortcut (legacy, short)
+    Session,  # Database session shortcut (recommended, clear)
     CurrentUser,  # Current authenticated user
     Cache,  # Cache client shortcut
     Request,  # Request object shortcut
@@ -135,9 +135,9 @@ from zenith.exceptions import (
 )
 
 # ============================================================================
-# BACKGROUND PROCESSING & JOBS
+# BACKGROUND PROCESSING & JOBS (LEGACY)
 # ============================================================================
-from zenith.jobs import JobManager, JobQueue, Worker
+from zenith.jobs import JobManager, Worker
 
 # ============================================================================
 # MIDDLEWARE
@@ -155,7 +155,7 @@ from zenith.middleware import (
 # SESSIONS
 # ============================================================================
 from zenith.sessions import SessionManager, SessionMiddleware
-from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
+from zenith.tasks.background import BackgroundTasks, TaskQueue
 
 # ============================================================================
 # WEB UTILITIES & RESPONSES
@@ -190,113 +190,123 @@ from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManag
 # ============================================================================
 
 __all__ = [
-    "DB",
+    # Core Framework
+    "Zenith",
     "Application",
+    "Config",
+    "__version__",
     # Database & Models
     "AsyncSession",
-    # Routing & Dependencies
-    "Auth",
+    "Base",
+    "Database",
+    "Field",
+    "Relationship",
+    "SQLModel",
+    "SQLModelRepository",
+    "ZenithSQLModel",
+    # Dependency Injection (Rails-like shortcuts)
+    "DB",                # Database session shortcut (legacy, short)
+    "Session",           # Database session shortcut (recommended, clear)
+    "Auth",              # Authentication dependency
+    "CurrentUser",       # Current authenticated user
+    "Cache",             # Cache client shortcut
+    "Request",           # Request object shortcut
+    "Inject",            # Service injection
+    "File",              # File dependency function for uploads
+    # Request-scoped dependencies
+    "DatabaseSession",
+    "Depends",
+    "RequestScoped",
+    # Background Processing
+    "BackgroundTaskManager",
+    "JobQueue",
+    "Job",
+    "JobStatus",
+    "background_task",
+    "BackgroundTasks",
     # HTTP Exceptions
     "AuthenticationException",
     "AuthorizationException",
-    # Background Processing
-    "BackgroundTasks",
     "BadRequestException",
-    "Base",
     "BusinessLogicException",
-    "CORSMiddleware",
-    "CSRFMiddleware",
-    "Cache",
-    # Middleware
-    "CompressionMiddleware",
     "ConcurrencyException",
-    "Config",
     "ConflictException",
-    "CurrentUser",
-    "CursorPagination",
-    "DataIntegrityException",
-    "Database",
     "DatabaseException",
-    "DatabaseSession",
-    "Depends",
-    "Field",
-    "File",
+    "DataIntegrityException",
     "ForbiddenException",
     "GoneException",
     "HTTPException",
-    "Inject",
     "IntegrationException",
     "InternalServerException",
-    "JobManager",
-    "JobQueue",
-    "MigrationManager",
     "NotFoundException",
-    # Web Responses & Utilities
-    "OptimizedJSONResponse",
-    "Paginate",
-    "PaginatedResponse",
     "PaymentException",
     "PreconditionFailedException",
     "RateLimitException",
-    "Relationship",
-    "Request",
+    "ResourceLockedException",
+    "ServiceUnavailableException",
+    "UnauthorizedException",
+    "ValidationException",
+    "ZenithException",
+    # Middleware
+    "CompressionMiddleware",
+    "CORSMiddleware",
+    "CSRFMiddleware",
     "RequestIDMiddleware",
     "RequestLoggingMiddleware",
-    "RequestScoped",
-    "ResourceLockedException",
-    "Router",
-    "SQLModel",
-    "SQLModelRepository",
-    # Server-Sent Events
-    "SSEConnection",
-    "SSEConnectionState",
-    "SSEEventManager",
     "SecurityHeadersMiddleware",
-    "ServerSentEvents",
     # Business Logic
     "Service",
-    "ServiceUnavailableException",
+    # Routing
+    "Router",
     # Sessions
     "SessionManager",
     "SessionMiddleware",
+    # Jobs & Background Processing
+    "JobManager",
+    "Worker",
     "TaskQueue",
-    "UnauthorizedException",
-    "ValidationException",
+    # Database Migrations
+    "MigrationManager",
+    "create_repository",
+    # Web Responses & Utilities
+    "OptimizedJSONResponse",
+    "json_response",
+    "error_response",
+    "success_response",
+    # Exception Helpers
+    "bad_request",
+    "conflict",
+    "forbidden",
+    "internal_error",
+    "not_found",
+    "unauthorized",
+    "validation_error",
+    # Pagination
+    "Paginate",
+    "PaginatedResponse",
+    "CursorPagination",
+    "paginate",
+    # Server-Sent Events
+    "ServerSentEvents",
+    "SSEConnection",
+    "SSEConnectionState",
+    "SSEEventManager",
+    "create_sse_response",
+    "sse",
     # WebSockets
     "WebSocket",
     "WebSocketDisconnect",
     "WebSocketManager",
-    "Worker",
-    "Zenith",
-    "ZenithException",
-    "ZenithSQLModel",
-    # Core Framework
-    "__version__",
-    "auth_required",
-    "background_task",
-    # Exception Helpers
-    "bad_request",
-    "cache",
-    "conflict",
-    "create_repository",
-    "create_sse_response",
-    "error_response",
-    "forbidden",
-    "internal_error",
-    "json_response",
-    "not_found",
-    "paginate",
-    "rate_limit",
-    "request_scoped",
-    "returns",
     # Static File Serving
     "serve_css_js",
     "serve_images",
     "serve_spa_files",
-    "sse",
-    "success_response",
-    "transaction",
-    "unauthorized",
+    # High-level Decorators
+    "cache",
+    "rate_limit",
     "validate",
-    "validation_error",
+    "returns",
+    "auth_required",
+    "transaction",
+    "request_scoped",
 ]

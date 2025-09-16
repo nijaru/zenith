@@ -18,8 +18,8 @@ from pydantic import BaseModel
 
 from zenith import (
     Zenith,
-    DatabaseSession,  # New: Addresses WealthScope variable conflict issue
-    DB,               # Alternative: Same functionality, different name
+    Session,  # Recommended: Clear, concise database session dependency
+    DB,       # Alternative: Shorter, legacy compatibility
 )
 
 # Create app with debug mode for better error messages
@@ -63,7 +63,7 @@ async def create_user_old(user_data: UserCreate):
 @app.post("/users", response_model=UserResponse)
 async def create_user_new(
     user_data: UserCreate,
-    session: AsyncSession = DatabaseSession  # Clear naming, no conflicts!
+    session: AsyncSession = Session  # Clear naming, no conflicts!
 ):
     """
     Create user with improved database session dependency.
@@ -87,7 +87,7 @@ async def create_user_new(
 
 
 @app.get("/users", response_model=list[UserResponse])
-async def list_users(session: AsyncSession = DatabaseSession):
+async def list_users(session: AsyncSession = Session):
     """
     List all users - demonstrates clean session usage.
 
@@ -103,11 +103,11 @@ async def list_users(session: AsyncSession = DatabaseSession):
 
 
 @app.get("/users/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, session: AsyncSession = DatabaseSession):
+async def get_user(user_id: int, session: AsyncSession = Session):
     """
     Get single user by ID.
 
-    Shows how DatabaseSession prevents the common WealthScope error pattern.
+    Shows how Session dependency prevents the common WealthScope error pattern.
     """
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -200,7 +200,7 @@ async def framework_health():
 
 
 @app.get("/_health/detailed")
-async def detailed_health(session: AsyncSession = DatabaseSession):
+async def detailed_health(session: AsyncSession = Session):
     """
     Detailed health check that validates database operations.
 
@@ -260,7 +260,7 @@ async def migration_examples():
         "migration_patterns": {
             "database_sessions": {
                 "old_pattern": "async with db.session() as db:",
-                "new_pattern": "session: AsyncSession = DatabaseSession",
+                "new_pattern": "session: AsyncSession = Session",
                 "issue_prevented": "UnboundLocalError variable naming conflict"
             },
             "dependency_injection": {
@@ -274,7 +274,8 @@ async def migration_examples():
             }
         },
         "debugging_tips": [
-            "Use DatabaseSession instead of db parameter name",
+            "Use Session dependency instead of manual context managers",
+            "Avoid variable name conflicts: session vs db vs database",
             "Check /_health endpoint after migration",
             "Validate all endpoints with detailed health check",
             "Test async patterns in development mode"
@@ -292,14 +293,14 @@ async def root():
     return {
         "message": "Zenith WealthScope Improvements Demo",
         "improvements_implemented": [
-            "✅ DatabaseSession dependency prevents naming conflicts",
+            "✅ Session dependency prevents naming conflicts",
             "✅ Framework health check endpoints",
             "✅ Better async error context (in development)",
             "✅ Clear migration patterns"
         ],
         "wealthscope_issues_resolved": [
-            "❌ Variable naming conflicts → ✅ DatabaseSession parameter",
-            "❌ Unclear error messages → ✅ Better async error context",
+            "❌ Variable naming conflicts → ✅ Session dependency with clear naming",
+            "❌ Unclear error messages → ✅ Enhanced async error context",
             "❌ No health monitoring → ✅ /_health endpoints",
             "❌ Manual migration testing → ✅ Automated health checks"
         ],

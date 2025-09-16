@@ -84,8 +84,9 @@ async def get_current_request_dependency() -> Any:
 # Convenient dependency shortcuts (Rails-like simplicity)
 # These can be used directly in route parameters
 
-# Database session shortcut
-DB = Depends(get_database_session)
+# Database session shortcuts - pick one style consistently
+DB = Depends(get_database_session)           # Short, familiar
+Session = Depends(get_database_session)      # Clear, concise
 
 # Authentication shortcuts
 Auth = Depends(get_auth_user)
@@ -146,9 +147,7 @@ AuthenticatedUser = Annotated[Any, Auth]
 CacheClient = Annotated[Any, Cache]
 HttpRequest = Annotated[Any, Request]
 
-# DatabaseSession shortcut - addresses WealthScope feedback
-# This prevents variable naming conflicts like: async with db.session() as db
-DatabaseSession = Depends(get_database_session)  # Same as DB, different name for clarity
+# Remove redundant DatabaseSession - Session is clearer and more concise
 
 
 # Convenience functions for manual dependency resolution
