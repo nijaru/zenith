@@ -14,7 +14,8 @@ import tempfile
 from unittest.mock import patch
 
 from zenith import Zenith
-from zenith.core import DB, Auth, Cache, is_development
+from zenith import Session
+from zenith.core import Auth, Cache, is_development
 from zenith.core.auto_config import Environment
 from zenith.db import ZenithModel
 from zenith.testing import TestClient
@@ -281,7 +282,7 @@ class TestEnhancedDependencyIntegration:
         app = Zenith(middleware=[])
 
         @app.get("/db-test")
-        async def db_test(db=DB):
+        async def db_test(session=Session):
             # Should get database session automatically
             return {"has_db": db is not None}
 
@@ -300,7 +301,7 @@ class TestEnhancedDependencyIntegration:
     async def test_dependency_shortcuts_integration(self, app_with_dependencies):
         """Test dependency shortcuts work in actual routes."""
         async with TestClient(app_with_dependencies) as client:
-            # Test DB shortcut
+            # Test Session shortcut
             response = await client.get("/db-test")
             assert response.status_code == 200
             assert response.json()["has_db"] is True

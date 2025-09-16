@@ -18,7 +18,8 @@ from sqlmodel import Field
 
 # Zenith v0.3.0 imports - much cleaner!
 from zenith import Zenith
-from zenith.core import DB, Auth, is_development
+from zenith import Session
+from zenith.core import Auth, is_development
 from zenith.db import ZenithModel
 
 # Set up a test database for the example
@@ -81,7 +82,7 @@ async def home():
 
 
 @app.get("/users")
-async def list_users(db=DB):
+async def list_users(session=Session):
     """
     List users with Rails-like query methods.
 
@@ -97,7 +98,7 @@ async def list_users(db=DB):
 
 
 @app.post("/users")
-async def create_user(user_data: dict, db=DB):
+async def create_user(user_data: dict, session=Session):
     """
     Create a user with Rails-like convenience.
 
@@ -112,7 +113,7 @@ async def create_user(user_data: dict, db=DB):
 
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, db=DB):
+async def get_user(user_id: int, session=Session):
     """
     Get user with automatic 404 handling.
 
@@ -125,7 +126,7 @@ async def get_user(user_id: int, db=DB):
 
 
 @app.get("/posts")
-async def list_posts(published: bool = True, db=DB):
+async def list_posts(published: bool = True, session=Session):
     """
     List posts with conditional filtering.
 
@@ -145,7 +146,7 @@ async def list_posts(published: bool = True, db=DB):
 
 
 @app.post("/posts")
-async def create_post(post_data: dict, db=DB):
+async def create_post(post_data: dict, session=Session):
     """
     Create a post.
 
@@ -169,7 +170,7 @@ async def create_post(post_data: dict, db=DB):
 
 
 @app.get("/stats")
-async def get_stats(db=DB):
+async def get_stats(session=Session):
     """
     Get database statistics using Rails-like count methods.
 
@@ -229,7 +230,7 @@ if __name__ == "__main__":
     print("🎨 DX Improvements showcased:")
     print("   ✨ Zero-config setup - app = Zenith() just works")
     print("   ✨ Rails-like models - User.where(active=True).limit(10)")
-    print("   ✨ Enhanced DI - db=DB instead of verbose Depends()")
+    print("   ✨ Enhanced DI - session=Session instead of verbose Depends()")
     print("   ✨ Automatic 404s - User.find_or_404(id)")
     print("   ✨ 85% less boilerplate than traditional FastAPI")
 

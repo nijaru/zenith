@@ -59,7 +59,7 @@ def _enhance_async_error_message(exc: Exception, tb: traceback.TracebackExceptio
                                         f"Solution: Use different variable names, e.g.:\n"
                                         f"  async with {var_name}.session() as session:\n"
                                         f"Or better yet, use dependency injection:\n"
-                                        f"  def your_function(session: AsyncSession = DatabaseSession):\n"
+                                        f"  def your_function(session: AsyncSession = Session):\n"
                                         f"File: {frame.filename}, Line: {frame.lineno}"
                                     )
                     except (IOError, IndexError):
@@ -74,7 +74,7 @@ def _enhance_async_error_message(exc: Exception, tb: traceback.TracebackExceptio
             f"  • Creating database engine/session at module level\n"
             f"  • Reusing sessions across requests\n"
             f"Solutions:\n"
-            f"  • Use dependency injection: session: AsyncSession = DatabaseSession\n"
+            f"  • Use dependency injection: session: AsyncSession = Session\n"
             f"  • Create sessions within request context\n"
             f"  • Avoid module-level async database operations"
         )

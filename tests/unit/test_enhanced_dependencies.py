@@ -16,7 +16,7 @@ from zenith.core.dependencies import (
     get_database_session, get_auth_user, get_cache_client, get_current_request_dependency,
     DatabaseContext, ServiceContext,
     resolve_db, resolve_auth, resolve_cache,
-    DatabaseSession, AuthenticatedUser, CacheClient, HttpRequest
+    AuthenticatedUser, CacheClient, HttpRequest
 )
 from zenith.core.container import set_current_db_session
 
@@ -132,7 +132,6 @@ class TestTypeAliases:
     def test_type_aliases_exist(self):
         """Test that type aliases are defined."""
         # These should be importable and usable for type hints
-        assert DatabaseSession is not None
         assert AuthenticatedUser is not None
         assert CacheClient is not None
         assert HttpRequest is not None

@@ -100,7 +100,7 @@ class ServiceConfigError(ZenithConfigError):
             [
                 "Ensure the class extends zenith.Service",
                 "Use Inject() for service injection: service: MyService = Inject()",
-                "For database sessions, use DatabaseSession(get_db) instead",
+                "For database sessions, use Session dependency instead",
             ],
         )
 
@@ -114,13 +114,13 @@ class DatabaseConfigError(ZenithConfigError):
         return cls(
             "Database operation failed: Future attached to different event loop.",
             [
-                "Use RequestScoped or DatabaseSession for proper async context isolation:",
-                "  from zenith import DatabaseSession",
+                "Use RequestScoped or Session for proper async context isolation:",
+                "  from zenith import Session",
                 "  async def get_db():",
                 "      async with SessionLocal() as session:",
                 "          yield session",
                 "  @app.get('/items')",
-                "  async def get_items(db: AsyncSession = DatabaseSession(get_db)):",
+                "  async def get_items(session: AsyncSession = Session):",
                 "      ...",
                 "Avoid creating database engines at module level",
                 "See examples/16-async-database-scoped.py for full example",

@@ -21,7 +21,7 @@ Let's build a simple blog API to demonstrate Zenith's Rails-inspired features.
 
    ```python
    from zenith import Zenith
-   from zenith.core import DB  # Enhanced dependency injection
+   from zenith import Session  # Enhanced dependency injection
    from zenith.db import ZenithModel  # Rails-like models
    from sqlmodel import Field
    from typing import Optional
@@ -52,7 +52,7 @@ Let's build a simple blog API to demonstrate Zenith's Rails-inspired features.
        }
 
    @app.get("/posts")
-   async def get_posts(published: bool = True, db=DB):
+   async def get_posts(published: bool = True, session=Session):
        """Get blog posts with Rails-like queries."""
        if published:
            # Rails-style: Post.where(published=True).order_by('-id').limit(10)
@@ -63,7 +63,7 @@ Let's build a simple blog API to demonstrate Zenith's Rails-inspired features.
        return {"posts": [post.to_dict() for post in posts]}
 
    @app.post("/posts")
-   async def create_post(post_data: dict, db=DB):
+   async def create_post(post_data: dict, session=Session):
        """Create post with Rails-style convenience."""
        # Rails-style: Post.create() - no session management!
        post = await Post.create(**post_data)

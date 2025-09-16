@@ -17,7 +17,7 @@ Zenith combines the **productivity of Rails** with the **performance of FastAPI*
 - **🚀 Zero-config setup** - `app = Zenith()` just works with intelligent defaults
 - **🏗️ Rails-like models** - `User.where(active=True).order_by('-created_at').limit(10)`
 - **⚡ One-liner features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
-- **🎯 Enhanced DX** - `db=DB` instead of verbose `Depends(get_database_session)`
+- **🎯 Enhanced DX** - `session=Session` instead of verbose `Depends(get_database_session)`
 - **🏎️ Exceptional performance** - 9,600+ req/s with full async support
 - **🛡️ Production-ready** - Security, monitoring, and middleware built-in
 
@@ -29,7 +29,7 @@ pip install zenith-web
 
 ```python
 from zenith import Zenith
-from zenith.core import DB  # Enhanced dependency injection
+from zenith import Session  # Enhanced dependency injection
 from zenith.db import ZenithModel  # Rails-like models
 from sqlmodel import Field
 from typing import Optional
@@ -55,20 +55,20 @@ async def home():
     return {"message": "Rails-like DX in Python!"}
 
 @app.get("/users")
-async def list_users(db=DB):  # ✨ Enhanced DI - no verbose Depends()
+async def list_users(session=Session):  # ✨ Enhanced DI - no verbose Depends()
     # Rails-style chaining: User.where().order_by().limit()
     query = await User.where(active=True)
     users = await query.order_by('-id').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
-async def create_user(user_data: dict, db=DB):
+async def create_user(user_data: dict, session=Session):
     # Rails-style: User.create() - no session management!
     user = await User.create(**user_data)
     return {"user": user.to_dict()}
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, db=DB):
+async def get_user(user_id: int, session=Session):
     # Rails-style: automatic 404 handling
     user = await User.find_or_404(user_id)
     return {"user": user.to_dict()}

@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Optional
 
 from zenith import Zenith, Router
-from zenith.core import DB
+from zenith import Session
 from zenith.db import ZenithModel, Field
 
 # 🎯 Zero-config setup - just works!
@@ -121,7 +121,7 @@ async def root():
 # ============================================================================
 
 @products_router.get("/", response_model=list[Product])
-async def list_products(category: str | None = None, db=DB) -> list[Product]:
+async def list_products(category: str | None = None, session=Session) -> list[Product]:
     """List products with Rails-like query patterns."""
     if category:
         # Rails-style: Product.where(category=category)
@@ -134,7 +134,7 @@ async def list_products(category: str | None = None, db=DB) -> list[Product]:
 
 
 @products_router.post("/", response_model=Product)
-async def create_product(product_data: dict, db=DB) -> Product:
+async def create_product(product_data: dict, session=Session) -> Product:
     """Create product using Rails-like patterns."""
     # Rails-style: Product.create() - no session management!
     product = await Product.create(**product_data)
@@ -142,7 +142,7 @@ async def create_product(product_data: dict, db=DB) -> Product:
 
 
 @products_router.get("/{product_id}", response_model=Product)
-async def get_product(product_id: int, db=DB) -> Product:
+async def get_product(product_id: int, session=Session) -> Product:
     """Get product by ID with automatic 404 handling."""
     # Rails-style: automatic 404 if not found
     product = await Product.find_or_404(product_id)
@@ -150,7 +150,7 @@ async def get_product(product_id: int, db=DB) -> Product:
 
 
 @orders_router.get("/", response_model=list[Order])
-async def list_orders(db=DB) -> list[Order]:
+async def list_orders(session=Session) -> list[Order]:
     """List all orders with Rails-like patterns."""
     # Rails-style: Order.all() with automatic ordering
     orders = await Order.order_by('-created_at').all()
@@ -158,7 +158,7 @@ async def list_orders(db=DB) -> list[Order]:
 
 
 @orders_router.post("/", response_model=Order)
-async def create_order(order_data: dict, db=DB) -> Order:
+async def create_order(order_data: dict, session=Session) -> Order:
     """Create order with Rails-like business logic."""
     product_id = order_data["product_id"]
     quantity = order_data["quantity"]
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     print("   • Product.where(category='Electronics').order_by('-created_at').all()")
     print("   • Product.find_or_404(id) - automatic 404 handling")
     print("   • Product.create(**data) - no session management")
-    print("   • Enhanced DI with db=DB shortcuts")
+    print("   • Enhanced DI with session=Session shortcuts")
     print("   • Zero-config setup with intelligent defaults")
     print("   • Router grouping for API organization")
     print()
