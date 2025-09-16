@@ -1,213 +1,393 @@
 ---
 title: Quick Start
-description: Build your first Zenith application with Rails-like DX in 5 minutes
+description: Build your first Zenith application in 5 minutes
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-## Create Your First Rails-like API
+## Create Your First Zenith API
 
-Let's build a simple blog API to demonstrate Zenith's Rails-inspired features.
+Let's build a simple blog API to demonstrate Zenith's modern Python web development patterns.
 
-1. **Install Zenith**
+### 1. Install Zenith
 
-   ```bash
-   pip install zenith-web
-   ```
-
-2. **Create your application file**
-
-   Create `app.py`:
-
-   ```python
-   from zenith import Zenith
-   from zenith import Session  # Enhanced dependency injection
-   from zenith.db import ZenithModel  # Rails-like models
-   from sqlmodel import Field
-   from typing import Optional
-
-   # 🚀 Zero-config setup - just works!
-   app = Zenith()
-
-   # ⚡ Add features in one line each
-   app.add_auth()    # JWT authentication + /auth/login
-   app.add_admin()   # Admin dashboard at /admin
-   app.add_api("Blog API", "1.0.0")  # API docs at /docs
-
-   # 🏗️ Rails-like model with ActiveRecord patterns
-   class Post(ZenithModel, table=True):
-       id: Optional[int] = Field(primary_key=True)
-       title: str = Field(max_length=200)
-       content: str
-       author: str = Field(max_length=100)
-       published: bool = Field(default=False)
-
-   @app.get("/")
-   async def root():
-       return {
-           "message": "Welcome to Rails-like Blog API",
-           "features": ["Rails-like models", "One-liner setup", "Enhanced DX"],
-           "docs": "/docs",
-           "admin": "/admin"
-       }
-
-   @app.get("/posts")
-   async def get_posts(published: bool = True, session=Session):
-       """Get blog posts with Rails-like queries."""
-       if published:
-           # Rails-style: Post.where(published=True).order_by('-id').limit(10)
-           query = await Post.where(published=True)
-           posts = await query.order_by('-id').limit(10).all()
-       else:
-           posts = await Post.all()
-       return {"posts": [post.to_dict() for post in posts]}
-
-   @app.post("/posts")
-   async def create_post(post_data: dict, session=Session):
-       """Create post with Rails-style convenience."""
-       # Rails-style: Post.create() - no session management!
-       post = await Post.create(**post_data)
-       return {"post": post.to_dict(), "message": "Post created"}
-
-   @app.get("/posts/{post_id}")
-   async def get_post(post_id: int, db=DB):
-       """Get post with automatic 404 handling."""
-       # Rails-style: automatic 404 if not found
-       post = await Post.find_or_404(post_id)
-       return {"post": post.to_dict()}
-
-   @app.put("/posts/{post_id}")
-   async def update_post(post_id: int, updates: dict, db=DB):
-       """Update post with Rails-style convenience."""
-       post = await Post.find_or_404(post_id)
-       # Rails-style: model.update() method
-       await post.update(**updates)
-       return {"post": post.to_dict(), "message": "Post updated"}
-
-   @app.delete("/posts/{post_id}")
-   async def delete_post(post_id: int, db=DB):
-       """Delete post with Rails-style convenience."""
-       post = await Post.find_or_404(post_id)
-       # Rails-style: model.destroy() method
-       await post.destroy()
-       return {"message": "Post deleted successfully"}
-   
-   # Health check endpoint
-   @app.get("/health")
-   async def health_check():
-       return {
-           "status": "healthy",
-           "timestamp": datetime.utcnow(),
-           "version": app.version
-       }
-   ```
-
-3. **Run the development server**
-
-   ```bash
-   python app.py
-   # Or use uvicorn directly
-   uvicorn app:app --reload
-   ```
-
-4. **Test your Rails-like API**
-
-   Your API is now running at `http://localhost:8000` with these features:
-   - 📚 **API Docs**: http://localhost:8000/docs (Interactive Swagger UI)
-   - 🔐 **Authentication**: POST to http://localhost:8000/auth/login
-   - ⚡ **Admin Dashboard**: http://localhost:8000/admin
-   - 🏥 **Health Check**: http://localhost:8000/health
-
-**Test the Rails-like CRUD:**
 ```bash
-# Create a post (Rails-style: Post.create)
+pip install zenith-web
+```
+
+Or with uv (recommended):
+
+```bash
+uv add zenith-web
+```
+
+### 2. Generate a New Project
+
+Use the Zenith CLI to create a new project with all the essentials:
+
+```bash
+zen new blog-api
+cd blog-api
+```
+
+This creates:
+- `app.py` - Main application with sample endpoints
+- `.env` - Environment variables with generated secret key
+- `requirements.txt` - Dependencies
+- `.gitignore` - Git ignore rules
+- `README.md` - Quick start guide
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+# or with uv
+uv sync
+```
+
+### 4. Customize Your Application
+
+Edit `app.py` to create a blog API:
+
+```python
+"""
+Blog API - Zenith application demonstrating modern patterns.
+"""
+
+from datetime import datetime
+from typing import Optional
+
+from zenith import Zenith, Session, Model
+from sqlmodel import Field, select
+
+# Create Zenith application
+app = Zenith()
+
+# Enhanced SQLModel with better defaults
+class Post(Model, table=True):
+    """Blog post model with Zenith enhancements."""
+
+    id: Optional[int] = Field(primary_key=True)
+    title: str = Field(max_length=200)
+    content: str
+    author: str = Field(max_length=100)
+    published: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# API Endpoints
+@app.get("/")
+async def root():
+    """API root with information."""
+    return {
+        "message": "Welcome to Blog API",
+        "version": "1.0.0",
+        "endpoints": {
+            "posts": "/posts",
+            "health": "/health",
+            "docs": "/docs"
+        }
+    }
+
+@app.get("/posts")
+async def get_posts(published: bool = True, db=Session):
+    """Get blog posts with filtering."""
+    async with db() as session:
+        query = select(Post)
+
+        if published:
+            query = query.where(Post.published == True)
+
+        query = query.order_by(Post.created_at.desc()).limit(10)
+        result = await session.execute(query)
+        posts = result.scalars().all()
+
+        return {
+            "posts": [post.model_dump() for post in posts],
+            "count": len(posts)
+        }
+
+@app.post("/posts")
+async def create_post(post_data: dict, db=Session):
+    """Create a new blog post."""
+    async with db() as session:
+        post = Post(**post_data)
+        session.add(post)
+        await session.commit()
+        await session.refresh(post)
+
+        return {
+            "post": post.model_dump(),
+            "message": "Post created successfully"
+        }
+
+@app.get("/posts/{post_id}")
+async def get_post(post_id: int, db=Session):
+    """Get a specific post by ID."""
+    async with db() as session:
+        result = await session.execute(
+            select(Post).where(Post.id == post_id)
+        )
+        post = result.scalar_one_or_none()
+
+        if not post:
+            return {"error": "Post not found"}, 404
+
+        return {"post": post.model_dump()}
+
+@app.put("/posts/{post_id}")
+async def update_post(post_id: int, updates: dict, db=Session):
+    """Update an existing post."""
+    async with db() as session:
+        result = await session.execute(
+            select(Post).where(Post.id == post_id)
+        )
+        post = result.scalar_one_or_none()
+
+        if not post:
+            return {"error": "Post not found"}, 404
+
+        # Update fields
+        for field, value in updates.items():
+            if hasattr(post, field):
+                setattr(post, field, value)
+
+        await session.commit()
+        await session.refresh(post)
+
+        return {
+            "post": post.model_dump(),
+            "message": "Post updated successfully"
+        }
+
+@app.delete("/posts/{post_id}")
+async def delete_post(post_id: int, db=Session):
+    """Delete a post."""
+    async with db() as session:
+        result = await session.execute(
+            select(Post).where(Post.id == post_id)
+        )
+        post = result.scalar_one_or_none()
+
+        if not post:
+            return {"error": "Post not found"}, 404
+
+        await session.delete(post)
+        await session.commit()
+
+        return {"message": "Post deleted successfully"}
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "blog-api"
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+```
+
+### 5. Run Your Application
+
+Start the development server:
+
+```bash
+zen dev
+```
+
+Or run directly:
+
+```bash
+python app.py
+```
+
+Your API is now running at http://localhost:8000!
+
+<Aside type="tip">
+  The `zen dev` command includes hot reload, so your server will automatically restart when you make changes to your code.
+</Aside>
+
+### 6. Explore Your API
+
+Visit these endpoints in your browser or API client:
+
+- **API Root**: http://localhost:8000/
+- **API Documentation**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+- **Blog Posts**: http://localhost:8000/posts
+
+### 7. Test Your API
+
+Create your first blog post:
+
+```bash
 curl -X POST http://localhost:8000/posts \
   -H "Content-Type: application/json" \
   -d '{
-    "title": "Rails-like DX in Python",
-    "content": "Zero config, ActiveRecord patterns, one-liner features!",
+    "title": "My First Post",
+    "content": "This is my first blog post using Zenith!",
     "author": "Developer",
     "published": true
   }'
-
-# Get published posts (Rails-style: Post.where().order_by().limit())
-curl http://localhost:8000/posts?published=true
-
-# Get specific post (Rails-style: Post.find_or_404)
-curl http://localhost:8000/posts/1
-
-# Update post (Rails-style: post.update)
-curl -X PUT http://localhost:8000/posts/1 \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Updated Title"}'
 ```
 
-```
+Get all posts:
 
-<Aside type="tip" title="Rails-like DX Benefits">
-Compare this Zenith code to equivalent FastAPI + SQLAlchemy:
-
-- **85% less boilerplate** - No manual session management, dependency setup, or middleware configuration
-- **Zero-config setup** - `app = Zenith()` vs 50+ lines of FastAPI setup
-- **Rails-like queries** - `Post.where().order_by().limit()` vs complex SQLAlchemy
-- **One-liner features** - `app.add_auth()` vs 20+ lines of auth setup
-- **Automatic 404s** - `Post.find_or_404()` vs manual error handling
-</Aside>
-
-## 🎯 What You Get Out of the Box
-
-Your Rails-like API now includes:
-
-### 🔐 **Authentication** (from `app.add_auth()`)
 ```bash
-# Login with any username/password
-curl -X POST http://localhost:8000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "password"}'
+curl http://localhost:8000/posts
 ```
 
-### ⚡ **Admin Dashboard** (from `app.add_admin()`)
-- Health monitoring at `/admin/health`
-- System stats at `/admin/stats`
-- Interactive dashboard at `/admin`
+## What You Get Out of the Box
 
-### 📚 **API Documentation** (from `app.add_api()`)
-- Interactive docs at `/docs`
-- Alternative docs at `/redoc`
-- OpenAPI schema at `/openapi.json`
+### 🚀 Zero Configuration
+
+- **Automatic setup** - No complex configuration files
+- **Smart defaults** - Production-ready settings
+- **Environment detection** - Automatic dev/prod behavior
+
+### 📊 Enhanced SQLModel
+
+```python
+from zenith import Model
+
+class User(Model, table=True):
+    # Enhanced configuration automatically applied:
+    # - from_attributes=True
+    # - use_enum_values=True
+    # - validate_assignment=True
+    id: int | None = Field(primary_key=True)
+    name: str
+    email: str
+```
+
+### 💉 Clean Dependency Injection
+
+```python
+from zenith import Session, Service, Inject
+
+@app.get("/users")
+async def get_users(
+    db=Session,                    # Database session
+    users: UserService = Inject()  # Service injection
+):
+    # Clean, readable code
+    pass
+```
+
+### 🔧 Development Tools
+
+- **Hot reload** with `zen dev`
+- **Automatic API docs** at `/docs`
+- **Health checks** at `/health`
+- **Project generation** with `zen new`
+
+### 🏭 Production Ready
+
+- **Automatic middleware** - CORS, security headers, compression
+- **Rate limiting** - Configurable per endpoint
+- **Request logging** - Structured logs with correlation IDs
+- **Performance monitoring** - Built-in metrics
 
 ## Next Steps
 
-- **[Learn ZenithModel patterns](./models.md)** - Rails-like database operations
-- **[Explore examples](../examples/)** - Real-world usage patterns
-- **[Add authentication](./auth.md)** - Secure your API endpoints
-- **[Deploy to production](./deployment.md)** - Ready for production use
+### Add Authentication
 
+```python
+from zenith.auth import configure_jwt, Auth
 
-## 🚀 Ready for More?
+# Configure JWT
+configure_jwt(secret_key="your-secret-key")
 
-You've just experienced the power of **Rails-like DX in Python**! In just a few lines of code, you built a production-ready API with:
+@app.get("/protected")
+async def protected_route(user=Auth):
+    return {"user_id": user.id}
+```
 
-✅ **Zero configuration** - No complex setup files
-✅ **ActiveRecord patterns** - Rails-like database operations
-✅ **One-liner features** - Authentication, admin, docs instantly
-✅ **Enhanced DI** - Clean, readable dependency injection
-✅ **Automatic 404s** - No manual error handling
-✅ **Production-ready** - Security, monitoring, health checks built-in
+### Add File Uploads
 
-### Next Steps
+```python
+from zenith import File, IMAGE_TYPES, MB
 
-- **[Learn ZenithModel](../models.md)** - Master Rails-like database patterns
-- **[Explore Examples](../examples/)** - See real-world usage patterns
-- **[Add Authentication](../auth.md)** - Secure your endpoints with JWT
-- **[Production Deployment](../deployment.md)** - Deploy with confidence
+@app.post("/upload")
+async def upload_file(
+    file: UploadFile = File(
+        max_size="10MB",
+        allowed_types=IMAGE_TYPES
+    )
+):
+    return {"filename": file.filename}
+```
 
-### Join the Community
+### Add Background Tasks
 
-- **[GitHub](https://github.com/nijaru/zenith)** - Star the project and contribute
-- **[Examples Repository](https://github.com/nijaru/zenith/tree/main/examples)** - Working examples
-- **[Issues](https://github.com/nijaru/zenith/issues)** - Report bugs or request features
+```python
+from zenith.tasks import BackgroundTasks
+
+@app.post("/send-email")
+async def send_email(
+    email_data: dict,
+    background: BackgroundTasks
+):
+    background.add_task(send_email_async, email_data)
+    return {"status": "email queued"}
+```
+
+### Organize with Services
+
+```python
+from zenith import Service
+
+class PostService(Service):
+    """Business logic for posts."""
+
+    async def create_post(self, data: dict) -> Post:
+        # Validation, business rules, etc.
+        return await Post.create(**data)
+
+# Use in routes
+@app.post("/posts")
+async def create_post(
+    data: dict,
+    posts: PostService = Inject()
+):
+    post = await posts.create_post(data)
+    return {"post": post.model_dump()}
+```
+
+## Key Features
+
+### Modern Python
+
+- **Python 3.12+** with latest features
+- **Type hints** throughout for better IDE support
+- **Async/await** for high performance
+- **Pydantic v2** for validation and serialization
+
+### Developer Experience
+
+- **Minimal boilerplate** - Focus on business logic
+- **Excellent tooling** - CLI, hot reload, debugging
+- **Clear patterns** - Consistent code organization
+- **Great defaults** - Secure and performant out of the box
+
+### Production Ready
+
+- **Security** - CSRF, rate limiting, secure headers
+- **Performance** - Optimized middleware stack
+- **Monitoring** - Health checks, metrics, logging
+- **Scalability** - Async throughout, connection pooling
+
+## Learn More
+
+- [Enhanced Models](./concepts/models) - Database patterns and best practices
+- [Services & DI](./concepts/services) - Business logic organization
+- [File Uploads](./examples/file-upload) - Handle file uploads securely
+- [Authentication](./concepts/authentication) - JWT and custom auth
+- [CLI Tools](./guides/cli) - Development and deployment tools
 
 ---
 
-**Happy coding with Rails-like DX in Python!** 🎉
+**Ready to build something amazing?** Zenith provides the foundation for modern, production-ready Python web applications! 🚀
