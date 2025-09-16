@@ -97,6 +97,7 @@ class User(UserBase, Model, table=True):
 
     __tablename__ = "users"
 
+    id: int | None = Field(default=None, primary_key=True)
     password_hash: str = Field(max_length=255, description="Hashed password")
     is_active: bool = Field(default=True, description="Whether user is active")
     created_at: datetime = Field(
@@ -109,6 +110,7 @@ class Todo(TodoBase, Model, table=True):
 
     __tablename__ = "todos"
 
+    id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(
         foreign_key="users.id", description="ID of the user who owns this todo"
     )
@@ -431,7 +433,7 @@ async def login(credentials: UserLogin, users: UserService = Inject()) -> TokenR
 async def create_todo(
     todo_data: TodoCreate,
     todos: TodoService = Inject(),
-    current_user=Auth(required=True),
+    current_user=Auth,
 ) -> TodoPublic:
     """Create a new todo."""
     user_id = current_user["id"]
@@ -446,7 +448,7 @@ async def list_todos(
     limit: int = 100,
     offset: int = 0,
     todos: TodoService = Inject(),
-    current_user=Auth(required=True),
+    current_user=Auth,
 ) -> list[TodoPublic]:
     """List todos for current user with optional filtering and pagination."""
     user_id = current_user["id"]
@@ -456,7 +458,7 @@ async def list_todos(
 
 @todos_router.get("/{todo_id}", response_model=TodoPublic)
 async def get_todo(
-    todo_id: int, todos: TodoService = Inject(), current_user=Auth(required=True)
+    todo_id: int, todos: TodoService = Inject(), current_user=Auth
 ) -> TodoPublic:
     """Get specific todo by ID."""
     user_id = current_user["id"]
@@ -471,7 +473,7 @@ async def update_todo(
     todo_id: int,
     updates: TodoUpdate,
     todos: TodoService = Inject(),
-    current_user=Auth(required=True),
+    current_user=Auth,
 ) -> TodoPublic:
     """Update todo with partial data."""
     user_id = current_user["id"]
@@ -483,7 +485,7 @@ async def update_todo(
 
 @todos_router.delete("/{todo_id}")
 async def delete_todo(
-    todo_id: int, todos: TodoService = Inject(), current_user=Auth(required=True)
+    todo_id: int, todos: TodoService = Inject(), current_user=Auth
 ) -> dict:
     """Delete todo by ID."""
     user_id = current_user["id"]
