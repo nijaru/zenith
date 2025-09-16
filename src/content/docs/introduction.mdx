@@ -12,138 +12,129 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Why Zenith?
 
-Zenith combines the best of modern Python web development with clean architecture patterns. Built on top of Starlette with modern async patterns, Zenith provides the performance you need with the developer experience you deserve.
+Zenith delivers **Rails-like DX in Python** with 85% less boilerplate while maintaining exceptional performance. Zero-config setup, ActiveRecord patterns, and one-liner features make Python web development as productive as Rails.
 
 <CardGrid>
-  <Card title="🏗️ Clean Architecture" icon="puzzle">
-    Service-based business logic separation. Keep your domain logic clean, testable, and independent of web concerns.
+  <Card title="🚀 Rails-like DX" icon="puzzle">
+    Zero-config setup with `app = Zenith()` - just works with intelligent defaults and environment detection.
   </Card>
-  <Card title="📊 SQLModel Integration" icon="database">
-    Unified Pydantic + SQLAlchemy models. Write once, use everywhere - API validation, database models, and OpenAPI documentation.
+  <Card title="🏗️ ActiveRecord Patterns" icon="database">
+    Rails-inspired ZenithModel: `User.where(active=True).order_by('-id').limit(10).all()` with automatic session management.
   </Card>
-  <Card title="⚡ Exceptional Performance" icon="rocket">
-    Built on Starlette with modern async patterns. Leverages Python 3.12+ features including TaskGroups for optimal concurrency.
+  <Card title="⚡ One-liner Features" icon="rocket">
+    `app.add_auth()`, `app.add_admin()`, `app.add_api()` - complex functionality in single commands with production-ready defaults.
   </Card>
-  <Card title="🔒 Type Safety" icon="shield">
-    Full type hints throughout. Inject() and Auth() dependency injection with complete IDE support and compile-time checking.
+  <Card title="🎯 Enhanced DX" icon="shield">
+    Clean dependency injection with `db=DB` instead of verbose `Depends(get_database_session)`. Full type safety included.
   </Card>
 </CardGrid>
 
 ## Quick Example
 
-**Basic App:**
+**Zero-Config Setup:**
 ```python
 from zenith import Zenith
 
+# 🎯 Zero-config - just works!
 app = Zenith()
 
 @app.get("/")
 async def hello():
-    return {"message": "Welcome to Zenith!"}
-
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
+    return {"message": "Rails-like DX in Python!"}
 ```
 
-**With Service:**
+**Rails-like Models:**
 ```python
-from zenith import Zenith, Service, Inject
-from zenith.db import SQLModel, Field
+from zenith import Zenith
+from zenith.core import DB
+from zenith.db import ZenithModel
+from sqlmodel import Field
+from typing import Optional
 
 app = Zenith()
 
-class User(SQLModel, table=True):
-    name: str = Field(description="User name")
-    email: str = Field(description="User email")
+# 🏗️ Rails-like model with ActiveRecord patterns
+class User(ZenithModel, table=True):
+    id: Optional[int] = Field(primary_key=True)
+    name: str = Field(max_length=100)
+    email: str = Field(unique=True)
+    active: bool = Field(default=True)
 
-class UserService(Service):
-    async def create_user(self, user: User) -> User:
-        # Business logic here
-        return user
+@app.get("/users")
+async def list_users(db=DB):  # ✨ Enhanced DI
+    # Rails-style chaining
+    query = await User.where(active=True)
+    users = await query.order_by('-id').limit(10).all()
+    return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
-async def create_user(
-    user: User,
-    service: UserService = Inject()
-):
-    return await service.create_user(user)
+async def create_user(user_data: dict, db=DB):
+    # Rails-style: User.create() - no session management!
+    user = await User.create(**user_data)
+    return {"user": user.to_dict()}
 ```
 
-**Full Featured:**
+**One-liner Features:**
 ```python
 from zenith import Zenith
-from zenith.middleware import (
-    CORSMiddleware,
-    RateLimitMiddleware,
-    SecurityHeadersMiddleware
-)
 
-app = Zenith(
-    title="Production API",
-    version="1.0.0",
-    middleware=[
-        CORSMiddleware({"allow_origins": ["https://myapp.com"]}),
-        RateLimitMiddleware({"requests_per_minute": 60}),
-        SecurityHeadersMiddleware({"force_https": True})
-    ]
-)
+app = Zenith()
 
-# Serve your React/Vue/Angular app
+# ⚡ Add features in one line each
+app.add_auth()    # JWT authentication + /auth/login
+app.add_admin()   # Admin dashboard at /admin
+app.add_api("My API", "1.0.0")  # API docs at /docs
+
+# 🌐 Serve your SPA
 app.spa("dist")
-
-# Health checks
-@app.get("/health")
-async def health():
-    return {"status": "healthy"}
 ```
 
 ## Key Features
 
+### Rails-like Productivity
+
+- 🚀 **85% Less Boilerplate** - Zero-config setup with intelligent defaults
+- 🏗️ **ActiveRecord Patterns** - `User.where().order_by().limit().all()` database operations
+- ⚡ **One-liner Features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
+- 🎯 **Enhanced DX** - Clean dependency injection with `db=DB` shortcuts
+- 🔍 **Automatic 404s** - `User.find_or_404()` with proper error handling
+- 📦 **Request-scoped Sessions** - No manual database session management
+
 ### Production Ready
 
-- ✅ **100% Test Coverage** - 293 tests passing
-- ✅ **Zero Memory Leaks** - Bounded caches and automatic cleanup
-- ✅ **Production Middleware** - Security, CORS, rate limiting, compression
-- ✅ **Health Checks** - `/health` and `/health/detailed` endpoints
-- ✅ **Metrics & Monitoring** - Prometheus `/metrics` endpoint
-- ✅ **Background Tasks** - Built-in task queues and scheduling
-
-### Developer Experience
-
-- 🛠️ **Modern CLI** - `zen new`, `zen server`, `zen test`
-- 🌐 **SPA Serving** - One command: `app.spa("dist")`
-- 🔄 **Hot Reload** - Instant feedback during development
-- 📚 **Auto Documentation** - OpenAPI/Swagger built-in
-- 🧪 **Testing Utilities** - TestClient, TestService, fixtures
-- 🎯 **Type Safety** - Full IDE support with type hints
+- ✅ **631+ Tests Passing** - Comprehensive test coverage with zero memory leaks
+- 🏎️ **9,600+ req/s** - Exceptional performance with Rails-like features
+- 🛡️ **Security by Default** - CORS, CSRF, security headers automatic
+- 🏥 **Built-in Monitoring** - `/health`, `/metrics`, request tracing
+- ⚡ **Background Tasks** - TaskGroups with Python 3.12+ optimizations
+- 🌐 **SPA Support** - One command: `app.spa("dist")`
 
 ## Philosophy
 
 Zenith follows these core principles:
 
-1. **Business Logic First** - Your domain logic should be independent of web concerns
-2. **Type Safety** - Catch errors at development time, not runtime
-3. **Performance** - Fast by default, optimized when needed
-4. **Developer Joy** - The framework should make you productive and happy
-5. **Production Focus** - Built for real-world applications, not just demos
+1. **Rails-like Productivity** - Zero-config setup and ActiveRecord patterns eliminate boilerplate
+2. **Type Safety** - Full type hints and Pydantic validation catch errors at development time
+3. **Performance First** - 9,600+ req/s with no performance penalty for convenience features
+4. **Developer Joy** - One-liner features and enhanced DX make Python as productive as Rails
+5. **Production Focus** - Security, monitoring, and scalability built-in from day one
 
 ## Next Steps
 
-Ready to build with Zenith?
+Ready to build with Rails-like DX in Python?
 
 <CardGrid>
   <Card title="Installation" icon="download" link="/installation">
     Get Zenith installed and set up your development environment
   </Card>
   <Card title="Quick Start" icon="rocket" link="/quick-start">
-    Build your first Zenith application in 5 minutes
+    Build your first Rails-like API in 5 minutes with zero configuration
   </Card>
-  <Card title="Service System" icon="puzzle" link="/concepts/services">
-    Learn about Zenith's unique approach to organizing business logic
+  <Card title="ZenithModel" icon="database" link="/concepts/models">
+    Learn ActiveRecord-style database patterns and automatic session management
   </Card>
   <Card title="Examples" icon="code" link="https://github.com/nijaru/zenith/tree/main/examples">
-    Explore real-world examples and patterns
+    Explore Rails-like DX patterns and real-world examples
   </Card>
 </CardGrid>
 

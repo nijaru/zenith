@@ -1,0 +1,80 @@
+---
+title: One-Liner Features
+description: Add authentication, admin, and API docs with single method calls
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Overview
+
+Zenith v0.3.0 introduces one-liner convenience methods that add complete features with a single method call. Each method saves 20-50 lines of configuration code.
+
+## Authentication in One Line
+
+```python
+from zenith import Zenith
+
+app = Zenith()
+app.add_auth()  # ✅ Complete JWT authentication added!
+
+# This single line adds:
+# - POST /auth/login endpoint
+# - JWT token generation
+# - User authentication middleware
+# - Token refresh capability
+```
+
+## Admin Dashboard in One Line
+
+```python
+app.add_admin()  # ✅ Admin dashboard added!
+
+# This adds:
+# - GET /admin - Admin dashboard
+# - GET /admin/health - System health check
+# - GET /admin/stats - Application statistics
+# - GET /admin/logs - Recent logs viewer
+```
+
+## API Documentation in One Line
+
+```python
+app.add_api("My API", "1.0.0", "API description")
+
+# This adds:
+# - GET /docs - Interactive Swagger UI
+# - GET /redoc - Alternative ReDoc UI
+# - GET /openapi.json - OpenAPI schema
+```
+
+## Chain Everything Together
+
+```python
+from zenith import Zenith
+
+# Add all features in 4 lines!
+app = (Zenith()
+       .add_auth()
+       .add_admin("/dashboard")  # Custom path
+       .add_api("My API", "1.0.0"))
+```
+
+## Complete Example
+
+Run the example: `python examples/04-one-liner-features.py`
+
+<Aside type="tip">
+  **Productivity Tip**: These one-liner methods are perfect for prototypes and MVPs. You can always customize later!
+</Aside>
+
+## Traditional Alternative
+
+Without these methods, you'd need:
+
+```python
+# 50+ lines of JWT configuration
+# 30+ lines of admin route setup
+# 20+ lines of OpenAPI configuration
+```
+
+With Zenith v0.3.0: **Just 3 lines!**

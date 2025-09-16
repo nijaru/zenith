@@ -16,20 +16,20 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Build Modern Python APIs
+## Build Rails-like APIs in Python
 
 <CardGrid>
-	<Card title="Clean Architecture" icon="puzzle">
-		Organize business logic with clean contexts. Keep your domain logic independent of web concerns.
+	<Card title="Rails-like DX" icon="puzzle">
+		Zero-config setup, ActiveRecord-style models, and one-liner features deliver 85% less boilerplate.
 	</Card>
-	<Card title="Type-Safe by Default" icon="shield">
-		Full type hints with Pydantic validation. Catch errors at development time with complete IDE support.
+	<Card title="ZenithModel" icon="database">
+		Rails-inspired database patterns: `User.where(active=True).order_by('-id').limit(10).all()`
 	</Card>
-	<Card title="SQLModel Integration" icon="database">
-		One model for everything - API validation, database tables, and documentation. No more duplication.
+	<Card title="One-liner Features" icon="rocket">
+		`app.add_auth()`, `app.add_admin()`, `app.add_api()` - complex features in single commands.
 	</Card>
-	<Card title="Production Ready" icon="rocket">
-		Built-in middleware for security, CORS, rate limiting, compression, monitoring, and health checks.
+	<Card title="Enhanced DX" icon="shield">
+		Clean dependency injection with `db=DB` instead of verbose `Depends(get_database_session)`.
 	</Card>
 </CardGrid>
 
@@ -49,16 +49,16 @@ zen server --reload
 ## Why Developers Choose Zenith
 
 <CardGrid>
-	<Card title="Developer Experience" icon="heart">
-		Modern CLI tools, hot reload, auto-documentation, and comprehensive testing utilities make development a joy.
+	<Card title="Rails-like Productivity" icon="heart">
+		Zero-config setup, ActiveRecord patterns, and automatic session management eliminate boilerplate.
 	</Card>
-	<Card title="Performance First" icon="rocket">
-		Built on Starlette with modern async patterns. Leverages Python 3.12+ features for optimal performance.
+	<Card title="Exceptional Performance" icon="rocket">
+		9,600+ req/s with Rails-like features. No performance penalty for convenience features.
 	</Card>
-	<Card title="Well Tested" icon="shield">
-		Comprehensive test suite with 446+ tests. Zero memory leaks with bounded caches and automatic cleanup.
+	<Card title="Production Ready" icon="shield">
+		631+ tests, zero memory leaks, automatic 404s, and comprehensive middleware out of the box.
 	</Card>
-	<Card title="Framework Agnostic" icon="puzzle">
-		Serve any SPA framework with one command. React, Vue, Angular, SolidJS - we've got you covered.
+	<Card title="Modern Python" icon="puzzle">
+		Python 3.12+ optimizations, full async/await, and complete type safety throughout.
 	</Card>
 </CardGrid>

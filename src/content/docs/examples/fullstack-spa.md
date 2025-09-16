@@ -461,4 +461,4 @@ This example is production-ready and includes:
 
 ---
 
-**Source**: [`examples/17-fullstack-spa.py`](https://github.com/nijaru/zenith/blob/main/examples/17-fullstack-spa.py)
+**Source**: [`examples/18-fullstack-spa.py`](https://github.com/nijaru/zenith/blob/main/examples/18-fullstack-spa.py)

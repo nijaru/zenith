@@ -18,26 +18,14 @@ Zenith combines the best ideas from modern web frameworks with Python's ecosyste
 
 ## Key Features
 
-### 🏗️ **Service Architecture**
-Organize your business logic in Services, keeping domain concerns separate from HTTP handling:
+### 🏗️ **Context System**
+Organize your business logic in contexts, keeping domain concerns separate from HTTP handling:
 
 ```python
-from zenith import Service, Inject
-
 class UserService(Service):
     async def create_user(self, data: UserCreate) -> User:
         # Business logic stays here, not in route handlers
-        user = User(**data.model_dump())
-        # Validation, saving, etc.
-        return user
-
-# Auto-injected in routes
-@app.post("/users")
-async def create_user(
-    data: UserCreate,
-    users: UserService = Inject()  # Automatic dependency injection
-):
-    return await users.create_user(data)
+        return await self.users.create(data)
 ```
 
 ### 🔒 **Type-Safe by Default**  
@@ -61,9 +49,9 @@ class User(SQLModel, table=True):
 ```
 
 ### ⚡ **Exceptional Performance**
-- **9,897 req/s** for simple endpoints
-- **9,982 req/s** for JSON responses  
-- **24.8% performance retained** with full middleware stack (127% improvement)
+- **9,557 req/s** for simple endpoints
+- **9,602 req/s** for JSON responses
+- **70% performance retained** with full middleware stack (6,694 req/s)
 - Zero memory leaks with bounded caches and comprehensive optimizations
 
 ### 🛡️ **Production Features**
@@ -97,18 +85,10 @@ Zenith is great for:
 
 Unlike other Python frameworks, Zenith provides:
 
-- **Service-Driven Architecture** - Clean business logic organization with dependency injection
-- **Request-Scoped Dependencies** - Prevents async crashes with proper resource management
-- **FastAPI Compatibility** - Use `Depends()` syntax for easy migration
-- **Enhanced File Uploads** - Starlette-compatible with convenience methods
+- **Context-Driven Architecture** - Inspired by Phoenix, Elixir's premier framework
 - **Zero-Configuration Defaults** - Production middleware enabled out-of-the-box
-- **Comprehensive Testing** - Built-in utilities for testing services and endpoints
+- **Comprehensive Testing** - Built-in utilities for testing contexts and endpoints
 - **Modern Python Features** - Leverages Python 3.12+ for optimal performance
-
-### 🚨 **Critical Production Features (v0.2.6)**
-- **Request-scoped database sessions** - No more "Future attached to loop" crashes
-- **Service auto-registration** - Automatic dependency injection for clean code
-- **Intelligent middleware** - Duplicate prevention with configurable behavior
 
 ## Ready to Get Started?
 

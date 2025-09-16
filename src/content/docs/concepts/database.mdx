@@ -369,17 +369,17 @@ async def list_users(
 ### Setup
 
 ```bash
-# Initialize migrations
-zen db init
+# Initialize migrations manually
+alembic init migrations
 
 # Create migration
-zen db migrate -m "add users table"
+alembic revision --autogenerate -m "add users table"
 
 # Apply migrations
-zen db upgrade
+alembic upgrade head
 
 # Rollback
-zen db downgrade -1
+alembic downgrade -1
 ```
 
 ### Configuration
@@ -401,13 +401,13 @@ target_metadata = SQLModel.metadata
 
 ```python
 # After model changes
-zen db migrate -m "add email field to users"
+alembic revision --autogenerate -m "add email field to users"
 
 # Review generated migration
 cat migrations/versions/xxx_add_email_field_to_users.py
 
 # Apply
-zen db upgrade
+alembic upgrade head
 ```
 
 ## Testing with Databases
