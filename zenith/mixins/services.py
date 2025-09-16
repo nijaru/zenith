@@ -31,10 +31,14 @@ class ServicesMixin:
             database_url: Database connection URL
             migrations_dir: Directory for migration files
         """
+        from zenith.core.container import set_default_database
         from zenith.db import Database, MigrationManager
 
         # Set up database connection
         self.database = Database(database_url)
+
+        # Set as default database for models to use
+        set_default_database(self.database)
 
         # Set up migrations
         self.migration_manager = MigrationManager(self.database, migrations_dir)

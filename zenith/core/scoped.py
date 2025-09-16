@@ -38,7 +38,7 @@ class RequestScoped:
             ...
     """
 
-    __slots__ = ("dependency", "_cache_key")
+    __slots__ = ("_cache_key", "dependency")
 
     def __init__(self, dependency: Callable[..., AsyncGenerator] | Callable[..., Any] | None = None):
         """
@@ -174,11 +174,11 @@ def request_scoped(dependency: Callable[..., AsyncGenerator] | Callable[..., Any
 Depends = RequestScoped
 
 __all__ = [
-    "RequestScoped",
     "DatabaseSession",
     "Depends",
-    "request_scoped",
-    "get_current_request",
-    "set_current_request",
+    "RequestScoped",
     "clear_current_request",
+    "get_current_request",
+    "request_scoped",
+    "set_current_request",
 ]

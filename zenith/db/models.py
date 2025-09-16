@@ -7,14 +7,11 @@ while maintaining SQLModel's type safety and FastAPI integration.
 
 from __future__ import annotations
 
-from typing import Any, Self, TypeVar, Generic, Union, Sequence
-from collections.abc import Awaitable
+from typing import Any, Generic, Self, TypeVar
 
-from sqlmodel import SQLModel, Session, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
-from sqlalchemy.sql import Select
-from pydantic import BaseModel
+from sqlalchemy.orm import selectinload
+from sqlmodel import SQLModel, select
 
 # Avoid circular imports by importing only when needed
 # from ..web.responses import JSONResponse  # Not needed yet
@@ -27,7 +24,7 @@ class NotFoundError(HTTPException):
         super().__init__(status_code=404, detail=detail)
 
 
-__all__ = ["ZenithModel", "QueryBuilder"]
+__all__ = ["QueryBuilder", "ZenithModel"]
 
 ModelType = TypeVar("ModelType", bound="ZenithModel")
 

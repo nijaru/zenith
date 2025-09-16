@@ -1,8 +1,81 @@
 """
 Service system for organizing business logic and domain operations.
 
-Services provide a way to organize related functionality and maintain
-clear boundaries between different areas of the application.
+Services provide a clean architecture pattern for organizing business logic
+separate from web concerns, with built-in dependency injection, event handling,
+and lifecycle management.
+
+Key Features:
+    - Clear separation of concerns between web and business logic
+    - Built-in dependency injection container
+    - Event-driven communication between services
+    - Transaction support for database operations
+    - Async initialization and shutdown lifecycle
+    - Service registry for centralized management
+
+Example Usage:
+    from zenith import Service, Inject
+
+    class UserService(Service):
+        async def initialize(self):
+            # Setup resources, connections, etc.
+            self.cache = await self.container.get("cache")
+            await super().initialize()
+
+        async def create_user(self, email: str, name: str):
+            # Business logic for user creation
+            user = User(email=email, name=name)
+            await user.save()
+
+            # Emit domain event
+            await self.emit("user.created", user)
+            return user
+
+        async def find_user(self, user_id: int):
+            # Implement caching, validation, etc.
+            user = await User.find(user_id)
+            if not user:
+                raise NotFoundError(f"User {user_id} not found")
+            return user
+
+    # Using in routes with dependency injection
+    @app.post("/users")
+    async def create_user(
+        data: UserCreate,
+        users: UserService = Inject()
+    ):
+        return await users.create_user(data.email, data.name)
+
+Service Lifecycle:
+    1. Service classes are registered with the ServiceRegistry
+    2. Services are instantiated on-demand with dependency injection
+    3. initialize() is called once per service instance
+    4. Services remain alive for application lifetime (singleton by default)
+    5. shutdown() is called during application cleanup
+
+Event System:
+    Services can communicate through events without tight coupling:
+
+    class EmailService(Service):
+        async def initialize(self):
+            # Subscribe to user events
+            self.subscribe("user.created", self.send_welcome_email)
+            await super().initialize()
+
+        async def send_welcome_email(self, user):
+            # Send email to new user
+            await self.send_email(user.email, "Welcome!")
+
+Transaction Support:
+    Services can provide transactional contexts:
+
+    class OrderService(Service):
+        async def create_order(self, items):
+            async with self.transaction():
+                order = await Order.create(items=items)
+                await self.update_inventory(items)
+                await self.emit("order.created", order)
+                return order
 """
 
 import asyncio
@@ -60,7 +133,40 @@ class EventBus:
 
 
 class Service(ABC):
-    """Base class for business services."""
+    """
+    Base class for business services.
+
+    Provides a foundation for organizing business logic with:
+    - Dependency injection container access
+    - Event-driven communication
+    - Lifecycle management (initialize/shutdown)
+    - Transaction support
+
+    Attributes:
+        container: Dependency injection container for accessing shared resources
+        events: Event bus for emitting and subscribing to domain events
+        _initialized: Flag tracking initialization state
+
+    Methods:
+        initialize(): Async initialization hook for setting up resources
+        shutdown(): Async cleanup hook for releasing resources
+        emit(event, data): Emit a domain event to all subscribers
+        subscribe(event, callback): Subscribe to domain events
+        transaction(): Context manager for database transactions
+
+    Example:
+        class PaymentService(Service):
+            async def initialize(self):
+                self.stripe = await self.container.get("stripe_client")
+                self.subscribe("order.completed", self.process_payment)
+                await super().initialize()
+
+            async def process_payment(self, order):
+                async with self.transaction():
+                    payment = await self.stripe.charge(order.total)
+                    await self.emit("payment.processed", payment)
+                    return payment
+    """
 
     __slots__ = ("_initialized", "container", "events")
 

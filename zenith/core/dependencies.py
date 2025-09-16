@@ -7,8 +7,8 @@ authentication, caching, and other services.
 
 from __future__ import annotations
 
-from typing import Annotated, Any, AsyncGenerator, Callable, TypeVar
-from collections.abc import Awaitable
+from collections.abc import AsyncGenerator, Callable
+from typing import Annotated, Any, TypeVar
 
 try:
     from fastapi import Depends
@@ -20,8 +20,9 @@ except ImportError:
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .container import get_db_session, set_current_db_session
+from .scoped import get_current_request
 
-__all__ = ["DB", "Auth", "Cache", "Inject", "Service", "Request"]
+__all__ = ["DB", "Auth", "CurrentUser", "Cache", "Inject", "Request"]
 
 T = TypeVar("T")
 
@@ -48,12 +49,15 @@ async def get_auth_user() -> Any:
     """
     Get authenticated user dependency.
 
-    This is a placeholder that will be properly implemented
-    when the auth system is integrated.
+    Returns the current authenticated user from the request context,
+    or None if no user is authenticated.
     """
-    # TODO: Implement actual authentication
-    # For now, return a mock user to avoid breaking the interface
-    return {"id": 1, "name": "Mock User", "email": "mock@example.com"}
+    from zenith.auth.dependencies import get_current_user
+
+    request = get_current_request()
+    if request:
+        return get_current_user(request)
+    return None
 
 
 async def get_cache_client() -> Any:
@@ -66,14 +70,15 @@ async def get_cache_client() -> Any:
     return {}
 
 
-async def get_current_request() -> Any:
+async def get_current_request_dependency() -> Any:
     """
-    Get current HTTP request object.
+    Get current HTTP request object from context.
 
-    This will be properly implemented with request context.
+    Returns the current request object, or None if not in request context.
     """
-    # TODO: Implement request context
-    return {}
+    from .scoped import get_current_request as get_request
+
+    return get_request()
 
 
 # Convenient dependency shortcuts (Rails-like simplicity)
@@ -84,12 +89,13 @@ DB = Depends(get_database_session)
 
 # Authentication shortcuts
 Auth = Depends(get_auth_user)
+CurrentUser = Depends(get_auth_user)  # Clearer alias for current user
 
 # Cache client shortcut
 Cache = Depends(get_cache_client)
 
 # Request object shortcut
-Request = Depends(get_current_request)
+Request = Depends(get_current_request_dependency)
 
 
 def Inject(service_type: type[T] | None = None) -> Any:
@@ -130,43 +136,8 @@ def Inject(service_type: type[T] | None = None) -> Any:
         return Depends(resolve_service)
 
 
-def Service(
-    singleton: bool = True,
-    lifecycle: str = "application"
-) -> Callable:
-    """
-    Decorator to mark a class as a service for dependency injection.
-
-    Usage:
-        @Service()
-        class UserService:
-            def __init__(self, db: AsyncSession = DB):
-                self.db = db
-
-            async def get_users(self):
-                return await User.all()
-
-        # Then inject into routes:
-        @app.get("/users")
-        async def get_users(service: UserService = Inject()):
-            return await service.get_users()
-
-    Args:
-        singleton: Whether to create a single instance (default: True)
-        lifecycle: Service lifecycle - "application", "request", or "transient"
-    """
-    def decorator(cls: type[T]) -> type[T]:
-        # Add service metadata
-        cls._zenith_service = True
-        cls._zenith_singleton = singleton
-        cls._zenith_lifecycle = lifecycle
-
-        # TODO: Register with DI container
-        # This will be implemented when we integrate with the container system
-
-        return cls
-
-    return decorator
+# Service decorator removed - use Service base class from zenith.core.service instead
+# The @Service() decorator pattern was confusing and rarely used
 
 
 # Type aliases for better documentation

@@ -250,6 +250,9 @@ class Database:
 # Import migration system
 from .migrations import MigrationManager, create_migration_manager  # noqa: E402
 
+# Import Rails-like models
+from .models import QueryBuilder, ZenithModel  # noqa: E402
+
 # Import SQLModel integration
 from .sqlmodel import (  # noqa: E402
     Field,
@@ -259,9 +262,6 @@ from .sqlmodel import (  # noqa: E402
     ZenithSQLModel,
     create_repository,
 )
-
-# Import Rails-like models
-from .models import ZenithModel, QueryBuilder  # noqa: E402
 
 # Export commonly used components
 __all__ = [

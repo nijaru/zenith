@@ -8,10 +8,10 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from zenith import Service, Zenith
+from zenith import Zenith
 from zenith.core.container import DIContainer
 from zenith.core.routing.dependencies import Inject
-from zenith.core.service import EventBus
+from zenith.core.service import Service, EventBus
 
 
 class UserService:

@@ -128,6 +128,94 @@ class RateLimitException(HTTPException):
         super().__init__(429, detail, **kwargs)
 
 
+# Domain-specific exceptions for business logic
+class DatabaseException(ZenithException):
+    """Database operation error."""
+
+    def __init__(self, message: str = "Database operation failed", cause: Exception | None = None):
+        super().__init__(message)
+        self.cause = cause
+
+
+class ServiceUnavailableException(HTTPException):
+    """503 Service Unavailable"""
+
+    def __init__(self, detail: str = "Service temporarily unavailable", retry_after: int | None = None, **kwargs):
+        headers = kwargs.get("headers", {})
+        if retry_after:
+            headers["Retry-After"] = str(retry_after)
+        kwargs["headers"] = headers
+        super().__init__(503, detail, **kwargs)
+
+
+class PaymentException(HTTPException):
+    """402 Payment Required"""
+
+    def __init__(self, detail: str = "Payment required", **kwargs):
+        super().__init__(402, detail, **kwargs)
+
+
+class ResourceLockedException(HTTPException):
+    """423 Locked - Resource is currently locked"""
+
+    def __init__(self, detail: str = "Resource is locked", **kwargs):
+        super().__init__(423, detail, **kwargs)
+
+
+class PreconditionFailedException(HTTPException):
+    """412 Precondition Failed"""
+
+    def __init__(self, detail: str = "Precondition failed", **kwargs):
+        super().__init__(412, detail, **kwargs)
+
+
+class GoneException(HTTPException):
+    """410 Gone - Resource is no longer available"""
+
+    def __init__(self, detail: str = "Resource is no longer available", **kwargs):
+        super().__init__(410, detail, **kwargs)
+
+
+class BusinessLogicException(ZenithException):
+    """
+    Exception for business rule violations.
+
+    This is not an HTTP exception - it represents domain logic failures
+    that should be handled by the service layer.
+    """
+
+    def __init__(self, message: str, code: str | None = None):
+        super().__init__(message)
+        self.code = code
+
+
+class IntegrationException(ZenithException):
+    """
+    Exception for external service integration failures.
+
+    Used when third-party APIs or external services fail.
+    """
+
+    def __init__(self, service: str, message: str, status_code: int | None = None):
+        super().__init__(f"{service}: {message}")
+        self.service = service
+        self.status_code = status_code
+
+
+class DataIntegrityException(DatabaseException):
+    """Data integrity constraint violation."""
+
+    def __init__(self, message: str = "Data integrity constraint violated"):
+        super().__init__(message)
+
+
+class ConcurrencyException(DatabaseException):
+    """Optimistic locking or concurrent update conflict."""
+
+    def __init__(self, message: str = "Concurrent update conflict"):
+        super().__init__(message)
+
+
 def exception_to_http_exception(exc: Exception) -> HTTPException:
     """
     Convert common Python exceptions to HTTP exceptions.

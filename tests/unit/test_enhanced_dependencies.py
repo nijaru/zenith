@@ -12,8 +12,8 @@ from unittest.mock import Mock, AsyncMock, patch
 
 from zenith.core.dependencies import (
     DB, Auth, Cache, Request,
-    Inject, Service,
-    get_database_session, get_auth_user, get_cache_client, get_current_request,
+    Inject,
+    get_database_session, get_auth_user, get_cache_client, get_current_request_dependency,
     DatabaseContext, ServiceContext,
     resolve_db, resolve_auth, resolve_cache,
     DatabaseSession, AuthenticatedUser, CacheClient, HttpRequest
@@ -43,7 +43,7 @@ class TestDependencyShortcuts:
     def test_request_shortcut_is_fastapi_depends(self):
         """Test Request shortcut is properly configured Depends."""
         assert hasattr(Request, 'dependency')
-        assert Request.dependency == get_current_request
+        assert Request.dependency == get_current_request_dependency
 
 
 class TestDependencyFunctions:
@@ -69,15 +69,11 @@ class TestDependencyFunctions:
         except StopAsyncIteration:
             pass
 
-    async def test_get_auth_user_mock(self):
-        """Test auth user dependency function returns mock user."""
+    async def test_get_auth_user_without_request_context(self):
+        """Test auth user dependency function returns None without request context."""
         user = await get_auth_user()
-
-        assert isinstance(user, dict)
-        assert "id" in user
-        assert "name" in user
-        assert "email" in user
-        assert user["name"] == "Mock User"
+        # Without request context, auth user is None
+        assert user is None
 
     async def test_get_cache_client_mock(self):
         """Test cache client dependency function returns mock cache."""
@@ -85,50 +81,11 @@ class TestDependencyFunctions:
 
         assert isinstance(cache, dict)  # Mock implementation returns empty dict
 
-    async def test_get_current_request_mock(self):
-        """Test current request dependency function returns mock request."""
-        request = await get_current_request()
+    async def test_get_current_request_without_context(self):
+        """Test current request dependency function returns None without context."""
+        request = await get_current_request_dependency()
 
-        assert isinstance(request, dict)  # Mock implementation returns empty dict
-
-
-class TestServiceDecorator:
-    """Test Service decorator functionality."""
-
-    def test_service_decorator_default_settings(self):
-        """Test Service decorator with default settings."""
-        @Service()
-        class TestService:
-            def __init__(self):
-                self.name = "test"
-
-        # Should add service metadata
-        assert hasattr(TestService, '_zenith_service')
-        assert TestService._zenith_service is True
-        assert TestService._zenith_singleton is True
-        assert TestService._zenith_lifecycle == "application"
-
-    def test_service_decorator_custom_settings(self):
-        """Test Service decorator with custom settings."""
-        @Service(singleton=False, lifecycle="request")
-        class TestService:
-            def __init__(self):
-                self.name = "test"
-
-        assert TestService._zenith_service is True
-        assert TestService._zenith_singleton is False
-        assert TestService._zenith_lifecycle == "request"
-
-    def test_service_decorator_returns_class(self):
-        """Test Service decorator returns the original class."""
-        @Service()
-        class TestService:
-            def test_method(self):
-                return "works"
-
-        # Should still be able to instantiate and use
-        instance = TestService()
-        assert instance.test_method() == "works"
+        assert request is None  # Without request context, returns None
 
 
 class TestInjectFunction:
@@ -154,7 +111,6 @@ class TestInjectFunction:
 
     def test_inject_service_resolution(self):
         """Test that Inject can resolve services."""
-        @Service()
         class TestService:
             def __init__(self):
                 self.value = "injected"
@@ -194,11 +150,11 @@ class TestManualResolution:
             assert session == mock_session
 
     async def test_resolve_auth(self):
-        """Test manual auth user resolution."""
+        """Test manual auth user resolution without context."""
         user = await resolve_auth()
 
-        assert isinstance(user, dict)
-        assert user["name"] == "Mock User"
+        # Without request context, auth user is None
+        assert user is None
 
     def test_resolve_cache(self):
         """Test manual cache client resolution."""
@@ -309,28 +265,7 @@ class TestDependencyIntegration:
         assert 'db' in hints
         # Note: AsyncSession hint should be preserved
 
-    def test_service_decorator_preserves_functionality(self):
-        """Test Service decorator doesn't break class functionality."""
-        @Service(singleton=True)
-        class UserService:
-            def __init__(self):
-                self.users = []
-
-            def add_user(self, name: str):
-                self.users.append(name)
-                return len(self.users)
-
-            def get_users(self):
-                return self.users
-
-        # Should work normally
-        service = UserService()
-        count = service.add_user("Alice")
-        assert count == 1
-        assert service.get_users() == ["Alice"]
-
-        # Should have service metadata
-        assert service._zenith_service is True
+    # Service decorator test removed - decorator functionality was removed from the framework
 
 
 class TestDependencyCompatibility:
