@@ -26,7 +26,7 @@ class JobStatus(str, Enum):
     RETRYING = "retrying"
 
 
-class JobQueue:
+class RedisJobQueue:
     """
     Redis-backed job queue.
 

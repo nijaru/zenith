@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .container import get_db_session, set_current_db_session
 from .scoped import get_current_request
 
-__all__ = ["DB", "Auth", "CurrentUser", "Cache", "Inject", "Request"]
+__all__ = ["Session", "Auth", "CurrentUser", "Cache", "Inject", "Request"]
 
 T = TypeVar("T")
 
@@ -33,7 +33,7 @@ async def get_database_session() -> AsyncGenerator[AsyncSession, None]:
 
     Usage:
         @app.get("/users")
-        async def get_users(db: AsyncSession = DB):
+        async def get_users(session: AsyncSession = Session):
             users = await User.all()
             return users
     """
@@ -84,9 +84,8 @@ async def get_current_request_dependency() -> Any:
 # Convenient dependency shortcuts (Rails-like simplicity)
 # These can be used directly in route parameters
 
-# Database session shortcuts - pick one style consistently
-DB = Depends(get_database_session)           # Short, familiar
-Session = Depends(get_database_session)      # Clear, concise
+# Database session dependency - the one true way
+Session = Depends(get_database_session)      # Clear, concise, conventional
 
 # Authentication shortcuts
 Auth = Depends(get_auth_user)
@@ -110,7 +109,7 @@ def Inject(service_type: type[T] | None = None) -> Any:
         async def get_posts(
             posts_service: PostService = Inject(),
             user: User = Auth,
-            db: AsyncSession = DB
+            session: AsyncSession = Session
         ):
             return await posts_service.get_recent_posts()
 

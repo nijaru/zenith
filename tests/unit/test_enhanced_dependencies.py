@@ -2,7 +2,7 @@
 Tests for enhanced dependency injection shortcuts - Rails-like DX.
 
 Tests for:
-- DB, Auth, Cache, Request shortcuts
+- Session, Auth, Cache, Request shortcuts
 - Service decorator and injection
 - Context managers for manual resolution
 """
@@ -11,7 +11,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock, patch
 
 from zenith.core.dependencies import (
-    DB, Auth, Cache, Request,
+    Session, Auth, Cache, Request,
     Inject,
     get_database_session, get_auth_user, get_cache_client, get_current_request_dependency,
     DatabaseContext, ServiceContext,
@@ -24,11 +24,11 @@ from zenith.core.container import set_current_db_session
 class TestDependencyShortcuts:
     """Test Rails-like dependency shortcuts."""
 
-    def test_db_shortcut_is_fastapi_depends(self):
-        """Test DB shortcut is properly configured Depends."""
-        # DB should be a Depends object wrapping get_database_session
-        assert hasattr(DB, 'dependency')
-        assert DB.dependency == get_database_session
+    def test_session_shortcut_is_fastapi_depends(self):
+        """Test Session shortcut is properly configured Depends."""
+        # Session should be a Depends object wrapping get_database_session
+        assert hasattr(Session, 'dependency')
+        assert Session.dependency == get_database_session
 
     def test_auth_shortcut_is_fastapi_depends(self):
         """Test Auth shortcut is properly configured Depends."""
@@ -254,15 +254,15 @@ class TestDependencyIntegration:
 
         # This should work in route definitions
         async def example_route(
-            db: AsyncSession = DB,
+            session: AsyncSession = Session,
             user = Auth,
             cache = Cache
         ):
-            return {"db": db, "user": user, "cache": cache}
+            return {"session": session, "user": user, "cache": cache}
 
         # Function should be properly annotated
         hints = get_type_hints(example_route)
-        assert 'db' in hints
+        assert 'session' in hints
         # Note: AsyncSession hint should be preserved
 
     # Service decorator test removed - decorator functionality was removed from the framework
@@ -284,7 +284,7 @@ class TestDependencyCompatibility:
             assert hasattr(old_style, 'dependency')
 
             # New style should work
-            new_style = DB
+            new_style = Session
             assert hasattr(new_style, 'dependency')
 
             # Should be equivalent

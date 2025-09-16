@@ -100,41 +100,9 @@ class RequestScoped:
             delattr(request.state, self._cache_key)
 
 
-class DatabaseSession(RequestScoped):
-    """
-    Special request-scoped dependency for database sessions.
-
-    Ensures database sessions are created in the correct async context
-    and properly cleaned up after each request.
-
-    Example:
-        from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-        from sqlalchemy.orm import sessionmaker
-
-        # This can be created at module level
-        engine = create_async_engine("postgresql+asyncpg://...")
-
-        async def get_db():
-            # This creates a new session in the current event loop
-            SessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-            async with SessionLocal() as session:
-                yield session
-
-        @app.get("/items")
-        async def get_items(db: AsyncSession = DatabaseSession(get_db)):
-            # db is properly scoped to this request's event loop
-            result = await db.execute(select(Item))
-            return result.scalars().all()
-    """
-
-    def __init__(self, session_factory: Callable[..., AsyncGenerator]):
-        """
-        Initialize database session dependency.
-
-        Args:
-            session_factory: Async generator that yields database sessions
-        """
-        super().__init__(session_factory)
+# DatabaseSession removed in favor of cleaner Session dependency
+# Use: from zenith import Session
+# Then: async def handler(session: AsyncSession = Session)
 
 
 def get_current_request() -> Request | None:
@@ -174,7 +142,6 @@ def request_scoped(dependency: Callable[..., AsyncGenerator] | Callable[..., Any
 Depends = RequestScoped
 
 __all__ = [
-    "DatabaseSession",
     "Depends",
     "RequestScoped",
     "clear_current_request",

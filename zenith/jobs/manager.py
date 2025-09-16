@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Any, TypeVar
 from uuid import uuid4
 
-from zenith.jobs.queue import JobQueue, JobStatus
+from zenith.jobs.queue import RedisJobQueue, JobStatus
 
 logger = logging.getLogger("zenith.jobs.manager")
 
@@ -41,7 +41,7 @@ class JobManager:
             redis_url: Redis connection URL for job persistence
         """
         self.redis_url = redis_url
-        self.queue = JobQueue(redis_url)
+        self.queue = RedisJobQueue(redis_url)
         self.jobs: dict[str, Callable] = {}
         self.running = False
 
