@@ -261,7 +261,7 @@ async def create_order_v2(
     product_id: int,
     quantity: int = 1,
     orders: OrderService = Inject(),
-    current_user: dict = Auth(required=False),  # Mock auth for demo
+    current_user: dict = Auth,  # Mock auth for demo
 ) -> Order:
     """Create a new order (v2)."""
     # In a real app, current_user would come from authentication
