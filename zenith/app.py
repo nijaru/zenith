@@ -52,8 +52,15 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 return
 
             # Automatically provide request-scoped database session
-            async with self.database.request_scoped_session(scope):
-                await self.app(scope, receive, send)
+            async with self.database.request_scoped_session(scope) as session:
+                # Also set in container context for ZenithModel seamless access
+                from zenith.core.container import set_current_db_session
+                set_current_db_session(session)
+                try:
+                    await self.app(scope, receive, send)
+                finally:
+                    # Clean up context
+                    set_current_db_session(None)
 
     def __init__(
         self,
@@ -629,6 +636,163 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         """
         self.app.add_shutdown_hook(func)
         return func
+
+    # 🚀 One-liner convenience methods for better DX
+    def add_auth(
+        self,
+        secret_key: str | None = None,
+        algorithm: str = "HS256",
+        expire_minutes: int = 30
+    ) -> "Zenith":
+        """
+        Add JWT authentication in one line.
+
+        Usage:
+            app.add_auth()  # Uses secret from config or env
+            app.add_auth("my-secret-key")
+        """
+        from zenith.auth import JWTManager, create_access_token
+        from zenith.middleware.auth import AuthenticationMiddleware
+
+        # Use provided secret or fallback to config
+        auth_secret = secret_key or self.config.secret_key
+        if not auth_secret:
+            raise ValueError(
+                "Secret key required for authentication. Either pass secret_key parameter "
+                "or set SECRET_KEY environment variable."
+            )
+
+        # Configure JWT manager
+        jwt_manager = JWTManager(
+            secret_key=auth_secret,
+            algorithm=algorithm,
+            access_token_expire_minutes=expire_minutes
+        )
+
+        # Add auth middleware
+        self.add_middleware(AuthenticationMiddleware)
+
+        # Add login endpoint
+        @self.post("/auth/login")
+        async def login(credentials: dict):
+            """Login endpoint - customize this for your user model."""
+            # This is a basic example - users should customize for their needs
+            username = credentials.get("username")
+            password = credentials.get("password")
+
+            # Mock authentication - replace with real user validation
+            if username and password:
+                # Create token with mock user data
+                token = jwt_manager.create_access_token(
+                    user_id=1,
+                    email=f"{username}@example.com",
+                    additional_claims={"username": username}
+                )
+                return {"access_token": token, "token_type": "bearer"}
+            else:
+                try:
+                    from fastapi import HTTPException
+                    raise HTTPException(status_code=401, detail="Invalid credentials")
+                except ImportError:
+                    # FastAPI not available, use Starlette HTTPException instead
+                    from starlette.exceptions import HTTPException
+                    raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        self.logger.info("✅ Authentication added - /auth/login endpoint available")
+        return self
+
+    def add_admin(self, route: str = "/admin") -> "Zenith":
+        """
+        Add admin interface in one line.
+
+        Usage:
+            app.add_admin()  # Mounts at /admin
+            app.add_admin("/dashboard")  # Custom route
+        """
+        # Basic admin interface - can be enhanced with proper admin framework
+        @self.get(f"{route}")
+        async def admin_dashboard():
+            """Simple admin dashboard - customize as needed."""
+            return {
+                "message": "Admin Dashboard",
+                "routes": [
+                    f"GET {route} - Dashboard",
+                    f"GET {route}/health - System health",
+                    f"GET {route}/stats - Application statistics"
+                ]
+            }
+
+        @self.get(f"{route}/health")
+        async def admin_health():
+            """Admin health check."""
+            try:
+                db_healthy = await self.app.database.health_check()
+                return {
+                    "status": "healthy" if db_healthy else "unhealthy",
+                    "database": "connected" if db_healthy else "disconnected",
+                    "version": "0.3.0"
+                }
+            except Exception as e:
+                return {
+                    "status": "unhealthy",
+                    "error": str(e),
+                    "version": "0.3.0"
+                }
+
+        @self.get(f"{route}/stats")
+        async def admin_stats():
+            """Basic application statistics."""
+            return {
+                "routes_count": len(self._app_router.routes),
+                "middleware_count": len(self.middleware),
+                "debug_mode": self.config.debug
+            }
+
+        self.logger.info(f"✅ Admin interface added at {route}")
+        return self
+
+    def add_api(
+        self,
+        title: str | None = None,
+        version: str = "1.0.0",
+        description: str | None = None,
+        docs_url: str = "/docs",
+        redoc_url: str = "/redoc"
+    ) -> "Zenith":
+        """
+        Add API documentation in one line.
+
+        Usage:
+            app.add_api()  # Default OpenAPI docs
+            app.add_api("My API", "1.2.0", "API for my app")
+        """
+        # Set API metadata
+        api_title = title or "Zenith API"
+        api_description = description or "API built with Zenith framework"
+
+        # Add OpenAPI documentation
+        self.add_docs(
+            title=api_title,
+            version=version,
+            description=api_description,
+            docs_url=docs_url,
+            redoc_url=redoc_url
+        )
+
+        # Add API info endpoint
+        @self.get("/api/info")
+        async def api_info():
+            """API information endpoint."""
+            return {
+                "title": api_title,
+                "version": version,
+                "description": api_description,
+                "docs_url": docs_url,
+                "redoc_url": redoc_url
+            }
+
+        self.logger.info(f"✅ API documentation added - {docs_url} and {redoc_url} available")
+        return self
 
     def __repr__(self) -> str:
         return f"Zenith(debug={self.config.debug})"

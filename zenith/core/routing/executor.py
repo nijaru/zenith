@@ -58,6 +58,10 @@ class RouteExecutor:
     ) -> Response:
         """Execute a route handler with full dependency injection."""
         try:
+            # Set up database session context for Rails-like DX
+            # This ensures ZenithModel can be used without explicit db=DB parameters
+            await self._setup_database_context(app)
+
             # Prepare handler arguments and track background tasks
             kwargs, background_tasks = await self._resolve_handler_args_with_bg(
                 request, route_spec.handler, app
@@ -79,6 +83,51 @@ class RouteExecutor:
         except Exception:
             # Re-raise for middleware to handle
             raise
+        finally:
+            # Clean up database session context
+            await self._cleanup_database_context()
+
+    async def _setup_database_context(self, app) -> None:
+        """Set up database session context for Rails-like DX."""
+        try:
+            # Import here to avoid circular imports
+            from ..container import set_current_db_session
+
+            # Get database session from the app's database
+            if hasattr(app, 'app') and hasattr(app.app, 'database'):
+                # Get a new session from the app's database (enter the context manager)
+                session_cm = app.app.database.session()
+                session = await session_cm.__aenter__()
+                set_current_db_session(session)
+                # Store the context manager so we can clean it up later
+                self._session_context_manager = session_cm
+            elif hasattr(app, 'database'):
+                # Alternative path for direct database access
+                session_cm = app.database.session()
+                session = await session_cm.__aenter__()
+                set_current_db_session(session)
+                # Store the context manager so we can clean it up later
+                self._session_context_manager = session_cm
+            else:
+                self._session_context_manager = None
+        except Exception:
+            # If database setup fails, don't block the request
+            # This allows routes without database access to work
+            self._session_context_manager = None
+
+    async def _cleanup_database_context(self) -> None:
+        """Clean up database session context."""
+        try:
+            from ..container import set_current_db_session
+            set_current_db_session(None)
+
+            # Clean up the session context manager
+            if hasattr(self, '_session_context_manager') and self._session_context_manager:
+                await self._session_context_manager.__aexit__(None, None, None)
+                self._session_context_manager = None
+        except Exception:
+            # Ignore cleanup errors
+            pass
 
     async def _resolve_handler_args_with_bg(
         self, request: Request, handler, app
@@ -200,6 +249,47 @@ class RouteExecutor:
                         )
                     raise ValidationException(f"Failed to parse request body: {e!s}")
                 kwargs[param_name] = param_type.model_validate(body)
+                continue
+
+            # Rails-like dict parameter for request body (simplified DX)
+            if (
+                param_type is dict
+                and request.method in _POST_METHODS
+            ):
+                # Get raw body and parse as JSON for dict parameters
+                body_bytes = await request.body()
+                try:
+                    # Use orjson if available for better performance
+                    try:
+                        import orjson
+                        body = orjson.loads(body_bytes)
+                    except ImportError:
+                        # Fallback to standard json
+                        import json
+                        try:
+                            body_str = body_bytes.decode("utf-8", errors="strict")
+                            body = json.loads(body_str)
+                        except UnicodeDecodeError as e:
+                            raise ValidationException(
+                                f"Invalid UTF-8 encoding in request body: {e!s}"
+                            )
+                except Exception as e:
+                    if (
+                        hasattr(e, "__class__")
+                        and e.__class__.__name__ == "JSONDecodeError"
+                    ):
+                        raise ValidationException(
+                            f"Invalid JSON in request body: {e!s}"
+                        )
+                    raise ValidationException(f"Failed to parse request body: {e!s}")
+
+                # Ensure body is a dict for Rails-like simplicity
+                if not isinstance(body, dict):
+                    raise ValidationException(
+                        "Request body must be a JSON object for dict parameters"
+                    )
+
+                kwargs[param_name] = body
                 continue
 
         return kwargs

@@ -1,6 +1,9 @@
 """
 💾 SQLModel Integration Example - Unified Models with Repository Pattern
 
+NOTE: This example uses the old repository pattern and needs updating for Zenith v0.3.0
+Rails-like DX improvements. See examples/16-rails-like-dx.py for the modern approach.
+
 This example demonstrates Zenith's SQLModel integration providing unified
 Pydantic + SQLAlchemy models with the repository pattern for clean data access.
 
@@ -25,7 +28,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import Field, Relationship, SQLModel
 
 from zenith import Inject, Router, Service, Zenith
-from zenith.db.sqlmodel import ZenithSQLModel, create_repository
+from zenith.db import ZenithModel
 
 # ============================================================================
 # SQLMODEL UNIFIED MODELS
@@ -41,7 +44,7 @@ class UserBase(SQLModel):
     is_active: bool = Field(default=True, description="Whether user is active")
 
 
-class User(UserBase, ZenithSQLModel, table=True):
+class User(UserBase, ZenithModel, table=True):
     """
     Database model for users.
     This single model handles both database operations AND API validation!
@@ -77,7 +80,7 @@ class PostBase(SQLModel):
     is_published: bool = Field(default=False)
 
 
-class Post(PostBase, ZenithSQLModel, table=True):
+class Post(PostBase, ZenithModel, table=True):
     """
     Database model for blog posts.
     Demonstrates relationships with SQLModel.
@@ -101,7 +104,7 @@ class PostCreate(PostBase):
     tag_ids: list[int] = []
 
 
-class Comment(ZenithSQLModel, table=True):
+class Comment(ZenithModel, table=True):
     """Comment model demonstrating multiple relationships."""
 
     __tablename__ = "comments"
@@ -117,7 +120,7 @@ class Comment(ZenithSQLModel, table=True):
     post: Post = Relationship(back_populates="comments")
 
 
-class Tag(ZenithSQLModel, table=True):
+class Tag(ZenithModel, table=True):
     """Tag model for categorizing posts."""
 
     __tablename__ = "tags"

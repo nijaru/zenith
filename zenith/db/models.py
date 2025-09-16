@@ -84,6 +84,8 @@ class QueryBuilder(Generic[ModelType]):
                 attr = getattr(self.model_class, rel)
                 # Use selectinload for better performance with async
                 self._query = self._query.options(selectinload(attr))
+                # Track included relationships
+                self._includes.append(rel)
         return self
 
     async def all(self) -> list[ModelType]:
@@ -151,14 +153,30 @@ class ZenithModel(SQLModel):
     @classmethod
     async def _get_session(cls) -> AsyncSession:
         """
-        Get the current database session.
+        Get the current database session with seamless integration.
 
-        This method should be overridden or configured to return
-        the appropriate session for your application context.
+        Automatically uses:
+        1. Request-scoped session (set by Zenith app middleware)
+        2. Manually set session context (via set_current_db_session)
+        3. Falls back to creating new session from container
+
+        This enables seamless integration with Zenith app - no manual session management needed!
         """
-        # Import here to avoid circular imports
+        # First check for current session (set by app middleware or manually)
+        from ..core.container import get_current_db_session
+        current_session = get_current_db_session()
+        if current_session is not None:
+            return current_session
+
+        # Fall back to container session
         from ..core.container import get_db_session
-        return await get_db_session()
+        session = await get_db_session()
+        if session is None:
+            raise RuntimeError(
+                "No database session available. Ensure you're using ZenithModel within a web request context, "
+                "or manually set the database session with set_current_db_session()."
+            )
+        return session
 
     @classmethod
     async def all(cls) -> list[Self]:
@@ -174,6 +192,21 @@ class ZenithModel(SQLModel):
         session = await cls._get_session()
         result = await session.execute(select(cls))
         return list(result.scalars().all())
+
+    @classmethod
+    async def first(cls) -> Self | None:
+        """
+        Get the first record of this model.
+
+        Returns:
+            First model instance or None if no records
+
+        Example:
+            user = await User.first()
+        """
+        session = await cls._get_session()
+        result = await session.execute(select(cls).limit(1))
+        return result.scalars().first()
 
     @classmethod
     async def find(cls, id: Any) -> Self | None:
@@ -230,7 +263,8 @@ class ZenithModel(SQLModel):
         Example:
             user = await User.find_by(email="alice@example.com")
         """
-        return await cls.where(**conditions).first()
+        builder = await cls.where(**conditions)
+        return await builder.first()
 
     @classmethod
     async def find_by_or_404(cls, **conditions) -> Self:
@@ -256,7 +290,7 @@ class ZenithModel(SQLModel):
         return record
 
     @classmethod
-    def where(cls, **conditions) -> QueryBuilder[Self]:
+    async def where(cls, **conditions) -> QueryBuilder[Self]:
         """
         Start a query with WHERE conditions.
 
@@ -269,12 +303,9 @@ class ZenithModel(SQLModel):
         Example:
             users = await User.where(active=True).order_by('-created_at').limit(10)
         """
-        session = cls._get_session()  # Will be awaited by QueryBuilder
-        if not isinstance(session, Awaitable):
-            raise RuntimeError("Session must be awaitable")
-
-        # Note: QueryBuilder will handle awaiting the session
-        return QueryBuilder(cls, session)
+        session = await cls._get_session()
+        builder = QueryBuilder(cls, session)
+        return builder.where(**conditions)
 
     @classmethod
     async def create(cls, **data) -> Self:
@@ -327,7 +358,8 @@ class ZenithModel(SQLModel):
         Example:
             exists = await User.exists(email="alice@example.com")
         """
-        return await cls.where(**conditions).exists()
+        builder = await cls.where(**conditions)
+        return await builder.exists()
 
     async def save(self) -> Self:
         """
@@ -409,7 +441,7 @@ class ZenithModel(SQLModel):
         exclude = exclude or set()
         return {
             field: getattr(self, field)
-            for field in self.__fields__
+            for field in self.__class__.model_fields
             if field not in exclude
         }
 
