@@ -4,6 +4,7 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	output: 'static',
 	site: 'https://nijaru.com',
 	base: '/zenith',
 	integrations: [
@@ -35,22 +36,10 @@ export default defineConfig({
 				{
 					tag: 'script',
 					attrs: {
-						'data-cfasync': 'false'
+						src: '/zenith/zenith-console.js',
+						'data-cfasync': 'false',
+						defer: true
 					},
-					content: `
-						// Zenith Framework Developer Console
-						if (typeof console !== 'undefined' && console.log) {
-							const zenithStyle = 'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 8px; border-radius: 3px; font-weight: bold;';
-							const versionStyle = 'color: #667eea; font-weight: bold;';
-							const linkStyle = 'color: #764ba2; text-decoration: underline;';
-
-							console.log('%c⚡ Zenith Framework %cv0.2.6', zenithStyle, versionStyle);
-							console.log('🚀 Modern Python web framework with clean architecture');
-							console.log('📚 Docs: %chttps://nijaru.com/zenith', linkStyle);
-							console.log('💻 GitHub: %chttps://github.com/nijaru/zenith', linkStyle);
-							console.log('📦 Install: pip install zenith-web');
-						}
-					`,
 				},
 			],
 			customCss: [
@@ -97,6 +86,8 @@ export default defineConfig({
 					items: [
 						{ label: 'Hello World', link: '/examples/hello-world' },
 						{ label: 'Basic Routing', link: '/examples/basic-routing' },
+						{ label: '✨ Modern DX', link: '/examples/modern-dx' },
+						{ label: '✨ One-Liner Features', link: '/examples/one-liner-features' },
 						{ label: 'File Upload', link: '/examples/file-upload' },
 						{ label: 'WebSocket Chat', link: '/examples/websocket-chat' },
 						{ label: 'Blog API', link: '/examples/blog-api' },

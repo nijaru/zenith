@@ -1,13 +1,13 @@
 """
-Rails-like DX Example - Showcasing v0.3.0 Developer Experience Improvements
+Modern Developer Experience Example - Showcasing v0.3.0 Improvements
 
-This example demonstrates the new Rails-inspired patterns in Zenith v0.3.0:
-- ZenithModel with ActiveRecord-style methods
+This example demonstrates the new patterns in Zenith v0.3.0:
+- ZenithModel with intuitive query methods
 - Enhanced dependency injection shortcuts
 - Zero-configuration auto-setup
 - Dramatically reduced boilerplate
 
-Compare this to traditional FastAPI + SQLAlchemy to see the DX improvements.
+Shows the improved developer experience with clean, declarative code.
 """
 
 import os
@@ -19,11 +19,12 @@ from sqlmodel import Field
 # Zenith v0.3.0 imports - much cleaner!
 from zenith import Zenith
 from zenith import Session
-from zenith.core import Auth, is_development
+from zenith import Auth
+from zenith.core import is_development
 from zenith.db import ZenithModel
 
 # Set up a test database for the example
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///rails_dx_example.db")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///modern_dx_example.db")
 
 # 🚀 Zero-config application setup
 # This automatically detects environment and configures:
@@ -34,9 +35,9 @@ os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///rails_dx_example.db")
 app = Zenith()
 
 
-# 📋 Rails-like Models with ZenithModel
+# 📋 Modern Models with ZenithModel
 class User(ZenithModel, table=True):
-    """User model with Rails-like convenience methods."""
+    """User model with Modern convenience methods."""
 
     id: Optional[int] = Field(primary_key=True)
     name: str = Field(max_length=100)
@@ -62,17 +63,17 @@ class Post(ZenithModel, table=True):
 async def home():
     """Homepage showing framework info."""
     return {
-        "message": "Rails-like DX Example",
+        "message": "Modern DX Example",
         "framework": "Zenith v0.3.0",
         "features": [
             "Zero-config setup",
-            "Rails-like models",
+            "Modern models",
             "Enhanced dependency injection",
             "85% less boilerplate"
         ],
         "environment": "development" if is_development() else "production",
         "endpoints": [
-            "GET /users - List users with Rails-like queries",
+            "GET /users - List users with Modern queries",
             "POST /users - Create user",
             "GET /users/{id} - Get user (with 404 handling)",
             "GET /posts - List published posts",
@@ -84,14 +85,14 @@ async def home():
 @app.get("/users")
 async def list_users(session=Session):
     """
-    List users with Rails-like query methods.
+    List users with Modern query methods.
 
     Notice how clean this is compared to raw SQLAlchemy:
     - No session management boilerplate
     - Readable query methods
     - Automatic async handling
     """
-    # Rails-style: User.where(active=True).order_by('-created_at').limit(10)
+    # Clean query syntax: User.where(active=True).order_by('-created_at').limit(10)
     query = await User.where(active=True)
     users = await query.order_by('-created_at').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
@@ -100,14 +101,14 @@ async def list_users(session=Session):
 @app.post("/users")
 async def create_user(user_data: dict, session=Session):
     """
-    Create a user with Rails-like convenience.
+    Create a user with Modern convenience.
 
-    Compare to traditional FastAPI:
+    Compare to verbose alternatives:
     - No manual session management
     - Clean creation syntax
     - Automatic validation
     """
-    # Rails-style: User.create(name="Alice", email="alice@example.com")
+    # Clean: User.create(name="Alice", email="alice@example.com")
     user = await User.create(**user_data)
     return {"user": user.to_dict(), "message": "User created successfully"}
 
@@ -120,7 +121,7 @@ async def get_user(user_id: int, session=Session):
     The find_or_404 method automatically raises a proper HTTP 404
     if the user doesn't exist - no manual checking needed!
     """
-    # Rails-style: User.find_or_404(123) - raises 404 if not found
+    # Clean: User.find_or_404(123) - raises 404 if not found
     user = await User.find_or_404(user_id)
     return {"user": user.to_dict()}
 
@@ -133,7 +134,7 @@ async def list_posts(published: bool = True, session=Session):
     Shows chainable query methods for complex queries.
     """
     if published:
-        # Rails-style chaining: Post.where(published=True).order_by('-created_at')
+        # Clean chaining: Post.where(published=True).order_by('-created_at')
         query = await Post.where(published=True)
         posts = await query.order_by('-created_at').all()
     else:
@@ -164,7 +165,7 @@ async def create_post(post_data: dict, session=Session):
     # Add user_id to post data
     post_data["user_id"] = user.id
 
-    # Rails-style creation
+    # Clean creation
     post = await Post.create(**post_data)
     return {"post": post.to_dict(), "message": "Post created successfully"}
 
@@ -172,11 +173,11 @@ async def create_post(post_data: dict, session=Session):
 @app.get("/stats")
 async def get_stats(session=Session):
     """
-    Get database statistics using Rails-like count methods.
+    Get database statistics using Modern count methods.
 
     Shows how clean aggregate queries can be.
     """
-    # Rails-style: User.count(), Post.where(published=True).count()
+    # Clean: User.count(), Post.where(published=True).count()
     total_users = await User.count()
     active_query = await User.where(active=True)
     active_users = await active_query.count()
@@ -210,16 +211,16 @@ async def setup_database():
     await db.create_all()
 
     print("✅ Database tables created successfully")
-    print("🎯 Rails-like DX patterns are ready to use!")
+    print("🎯 Modern DX patterns are ready to use!")
     print("📝 Try the endpoints to see ZenithModel in action")
 
 
 if __name__ == "__main__":
-    print("🚀 Starting Rails-like DX Example")
+    print("🚀 Starting Modern DX Example")
     print("📍 Server will start at: http://localhost:8016")
     print("🔗 Try these endpoints:")
     print("   GET /           - Framework info and available endpoints")
-    print("   GET /users      - List active users (Rails-style queries)")
+    print("   GET /users      - List active users (Clean queries)")
     print("   POST /users     - Create user (JSON: {\"name\": \"...\", \"email\": \"...\"})")
     print("   GET /users/1    - Get specific user (with 404 handling)")
     print("   GET /posts      - List published posts")
@@ -229,10 +230,10 @@ if __name__ == "__main__":
     print()
     print("🎨 DX Improvements showcased:")
     print("   ✨ Zero-config setup - app = Zenith() just works")
-    print("   ✨ Rails-like models - User.where(active=True).limit(10)")
+    print("   ✨ Modern models - User.where(active=True).limit(10)")
     print("   ✨ Enhanced DI - session=Session instead of verbose Depends()")
     print("   ✨ Automatic 404s - User.find_or_404(id)")
-    print("   ✨ 85% less boilerplate than traditional FastAPI")
+    print("   ✨ 85% less boilerplate than verbose alternatives")
 
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8016)

@@ -7,7 +7,7 @@ web requests without any manual session management required.
 Key features:
 - ZenithModel automatically uses request-scoped database sessions
 - No manual set_current_db_session() calls needed in route handlers
-- Seamless Rails-like experience with zero boilerplate
+- Seamless Modern experience with zero boilerplate
 """
 
 import os
@@ -60,7 +60,7 @@ async def home():
         "features": [
             "ZenithModel automatically uses app's request-scoped sessions",
             "No manual session management in route handlers",
-            "Rails-like convenience with zero boilerplate"
+            "Modern convenience with zero boilerplate"
         ],
         "try_these": [
             "GET /users - List all users (seamless database access)",
@@ -129,7 +129,7 @@ async def list_posts():
 @app.get("/stats")
 async def get_stats():
     """
-    Database statistics using seamless Rails-like methods.
+    Database statistics using seamless Modern methods.
     All database operations just work without session management.
     """
     # Multiple database operations in one request - all seamless!
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     print("✨ Key Benefits Demonstrated:")
     print("   🔗 ZenithModel automatically uses app's database sessions")
     print("   🚫 NO manual session management in route handlers")
-    print("   🎯 Rails-like convenience with zero boilerplate")
+    print("   🎯 Modern convenience with zero boilerplate")
     print("   ⚡ Request-scoped session reuse for better performance")
     print()
     print("🔗 Try these endpoints:")

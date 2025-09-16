@@ -15,7 +15,8 @@ from unittest.mock import patch
 
 from zenith import Zenith
 from zenith import Session
-from zenith.core import Auth, Cache, is_development
+from zenith import Auth
+from zenith.core import is_development
 from zenith.core.auto_config import Environment
 from zenith.db import ZenithModel
 from zenith.testing import TestClient

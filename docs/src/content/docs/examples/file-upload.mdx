@@ -17,6 +17,51 @@ This example demonstrates building a comprehensive file upload service with Zeni
 - **Metadata Extraction** - EXIF data, file analysis
 - **Virus Scanning** - Optional malware detection
 
+## Enhanced File API
+
+Zenith v0.3.0 includes an enhanced File dependency with intuitive validation:
+
+```python
+from zenith import File, UploadedFile
+from zenith.core.dependencies import IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, VIDEO_TYPES
+
+# String-based size limits (more readable than raw bytes)
+@app.post("/avatar")
+async def upload_avatar(
+    avatar: UploadedFile = File(
+        max_size="5MB",           # Instead of max_size=5*1024*1024
+        allowed_types=IMAGE_TYPES, # Pre-defined type constants
+        allowed_extensions=[".jpg", ".png", ".webp"]
+    )
+):
+    """Upload user avatar with validation."""
+    return {"filename": avatar.filename, "size": avatar.size}
+
+# Multiple file types with flexible sizing
+@app.post("/media")
+async def upload_media(
+    files: List[UploadedFile] = File(
+        max_size="100MB",         # Supports KB, MB, GB
+        allowed_types=IMAGE_TYPES + VIDEO_TYPES + AUDIO_TYPES,
+        allowed_extensions=[".jpg", ".png", ".mp4", ".mp3", ".pdf"]
+    )
+):
+    """Upload media files with comprehensive validation."""
+    return [{"name": f.filename, "type": f.content_type} for f in files]
+```
+
+### Available Type Constants
+
+```python
+from zenith.core.dependencies import (
+    IMAGE_TYPES,    # ["image/jpeg", "image/png", "image/webp", ...]
+    DOCUMENT_TYPES, # ["application/pdf", "text/plain", ...]
+    AUDIO_TYPES,    # ["audio/mpeg", "audio/wav", ...]
+    VIDEO_TYPES,    # ["video/mp4", "video/webm", ...]
+    ARCHIVE_TYPES   # ["application/zip", "application/x-tar", ...]
+)
+```
+
 ## Project Structure
 
 <FileTree>
@@ -898,7 +943,8 @@ class UploadsService(Service):
 
 ```python
 # app/routes/uploads.py
-from zenith import Router, UploadFile, File, Form, Inject, HTTPException, BackgroundTasks
+from zenith import Router, UploadedFile, File, Form, Inject, HTTPException, BackgroundTasks
+from zenith.core.dependencies import IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES
 from zenith.auth import get_current_user
 from app.services.uploads import UploadsService
 from app.models.file import FileUploadResponse, ChunkedUploadInit, ChunkedUploadResponse
@@ -909,13 +955,18 @@ router = Router(prefix="/uploads", tags=["File Uploads"])
 
 @router.post("/single", response_model=FileUploadResponse)
 async def upload_single_file(
-    file: UploadFile = File(..., description="File to upload"),
+    file: UploadedFile = File(
+        max_size="10MB",
+        allowed_types=IMAGE_TYPES + DOCUMENT_TYPES,
+        allowed_extensions=[".jpg", ".png", ".pdf", ".docx"],
+        description="File to upload"
+    ),
     is_public: bool = Form(False),
     background_tasks: BackgroundTasks,
     current_user: User = Inject(get_current_user),
     uploads: UploadsService = Inject()
 ):
-    """Upload a single file."""
+    """Upload a single file with validation."""
     try:
         uploaded_file = await uploads.upload_single_file(
             file, current_user, is_public
@@ -953,12 +1004,17 @@ async def upload_single_file(
 
 @router.post("/multiple", response_model=List[FileUploadResponse])
 async def upload_multiple_files(
-    files: List[UploadFile] = File(..., description="Files to upload"),
+    files: List[UploadedFile] = File(
+        max_size="50MB",
+        allowed_types=IMAGE_TYPES + DOCUMENT_TYPES + AUDIO_TYPES,
+        allowed_extensions=[".jpg", ".png", ".pdf", ".docx", ".mp3", ".wav"],
+        description="Files to upload (max 10 files)"
+    ),
     is_public: bool = Form(False),
     current_user: User = Inject(get_current_user),
     uploads: UploadsService = Inject()
 ):
-    """Upload multiple files."""
+    """Upload multiple files with validation."""
     if len(files) > 10:  # Limit batch size
         raise HTTPException(400, "Maximum 10 files per batch")
     

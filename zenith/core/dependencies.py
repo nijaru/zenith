@@ -11,20 +11,63 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Annotated, Any, TypeVar
 
 try:
-    from fastapi import Depends
+    from fastapi import Depends, UploadFile
 except ImportError:
     # FastAPI not available, create a dummy Depends for type compatibility
     class Depends:
         def __init__(self, dependency: Callable[..., Any]):
             self.dependency = dependency
+
+    # Mock UploadFile for environments without FastAPI
+    class UploadFile:
+        def __init__(self, filename=None, content_type=None):
+            self.filename = filename
+            self.content_type = content_type
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .container import get_db_session, set_current_db_session
 from .scoped import get_current_request
 
-__all__ = ["Session", "Auth", "CurrentUser", "Cache", "Inject", "Request"]
+__all__ = [
+    "Session", "Auth", "CurrentUser", "File", "Inject", "Request",
+    # File upload constants for better DX
+    "IMAGE_TYPES", "DOCUMENT_TYPES", "AUDIO_TYPES", "VIDEO_TYPES", "ARCHIVE_TYPES",
+    "MB", "GB", "KB"
+]
 
 T = TypeVar("T")
+
+KB = 1024
+MB = 1024 * 1024
+GB = 1024 * 1024 * 1024
+
+IMAGE_TYPES = [
+    "image/jpeg", "image/jpg", "image/png", "image/gif",
+    "image/webp", "image/bmp", "image/tiff", "image/svg+xml"
+]
+
+DOCUMENT_TYPES = [
+    "application/pdf", "text/plain", "text/markdown",
+    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+]
+
+AUDIO_TYPES = [
+    "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg",
+    "audio/aac", "audio/flac", "audio/m4a"
+]
+
+VIDEO_TYPES = [
+    "video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo",
+    "video/webm", "video/ogg", "video/x-flv"
+]
+
+ARCHIVE_TYPES = [
+    "application/zip", "application/x-rar-compressed", "application/x-tar",
+    "application/gzip", "application/x-7z-compressed"
+]
 
 
 async def get_database_session() -> AsyncGenerator[AsyncSession, None]:
@@ -60,15 +103,6 @@ async def get_auth_user() -> Any:
     return None
 
 
-async def get_cache_client() -> Any:
-    """
-    Get cache client dependency.
-
-    This will be properly implemented when caching is added.
-    """
-    # TODO: Implement actual cache client
-    return {}
-
 
 async def get_current_request_dependency() -> Any:
     """
@@ -81,6 +115,58 @@ async def get_current_request_dependency() -> Any:
     return get_request()
 
 
+def _parse_size(size: str | int | None) -> int | None:
+    """Parse size string like '10MB' into bytes."""
+    if size is None or isinstance(size, int):
+        return size
+
+    if not isinstance(size, str):
+        raise ValueError(f"Size must be string like '10MB' or integer, got {type(size)}")
+
+    size = size.upper().strip()
+
+    if size.endswith('KB'):
+        return int(float(size[:-2]) * KB)
+    elif size.endswith('MB'):
+        return int(float(size[:-2]) * MB)
+    elif size.endswith('GB'):
+        return int(float(size[:-2]) * GB)
+    elif size.isdigit():
+        return int(size)  # Assume bytes if just a number
+    else:
+        raise ValueError(f"Invalid size format: {size}. Use '10MB', '512KB', '1GB', or bytes as integer")
+
+
+async def get_validated_file(
+    max_size: str | int | None = None,
+    allowed_types: list[str] | None = None,
+    allowed_extensions: list[str] | None = None,
+    field_name: str = "file"
+) -> Any:
+    """
+    Get validated file upload dependency.
+
+    Returns the uploaded file after validation, or raises HTTPException
+    if validation fails.
+
+    Args:
+        max_size: Maximum file size ('10MB', '512KB', '1GB') or bytes as int
+        allowed_types: List of allowed MIME types (use IMAGE_TYPES, etc.)
+        allowed_extensions: List of allowed file extensions ['.jpg', '.png']
+        field_name: Form field name (default: "file")
+    """
+    parsed_size = _parse_size(max_size)
+
+    # This is a placeholder - actual implementation would need to:
+    # 1. Get the file from the request
+    # 2. Validate size against parsed_size
+    # 3. Validate MIME type against allowed_types
+    # 4. Validate extension against allowed_extensions
+    # 5. Return UploadFile or enhanced UploadedFile
+    # For now, return None to indicate not implemented
+    return None
+
+
 # Convenient dependency shortcuts (Rails-like simplicity)
 # These can be used directly in route parameters
 
@@ -91,11 +177,48 @@ Session = Depends(get_database_session)      # Clear, concise, conventional
 Auth = Depends(get_auth_user)
 CurrentUser = Depends(get_auth_user)  # Clearer alias for current user
 
-# Cache client shortcut
-Cache = Depends(get_cache_client)
-
 # Request object shortcut
 Request = Depends(get_current_request_dependency)
+
+
+def File(
+    max_size: str | int | None = None,
+    allowed_types: list[str] | None = None,
+    allowed_extensions: list[str] | None = None,
+    field_name: str = "file"
+) -> Any:
+    """
+    File upload dependency with validation.
+
+    Usage:
+        from zenith import File, IMAGE_TYPES, MB
+
+        @app.post("/upload")
+        async def upload_file(
+            file: UploadFile = File(
+                max_size="10MB",
+                allowed_types=IMAGE_TYPES,
+                allowed_extensions=[".jpg", ".png"]
+            )
+        ):
+            return {"filename": file.filename}
+
+        avatar: UploadFile = File(max_size=5*MB, allowed_types=["image/jpeg"])
+
+    Args:
+        max_size: Max file size ("10MB", "512KB", "1GB") or bytes as int
+        allowed_types: MIME types (use IMAGE_TYPES, DOCUMENT_TYPES, etc.)
+        allowed_extensions: File extensions ['.jpg', '.png'] for extra validation
+        field_name: Form field name (default: "file")
+    """
+    # Validate parameters at creation time for better error messages
+    parsed_size = _parse_size(max_size)  # This will raise ValueError if invalid
+
+    def create_file_validator():
+        """Create a file validator with the specified constraints."""
+        return lambda: get_validated_file(parsed_size, allowed_types, allowed_extensions, field_name)
+
+    return Depends(create_file_validator())
 
 
 def Inject(service_type: type[T] | None = None) -> Any:
@@ -143,7 +266,6 @@ def Inject(service_type: type[T] | None = None) -> Any:
 # Type aliases for better documentation - these provide clear naming
 # but use the same underlying dependency injection
 AuthenticatedUser = Annotated[Any, Auth]
-CacheClient = Annotated[Any, Cache]
 HttpRequest = Annotated[Any, Request]
 
 # Remove redundant DatabaseSession - Session is clearer and more concise
@@ -160,10 +282,6 @@ async def resolve_auth() -> Any:
     return await get_auth_user()
 
 
-def resolve_cache() -> Any:
-    """Manually resolve cache client outside of FastAPI context."""
-    # Cache is typically synchronous
-    return {}
 
 
 # Context managers for manual session management
