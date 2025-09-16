@@ -58,6 +58,9 @@ class RouteExecutor:
     ) -> Response:
         """Execute a route handler with full dependency injection."""
         try:
+            # Set up request context for dependency injection
+            await self._setup_request_context(request)
+
             # Set up database session context for Rails-like DX
             # This ensures ZenithModel can be used without explicit db=DB parameters
             await self._setup_database_context(app)
@@ -84,8 +87,9 @@ class RouteExecutor:
             # Re-raise for middleware to handle
             raise
         finally:
-            # Clean up database session context
+            # Clean up contexts
             await self._cleanup_database_context()
+            await self._cleanup_request_context()
 
     async def _setup_database_context(self, app) -> None:
         """Set up database session context for Rails-like DX."""
@@ -114,6 +118,24 @@ class RouteExecutor:
             # If database setup fails, don't block the request
             # This allows routes without database access to work
             self._session_context_manager = None
+
+    async def _setup_request_context(self, request: Request) -> None:
+        """Set up request context for dependency injection."""
+        try:
+            from ..scoped import set_current_request
+            set_current_request(request)
+        except Exception:
+            # Don't block if request context setup fails
+            pass
+
+    async def _cleanup_request_context(self) -> None:
+        """Clean up request context."""
+        try:
+            from ..scoped import clear_current_request
+            clear_current_request()
+        except Exception:
+            # Don't block if cleanup fails
+            pass
 
     async def _cleanup_database_context(self) -> None:
         """Clean up database session context."""

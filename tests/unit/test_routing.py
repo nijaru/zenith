@@ -9,14 +9,11 @@ from pydantic import BaseModel
 
 from zenith import Zenith
 from zenith.auth import configure_auth
-from zenith.core.routing import (
+from zenith.core.routing import Router
+from zenith.core.routing.dependencies import (
     Auth,
-    AuthDependency,
     File,
-    FileDependency,
     Inject,
-    InjectDependency,
-    Router,
 )
 from zenith.testing import TestClient
 
@@ -97,11 +94,11 @@ class TestRouter:
         """Test dependency injection markers."""
         # Context dependency
         ctx_dep = Inject()
-        assert isinstance(ctx_dep, InjectDependency)
+        assert hasattr(ctx_dep, 'service_class')  # Check it has the expected attribute
 
         # Auth dependency
         auth_dep = Auth()
-        assert isinstance(auth_dep, AuthDependency)
+        assert hasattr(auth_dep, 'required')  # Check it has auth attributes
         assert auth_dep.required
         assert auth_dep.scopes == []
 
@@ -111,7 +108,7 @@ class TestRouter:
 
         # File dependency
         file_dep = File("upload")
-        assert isinstance(file_dep, FileDependency)
+        assert hasattr(file_dep, 'field_name')  # Check it has file attributes
         assert file_dep.field_name == "upload"
 
 

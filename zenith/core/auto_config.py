@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-__all__ = ["Environment", "AutoConfig", "detect_environment", "create_auto_config"]
+__all__ = ["AutoConfig", "Environment", "create_auto_config", "detect_environment"]
 
 
 class Environment(str, Enum):
@@ -186,16 +186,7 @@ class MiddlewareConfig(BaseModel):
     @classmethod
     def from_environment(cls, env: Environment) -> MiddlewareConfig:
         """Create middleware config based on environment."""
-        if env == Environment.PRODUCTION:
-            return cls(
-                enable_cors=True,
-                enable_security_headers=True,
-                enable_compression=True,
-                enable_rate_limiting=True,
-                enable_request_logging=True,
-                enable_debug_toolbar=False
-            )
-        elif env == Environment.STAGING:
+        if env == Environment.PRODUCTION or env == Environment.STAGING:
             return cls(
                 enable_cors=True,
                 enable_security_headers=True,

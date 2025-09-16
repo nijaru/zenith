@@ -8,8 +8,8 @@ import asyncio
 import inspect
 from collections.abc import Callable
 from contextlib import asynccontextmanager
-from typing import Any, TypeVar
 from contextvars import ContextVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -21,6 +21,9 @@ try:
 except ImportError:
     _current_db_session = None
     _HAS_SQLALCHEMY = False
+
+# Global registry for the default database instance
+_default_database = None
 
 
 class DIContainer:
@@ -235,7 +238,6 @@ async def get_db_session():
     # or available through some other mechanism
     try:
         # Import here to avoid circular imports
-        from ..db import Database
 
         # Try to get database from container or global state
         # This is a fallback for cases where models are used outside web requests
@@ -259,10 +261,62 @@ def _get_default_database():
     is available in the context. Applications can override this
     behavior by setting up proper session management.
     """
-    # This would typically be set up during application initialization
-    # For now, we'll raise an error with helpful guidance
+    global _default_database
+
+    if _default_database is not None:
+        return _default_database
+
+    # Try to import and get from the app's database attribute
+    try:
+        # This is a common pattern where the app has a database attribute
+        import sys
+        for module in sys.modules.values():
+            if hasattr(module, 'app') and hasattr(module.app, 'database'):
+                _default_database = module.app.database
+                return _default_database
+    except Exception:
+        pass
+
     raise RuntimeError(
         "No database session available. "
         "Ensure you're using ZenithModel within a web request context, "
         "or manually set the database session with set_current_db_session()."
     )
+
+
+def set_default_database(database) -> None:
+    """
+    Set the default database instance.
+
+    This should be called during application initialization to set
+    the default database for models to use when no session is available
+    in the context.
+
+    Args:
+        database: The Database instance to use as default
+    """
+    global _default_database
+    _default_database = database
+
+
+def clear_default_database() -> None:
+    """Clear the default database instance."""
+    global _default_database
+    _default_database = None
+
+
+async def create_database_session():
+    """
+    Create a new database session using the default database.
+
+    This is a convenience function for creating sessions outside
+    of the web request context.
+
+    Returns:
+        AsyncSession: A new database session
+
+    Raises:
+        RuntimeError: If no default database is configured
+    """
+    db = _get_default_database()
+    return await db.session().__aenter__()

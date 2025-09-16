@@ -5,8 +5,9 @@ Solves the critical event loop binding issue with async SQLAlchemy engines.
 """
 
 import asyncio
+from collections.abc import AsyncGenerator
 from contextvars import ContextVar
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 from weakref import WeakKeyDictionary
 
 from sqlalchemy.ext.asyncio import (
@@ -15,7 +16,6 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-
 
 # Context variable to store engine per event loop
 _engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
@@ -118,7 +118,7 @@ class AsyncEngineManager:
 
 
 # Global engine manager instance
-_engine_manager: Optional[AsyncEngineManager] = None
+_engine_manager: AsyncEngineManager | None = None
 
 
 def init_async_engine(database_url: str, **engine_kwargs) -> AsyncEngineManager:

@@ -651,7 +651,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             app.add_auth()  # Uses secret from config or env
             app.add_auth("my-secret-key")
         """
-        from zenith.auth import JWTManager, create_access_token
+        from zenith.auth import JWTManager
         from zenith.middleware.auth import AuthenticationMiddleware
 
         # Use provided secret or fallback to config
