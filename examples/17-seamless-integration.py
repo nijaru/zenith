@@ -1,11 +1,11 @@
 """
-Seamless Integration Example - ZenithModel + Zenith App Integration
+Seamless Integration Example - Enhanced Model + Zenith App Integration
 
-This example demonstrates that ZenithModel works seamlessly within Zenith app
+This example demonstrates that the enhanced Model works seamlessly within Zenith app
 web requests without any manual session management required.
 
 Key features:
-- ZenithModel automatically uses request-scoped database sessions
+- Enhanced Model automatically uses request-scoped database sessions
 - No manual set_current_db_session() calls needed in route handlers
 - Seamless Modern experience with zero boilerplate
 """
@@ -18,7 +18,7 @@ from sqlmodel import Field
 
 from zenith import Zenith
 from zenith import Session
-from zenith.db import ZenithModel
+from zenith.db import Model
 
 # Set up environment
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///seamless_integration.db")
@@ -28,7 +28,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only")
 app = Zenith()
 
 # 📋 Define models - they'll automatically work with app's database sessions
-class User(ZenithModel, table=True):
+class User(Model, table=True):
     """User model with seamless database integration."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -38,7 +38,7 @@ class User(ZenithModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
 
-class Post(ZenithModel, table=True):
+class Post(Model, table=True):
     """Post model with seamless database integration."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -49,16 +49,16 @@ class Post(ZenithModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
 
-# 🎯 Routes that demonstrate seamless ZenithModel integration
+# 🎯 Routes that demonstrate seamless Model integration
 # Notice: NO manual session management needed!
 
 @app.get("/")
 async def home():
     """Homepage showing seamless integration capabilities."""
     return {
-        "message": "Seamless ZenithModel Integration Demo",
+        "message": "Seamless Model Integration Demo",
         "features": [
-            "ZenithModel automatically uses app's request-scoped sessions",
+            "Enhanced Model automatically uses app's request-scoped sessions",
             "No manual session management in route handlers",
             "Modern convenience with zero boilerplate"
         ],
@@ -75,10 +75,10 @@ async def home():
 @app.get("/users")
 async def list_users():
     """
-    List users - ZenithModel seamlessly uses app's database session.
+    List users - Enhanced Model seamlessly uses app's database session.
     No manual session management required!
     """
-    # This just works! ZenithModel automatically uses the request-scoped session
+    # This just works! Enhanced Model automatically uses the request-scoped session
     users = await User.where(active=True).order_by('-created_at').all()
     return {"users": [user.to_dict() for user in users]}
 
@@ -162,7 +162,7 @@ async def setup_database():
     await db.create_all()
 
     print("✅ Database setup complete")
-    print("🎯 ZenithModel seamless integration ready!")
+    print("🎯 Enhanced Model seamless integration ready!")
 
 
 if __name__ == "__main__":
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     print("📍 Server will start at: http://localhost:8018")
     print()
     print("✨ Key Benefits Demonstrated:")
-    print("   🔗 ZenithModel automatically uses app's database sessions")
+    print("   🔗 Enhanced Model automatically uses app's database sessions")
     print("   🚫 NO manual session management in route handlers")
     print("   🎯 Modern convenience with zero boilerplate")
     print("   ⚡ Request-scoped session reuse for better performance")
