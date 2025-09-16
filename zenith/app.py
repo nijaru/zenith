@@ -31,8 +31,15 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
     - Rails-style conventions and tooling
     - Automatic database performance optimizations
 
+    Args:
+        testing: Enable testing mode to disable rate limiting and strict CORS.
+                Also enabled by ZENITH_TESTING environment variable.
+
     Example:
         app = Zenith()
+
+        # For testing
+        app = Zenith(testing=True)
 
         @app.get("/items/{id}")
         async def get_item(id: int, items: ItemsContext = Inject()) -> dict:
@@ -72,6 +79,8 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         title: str | None = None,
         version: str = "1.0.0",
         description: str | None = None,
+        # Testing mode to disable problematic middleware for test suites
+        testing: bool = False,
     ):
         # Apply performance optimizations if enabled
         if enable_optimizations:
@@ -93,6 +102,12 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # Set up logger
         self.logger = logging.getLogger("zenith.application")
+
+        # Determine testing mode from parameter or environment variable
+        import os
+        self.testing = testing or os.getenv('ZENITH_TESTING', '').lower() in ('true', '1', 'yes')
+        if self.testing:
+            self.logger.info("🧪 Testing mode enabled - rate limiting and strict CORS disabled")
 
         if debug is not None:
             self.config._debug_explicitly_set = True
@@ -158,13 +173,14 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # 4. Security headers (fast header additions)
         self.add_middleware(SecurityHeadersMiddleware)
 
-        # 5. Rate limiting (fast memory/Redis operations)
-        from zenith.middleware.rate_limit import RateLimit
+        # 5. Rate limiting (fast memory/Redis operations) - Skip in testing mode
+        if not self.testing:
+            from zenith.middleware.rate_limit import RateLimit
 
-        self.add_middleware(
-            RateLimitMiddleware,
-            default_limits=[RateLimit(requests=100, window=60, per="ip")],
-        )
+            self.add_middleware(
+                RateLimitMiddleware,
+                default_limits=[RateLimit(requests=100, window=60, per="ip")],
+            )
 
         # 6. Minimal logging
         if self.config.debug:
