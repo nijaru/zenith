@@ -17,6 +17,17 @@ from zenith.__version__ import __version__
 
 __author__ = "Nick"
 
+# Python version compatibility check
+import sys
+if sys.version_info >= (3, 13):
+    import warnings
+    warnings.warn(
+        "Zenith currently supports Python 3.12. Python 3.13 support will be added "
+        "when the dependency ecosystem stabilizes. Please use Python 3.12 for now.",
+        UserWarning,
+        stacklevel=2
+    )
+
 # ============================================================================
 # MAIN FRAMEWORK
 # ============================================================================
