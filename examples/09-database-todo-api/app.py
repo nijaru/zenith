@@ -26,7 +26,7 @@ from zenith.auth import (
     hash_password,
     verify_password,
 )
-from zenith.db import Field, SQLModel, ZenithSQLModel
+from zenith.db import Field, Model, SQLModel
 
 # ============================================================================
 # DATABASE SETUP
@@ -92,7 +92,7 @@ class TodoBase(SQLModel):
 
 
 # Database models (for table creation)
-class User(UserBase, ZenithSQLModel, table=True):
+class User(UserBase, Model, table=True):
     """User database model."""
 
     __tablename__ = "users"
@@ -104,7 +104,7 @@ class User(UserBase, ZenithSQLModel, table=True):
     )
 
 
-class Todo(TodoBase, ZenithSQLModel, table=True):
+class Todo(TodoBase, Model, table=True):
     """Todo database model."""
 
     __tablename__ = "todos"
