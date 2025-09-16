@@ -17,7 +17,7 @@ from typing import Optional
 from sqlmodel import Field
 
 from zenith import Zenith
-from zenith.core import DB
+from zenith import Session
 from zenith.db import ZenithModel
 
 # Set up environment
