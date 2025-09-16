@@ -28,6 +28,7 @@ from zenith.core.config import Config
 # Rails-like dependency shortcuts - these are pre-configured Depends objects
 from zenith.core.dependencies import (
     DB,  # Database session shortcut
+    DatabaseSession,  # Same as DB, addresses WealthScope naming conflict feedback
     CurrentUser,  # Current authenticated user
     Cache,  # Cache client shortcut
     Request,  # Request object shortcut

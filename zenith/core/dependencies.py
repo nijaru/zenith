@@ -140,11 +140,15 @@ def Inject(service_type: type[T] | None = None) -> Any:
 # The @Service() decorator pattern was confusing and rarely used
 
 
-# Type aliases for better documentation
-DatabaseSession = Annotated[AsyncSession, DB]
+# Type aliases for better documentation - these provide clear naming
+# but use the same underlying dependency injection
 AuthenticatedUser = Annotated[Any, Auth]
 CacheClient = Annotated[Any, Cache]
 HttpRequest = Annotated[Any, Request]
+
+# DatabaseSession shortcut - addresses WealthScope feedback
+# This prevents variable naming conflicts like: async with db.session() as db
+DatabaseSession = Depends(get_database_session)  # Same as DB, different name for clarity
 
 
 # Convenience functions for manual dependency resolution

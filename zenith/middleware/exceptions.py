@@ -7,6 +7,7 @@ logging, and user-friendly error responses.
 
 import logging
 import traceback
+import re
 from collections.abc import Callable
 
 from pydantic import ValidationError
@@ -18,6 +19,80 @@ from zenith.exceptions import ZenithException
 
 # Get logger
 logger = logging.getLogger("zenith.exceptions")
+
+
+def _enhance_async_error_message(exc: Exception, tb: traceback.TracebackException) -> str | None:
+    """
+    Enhance error messages for common async patterns that cause confusion.
+
+    Addresses WealthScope feedback about cryptic async context errors.
+    Returns enhanced error message or None if no enhancement is needed.
+    """
+    exc_str = str(exc)
+    exc_type = type(exc).__name__
+
+    # Pattern 1: Variable naming conflicts in async context managers
+    if (exc_type == "UnboundLocalError" and
+        "cannot access local variable" in exc_str and
+        "where it is not associated" in exc_str):
+
+        # Extract variable name from error
+        var_match = re.search(r"cannot access local variable '(\w+)'", exc_str)
+        if var_match:
+            var_name = var_match.group(1)
+
+            # Look through traceback for async context manager patterns
+            for frame in tb.stack:
+                if frame.filename and frame.lineno:
+                    try:
+                        with open(frame.filename, 'r') as f:
+                            lines = f.readlines()
+                            if frame.lineno <= len(lines):
+                                line = lines[frame.lineno - 1].strip()
+
+                                # Check for common problematic patterns
+                                if f"async with {var_name}.session() as {var_name}:" in line:
+                                    return (
+                                        f"AsyncContextError: Variable name conflict in database session context.\n"
+                                        f"Found: {line}\n"
+                                        f"Problem: Using '{var_name}' as both the source and target variable creates a conflict.\n"
+                                        f"Solution: Use different variable names, e.g.:\n"
+                                        f"  async with {var_name}.session() as session:\n"
+                                        f"Or better yet, use dependency injection:\n"
+                                        f"  def your_function(session: AsyncSession = DatabaseSession):\n"
+                                        f"File: {frame.filename}, Line: {frame.lineno}"
+                                    )
+                    except (IOError, IndexError):
+                        pass
+
+    # Pattern 2: Event loop context errors
+    if "got Future" in exc_str and "attached to a different loop" in exc_str:
+        return (
+            f"AsyncLoopError: Database session created in wrong event loop context.\n"
+            f"Problem: {exc_str}\n"
+            f"Common causes:\n"
+            f"  • Creating database engine/session at module level\n"
+            f"  • Reusing sessions across requests\n"
+            f"Solutions:\n"
+            f"  • Use dependency injection: session: AsyncSession = DatabaseSession\n"
+            f"  • Create sessions within request context\n"
+            f"  • Avoid module-level async database operations"
+        )
+
+    # Pattern 3: Session not in async context
+    if "SQLAlchemy" in exc_str and ("await" in exc_str or "async" in exc_str):
+        if "not within an async" in exc_str or "not awaitable" in exc_str:
+            return (
+                f"AsyncSQLAlchemyError: Database operation not properly awaited.\n"
+                f"Problem: {exc_str}\n"
+                f"Solutions:\n"
+                f"  • Use 'await db.execute()' instead of 'db.execute()'\n"
+                f"  • Use 'await db.commit()' instead of 'db.commit()'\n"
+                f"  • Use 'await db.refresh(obj)' instead of 'db.refresh(obj)'\n"
+                f"  • Ensure you're using AsyncSession, not regular Session"
+            )
+
+    return None
 
 
 class ExceptionHandlerMiddleware:
@@ -246,11 +321,22 @@ class ExceptionHandlerMiddleware:
 
         # In debug mode, include exception details
         if self.debug:
+            # Try to enhance async-related error messages (WealthScope improvement)
+            tb = traceback.TracebackException.from_exception(exc)
+            enhanced_message = _enhance_async_error_message(exc, tb)
+
             error_response["details"] = {
                 "type": exc.__class__.__name__,
                 "message": str(exc),
                 "traceback": traceback.format_exc().split("\n"),
             }
+
+            # Add enhanced message for better debugging (WealthScope request)
+            if enhanced_message:
+                error_response["enhanced_error"] = enhanced_message
+                error_response["message"] = "Enhanced error information available in development mode"
+                # Also log the enhanced message for visibility
+                logger.warning(f"Enhanced error context: {enhanced_message}")
 
         return JSONResponse(content=error_response, status_code=500)
 
