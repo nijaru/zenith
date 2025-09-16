@@ -47,6 +47,17 @@ from zenith.core.routing.dependencies import (
 from zenith.core.scoped import DatabaseSession, Depends, RequestScoped, request_scoped
 
 # ============================================================================
+# BACKGROUND TASK MANAGEMENT
+# ============================================================================
+from zenith.background import (
+    BackgroundTaskManager,  # Simple async task management with automatic cleanup
+    JobQueue,  # Comprehensive job queue with persistence and retry
+    Job,  # Job data model
+    JobStatus,  # Job status enum
+    background_task,  # Decorator for background task functions
+)
+
+# ============================================================================
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
 from zenith.core.service import Service  # Service base class for business logic
