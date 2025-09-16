@@ -13,9 +13,8 @@ from pathlib import Path
 from pydantic import BaseModel
 from starlette.datastructures import UploadFile
 
-from zenith import File, IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, MB, Zenith
+from zenith import File, UploadedFile, IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, MB, Zenith
 from zenith.exceptions import HTTPException
-from zenith.web.files import UploadedFile
 
 # Create app
 app = Zenith()

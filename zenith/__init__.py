@@ -37,6 +37,9 @@ from zenith.core.dependencies import (
     MB, GB, KB,  # Size constants
 )
 
+# File upload types
+from zenith.web.files import UploadedFile
+
 # ============================================================================
 # ROUTING & DEPENDENCY INJECTION
 # ============================================================================
