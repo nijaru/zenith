@@ -109,14 +109,20 @@ class SQLModelRepository[T: SQLModel]:
         return result.rowcount > 0
 
 
-class ZenithSQLModel(SQLModel):
+# Clean, recommended base class for database models
+class Model(SQLModel):
     """
-    Base SQLModel class with Zenith-specific enhancements.
+    Recommended base class for database models.
 
-    Provides common fields and utilities for all Zenith SQLModel entities.
+    A clean alias for SQLModel with sensible defaults for most use cases.
+    Use this instead of the deprecated ZenithSQLModel.
+
+    Example:
+        class User(Model, table=True):
+            id: int | None = Field(primary_key=True)
+            name: str
+            email: str = Field(unique=True)
     """
-
-    id: int | None = Field(default=None, primary_key=True)
 
     model_config = ConfigDict(
         # Enable ORM mode for Pydantic compatibility

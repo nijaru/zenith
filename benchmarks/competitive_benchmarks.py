@@ -237,9 +237,9 @@ if __name__ == "__main__":
             return (
                 base_imports
                 + """
-from zenith.db import SQLModel, Field, ZenithSQLModel
+from zenith.db import SQLModel, Field, Model
 
-class User(SQLModel, ZenithSQLModel, table=True):
+class User(SQLModel, Model, table=True):
     __tablename__ = "users"
     name: str = Field(max_length=100)
     email: str = Field(unique=True)

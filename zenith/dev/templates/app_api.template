@@ -3,7 +3,7 @@ Production-ready API built with Zenith.
 Demonstrates: SQLModel, Router grouping, Service pattern, performance optimization, and modern best practices.
 """
 from zenith import Zenith, Router, Service, Inject, not_found
-from zenith.db import SQLModel, Field, ZenithSQLModel, create_repository, AsyncSession
+from zenith.db import SQLModel, Field, Model, create_repository, AsyncSession
 from zenith.performance_optimizations import create_api_app
 
 # Create optimized API app with performance-first middleware configuration
@@ -23,7 +23,7 @@ class ItemBase(SQLModel):
     title: str = Field(min_length=1, max_length=200)
     description: str = Field(default="", max_length=1000)
 
-class Item(ItemBase, ZenithSQLModel, table=True):
+class Item(ItemBase, Model, table=True):
     """Database model for items."""
     __tablename__ = "items"
     

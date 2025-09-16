@@ -3,7 +3,7 @@ Production-ready web application built with Zenith.
 Demonstrates: Templates, forms, CSRF protection, session management, and modern web best practices.
 """
 from zenith import Zenith, Router, Service, Inject, not_found
-from zenith.db import SQLModel, Field, ZenithSQLModel, create_repository, AsyncSession
+from zenith.db import SQLModel, Field, Model, create_repository, AsyncSession
 from zenith.performance_optimizations import PerformanceMiddlewareConfig
 from zenith.middleware.security import SecurityHeadersMiddleware, SecurityConfig
 from zenith.middleware.csrf import CSRFMiddleware, CSRFConfig
@@ -86,7 +86,7 @@ class PageBase(SQLModel):
     content: str = Field(default="", max_length=10000)
     published: bool = Field(default=False)
 
-class Page(PageBase, ZenithSQLModel, table=True):
+class Page(PageBase, Model, table=True):
     """Database model for web pages."""
     __tablename__ = "pages"
     

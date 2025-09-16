@@ -256,10 +256,10 @@ from .models import QueryBuilder, ZenithModel  # noqa: E402
 # Import SQLModel integration
 from .sqlmodel import (  # noqa: E402
     Field,
+    Model,
     Relationship,
     SQLModel,
     SQLModelRepository,
-    ZenithSQLModel,
     create_repository,
 )
 
@@ -270,13 +270,13 @@ __all__ = [
     "Database",
     "Field",
     "MigrationManager",
+    "Model",
     "QueryBuilder",
     "Relationship",
     # SQLModel components
     "SQLModel",
     "SQLModelRepository",
     "ZenithModel",
-    "ZenithSQLModel",
     "async_sessionmaker",
     "create_async_engine",
     "create_migration_manager",

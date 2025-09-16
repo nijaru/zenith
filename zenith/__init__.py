@@ -106,10 +106,10 @@ from zenith.db import (
     Base,
     Database,
     Field,
+    Model,  # Recommended base class for database models
     Relationship,
     SQLModel,
     SQLModelRepository,
-    ZenithSQLModel,
     create_repository,
 )
 from zenith.db.migrations import MigrationManager
@@ -214,10 +214,10 @@ __all__ = [
     "Base",
     "Database",
     "Field",
+    "Model",             # Recommended base class for database models
     "Relationship",
     "SQLModel",
     "SQLModelRepository",
-    "ZenithSQLModel",
     # Dependency Injection (Rails-like shortcuts)
     "Session",           # Database session shortcut (the one true way)
     "Auth",              # Authentication dependency
