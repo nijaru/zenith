@@ -224,6 +224,12 @@ class TestSeamlessZenithModelIntegration:
         """Test Rails-like query patterns work seamlessly."""
         app = app_with_models
 
+        # Need to define a create_user endpoint for the test
+        @app.post("/users")
+        async def create_user(user_data: dict):
+            user = await IntegrationUser.create(**user_data)
+            return {"user": user.to_dict()}
+
         @app.get("/users/active")
         async def get_active_users():
             # Rails-like chainable queries (current working pattern)
@@ -246,8 +252,10 @@ class TestSeamlessZenithModelIntegration:
             # Create test data with unique emails
             import time
             timestamp = int(time.time() * 1000)
-            await client.post("/users", json={"name": "Active User", "email": f"active-{timestamp}@example.com", "active": True})
-            await client.post("/users", json={"name": "Inactive User", "email": f"inactive-{timestamp}@example.com", "active": False})
+            response1 = await client.post("/users", json={"name": "Active User", "email": f"active-{timestamp}@example.com", "active": True})
+            assert response1.status_code == 200, f"Failed to create active user: {response1.text}"
+            response2 = await client.post("/users", json={"name": "Inactive User", "email": f"inactive-{timestamp}@example.com", "active": False})
+            assert response2.status_code == 200, f"Failed to create inactive user: {response2.text}"
 
             # Test Rails-like queries
             response = await client.get("/users/active")

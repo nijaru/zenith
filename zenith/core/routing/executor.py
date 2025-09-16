@@ -191,11 +191,40 @@ class RouteExecutor:
                     (AuthDependency, InjectDependency, FileDependency),
                 )
 
+                # Also check for Depends objects (from FastAPI or our mock)
+                is_depends = (
+                    hasattr(param.default, '__class__') and
+                    param.default.__class__.__name__ == 'Depends'
+                )
+
+                # Check if it has a dependency attribute (our Depends objects)
+                has_dependency_attr = hasattr(param.default, 'dependency')
+
                 if is_dependency:
                     resolved = await self.dependency_resolver.resolve_dependency(
                         param.default, param_type, request, app
                     )
                     kwargs[param_name] = resolved  # Can be None for optional Auth
+                    continue
+                elif is_depends or has_dependency_attr:
+                    # Handle Depends objects
+                    if hasattr(param.default, 'dependency'):
+                        # Our Depends object has a dependency function
+                        dep_func = param.default.dependency
+                        if inspect.iscoroutinefunction(dep_func):
+                            result = await dep_func()
+                        elif inspect.isasyncgenfunction(dep_func):
+                            # Handle async generators (like get_database_session)
+                            gen = dep_func()
+                            result = await gen.__anext__()
+                            # Store generator for cleanup later if needed
+                            # For now, we'll just get the value
+                        else:
+                            result = dep_func()
+                        kwargs[param_name] = result
+                    else:
+                        # Unknown Depends format, use param.default
+                        kwargs[param_name] = param.default
                     continue
                 else:
                     # Regular default value
