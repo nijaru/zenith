@@ -22,7 +22,7 @@ from zenith.core.container import DIContainer
 
 # Enhanced dependency injection
 from zenith.core.dependencies import (
-    DB,
+    Session,
     Auth,
     Cache,
     DatabaseContext,
@@ -35,7 +35,7 @@ from zenith.core.service import Service
 from zenith.core.supervisor import Supervisor
 
 __all__ = [
-    "DB",
+    "Session",
     "Application",
     "Auth",
     "AutoConfig",

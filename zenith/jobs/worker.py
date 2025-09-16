@@ -10,7 +10,7 @@ import signal
 import traceback
 from collections.abc import Callable
 
-from zenith.jobs.queue import JobQueue
+from zenith.jobs.queue import RedisJobQueue
 
 logger = logging.getLogger("zenith.jobs.worker")
 
@@ -29,7 +29,7 @@ class Worker:
 
     __slots__ = ("current_job", "jobs", "queue", "running")
 
-    def __init__(self, queue: JobQueue, jobs: dict[str, Callable]):
+    def __init__(self, queue: RedisJobQueue, jobs: dict[str, Callable]):
         """
         Initialize worker.
 

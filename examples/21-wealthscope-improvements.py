@@ -18,8 +18,7 @@ from pydantic import BaseModel
 
 from zenith import (
     Zenith,
-    Session,  # Recommended: Clear, concise database session dependency
-    DB,       # Alternative: Shorter, legacy compatibility
+    Session,  # Database session dependency - the one true way
 )
 
 # Create app with debug mode for better error messages
@@ -119,21 +118,18 @@ async def get_user(user_id: int, session: AsyncSession = Session):
     return UserResponse(id=user.id, email=user.email, name=user.name)
 
 
-# Alternative: You can still use DB if you prefer shorter names
 @app.put("/users/{user_id}", response_model=UserResponse)
 async def update_user(
     user_id: int,
     user_data: UserCreate,
-    db: AsyncSession = DB  # Same as DatabaseSession, just shorter
+    session: AsyncSession = Session
 ):
     """
-    Update user - shows both DB and DatabaseSession work identically.
+    Update user - demonstrates consistent Session usage.
 
-    Choose based on your naming preference:
-    - DatabaseSession: More explicit, prevents confusion
-    - DB: Shorter, familiar to existing Zenith users
+    Uses the one true dependency injection pattern for database sessions.
     """
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
 
     if not user:
@@ -142,8 +138,8 @@ async def update_user(
 
     user.email = user_data.email
     user.name = user_data.name
-    await db.commit()
-    await db.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     return UserResponse(id=user.id, email=user.email, name=user.name)
 
@@ -265,7 +261,7 @@ async def migration_examples():
             },
             "dependency_injection": {
                 "old_pattern": "Manual context managers everywhere",
-                "new_pattern": "Automatic injection with type safety",
+                "new_pattern": "Automatic injection with Session dependency",
                 "benefit": "Reduced boilerplate, clearer code"
             },
             "error_handling": {
@@ -299,7 +295,7 @@ async def root():
             "✅ Clear migration patterns"
         ],
         "wealthscope_issues_resolved": [
-            "❌ Variable naming conflicts → ✅ Session dependency with clear naming",
+            "❌ Variable naming conflicts → ✅ Session dependency prevents conflicts",
             "❌ Unclear error messages → ✅ Enhanced async error context",
             "❌ No health monitoring → ✅ /_health endpoints",
             "❌ Manual migration testing → ✅ Automated health checks"

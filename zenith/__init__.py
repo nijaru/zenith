@@ -27,8 +27,7 @@ from zenith.core.config import Config
 
 # Rails-like dependency shortcuts - these are pre-configured Depends objects
 from zenith.core.dependencies import (
-    DB,  # Database session shortcut (legacy, short)
-    Session,  # Database session shortcut (recommended, clear)
+    Session,  # Database session shortcut (the one true way)
     CurrentUser,  # Current authenticated user
     Cache,  # Cache client shortcut
     Request,  # Request object shortcut
@@ -45,7 +44,7 @@ from zenith.core.routing.dependencies import (
 )
 
 # Request-scoped dependencies (FastAPI-compatible)
-from zenith.core.scoped import DatabaseSession, Depends, RequestScoped, request_scoped
+from zenith.core.scoped import Depends, RequestScoped, request_scoped
 
 # ============================================================================
 # BACKGROUND TASK MANAGEMENT
@@ -137,7 +136,7 @@ from zenith.exceptions import (
 # ============================================================================
 # BACKGROUND PROCESSING & JOBS (LEGACY)
 # ============================================================================
-from zenith.jobs import JobManager, Worker
+from zenith.jobs import JobManager, RedisJobQueue, Worker
 
 # ============================================================================
 # MIDDLEWARE
@@ -205,8 +204,7 @@ __all__ = [
     "SQLModelRepository",
     "ZenithSQLModel",
     # Dependency Injection (Rails-like shortcuts)
-    "DB",                # Database session shortcut (legacy, short)
-    "Session",           # Database session shortcut (recommended, clear)
+    "Session",           # Database session shortcut (the one true way)
     "Auth",              # Authentication dependency
     "CurrentUser",       # Current authenticated user
     "Cache",             # Cache client shortcut
@@ -214,7 +212,6 @@ __all__ = [
     "Inject",            # Service injection
     "File",              # File dependency function for uploads
     # Request-scoped dependencies
-    "DatabaseSession",
     "Depends",
     "RequestScoped",
     # Background Processing
@@ -263,6 +260,7 @@ __all__ = [
     "SessionMiddleware",
     # Jobs & Background Processing
     "JobManager",
+    "RedisJobQueue",
     "Worker",
     "TaskQueue",
     # Database Migrations
