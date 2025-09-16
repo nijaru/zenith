@@ -6,16 +6,16 @@
 [![Tests](https://github.com/nijaru/zenith/workflows/Test%20Suite/badge.svg)](https://github.com/nijaru/zenith/actions)
 [![Documentation](https://img.shields.io/badge/docs-passing-brightgreen.svg)](https://nijaru.github.io/zenith/)
 
-A modern Python web framework with **Rails-like DX** that delivers **85% less boilerplate** while maintaining exceptional performance.
+A modern Python web framework with **intuitive developer experience** that delivers **85% less boilerplate** while maintaining exceptional performance.
 
-> **🎯 Rails-like DX**: Zero-config setup, ActiveRecord-style models, one-liner features, and enhanced dependency injection - making Python web development as productive as Rails.
+> **🎯 Modern DX**: Zero-config setup, database models with chainable queries, one-liner features, and enhanced dependency injection - making Python web development incredibly productive.
 
 ## What is Zenith?
 
-Zenith combines the **productivity of Rails** with the **performance of FastAPI** and the **type safety of Python**:
+Zenith brings together **exceptional productivity**, **outstanding performance**, and **full type safety**:
 
 - **🚀 Zero-config setup** - `app = Zenith()` just works with intelligent defaults
-- **🏗️ Rails-like models** - `User.where(active=True).order_by('-created_at').limit(10)`
+- **🏗️ Intuitive models** - `User.where(active=True).order_by('-created_at').limit(10)`
 - **⚡ One-liner features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
 - **🎯 Enhanced DX** - `session=Session` instead of verbose `Depends(get_database_session)`
 - **🏎️ Exceptional performance** - 9,600+ req/s with full async support
@@ -30,7 +30,7 @@ pip install zenith-web
 ```python
 from zenith import Zenith
 from zenith import Session  # Enhanced dependency injection
-from zenith.db import ZenithModel  # Rails-like models
+from zenith.db import ZenithModel  # Modern database models
 from sqlmodel import Field
 from typing import Optional
 
@@ -42,7 +42,7 @@ app.add_auth()    # JWT authentication + /auth/login
 app.add_admin()   # Admin dashboard at /admin
 app.add_api("My API", "1.0.0")  # API docs at /docs
 
-# 🏗️ Rails-like models with ActiveRecord patterns
+# 🏗️ Modern models with chainable query patterns
 class User(ZenithModel, table=True):
     id: Optional[int] = Field(primary_key=True)
     name: str = Field(max_length=100)
@@ -52,24 +52,24 @@ class User(ZenithModel, table=True):
 # 🎨 Clean routes with enhanced DX
 @app.get("/")
 async def home():
-    return {"message": "Rails-like DX in Python!"}
+    return {"message": "Modern DX in Python!"}
 
 @app.get("/users")
 async def list_users(session=Session):  # ✨ Enhanced DI - no verbose Depends()
-    # Rails-style chaining: User.where().order_by().limit()
+    # Clean chaining: User.where().order_by().limit()
     query = await User.where(active=True)
     users = await query.order_by('-id').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
 async def create_user(user_data: dict, session=Session):
-    # Rails-style: User.create() - no session management!
+    # Clean API: User.create() - no session management!
     user = await User.create(**user_data)
     return {"user": user.to_dict()}
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: int, session=Session):
-    # Rails-style: automatic 404 handling
+    # Automatic 404 handling
     user = await User.find_or_404(user_id)
     return {"user": user.to_dict()}
 
@@ -84,7 +84,7 @@ Run with:
 uvicorn main:app --reload
 ```
 
-## 🎯 Rails-like DX Features
+## 🎯 Modern DX Features
 
 ### 🚀 **Zero-Config Setup**
 ```python
@@ -96,12 +96,12 @@ app = Zenith()  # Just works! No complex configuration needed
 
 ### 🏗️ **ActiveRecord-Style Models**
 ```python
-# Rails-like database operations
+# Intuitive database operations
 users = await User.where(active=True).order_by('-created_at').limit(10).all()
 user = await User.find_or_404(123)  # Automatic 404 handling
 user = await User.create(name="Alice", email="alice@example.com")
 ```
-- **ZenithModel** - Rails-inspired ORM with chainable queries
+- **ZenithModel** - Modern ORM with chainable queries
 - **Automatic sessions** - No manual database session management
 - **Type-safe queries** - Full async support with SQLModel integration
 
@@ -122,11 +122,11 @@ async def get_users(db=DB, user=Auth, cache=Cache):
     # Clean, readable dependency injection
 ```
 - **Readable shortcuts** - `DB` instead of `Depends(get_database_session)`
-- **FastAPI compatible** - Works alongside existing `Depends()` patterns
+- **Compatible** - Works alongside existing `Depends()` patterns
 - **Type-safe** - Full IDE support and autocompletion
 
 ### 🏎️ **Exceptional Performance**
-- **9,600+ req/s** - Faster than FastAPI while adding Rails-like features
+- **9,600+ req/s** - Exceptional performance with modern features
 - **No performance penalty** - Zero overhead from convenience features
 - **Async-first** - Full async/await with Python 3.12+ optimizations
 - **Production tested** - 70% middleware retention with full feature stack
@@ -145,12 +145,12 @@ async def get_users(db=DB, user=Auth, cache=Cache):
 
 ## 📁 Project Structure
 
-Rails-like organization with zero configuration:
+Clean organization with zero configuration:
 
 ```
 your-app/
 ├── main.py         # app = Zenith() + routes
-├── models.py       # ZenithModel classes (like Rails models)
+├── models.py       # ZenithModel classes
 ├── services.py     # Business logic (optional)
 ├── migrations/     # Database migrations (auto-generated)
 └── tests/          # Testing with built-in TestClient
@@ -191,8 +191,9 @@ python scripts/run_performance_tests.py --quick
 
 ## 📚 Examples
 
-**🔥 Rails-like DX Examples:**
-- **[Rails-like DX](examples/16-rails-like-dx.py)** - Complete Rails-inspired patterns showcase
+**🔥 Modern DX Examples:**
+- **[Modern Developer Experience](examples/03-modern-developer-experience.py)** - Complete modern patterns showcase
+- **[One-Liner Features](examples/04-one-liner-features.py)** - Convenience methods demonstration
 - **[One-liner Features](examples/17-one-liner-features.py)** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
 - **[Zero-config Setup](examples/18-seamless-integration.py)** - Automatic environment detection
 
