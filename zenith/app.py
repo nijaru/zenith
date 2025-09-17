@@ -496,6 +496,31 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         def rate_limit_handler(request, exc):
             """Handle rate limit exceptions."""
+            # Start with default headers
+            headers = {
+                "Retry-After": "60",  # Default retry after 60 seconds
+            }
+
+            # If the exception includes headers, use them
+            if hasattr(exc, "headers") and exc.headers:
+                headers.update(exc.headers)
+
+            # Add standard rate limit headers if not present
+            if "X-RateLimit-Limit" not in headers:
+                # Try to extract from exception details
+                if hasattr(exc, "limit"):
+                    headers["X-RateLimit-Limit"] = str(exc.limit)
+
+            if "X-RateLimit-Remaining" not in headers:
+                # Set to 0 since we hit the limit
+                headers["X-RateLimit-Remaining"] = "0"
+
+            if "X-RateLimit-Reset" not in headers:
+                # Calculate reset time
+                import time
+                retry_after = int(headers.get("Retry-After", 60))
+                headers["X-RateLimit-Reset"] = str(int(time.time()) + retry_after)
+
             return JSONResponse(
                 status_code=429,
                 content={
@@ -503,9 +528,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                     "message": str(exc),
                     "detail": exc.detail if hasattr(exc, "detail") else "Too many requests"
                 },
-                headers={
-                    "Retry-After": "60",  # Default retry after 60 seconds
-                }
+                headers=headers
             )
 
         exception_handlers = {
