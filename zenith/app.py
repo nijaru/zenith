@@ -70,6 +70,20 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                     # Clean up context
                     set_current_db_session(None)
 
+    # Supported environment names and their aliases
+    ENVIRONMENT_ALIASES = {
+        'dev': 'development',
+        'develop': 'development',
+        'development': 'development',
+        'prod': 'production',
+        'production': 'production',
+        'test': 'test',
+        'testing': 'test',
+        'tests': 'test',
+        'stage': 'staging',
+        'staging': 'staging',
+    }
+
     def __init__(
         self,
         config: Config | None = None,
@@ -104,19 +118,52 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # Set up logger
         self.logger = logging.getLogger("zenith.application")
 
-        # Determine testing mode from parameter or environment variable
+        # Detect environment using new ZENITH_ENV system
         import os
-        self.testing = testing or os.getenv('ZENITH_TESTING', '').lower() in ('true', '1', 'yes')
+        import warnings
+
+        self.environment = self._detect_environment()
+
+        # Configure based on environment (unless explicitly overridden)
+        if self.environment == 'production':
+            if testing:
+                raise ValueError("Cannot enable testing mode in production environment")
+            self.testing = False
+            if debug is None:
+                self.config.debug = False
+            self._validate_production_config()
+        elif self.environment == 'staging':
+            self.testing = testing
+            if debug is None:
+                self.config.debug = False
+            self._validate_production_config()
+        elif self.environment == 'test':
+            self.testing = True  # Always true in test environment
+            if debug is None:
+                self.config.debug = True
+        else:  # development
+            # Check legacy ZENITH_TESTING for backward compatibility
+            if os.getenv('ZENITH_TESTING', '').lower() in ('true', '1', 'yes'):
+                warnings.warn(
+                    "ZENITH_TESTING is deprecated. Use ZENITH_ENV=test instead",
+                    DeprecationWarning,
+                    stacklevel=2
+                )
+                self.testing = True
+            else:
+                self.testing = testing
+            if debug is None:
+                self.config.debug = True
+
         if self.testing:
-            self.logger.info("🧪 Testing mode enabled - rate limiting and strict CORS disabled")
+            self.logger.info(f"🧪 Testing mode enabled ({self.environment} environment)")
+        else:
+            self.logger.info(f"🚀 Running in {self.environment} environment")
 
         if debug is not None:
             self.config._debug_explicitly_set = True
         else:
             self.config._debug_explicitly_set = False
-
-        # Auto-detect environment if not explicitly set (BEFORE creating Application)
-        self._detect_environment()
 
         # Create core application (after environment is detected)
         self.app = Application(self.config)
@@ -216,49 +263,116 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                         f"Auto-mounted static files: {url_path} -> {static_path}"
                     )
 
-    def _detect_environment(self) -> None:
-        """Auto-detect development vs production environment."""
+    def _detect_environment(self) -> str:
+        """Detect the current environment from ZENITH_ENV or other indicators."""
         import os
+        import warnings
 
-        # Only auto-detect if debug wasn't explicitly set via constructor
-        if (
-            not hasattr(self.config, "_debug_explicitly_set")
-            or not self.config._debug_explicitly_set
-        ):
-            # Check if DEBUG environment variable was explicitly set
-            debug_env = os.getenv("DEBUG")
-            if debug_env is not None:
-                # DEBUG was explicitly set in environment
-                mode = "development" if self.config.debug else "production"
-                self.logger.info(f"{mode.title()} mode (DEBUG env var)")
-                return
+        # Check ZENITH_ENV first (new standard)
+        zenith_env = os.getenv('ZENITH_ENV', '').lower().strip()
+        if zenith_env:
+            if zenith_env in self.ENVIRONMENT_ALIASES:
+                return self.ENVIRONMENT_ALIASES[zenith_env]
+            else:
+                valid_envs = sorted(set(self.ENVIRONMENT_ALIASES.keys()))
+                raise ValueError(
+                    f"Invalid ZENITH_ENV='{zenith_env}'. "
+                    f"Valid options: {', '.join(valid_envs)}"
+                )
 
-            # Check other common environment indicators
-            env_indicators = [
-                os.getenv("ENVIRONMENT", "").lower(),
-                os.getenv("ENV", "").lower(),
-                os.getenv("FLASK_ENV", "").lower(),  # Common from Flask
-                os.getenv("NODE_ENV", "").lower(),  # Common from Node.js
-            ]
+        # Legacy environment detection for backward compatibility
+        # Check other common environment indicators
+        legacy_indicators = [
+            os.getenv("ENVIRONMENT", "").lower(),
+            os.getenv("ENV", "").lower(),
+            os.getenv("FLASK_ENV", "").lower(),
+            os.getenv("NODE_ENV", "").lower(),
+        ]
 
-            is_production = any(env in ["production", "prod"] for env in env_indicators)
-            is_development = any(
-                env in ["development", "dev", "debug"] for env in env_indicators
+        for indicator in legacy_indicators:
+            if indicator:
+                warnings.warn(
+                    f"Using legacy environment variable. Please use ZENITH_ENV instead",
+                    DeprecationWarning,
+                    stacklevel=3
+                )
+                if indicator in self.ENVIRONMENT_ALIASES:
+                    return self.ENVIRONMENT_ALIASES[indicator]
+
+        # Check if we're in a production-like environment
+        if self._looks_like_production():
+            from zenith.exceptions import ConfigError
+            raise ConfigError(
+                "Production environment detected but ZENITH_ENV is not set.\n"
+                "For safety, ZENITH_ENV must be explicitly set in production.\n"
+                "Set ZENITH_ENV=production or ZENITH_ENV=development"
             )
 
-            if is_production:
-                self.config.debug = False
-                self.logger.info("Production mode detected")
-            elif is_development:
-                self.config.debug = True
-                self.logger.info("Development mode detected")
-            else:
-                # Default to development for ease of use (override the config default)
-                self.config.debug = True
-                self.logger.info("Development mode (default)")
-        else:
-            mode = "development" if self.config.debug else "production"
-            self.logger.info(f"{mode.title()} mode (explicit)")
+        # Default to development for local development
+        return 'development'
+
+    def _looks_like_production(self) -> bool:
+        """Detect if we're running in a production-like environment."""
+        import os
+        import sys
+
+        indicators = [
+            # Cloud platforms
+            os.getenv('KUBERNETES_SERVICE_HOST'),     # Kubernetes
+            os.getenv('DYNO'),                        # Heroku
+            os.getenv('AWS_EXECUTION_ENV'),           # AWS Lambda
+            os.getenv('GOOGLE_CLOUD_PROJECT'),        # Google Cloud
+            os.getenv('WEBSITE_INSTANCE_ID'),         # Azure
+            os.getenv('FLY_APP_NAME'),                # Fly.io
+            os.getenv('RENDER'),                       # Render
+            os.getenv('RAILWAY_ENVIRONMENT'),         # Railway
+            os.getenv('DETA_RUNTIME'),                # Deta
+
+            # Container environments
+            os.path.exists('/.dockerenv'),            # Docker
+            os.path.exists('/var/run/secrets/kubernetes.io'),  # K8s
+
+            # CI/CD environments (should not default to dev in CI)
+            os.getenv('CI'),                          # Generic CI
+            os.getenv('GITHUB_ACTIONS'),              # GitHub Actions
+            os.getenv('GITLAB_CI'),                   # GitLab CI
+            os.getenv('CIRCLECI'),                    # CircleCI
+        ]
+
+        # Check if any production indicator is present
+        if any(indicators):
+            return True
+
+        # Check if running non-interactively (likely a server)
+        if not sys.stdin.isatty() and not sys.stdout.isatty():
+            # But allow non-interactive local testing
+            if not os.getenv('PYTEST_CURRENT_TEST'):
+                return True
+
+        return False
+
+    def _validate_production_config(self) -> None:
+        """Validate that production requirements are met."""
+        import os
+        from zenith.exceptions import ConfigError
+
+        # Require a proper secret key
+        secret_key = os.getenv('SECRET_KEY') or self.config.secret_key
+
+        # Check if using default secret key
+        if secret_key in ('dev-secret-change-in-prod', '', None):
+            raise ConfigError(
+                f"SECRET_KEY must be set for {self.environment} environment.\n"
+                "Generate a secure key with:\n"
+                "  python -c 'import secrets; print(secrets.token_hex(32))'"
+            )
+
+        # Validate secret key strength
+        if len(secret_key) < 32:
+            raise ConfigError(
+                f"SECRET_KEY must be at least 32 characters for {self.environment} environment.\n"
+                f"Current length: {len(secret_key)}"
+            )
 
     def _add_health_endpoints(self) -> None:
         """Add health check endpoints."""
