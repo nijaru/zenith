@@ -180,7 +180,7 @@ database = Database("sqlite+aiosqlite:///./app.db", echo=True)
 # Add comprehensive middleware stack
 # app.add_middleware(SessionMiddleware, session_manager=session_manager)  # Add as needed
 app.add_cors(allow_origins=["http://localhost:3000", "https://myapp.com"])
-app.add_exception_handling(debug=True)
+app.add_exception_handling()  # Uses environment-aware debug setting
 app.add_rate_limiting(default_limit=1000, window_seconds=3600)
 app.add_security_headers(strict=True)
 

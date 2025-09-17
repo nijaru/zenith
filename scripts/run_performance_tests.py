@@ -40,6 +40,7 @@ def run_performance_tests(
 
     # Set environment
     env = {
+        "ZENITH_ENV": "test",
         "SECRET_KEY": "performance-test-key-long-enough-for-testing",
         "PYTHONPATH": str(Path(__file__).parent),
     }
