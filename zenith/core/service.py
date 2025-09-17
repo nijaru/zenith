@@ -203,6 +203,68 @@ class Service(ABC):
         return f"{self.__class__.__name__}()"
 
 
+class SimplifiedService:
+    """
+    Simplified base class for services that don't need manual container setup.
+
+    This class allows services to be defined without requiring a container
+    in the constructor, making it easier to use in production applications.
+    The container will be injected automatically when the service is registered.
+
+    Example:
+        class UserService(SimplifiedService):
+            async def initialize(self):
+                # Access dependencies through self.container
+                self.db = await self.container.get(Database)
+                await super().initialize()
+
+            async def create_user(self, email: str):
+                return await self.db.create(User(email=email))
+    """
+
+    __slots__ = ("_initialized", "container", "events")
+
+    def __init__(self):
+        """Initialize without requiring container - it will be injected later."""
+        self.container = None
+        self.events = None
+        self._initialized = False
+
+    def _inject_container(self, container: DIContainer):
+        """Internal method to inject container after instantiation."""
+        self.container = container
+        self.events = container.get("events") if container else None
+
+    async def initialize(self) -> None:
+        """Initialize the service. Override for custom initialization."""
+        if self._initialized:
+            return
+        self._initialized = True
+
+    async def shutdown(self) -> None:
+        """Cleanup service resources. Override for custom cleanup."""
+        pass
+
+    async def emit(self, event: str, data: Any = None) -> None:
+        """Emit a domain event."""
+        if self.events:
+            await self.events.emit(event, data)
+
+    def subscribe(self, event: str, callback: Callable) -> None:
+        """Subscribe to a domain event."""
+        if self.events:
+            self.events.subscribe(event, callback)
+
+    @asynccontextmanager
+    async def transaction(self):
+        """Context manager for database transactions. Override in subclasses."""
+        # Default implementation - no transaction support
+        yield
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
+
+
 class ServiceRegistry:
     """Registry for managing application services."""
 
@@ -224,7 +286,15 @@ class ServiceRegistry:
                 raise KeyError(f"Service not registered: {name}")
 
             service_class = self._service_classes[name]
-            service = service_class(self.container)
+
+            # Check if it's a SimplifiedService that doesn't need container in constructor
+            if issubclass(service_class, SimplifiedService):
+                service = service_class()
+                service._inject_container(self.container)
+            else:
+                # Traditional Service that requires container
+                service = service_class(self.container)
+
             await service.initialize()
             self._services[name] = service
 

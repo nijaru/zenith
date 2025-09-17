@@ -672,6 +672,49 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self.app.add_shutdown_hook(func)
         return func
 
+    # Service/DI Registration Methods
+    def register_service(self, service_class: type, name: str | None = None) -> None:
+        """
+        Register a service class with the DI container.
+
+        Args:
+            service_class: The service class to register
+            name: Optional name for the service (defaults to class name)
+
+        Usage:
+            app.register_service(UserService)
+            app.register_service(EmailService, "email")
+        """
+        service_name = name or service_class.__name__
+        self.app.contexts.register(service_name, service_class)
+        self.logger.info(f"✅ Service registered: {service_name}")
+
+    def register(self, dependency_type: type, implementation: Any = None, singleton: bool = True) -> None:
+        """
+        Register a dependency with the DI container.
+
+        Args:
+            dependency_type: The type/interface to register
+            implementation: The implementation (defaults to the type itself)
+            singleton: Whether to use singleton pattern
+
+        Usage:
+            app.register(Database, MyDatabase())
+            app.register(CacheInterface, RedisCache(), singleton=True)
+        """
+        self.app.container.register(dependency_type, implementation or dependency_type, singleton)
+        self.logger.info(f"✅ Dependency registered: {dependency_type.__name__}")
+
+    @property
+    def container(self):
+        """Access the dependency injection container."""
+        return self.app.container
+
+    @property
+    def contexts(self):
+        """Access the service registry."""
+        return self.app.contexts
+
     # 🚀 One-liner convenience methods for better DX
     def add_auth(
         self,
