@@ -52,6 +52,7 @@ jobs:
     
     - name: Run tests with coverage
       env:
+        ZENITH_ENV: test
         DATABASE_URL: postgresql://zenith:zenith@localhost:5432/zenith_test
         SECRET_KEY: test-secret-key-for-ci-testing
       run: |

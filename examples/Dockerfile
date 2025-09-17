@@ -1,7 +1,7 @@
 # Example Dockerfile for Zenith applications
 # This shows the standard pattern for containerizing Zenith apps
 
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
@@ -20,6 +20,7 @@ COPY . .
 
 # Set environment variables
 ENV PYTHONPATH=/app
+ENV ZENITH_ENV=production
 ENV SECRET_KEY=your-secret-key-here
 
 # Expose port

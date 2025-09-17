@@ -49,6 +49,7 @@ jobs:
     
     - name: Critical tests only
       env:
+        ZENITH_ENV: test
         DATABASE_URL: postgresql://zenith:zenith@localhost:5432/zenith_test
         SECRET_KEY: test-secret-key-for-ci
       run: |
@@ -78,7 +79,7 @@ jobs:
     - name: Full test suite for releases
       run: |
         pip install -e ".[dev]"
-        SECRET_KEY=test pytest tests/ --tb=short
+        ZENITH_ENV=test SECRET_KEY=test pytest tests/ --tb=short
     
     - name: Build check
       run: |

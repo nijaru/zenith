@@ -259,14 +259,24 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ### Environment Configuration
 ```python
 from zenith import Zenith
-from zenith.config import Config
 
+# Modern approach - automatic environment detection
+app = Zenith()  # Uses ZENITH_ENV or sensible detection
+
+# Environment-specific behavior:
+# ZENITH_ENV=development (or dev) → debug=True, auto-generated SECRET_KEY
+# ZENITH_ENV=production (or prod) → debug=False, requires SECRET_KEY
+# ZENITH_ENV=test → debug=True, testing mode enabled
+# ZENITH_ENV=staging → debug=False, requires SECRET_KEY
+
+# Manual configuration if needed
+from zenith.config import Config
 app = Zenith(
     config=Config(
         database_url=os.getenv("DATABASE_URL"),
-        redis_url=os.getenv("REDIS_URL"), 
-        secret_key=os.getenv("SECRET_KEY"),
-        debug=os.getenv("DEBUG", "false").lower() == "true"
+        redis_url=os.getenv("REDIS_URL"),
+        secret_key=os.getenv("SECRET_KEY")
+        # debug automatically set based on ZENITH_ENV
     )
 )
 ```
