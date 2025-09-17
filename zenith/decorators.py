@@ -300,23 +300,24 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             # Only pass parameters that the function expects
             call_kwargs = dict(kwargs)
 
-            # Add pagination metadata for functions that want it
-            call_kwargs["_page"] = page
-            call_kwargs["_limit"] = limit
-            call_kwargs["_offset"] = offset
+            # Remove pagination params from query string that we'll handle specially
+            call_kwargs.pop('page', None)
+            call_kwargs.pop('limit', None)
+
+            # Only add parameters the function actually accepts
+            if '_page' in func_params:
+                call_kwargs["_page"] = page
+            if '_limit' in func_params:
+                call_kwargs["_limit"] = limit
+            if '_offset' in func_params:
+                call_kwargs["_offset"] = offset
 
             # Check if function expects page/limit parameters
             if 'page' in func_params:
                 call_kwargs['page'] = page
-            elif 'page' in call_kwargs:
-                # Remove if function doesn't expect it
-                del call_kwargs['page']
 
             if 'limit' in func_params:
                 call_kwargs['limit'] = limit
-            elif 'limit' in call_kwargs:
-                # Remove if function doesn't expect it
-                del call_kwargs['limit']
 
             # Check if function expects a Paginate object
             for param_name, param in func_params.items():
