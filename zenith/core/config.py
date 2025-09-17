@@ -14,10 +14,11 @@ from typing import Any
 class Config:
     """Application configuration with environment variable support."""
 
+    # Environment detection (used to set defaults)
+    _environment: str = field(default_factory=lambda: Config._get_environment())
+
     # Core settings
-    debug: bool = field(
-        default_factory=lambda: os.getenv("DEBUG", "false").lower() == "true"
-    )
+    debug: bool = field(default_factory=lambda: Config._get_debug_default())
     secret_key: str = field(
         default_factory=lambda: os.getenv("SECRET_KEY", "dev-secret-change-in-prod")
     )
@@ -82,29 +83,85 @@ class Config:
         """Set custom configuration value."""
         self.custom[key] = value
 
+    @staticmethod
+    def _get_environment() -> str:
+        """Get the current environment from ZENITH_ENV."""
+        env_aliases = {
+            'dev': 'development',
+            'prod': 'production',
+            'test': 'test',
+            'testing': 'test',
+            'stage': 'staging',
+        }
+
+        env = os.getenv("ZENITH_ENV", "").lower()
+        if env in env_aliases:
+            return env_aliases[env]
+        elif env in ('development', 'production', 'test', 'staging'):
+            return env
+
+        # Legacy fallback for ZENITH_TESTING
+        if os.getenv("ZENITH_TESTING"):
+            import warnings
+            warnings.warn(
+                "ZENITH_TESTING is deprecated. Use ZENITH_ENV=test instead",
+                DeprecationWarning,
+                stacklevel=2
+            )
+            return 'test'
+
+        # Check explicit DEBUG env var as secondary option
+        if os.getenv("DEBUG"):
+            debug_val = os.getenv("DEBUG", "").lower()
+            if debug_val == "true":
+                return 'development'
+            elif debug_val == "false":
+                return 'production'
+
+        return 'development'  # Default to development
+
+    @staticmethod
+    def _get_debug_default() -> bool:
+        """Get debug default based on environment."""
+        env = Config._get_environment()
+
+        # Check explicit DEBUG override first
+        debug_env = os.getenv("DEBUG")
+        if debug_env:
+            return debug_env.lower() == "true"
+
+        # Otherwise use environment-based defaults
+        return env in ('development', 'test')
+
     def validate(self) -> None:
         """Validate configuration settings."""
+        # Check if we're in production-like environment
+        is_production = self._environment in ('production', 'staging')
+
         # Auto-generate secret key for development if not set
         if not self.secret_key or self.secret_key == "dev-secret-change-in-prod":
             import logging
             import secrets
             import string
 
+            if is_production:
+                raise ValueError(
+                    "SECRET_KEY must be set in production/staging environments.\n"
+                    "Generate with: python -c 'import secrets; print(secrets.token_hex(32))'"
+                )
+
+            # Development/test mode - generate temporary key
             chars = string.ascii_letters + string.digits
             self.secret_key = "".join(secrets.choice(chars) for _ in range(64))
 
             logger = logging.getLogger("zenith.config")
-            if self.debug:
-                # Development mode - this is expected
-                logger.info(
-                    "Generated development SECRET_KEY (set SECRET_KEY environment variable for production)"
-                )
-            else:
-                # Production mode without secret key - this is a warning
-                logger.warning(
-                    "No SECRET_KEY provided in production mode! "
-                    "Generated temporary key. Set SECRET_KEY environment variable for security."
-                )
+            logger.info(
+                f"Generated temporary SECRET_KEY for {self._environment} environment"
+            )
+
+        # Validate secret key strength in production
+        if is_production and len(self.secret_key) < 32:
+            raise ValueError("SECRET_KEY must be at least 32 characters in production")
 
         if self.port < 1 or self.port > 65535:
             raise ValueError(f"Invalid port: {self.port}")

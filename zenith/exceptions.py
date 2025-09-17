@@ -176,6 +176,13 @@ class GoneException(HTTPException):
         super().__init__(410, detail, **kwargs)
 
 
+class ConfigError(ZenithException):
+    """Configuration error exception."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 class BusinessLogicException(ZenithException):
     """
     Exception for business rule violations.
