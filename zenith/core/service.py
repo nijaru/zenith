@@ -300,13 +300,22 @@ class ServiceRegistry:
 
         return self._services[name]
 
-    async def get_by_type(self, service_type: type) -> Service:
-        """Get a service by its type."""
-        # Find the name for this service type
-        for name, cls in self._service_classes.items():
-            if cls == service_type:
-                return await self.get(name)
-        raise KeyError(f"Service type not registered: {service_type.__name__}")
+    async def get_by_type(self, service_class: type) -> Service:
+        """Get or create a service instance by class type."""
+        # Find the service name by class type
+        service_name = None
+        for name, registered_class in self._service_classes.items():
+            if registered_class == service_class:
+                service_name = name
+                break
+
+        if service_name is None:
+            # Try to use the class name as the service name
+            service_name = service_class.__name__
+            if service_name not in self._service_classes:
+                raise KeyError(f"Service not registered: {service_class.__name__}")
+
+        return await self.get(service_name)
 
     async def shutdown_all(self) -> None:
         """Shutdown all services."""

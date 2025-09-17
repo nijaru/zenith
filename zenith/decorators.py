@@ -290,33 +290,14 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
 
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            # Debug logging
-            import logging
-            logger = logging.getLogger("zenith.decorators.paginate")
-            logger.debug(f"paginate wrapper called with kwargs: {kwargs}")
+            # The issue: Zenith's DI system already instantiates Paginate before the decorator runs
+            # We can't fix this properly without refactoring the entire DI system
+            # For now, we'll document this limitation clearly
 
-            # Try to get request object to access query parameters
-            request = None
-            if "request" in kwargs:
-                request = kwargs["request"]
-                logger.debug(f"Found request in kwargs")
-            elif args and hasattr(args[0], "url") and hasattr(args[0], "method"):
-                request = args[0]
-                logger.debug(f"Found request in args[0]")
-            else:
-                logger.debug(f"No request found. args={args}, kwargs keys={list(kwargs.keys())}")
-
-            # Extract pagination parameters
-            if request and hasattr(request, "query_params"):
-                # Get from query parameters if we have a request
-                page = int(request.query_params.get('page', 1))
-                limit = int(request.query_params.get('limit', default_limit))
-                logger.debug(f"Got page={page}, limit={limit} from request.query_params")
-            else:
-                # Fall back to kwargs (for non-web usage)
-                page = kwargs.get('page', 1)
-                limit = kwargs.get('limit', default_limit)
-                logger.debug(f"Using fallback: page={page}, limit={limit}")
+            # Extract pagination parameters from kwargs (these come from query params)
+            # When the function has page/limit parameters, Zenith's router properly extracts them
+            page = kwargs.get('page', 1)
+            limit = kwargs.get('limit', default_limit)
 
             # Enforce limits
             limit = min(limit, max_limit)
@@ -337,36 +318,14 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             has_paginate_param = False
             for param_name, param in func_params.items():
                 if param.annotation and 'Paginate' in str(param.annotation):
-                    from zenith.pagination import Paginate
-                    # Warn about incompatible usage
-                    import warnings
-                    warnings.warn(
-                        f"@paginate decorator is not fully compatible with Paginate dependency injection. "
-                        f"Consider using simple page/limit parameters instead, or manually configure "
-                        f"Paginate in your endpoint. See decorator documentation for examples.",
-                        UserWarning,
-                        stacklevel=2
+                    # This is fundamentally incompatible - raise an error
+                    raise TypeError(
+                        f"@paginate decorator cannot be used with Paginate dependency injection. "
+                        f"The Paginate object is instantiated by the DI system before the decorator runs. "
+                        f"Use one of these patterns instead:\n"
+                        f"  1. Use @paginate with simple page/limit parameters\n"
+                        f"  2. Remove @paginate and configure Paginate manually in your endpoint"
                     )
-
-                    # Try to work with what we have
-                    # Check if a Paginate object was already passed
-                    if param_name in call_kwargs and isinstance(call_kwargs[param_name], Paginate):
-                        # Update the existing Paginate object with query parameters if we have them
-                        existing_paginate = call_kwargs[param_name]
-                        logger.debug(f"Found existing Paginate: page={existing_paginate.page}, limit={existing_paginate.limit}")
-                        # Only update if we got actual values from query params
-                        if page != 1 or limit != default_limit:
-                            updated_paginate = existing_paginate(page=page, limit=limit)
-                            logger.debug(f"Updated Paginate: page={updated_paginate.page}, limit={updated_paginate.limit}")
-                            call_kwargs[param_name] = updated_paginate
-                    else:
-                        # Create a new Paginate object with the parameters we have
-                        paginate_obj = Paginate()
-                        paginate_obj = paginate_obj(page=page, limit=limit)
-                        logger.debug(f"Creating new Paginate with page={page}, limit={limit}")
-                        call_kwargs[param_name] = paginate_obj
-                    has_paginate_param = True
-                    break  # Only handle one Paginate parameter
 
             # Only add individual parameters if no Paginate object is used
             if not has_paginate_param:
