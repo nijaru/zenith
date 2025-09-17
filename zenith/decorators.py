@@ -262,21 +262,26 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
     This decorator adds pagination parameters to endpoints and wraps
     the response with pagination metadata.
 
+    NOTE: This decorator works with simple page/limit parameters.
+    For Paginate dependency injection, configure it manually in your endpoint.
+
     Args:
         default_limit: Default page size
         max_limit: Maximum allowed page size
 
     Example:
-        @app.get("/users")
-        @paginate()
-        async def list_users(pagination: Paginate = Paginate()):
-            return await User.paginate(pagination.page, pagination.limit)
-
-        # Or with explicit parameters:
+        # RECOMMENDED: Use with simple parameters
         @app.get("/posts")
         @paginate()
         async def list_posts(page: int = 1, limit: int = 20):
             return await Post.paginate(page, limit)
+
+        # NOT RECOMMENDED: Don't use with Paginate dependency
+        # Instead, configure Paginate manually in your endpoint:
+        @app.get("/users")
+        async def list_users(page: int = 1, limit: int = 20):
+            pagination = Paginate()(page=page, limit=limit)
+            return await User.paginate(pagination.page, pagination.limit)
     """
     def decorator(func: Callable) -> Callable:
         import inspect
@@ -285,9 +290,33 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
 
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            # Extract pagination parameters from kwargs
-            page = kwargs.get('page', 1)
-            limit = kwargs.get('limit', default_limit)
+            # Debug logging
+            import logging
+            logger = logging.getLogger("zenith.decorators.paginate")
+            logger.debug(f"paginate wrapper called with kwargs: {kwargs}")
+
+            # Try to get request object to access query parameters
+            request = None
+            if "request" in kwargs:
+                request = kwargs["request"]
+                logger.debug(f"Found request in kwargs")
+            elif args and hasattr(args[0], "url") and hasattr(args[0], "method"):
+                request = args[0]
+                logger.debug(f"Found request in args[0]")
+            else:
+                logger.debug(f"No request found. args={args}, kwargs keys={list(kwargs.keys())}")
+
+            # Extract pagination parameters
+            if request and hasattr(request, "query_params"):
+                # Get from query parameters if we have a request
+                page = int(request.query_params.get('page', 1))
+                limit = int(request.query_params.get('limit', default_limit))
+                logger.debug(f"Got page={page}, limit={limit} from request.query_params")
+            else:
+                # Fall back to kwargs (for non-web usage)
+                page = kwargs.get('page', 1)
+                limit = kwargs.get('limit', default_limit)
+                logger.debug(f"Using fallback: page={page}, limit={limit}")
 
             # Enforce limits
             limit = min(limit, max_limit)
@@ -304,27 +333,57 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             call_kwargs.pop('page', None)
             call_kwargs.pop('limit', None)
 
-            # Only add parameters the function actually accepts
-            if '_page' in func_params:
-                call_kwargs["_page"] = page
-            if '_limit' in func_params:
-                call_kwargs["_limit"] = limit
-            if '_offset' in func_params:
-                call_kwargs["_offset"] = offset
-
-            # Check if function expects page/limit parameters
-            if 'page' in func_params:
-                call_kwargs['page'] = page
-
-            if 'limit' in func_params:
-                call_kwargs['limit'] = limit
-
-            # Check if function expects a Paginate object
+            # Check if function expects a Paginate object first
+            has_paginate_param = False
             for param_name, param in func_params.items():
                 if param.annotation and 'Paginate' in str(param.annotation):
-                    # Create Paginate object
                     from zenith.pagination import Paginate
-                    call_kwargs[param_name] = Paginate(page=page, limit=limit, offset=offset)
+                    # Warn about incompatible usage
+                    import warnings
+                    warnings.warn(
+                        f"@paginate decorator is not fully compatible with Paginate dependency injection. "
+                        f"Consider using simple page/limit parameters instead, or manually configure "
+                        f"Paginate in your endpoint. See decorator documentation for examples.",
+                        UserWarning,
+                        stacklevel=2
+                    )
+
+                    # Try to work with what we have
+                    # Check if a Paginate object was already passed
+                    if param_name in call_kwargs and isinstance(call_kwargs[param_name], Paginate):
+                        # Update the existing Paginate object with query parameters if we have them
+                        existing_paginate = call_kwargs[param_name]
+                        logger.debug(f"Found existing Paginate: page={existing_paginate.page}, limit={existing_paginate.limit}")
+                        # Only update if we got actual values from query params
+                        if page != 1 or limit != default_limit:
+                            updated_paginate = existing_paginate(page=page, limit=limit)
+                            logger.debug(f"Updated Paginate: page={updated_paginate.page}, limit={updated_paginate.limit}")
+                            call_kwargs[param_name] = updated_paginate
+                    else:
+                        # Create a new Paginate object with the parameters we have
+                        paginate_obj = Paginate()
+                        paginate_obj = paginate_obj(page=page, limit=limit)
+                        logger.debug(f"Creating new Paginate with page={page}, limit={limit}")
+                        call_kwargs[param_name] = paginate_obj
+                    has_paginate_param = True
+                    break  # Only handle one Paginate parameter
+
+            # Only add individual parameters if no Paginate object is used
+            if not has_paginate_param:
+                # Only add parameters the function actually accepts
+                if '_page' in func_params:
+                    call_kwargs["_page"] = page
+                if '_limit' in func_params:
+                    call_kwargs["_limit"] = limit
+                if '_offset' in func_params:
+                    call_kwargs["_offset"] = offset
+
+                # Check if function expects page/limit parameters
+                if 'page' in func_params:
+                    call_kwargs['page'] = page
+
+                if 'limit' in func_params:
+                    call_kwargs['limit'] = limit
 
             # Call the original function
             result = await func(*args, **call_kwargs)
