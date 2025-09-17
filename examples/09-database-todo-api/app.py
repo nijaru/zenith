@@ -354,7 +354,7 @@ class TodoService(Service):
 # APPLICATION SETUP
 # ============================================================================
 
-app = Zenith()  # Auto-detects environment from ZENITH_ENV
+app = Zenith()
 
 # Configure JWT
 SECRET_KEY = os.getenv(

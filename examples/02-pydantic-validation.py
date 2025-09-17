@@ -17,7 +17,7 @@ from pydantic import BaseModel, EmailStr, field_validator
 
 from zenith import Zenith
 
-app = Zenith()  # Auto-detects environment from ZENITH_ENV
+app = Zenith()
 
 
 # Request Models
