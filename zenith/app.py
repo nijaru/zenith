@@ -490,6 +490,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             )
 
         # Import exception handler for rate limiting
+        from starlette.responses import JSONResponse
         from zenith.exceptions import RateLimitException
 
         def rate_limit_handler(request, exc):
