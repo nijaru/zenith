@@ -786,6 +786,44 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self.logger.info(f"✅ Admin interface added at {route}")
         return self
 
+    def add_docs(
+        self,
+        title: str | None = None,
+        version: str = "1.0.0",
+        description: str | None = None,
+        docs_url: str = "/docs",
+        redoc_url: str = "/redoc",
+        openapi_url: str = "/openapi.json"
+    ) -> "Zenith":
+        """
+        Add OpenAPI documentation endpoints.
+
+        Args:
+            title: API title for documentation
+            version: API version
+            description: API description
+            docs_url: URL for Swagger UI documentation
+            redoc_url: URL for ReDoc documentation
+            openapi_url: URL for OpenAPI JSON spec
+
+        Returns:
+            Self for method chaining
+        """
+        # Store API info in config for OpenAPI generation
+        self.config.api_title = title or "Zenith API"
+        self.config.api_version = version
+        self.config.api_description = description or "API built with Zenith framework"
+
+        # Add the OpenAPI endpoints
+        self._add_openapi_endpoints(
+            docs_url=docs_url,
+            redoc_url=redoc_url,
+            openapi_url=openapi_url
+        )
+
+        self.logger.info(f"📖 OpenAPI documentation enabled at {docs_url} and {redoc_url}")
+        return self
+
     def add_api(
         self,
         title: str | None = None,

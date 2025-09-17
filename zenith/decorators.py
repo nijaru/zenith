@@ -32,12 +32,16 @@ _rate_limit_lock = Lock()
 _rate_limit_store: dict[str, list[float]] = {}
 
 
-def cache(ttl: int = 60):
+def cache(ttl: int = 60, key_prefix: str = None):
     """
     Cache endpoint responses for the specified time.
 
+    For web endpoints, caches based on URL path and query parameters.
+    For regular functions, caches based on arguments.
+
     Args:
         ttl: Time to live in seconds
+        key_prefix: Optional prefix for cache keys
 
     Example:
         @app.get("/expensive")
@@ -48,8 +52,46 @@ def cache(ttl: int = 60):
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
-            # Create cache key using SHA256 (more secure than MD5)
-            cache_key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
+            # Try to get request object for web endpoints
+            request = None
+            cache_key_parts = []
+
+            # Check if this is a web endpoint by looking for request in kwargs
+            if "request" in kwargs:
+                request = kwargs["request"]
+            # Check if first arg is a request object (Starlette pattern)
+            elif args and hasattr(args[0], "url") and hasattr(args[0], "method"):
+                request = args[0]
+
+            if request:
+                # For web endpoints: cache based on method, path, and query params
+                cache_key_parts = [
+                    request.method,
+                    str(request.url.path),
+                    str(sorted(request.query_params.items())) if hasattr(request, "query_params") else ""
+                ]
+                # Add any path parameters
+                if "path_params" in kwargs:
+                    cache_key_parts.append(str(sorted(kwargs["path_params"].items())))
+            else:
+                # For regular functions: cache based on function name and args
+                # Exclude request-like objects from cache key
+                clean_args = [str(arg) for arg in args if not hasattr(arg, "url")]
+                clean_kwargs = {k: v for k, v in kwargs.items()
+                              if k not in ["request", "db", "session", "background_tasks"]}
+                cache_key_parts = [
+                    func.__module__,
+                    func.__name__,
+                    str(clean_args),
+                    str(sorted(clean_kwargs.items()))
+                ]
+
+            # Add optional prefix
+            if key_prefix:
+                cache_key_parts.insert(0, key_prefix)
+
+            # Create cache key
+            cache_key = ":".join(cache_key_parts)
             cache_hash = hashlib.sha256(cache_key.encode()).hexdigest()
 
             # Thread-safe cache check
@@ -59,6 +101,9 @@ def cache(ttl: int = 60):
                     if time.time() - cached_time < ttl:
                         # Move to end for LRU
                         _cache_store.move_to_end(cache_hash)
+                        # Log cache hit for debugging
+                        import logging
+                        logging.getLogger("zenith.cache").debug(f"Cache hit for {cache_key[:50]}...")
                         return cached_value
                     else:
                         # Remove expired entry
