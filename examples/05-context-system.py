@@ -20,7 +20,7 @@ from zenith import Session
 from zenith.db import Model, Field
 
 # 🎯 Zero-config setup - just works!
-app = Zenith(debug=True)
+app = Zenith()  # Auto-detects environment from ZENITH_ENV
 
 # ============================================================================
 # MODERN MODELS - ActiveRecord-Style Database Operations

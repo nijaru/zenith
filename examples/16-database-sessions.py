@@ -73,7 +73,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 app = Zenith(
     title="Async Database Example",
     version="1.0.0",
-    debug=True,
+    # Auto-detects environment from ZENITH_ENV
 )
 
 

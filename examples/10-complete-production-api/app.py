@@ -168,7 +168,7 @@ async def cleanup_expired_sessions():
 # ============================================================================
 
 # Create Zenith app
-app = Zenith(debug=True)
+app = Zenith()  # Auto-detects environment from ZENITH_ENV
 
 # Database setup
 database = Database("sqlite+aiosqlite:///./app.db", echo=True)
