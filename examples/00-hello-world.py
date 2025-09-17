@@ -12,8 +12,7 @@ Then visit: http://localhost:8000
 
 from zenith import Zenith
 
-# Create the Zenith application (auto-detects environment from ZENITH_ENV)
-app = Zenith()  # Defaults to development mode with debug=True and auto-generated SECRET_KEY
+app = Zenith()
 
 
 # Define a simple route

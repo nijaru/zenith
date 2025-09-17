@@ -74,8 +74,8 @@ class SecurityHeaders(BaseModel):
 # Generate secure secret key (in production, use environment variable)
 SECRET_KEY = os.getenv("SECRET_KEY") or secrets.token_urlsafe(32)
 
-# Create Zenith app
-app = Zenith(debug=False)  # Important: disable debug in production
+# Create Zenith app - use ZENITH_ENV=production for production deployment
+app = Zenith()  # Environment-aware configuration
 
 # ============================================================================
 # SECURITY MIDDLEWARE STACK - ORDER MATTERS!

@@ -261,13 +261,13 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 from zenith import Zenith
 
 # Modern approach - automatic environment detection
-app = Zenith()  # Uses ZENITH_ENV or sensible detection
+app = Zenith()  # No configuration needed - just works
 
 # Environment-specific behavior:
-# ZENITH_ENV=development (or dev) → debug=True, auto-generated SECRET_KEY
-# ZENITH_ENV=production (or prod) → debug=False, requires SECRET_KEY
-# ZENITH_ENV=test → debug=True, testing mode enabled
-# ZENITH_ENV=staging → debug=False, requires SECRET_KEY
+# development (or dev): Enhanced error reporting, auto-generated secrets
+# production (or prod): Optimized for deployment, requires SECRET_KEY
+# test: Testing mode with rate limiting disabled
+# staging: Production-like with enhanced monitoring
 
 # Manual configuration if needed
 from zenith.config import Config
