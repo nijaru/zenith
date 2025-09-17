@@ -260,8 +260,7 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```python
 from zenith import Zenith
 
-# Modern approach - automatic environment detection
-app = Zenith()  # No configuration needed - just works
+app = Zenith()
 
 # Environment-specific behavior:
 # development (or dev): Enhanced error reporting, auto-generated secrets
