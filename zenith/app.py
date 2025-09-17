@@ -488,9 +488,28 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 status_code=405,
             )
 
+        # Import exception handler for rate limiting
+        from zenith.exceptions import RateLimitException
+
+        def rate_limit_handler(request, exc):
+            """Handle rate limit exceptions."""
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "error": "rate_limit_exceeded",
+                    "message": str(exc),
+                    "detail": exc.detail if hasattr(exc, "detail") else "Too many requests"
+                },
+                headers={
+                    "Retry-After": "60",  # Default retry after 60 seconds
+                }
+            )
+
         exception_handlers = {
             404: not_found_handler,
             405: method_not_allowed_handler,
+            RateLimitException: rate_limit_handler,
+            429: rate_limit_handler,  # Also handle standard 429 status codes
         }
 
         # Create Starlette app

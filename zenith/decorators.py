@@ -85,6 +85,10 @@ def rate_limit(limit: str):
     """
     Rate limit endpoint access.
 
+    This decorator adds endpoint-specific rate limiting that works WITH
+    the RateLimitMiddleware. It respects testing mode and properly
+    returns 429 responses.
+
     Args:
         limit: Rate limit string (e.g., "10/minute", "100/hour")
 
@@ -108,10 +112,20 @@ def rate_limit(limit: str):
 
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
+            # Check if testing mode is enabled
+            import os
+            if os.getenv("ZENITH_TESTING", "false").lower() == "true":
+                # Skip rate limiting in testing mode
+                return await func(*args, **kwargs)
+
             # Get client identifier from request context if available
             # In production, this would use IP address or authenticated user ID
-            from zenith.core.scoped import get_current_request
-            request = get_current_request()
+            try:
+                from zenith.core.scoped import get_current_request
+                request = get_current_request()
+            except ImportError:
+                # If scoped module doesn't exist, try getting from kwargs
+                request = kwargs.get('request')
 
             if request and hasattr(request, 'client'):
                 client_id = f"{func.__name__}:{request.client.host}"
@@ -136,8 +150,10 @@ def rate_limit(limit: str):
                         # Calculate retry-after time
                         oldest_request = min(requests)
                         retry_after = int(period_seconds - (current_time - oldest_request))
+                        # Use proper exception with detail field
                         raise RateLimitException(
-                            f"Rate limit exceeded: {limit}. Try again in {retry_after} seconds."
+                            detail=f"Rate limit exceeded: {limit}. Try again in {retry_after} seconds.",
+                            headers={"Retry-After": str(retry_after)}
                         )
 
                     requests.append(current_time)
