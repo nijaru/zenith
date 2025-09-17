@@ -146,12 +146,12 @@ async def health():
             assert "🧪 Testing mode enabled" in result.output
             assert "rate limiting and other test-interfering middleware disabled" in result.output
 
-            # Check that ZENITH_TESTING environment variable was set
-            assert os.environ.get("ZENITH_TESTING") == "true"
+            # Check that ZENITH_ENV environment variable was set
+            assert os.environ.get("ZENITH_ENV") == "test"
 
             # Clean up
-            if "ZENITH_TESTING" in os.environ:
-                del os.environ["ZENITH_TESTING"]
+            if "ZENITH_ENV" in os.environ:
+                del os.environ["ZENITH_ENV"]
 
     @patch("subprocess.run")
     def test_dev_command_with_options(self, mock_run, runner, temp_dir, test_app_file):
@@ -388,21 +388,37 @@ class TestCLIAppDiscovery:
 class TestTestingModeIntegration:
     """Test testing mode functionality integration."""
 
-    def test_testing_mode_environment_variable(self):
-        """Test that ZENITH_TESTING environment variable is respected."""
+    def test_testing_mode_legacy_environment_variable(self):
+        """Test that legacy ZENITH_TESTING environment variable is still respected."""
         from zenith import Zenith
 
         # Test without testing mode
         app1 = Zenith()
         assert app1.testing is False
 
-        # Test with environment variable
+        # Test with legacy environment variable
         os.environ["ZENITH_TESTING"] = "true"
         try:
             app2 = Zenith()
             assert app2.testing is True
         finally:
             del os.environ["ZENITH_TESTING"]
+
+    def test_testing_mode_zenith_env_variable(self):
+        """Test that ZENITH_ENV=test environment variable enables testing mode."""
+        from zenith import Zenith
+
+        # Test without testing mode
+        app1 = Zenith()
+        assert app1.testing is False
+
+        # Test with new ZENITH_ENV environment variable
+        os.environ["ZENITH_ENV"] = "test"
+        try:
+            app2 = Zenith()
+            assert app2.testing is True
+        finally:
+            del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_parameter(self):
         """Test that testing parameter works."""

@@ -159,7 +159,8 @@ def rate_limit(limit: str):
         async def wrapper(*args, **kwargs):
             # Check if testing mode is enabled
             import os
-            if os.getenv("ZENITH_TESTING", "false").lower() == "true":
+            zenith_env = os.getenv("ZENITH_ENV", "").lower()
+            if zenith_env in ("test", "testing") or os.getenv("ZENITH_TESTING", "false").lower() == "true":
                 # Skip rate limiting in testing mode
                 return await func(*args, **kwargs)
 

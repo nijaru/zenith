@@ -199,7 +199,7 @@ def dev(host: str, port: int, app: str | None, open: bool, testing: bool):
     """Start development server with hot reload."""
     if testing:
         import os
-        os.environ["ZENITH_TESTING"] = "true"
+        os.environ["ZENITH_ENV"] = "test"
         click.echo("🧪 Testing mode enabled - rate limiting and other test-interfering middleware disabled")
 
     _run_server(host, port, reload=True, workers=1, open_browser=open, app_path=app)
