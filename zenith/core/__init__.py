@@ -29,6 +29,13 @@ from zenith.core.dependencies import (
     Request,
     ServiceContext,
 )
+# HTTP patterns and constants
+from zenith.core.patterns import (
+    HTTP_GET, HTTP_POST, HTTP_PUT, HTTP_PATCH, HTTP_DELETE, HTTP_HEAD, HTTP_OPTIONS,
+    METHODS_WITH_BODY, CACHEABLE_METHODS, SAFE_METHODS,
+    extract_path_params
+)
+
 # Service decorator removed - use Service base class from zenith.core.service instead
 from zenith.core.service import Service
 from zenith.core.supervisor import Supervisor
@@ -47,6 +54,11 @@ __all__ = [
     "Service",
     "ServiceContext",
     "Supervisor",
+    # HTTP patterns
+    "HTTP_GET", "HTTP_POST", "HTTP_PUT", "HTTP_PATCH", "HTTP_DELETE", "HTTP_HEAD", "HTTP_OPTIONS",
+    "METHODS_WITH_BODY", "CACHEABLE_METHODS", "SAFE_METHODS",
+    "extract_path_params",
+    # Auto-config functions
     "create_auto_config",
     "detect_environment",
     "get_database_url",
