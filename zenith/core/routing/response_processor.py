@@ -117,18 +117,24 @@ class ResponseProcessor:
 
     def _create_json_response(self, result: Any) -> OptimizedJSONResponse:
         """Create high-performance JSON response from handler result."""
-        if isinstance(result, BaseModel):
-            content = result.model_dump()
-        elif isinstance(result, list):
-            # Handle list of BaseModel objects
-            if result and isinstance(result[0], BaseModel):
-                content = [item.model_dump() for item in result]
-            else:
-                content = result
-        elif isinstance(result, dict):
-            content = result
-        else:
-            # Wrap simple values in a result object
-            content = {"result": result}
+        status_code = 200
+        content = result
 
-        return OptimizedJSONResponse(content=content)
+        # Handle tuple returns with (content, status_code)
+        if isinstance(result, tuple) and len(result) == 2:
+            content, status_code = result
+
+        # Process content based on type
+        if isinstance(content, BaseModel):
+            content = content.model_dump()
+        elif isinstance(content, list):
+            # Handle list of BaseModel objects
+            if content and isinstance(content[0], BaseModel):
+                content = [item.model_dump() for item in content]
+        elif isinstance(content, dict):
+            pass  # Keep as-is
+        elif not isinstance(content, (str, int, float, bool, type(None))):
+            # Wrap complex values in a result object
+            content = {"result": content}
+
+        return OptimizedJSONResponse(content=content, status_code=status_code)
