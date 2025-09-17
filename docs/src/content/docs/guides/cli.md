@@ -76,12 +76,12 @@ The `--testing` flag is crucial for test suites that make multiple rapid request
 zen dev --testing
 
 # For test scripts and CI/CD
-ZENITH_TESTING=true zen dev
+ZENITH_ENV=test zen dev
 ```
 
 **Why testing mode?**
 - Disables rate limiting middleware that can cause `429 Too Many Requests` errors in tests
-- Automatically enabled when `ZENITH_TESTING=true` environment variable is set
+- Automatically enabled when `ZENITH_ENV=test` environment variable is set
 - Safe for production (only affects rate limiting, not security features)
 
 ### App Discovery
@@ -184,7 +184,7 @@ zen dev --host 0.0.0.0 --port 3000 --app src.main:app
 ### Testing Workflow
 ```bash
 # Enable testing mode for test suites
-ZENITH_TESTING=true python -m pytest
+ZENITH_ENV=test python -m pytest
 
 # Or in development server
 zen dev --testing
@@ -212,7 +212,7 @@ SECRET_KEY=your-secret zen serve --workers 4
 
 The CLI respects these environment variables:
 
-- **`ZENITH_TESTING`** - Enables testing mode (disables rate limiting)
+- **`ZENITH_ENV=test`** - Enables testing mode (disables rate limiting)
 - **`SECRET_KEY`** - Application secret key
 - **`DATABASE_URL`** - Database connection string
 - **`DEBUG`** - Enable debug mode
@@ -282,12 +282,12 @@ If tests fail with rate limiting errors:
 zen dev --testing
 
 # Or set environment variable
-export ZENITH_TESTING=true
+export ZENITH_ENV=test
 zen dev
 
 # In pytest configuration (conftest.py)
 import os
-os.environ["ZENITH_TESTING"] = "true"
+os.environ["ZENITH_ENV"] = "test"
 ```
 
 ### Development Server Issues
@@ -329,7 +329,7 @@ If upgrading from earlier Zenith versions, note that these commands have been re
 - Set up `.env` file for consistent local configuration
 
 ### Testing
-- Always enable testing mode: `ZENITH_TESTING=true`
+- Always enable testing mode: `ZENITH_ENV=test`
 - Use explicit app paths in CI/CD: `zen dev --app src.main:app`
 - Create wrapper files for complex app structures
 
