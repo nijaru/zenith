@@ -259,6 +259,9 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
     """
     Add pagination to list endpoints.
 
+    This decorator adds pagination parameters to endpoints and wraps
+    the response with pagination metadata.
+
     Args:
         default_limit: Default page size
         max_limit: Maximum allowed page size
@@ -266,12 +269,26 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
     Example:
         @app.get("/users")
         @paginate()
-        async def list_users(page: int = 1, limit: int = 20):
-            return await User.paginate(page, limit)
+        async def list_users(pagination: Paginate = Paginate()):
+            return await User.paginate(pagination.page, pagination.limit)
+
+        # Or with explicit parameters:
+        @app.get("/posts")
+        @paginate()
+        async def list_posts(page: int = 1, limit: int = 20):
+            return await Post.paginate(page, limit)
     """
     def decorator(func: Callable) -> Callable:
+        import inspect
+        sig = inspect.signature(func)
+        func_params = sig.parameters
+
         @functools.wraps(func)
-        async def wrapper(*args, page: int = 1, limit: int = default_limit, **kwargs):
+        async def wrapper(*args, **kwargs):
+            # Extract pagination parameters from kwargs
+            page = kwargs.get('page', 1)
+            limit = kwargs.get('limit', default_limit)
+
             # Enforce limits
             limit = min(limit, max_limit)
             limit = max(1, limit)
@@ -280,12 +297,36 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             # Calculate offset
             offset = (page - 1) * limit
 
-            # Inject pagination params
-            kwargs["_page"] = page
-            kwargs["_limit"] = limit
-            kwargs["_offset"] = offset
+            # Only pass parameters that the function expects
+            call_kwargs = dict(kwargs)
 
-            result = await func(*args, page=page, limit=limit, **kwargs)
+            # Add pagination metadata for functions that want it
+            call_kwargs["_page"] = page
+            call_kwargs["_limit"] = limit
+            call_kwargs["_offset"] = offset
+
+            # Check if function expects page/limit parameters
+            if 'page' in func_params:
+                call_kwargs['page'] = page
+            elif 'page' in call_kwargs:
+                # Remove if function doesn't expect it
+                del call_kwargs['page']
+
+            if 'limit' in func_params:
+                call_kwargs['limit'] = limit
+            elif 'limit' in call_kwargs:
+                # Remove if function doesn't expect it
+                del call_kwargs['limit']
+
+            # Check if function expects a Paginate object
+            for param_name, param in func_params.items():
+                if param.annotation and 'Paginate' in str(param.annotation):
+                    # Create Paginate object
+                    from zenith.pagination import Paginate
+                    call_kwargs[param_name] = Paginate(page=page, limit=limit, offset=offset)
+
+            # Call the original function
+            result = await func(*args, **call_kwargs)
 
             # Wrap result with pagination metadata
             if isinstance(result, list):
@@ -294,7 +335,16 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
                     "page": page,
                     "limit": limit,
                     "total": len(result),  # In real implementation, would get actual total
+                    "has_next": len(result) == limit,  # Simple heuristic
+                    "has_prev": page > 1
                 }
+            elif isinstance(result, dict) and "items" in result:
+                # Already paginated response, enhance it
+                result["page"] = page
+                result["limit"] = limit
+                if "total" not in result:
+                    result["total"] = len(result.get("items", []))
+                return result
 
             return result
         return wrapper

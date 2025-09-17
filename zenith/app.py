@@ -766,7 +766,12 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                     email=f"{username}@example.com",
                     additional_claims={"username": username}
                 )
-                return {"access_token": token, "token_type": "bearer"}
+                # Return OAuth2-compliant response format
+                return {
+                    "access_token": token,
+                    "token_type": "bearer",
+                    "expires_in": expire_minutes * 60  # Convert minutes to seconds
+                }
             else:
                 try:
                     from fastapi import HTTPException
