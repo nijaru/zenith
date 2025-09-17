@@ -151,7 +151,7 @@ class UserService(Service):
 
 
 # Create test application
-app = Zenith(debug=True)
+app = Zenith()  # Environment-aware - use ZENITH_ENV=test for testing
 
 
 # ============================================================================

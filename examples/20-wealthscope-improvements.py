@@ -21,8 +21,8 @@ from zenith import (
     Session,  # Database session dependency - the one true way
 )
 
-# Create app with debug mode for better error messages
-app = Zenith(debug=True)
+# Create app - auto-detects environment from ZENITH_ENV
+app = Zenith()  # Development mode by default
 
 # SQLAlchemy setup (example)
 Base = declarative_base()

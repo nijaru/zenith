@@ -13,7 +13,7 @@ Then visit: http://localhost:8001
 
 from zenith import Zenith
 
-app = Zenith(debug=True)
+app = Zenith()  # Auto-detects environment from ZENITH_ENV
 
 
 @app.get("/")
