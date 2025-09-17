@@ -138,7 +138,7 @@ def _parse_size(size: str | int | None) -> int | None:
 
 
 async def get_validated_file(
-    max_size: str | int | None = None,
+    max_size: int | None = None,
     allowed_types: list[str] | None = None,
     allowed_extensions: list[str] | None = None,
     field_name: str = "file"
@@ -150,21 +150,61 @@ async def get_validated_file(
     if validation fails.
 
     Args:
-        max_size: Maximum file size ('10MB', '512KB', '1GB') or bytes as int
+        max_size: Maximum file size in bytes
         allowed_types: List of allowed MIME types (use IMAGE_TYPES, etc.)
         allowed_extensions: List of allowed file extensions ['.jpg', '.png']
         field_name: Form field name (default: "file")
     """
-    parsed_size = _parse_size(max_size)
+    from starlette.datastructures import UploadFile as StarletteUploadFile
+    from starlette.requests import Request
+    from zenith.exceptions import ValidationException
 
-    # This is a placeholder - actual implementation would need to:
-    # 1. Get the file from the request
-    # 2. Validate size against parsed_size
-    # 3. Validate MIME type against allowed_types
-    # 4. Validate extension against allowed_extensions
-    # 5. Return UploadFile or enhanced UploadedFile
-    # For now, return None to indicate not implemented
-    return None
+    # This function will be called during request handling
+    # We need to return a dependency function that gets the request
+    async def validate_file_upload(request: Request) -> StarletteUploadFile:
+        # Get the file from the request form data
+        form = await request.form()
+        file_field = form.get(field_name)
+
+        if not file_field or not isinstance(file_field, StarletteUploadFile):
+            raise ValidationException(f"No file uploaded in field '{field_name}'")
+
+        file: StarletteUploadFile = file_field
+
+        # Validate file size
+        if max_size is not None:
+            # Read file size (we need to read the file to check size)
+            contents = await file.read()
+            file_size = len(contents)
+            # Reset file position so it can be read again
+            await file.seek(0)
+
+            if file_size > max_size:
+                size_mb = max_size / (1024 * 1024)
+                actual_mb = file_size / (1024 * 1024)
+                raise ValidationException(
+                    f"File size ({actual_mb:.2f}MB) exceeds maximum allowed size ({size_mb:.2f}MB)"
+                )
+
+        # Validate MIME type
+        if allowed_types and file.content_type:
+            if file.content_type not in allowed_types:
+                raise ValidationException(
+                    f"File type '{file.content_type}' not allowed. Allowed types: {', '.join(allowed_types)}"
+                )
+
+        # Validate file extension
+        if allowed_extensions and file.filename:
+            import os
+            ext = os.path.splitext(file.filename)[1].lower()
+            if ext not in [e.lower() for e in allowed_extensions]:
+                raise ValidationException(
+                    f"File extension '{ext}' not allowed. Allowed extensions: {', '.join(allowed_extensions)}"
+                )
+
+        return file
+
+    return validate_file_upload
 
 
 # Convenient dependency shortcuts (Rails-like simplicity)
@@ -214,11 +254,11 @@ def File(
     # Validate parameters at creation time for better error messages
     parsed_size = _parse_size(max_size)  # This will raise ValueError if invalid
 
-    def create_file_validator():
-        """Create a file validator with the specified constraints."""
-        return lambda: get_validated_file(parsed_size, allowed_types, allowed_extensions, field_name)
+    # Create the dependency function
+    async def file_dependency(request):
+        return await get_validated_file(parsed_size, allowed_types, allowed_extensions, field_name)(request)
 
-    return Depends(create_file_validator())
+    return Depends(file_dependency)
 
 
 def Inject(service_type: type[T] | None = None) -> Any:
