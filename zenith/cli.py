@@ -185,6 +185,793 @@ SECRET_KEY = "{secret_key}"
 
 
 @main.command()
+@click.argument("name")
+@click.option("--template", type=click.Choice(["api", "webapp", "micro"]), default="api", help="Project template")
+@click.option("--path", default=".", help="Directory to create project in")
+def init(name: str, template: str, path: str):
+    """Create a new Zenith project with best-practice templates.
+
+    Templates:
+      api     - Basic API with authentication and database (default)
+      webapp  - Full-stack webapp with frontend integration
+      micro   - Microservice pattern with health checks and metrics
+
+    Examples:
+      zen init my-api                      # Basic API structure
+      zen init my-app --template webapp    # Full-stack webapp
+      zen init my-service --template micro # Microservice pattern
+    """
+    import secrets
+
+    project_path = Path(path) / name
+
+    click.echo(f"🚀 Creating new Zenith {template}: {name}")
+    click.echo(f"📁 Path: {project_path}")
+
+    # Create project directory
+    try:
+        project_path.mkdir(parents=True, exist_ok=False)
+    except FileExistsError:
+        click.echo(f"❌ Directory {project_path} already exists")
+        click.echo("   Choose a different name or remove the existing directory")
+        sys.exit(1)
+
+    # Generate secure secret key (64 bytes for stronger entropy)
+    secret_key = secrets.token_urlsafe(64)
+
+    # Template-specific content generation
+    templates = {
+        "api": _generate_api_template,
+        "webapp": _generate_webapp_template,
+        "micro": _generate_micro_template
+    }
+
+    template_generator = templates[template]
+    files_to_create = template_generator(name, secret_key)
+
+    # Write all files
+    for filename, content in files_to_create:
+        file_path = project_path / filename
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(content.strip())
+        click.echo(f"  ✓ {filename}")
+
+    click.echo("\n✅ Project created successfully!")
+    click.echo("\nNext steps:")
+    click.echo(f"  cd {name}")
+    click.echo("  pip install -r requirements.txt")
+    click.echo("  zen dev                         # Start development server")
+    if template == "webapp":
+        click.echo("  # Configure frontend build in package.json")
+    elif template == "micro":
+        click.echo("  # Configure service discovery and monitoring")
+
+
+def _generate_api_template(name: str, secret_key: str) -> list[tuple[str, str]]:
+    """Generate basic API template files."""
+
+    app_py_content = f'''"""
+{name} - Zenith API application.
+"""
+
+from zenith import Zenith
+
+# Create your Zenith app
+app = Zenith()
+
+
+@app.get("/")
+async def root():
+    """API root endpoint."""
+    return {{"message": "Welcome to {name} API!", "status": "running"}}
+
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
+    return {{"status": "healthy", "service": "{name}"}}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+'''
+
+    env_content = f'''# Environment variables for {name}
+SECRET_KEY={secret_key}
+ZENITH_ENV=development
+DEBUG=true
+
+# Database (uncomment and configure as needed)
+# DATABASE_URL=sqlite:///./app.db
+
+# Redis (uncomment if using caching/sessions)
+# REDIS_URL=redis://localhost:6379
+'''
+
+    requirements_content = '''zenith-web>=0.3.0
+uvicorn[standard]>=0.20.0
+'''
+
+    gitignore_content = '''# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+'''
+
+    readme_content = f'''# {name}
+
+A modern API built with [Zenith](https://zenith-python.org).
+
+## Quick Start
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Start development server:
+   ```bash
+   zen dev
+   ```
+
+3. Visit http://localhost:8000 to see your API!
+
+## API Endpoints
+
+- `GET /` - API root
+- `GET /health` - Health check
+- `GET /docs` - Interactive API documentation
+
+## Project Structure
+
+- `app.py` - Main application file
+- `.env` - Environment variables (configure your secrets here)
+- `requirements.txt` - Python dependencies
+
+## Next Steps
+
+- Add your business logic and models
+- Configure database connection in `.env`
+- Add authentication with `app.add_auth()`
+- Deploy to production
+
+## Learn More
+
+- [Zenith Documentation](https://zenith-python.org)
+- [API Examples](https://zenith-python.org/examples)
+'''
+
+    return [
+        ("app.py", app_py_content),
+        (".env", env_content),
+        ("requirements.txt", requirements_content),
+        (".gitignore", gitignore_content),
+        ("README.md", readme_content),
+    ]
+
+
+def _generate_webapp_template(name: str, secret_key: str) -> list[tuple[str, str]]:
+    """Generate full-stack webapp template files."""
+
+    app_py_content = f'''"""
+{name} - Zenith Full-Stack Web Application.
+"""
+
+from zenith import Zenith
+
+# Create your Zenith app with webapp features
+app = (Zenith()
+       .add_auth()           # JWT authentication
+       .add_api("{name}", "1.0.0", "Full-stack web application")
+       .add_admin())         # Admin dashboard
+
+
+@app.get("/")
+async def root():
+    """Frontend home page."""
+    return {{"message": "Welcome to {name}!", "type": "webapp"}}
+
+
+@app.get("/api/")
+async def api_root():
+    """API root endpoint."""
+    return {{"message": "{name} API", "version": "1.0.0"}}
+
+
+# Static file serving for frontend
+from zenith.web.static import StaticFiles
+app.mount("/static", StaticFiles(directory="frontend/dist"), name="static")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+'''
+
+    env_content = f'''# Environment variables for {name}
+SECRET_KEY={secret_key}
+ZENITH_ENV=development
+DEBUG=true
+
+# Database
+DATABASE_URL=sqlite:///./app.db
+
+# Frontend build
+FRONTEND_DIR=frontend/dist
+
+# CORS for frontend development
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Redis (uncomment if using sessions/caching)
+# REDIS_URL=redis://localhost:6379
+'''
+
+    requirements_content = '''zenith-web>=0.3.0
+uvicorn[standard]>=0.20.0
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+'''
+
+    package_json_content = f'''{{
+  "name": "{name.lower().replace('_', '-')}-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for {name}",
+  "scripts": {{
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }},
+  "devDependencies": {{
+    "vite": "^4.4.0"
+  }}
+}}'''
+
+    frontend_index_html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{name}</title>
+</head>
+<body>
+    <div id="app">
+        <h1>Welcome to {name}!</h1>
+        <p>Your Zenith full-stack application is running.</p>
+        <div id="api-status">Loading API status...</div>
+    </div>
+
+    <script>
+        // Simple API integration example
+        fetch('/api/')
+            .then(res => res.json())
+            .then(data => {{
+                document.getElementById('api-status').innerHTML =
+                    `<p>✅ API connected: ${{data.message}}</p>`;
+            }})
+            .catch(err => {{
+                document.getElementById('api-status').innerHTML =
+                    `<p>❌ API connection failed</p>`;
+            }});
+    </script>
+</body>
+</html>'''
+
+    gitignore_content = '''# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+'''
+
+    readme_content = f'''# {name}
+
+A modern full-stack web application built with [Zenith](https://zenith-python.org).
+
+## Features
+
+- 🔐 **Authentication** - JWT-based user authentication
+- 📊 **Admin Dashboard** - Built-in admin interface
+- 🎨 **Frontend Integration** - Static file serving and API integration
+- 📝 **API Documentation** - Interactive Swagger/OpenAPI docs
+- 🗄️ **Database** - SQLite with SQLAlchemy ORM
+
+## Quick Start
+
+1. **Backend Setup:**
+   ```bash
+   pip install -r requirements.txt
+   zen dev
+   ```
+
+2. **Frontend Setup** (optional):
+   ```bash
+   cd frontend
+   npm install
+   npm run dev        # Development server
+   npm run build      # Production build
+   ```
+
+3. Visit http://localhost:8000 to see your app!
+
+## Project Structure
+
+```
+{name}/
+├── app.py              # Main application
+├── .env                # Environment variables
+├── requirements.txt    # Python dependencies
+├── frontend/           # Frontend application
+│   ├── package.json    # Node.js dependencies
+│   └── index.html      # Main HTML file
+└── README.md           # This file
+```
+
+## API Endpoints
+
+- `GET /` - Frontend home page
+- `GET /api/` - API root
+- `GET /docs` - Interactive API documentation
+- `GET /admin` - Admin dashboard
+- `POST /auth/login` - User authentication
+
+## Next Steps
+
+- Configure your database models
+- Add user registration and profiles
+- Customize the frontend with your preferred framework (React, Vue, etc.)
+- Add business logic and API endpoints
+- Deploy to production
+
+## Learn More
+
+- [Zenith Documentation](https://zenith-python.org)
+- [Full-Stack Examples](https://zenith-python.org/examples/webapp)
+'''
+
+    return [
+        ("app.py", app_py_content),
+        (".env", env_content),
+        ("requirements.txt", requirements_content),
+        ("package.json", package_json_content),
+        ("frontend/index.html", frontend_index_html),
+        (".gitignore", gitignore_content),
+        ("README.md", readme_content),
+    ]
+
+
+def _generate_micro_template(name: str, secret_key: str) -> list[tuple[str, str]]:
+    """Generate microservice template files."""
+
+    app_py_content = f'''"""
+{name} - Zenith Microservice.
+"""
+
+from zenith import Zenith
+
+# Create your Zenith microservice
+app = Zenith()
+
+# Add production microservice features
+app.add_api("{name}", "1.0.0", "Production microservice")
+
+
+@app.get("/")
+async def root():
+    """Service information."""
+    return {{
+        "service": "{name}",
+        "version": "1.0.0",
+        "status": "running",
+        "type": "microservice"
+    }}
+
+
+@app.get("/health")
+async def health():
+    """Kubernetes-compatible health check."""
+    return {{
+        "status": "healthy",
+        "service": "{name}",
+        "checks": {{
+            "database": "healthy",
+            "memory": "healthy",
+            "disk": "healthy"
+        }}
+    }}
+
+
+@app.get("/ready")
+async def ready():
+    """Kubernetes readiness probe."""
+    return {{
+        "status": "ready",
+        "service": "{name}",
+        "uptime": "0s"  # TODO: Implement actual uptime
+    }}
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus-compatible metrics endpoint."""
+    # TODO: Implement actual metrics collection
+    return {{
+        "requests_total": 0,
+        "requests_duration_seconds": 0.0,
+        "memory_usage_bytes": 0
+    }}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+'''
+
+    env_content = f'''# Environment variables for {name}
+SECRET_KEY={secret_key}
+ZENITH_ENV=production
+DEBUG=false
+
+# Service configuration
+SERVICE_NAME={name}
+SERVICE_VERSION=1.0.0
+SERVICE_PORT=8000
+
+# Database
+DATABASE_URL=postgresql://user:pass@db:5432/dbname
+
+# Redis (for caching/sessions)
+REDIS_URL=redis://redis:6379
+
+# Monitoring
+METRICS_ENABLED=true
+HEALTH_CHECK_TIMEOUT=5
+
+# Security
+CORS_ORIGINS=https://api.yourdomain.com
+'''
+
+    requirements_content = '''zenith-web>=0.3.0
+uvicorn[standard]>=0.20.0
+psycopg2-binary>=2.9.0
+redis>=4.5.0
+prometheus-client>=0.16.0
+'''
+
+    dockerfile_content = f'''FROM python:3.12-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \\
+    gcc \\
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash app \\
+    && chown -R app:app /app
+USER app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+'''
+
+    docker_compose_content = f'''version: '3.8'
+
+services:
+  {name.lower().replace('_', '-')}:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/{name.lower()}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: {name.lower()}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+'''
+
+    k8s_deployment_content = f'''apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {name.lower().replace('_', '-')}
+  labels:
+    app: {name.lower().replace('_', '-')}
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: {name.lower().replace('_', '-')}
+  template:
+    metadata:
+      labels:
+        app: {name.lower().replace('_', '-')}
+    spec:
+      containers:
+      - name: {name.lower().replace('_', '-')}
+        image: {name.lower().replace('_', '-')}:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: ZENITH_ENV
+          value: "production"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: {name.lower().replace('_', '-')}-secrets
+              key: database-url
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {name.lower().replace('_', '-')}-secrets
+              key: secret-key
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {name.lower().replace('_', '-')}-service
+spec:
+  selector:
+    app: {name.lower().replace('_', '-')}
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: LoadBalancer
+'''
+
+    gitignore_content = '''# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+
+# Docker
+.dockerignore
+
+# Kubernetes
+*.kubeconfig
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Monitoring
+prometheus/
+grafana/
+'''
+
+    readme_content = f'''# {name}
+
+A production-ready microservice built with [Zenith](https://zenith-python.org).
+
+## Features
+
+- 🏥 **Health Checks** - Kubernetes-compatible liveness and readiness probes
+- 📊 **Metrics** - Prometheus-compatible metrics endpoint
+- 🐳 **Containerized** - Docker and Docker Compose ready
+- ☸️ **Kubernetes** - Deployment manifests included
+- 🔒 **Production Security** - Security headers, CORS, and rate limiting
+- 📝 **API Documentation** - Interactive Swagger/OpenAPI docs
+
+## Quick Start
+
+### Local Development
+```bash
+pip install -r requirements.txt
+zen dev
+```
+
+### Docker Development
+```bash
+docker-compose up --build
+```
+
+### Production Deployment
+```bash
+# Build and deploy
+docker build -t {name.lower().replace('_', '-')} .
+kubectl apply -f k8s/
+```
+
+## Health Endpoints
+
+- `GET /health` - Liveness probe (Kubernetes compatible)
+- `GET /ready` - Readiness probe (Kubernetes compatible)
+- `GET /metrics` - Prometheus metrics
+
+## Project Structure
+
+```
+{name}/
+├── app.py              # Main microservice application
+├── .env                # Environment variables
+├── requirements.txt    # Python dependencies
+├── Dockerfile          # Container image
+├── docker-compose.yml  # Local development stack
+├── k8s/               # Kubernetes manifests
+│   └── deployment.yaml
+└── README.md          # This file
+```
+
+## Configuration
+
+### Environment Variables
+- `SERVICE_NAME` - Service identifier
+- `SERVICE_VERSION` - Service version
+- `DATABASE_URL` - PostgreSQL connection string
+- `REDIS_URL` - Redis connection string
+- `METRICS_ENABLED` - Enable/disable metrics collection
+
+### Kubernetes Secrets
+```bash
+kubectl create secret generic {name.lower().replace('_', '-')}-secrets \\
+  --from-literal=database-url="postgresql://user:pass@host:5432/db" \\
+  --from-literal=secret-key="your-secret-key"
+```
+
+## Monitoring
+
+- **Health**: `/health` and `/ready` endpoints
+- **Metrics**: `/metrics` for Prometheus scraping
+- **Logs**: Structured JSON logging to stdout
+
+## Next Steps
+
+- Implement your business logic
+- Configure database models and migrations
+- Add authentication and authorization
+- Set up monitoring and alerting
+- Configure CI/CD pipeline
+
+## Learn More
+
+- [Zenith Documentation](https://zenith-python.org)
+- [Microservice Examples](https://zenith-python.org/examples/microservice)
+- [Kubernetes Deployment Guide](https://zenith-python.org/guides/kubernetes)
+'''
+
+    return [
+        ("app.py", app_py_content),
+        (".env", env_content),
+        ("requirements.txt", requirements_content),
+        ("Dockerfile", dockerfile_content),
+        ("docker-compose.yml", docker_compose_content),
+        ("k8s/deployment.yaml", k8s_deployment_content),
+        (".gitignore", gitignore_content),
+        ("README.md", readme_content),
+    ]
+
+
+@main.command()
 @click.argument("path", default=".")
 @click.option("--name", help="Application name")
 def new(path: str, name: str | None):
