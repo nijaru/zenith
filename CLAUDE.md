@@ -66,6 +66,7 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 3. **Performance First** - Minimal overhead, efficient request handling, comprehensive benchmarks
 4. **Developer Experience** - Intuitive APIs, excellent tooling, zero-configuration defaults
 5. **Production Ready** - Security, monitoring, scalability, and reliability built-in
+6. **Automation Over Validation** - Eliminate manual steps rather than trying to predict deployment success
 
 ### Key Differentiators from FastAPI/Flask
 - **Rails-like ActiveRecord Models**: `User.where(active=True).limit(10)` instead of raw SQLAlchemy
