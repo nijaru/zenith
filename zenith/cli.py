@@ -14,7 +14,7 @@ from zenith.__version__ import __version__
 
 
 @click.group()
-@click.version_option(version=__version__, package_name="zenith-web")
+@click.version_option(version=__version__, package_name="zenith-web", prog_name="Zenith")
 def main():
     """Zenith - Modern Python web framework."""
     pass

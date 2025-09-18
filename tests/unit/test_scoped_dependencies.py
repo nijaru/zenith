@@ -171,13 +171,15 @@ class TestSession:
     """Test Session specialized RequestScoped."""
 
     def test_database_session_creation(self):
-        """Test Session can be created."""
+        """Test Session is a pre-configured dependency."""
+        # Session is now a pre-configured Depends object
+        assert hasattr(Session, 'dependency')
+        # For custom sessions, use Depends directly
         async def get_db():
             yield "db_session"
 
-        db_session = Session(get_db)
-        assert db_session.dependency == get_db
-        assert isinstance(db_session, RequestScoped)
+        custom_session = Depends(get_db)
+        assert custom_session.dependency == get_db
 
 
 class TestDependsAlias:
@@ -251,7 +253,7 @@ class TestIntegrationWithZenith:
             yield "mock_db_session"
 
         @app.get("/users")
-        async def get_users(db=Session(get_db)):
+        async def get_users(db=Depends(get_db)):
             return {"users": [], "db": db}
 
         # Basic structure test

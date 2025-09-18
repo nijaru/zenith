@@ -98,7 +98,7 @@ class TestTestingModeMiddleware:
     def test_testing_mode_preserves_essential_middleware(self):
         """Test that testing mode preserves essential middleware."""
         app = Zenith(testing=True)
-        middleware_classes = [m.cls.__name__ for m in app.middleware]
+        middleware_classes = [m.__name__ for m in app.middleware]
 
         # These middleware should still be present in testing mode
         essential_middleware = [
@@ -123,7 +123,7 @@ class TestTestingModeMiddleware:
         os.environ["ZENITH_TESTING"] = "true"
         try:
             app = Zenith()
-            middleware_classes = [m.cls.__name__ for m in app.middleware]
+            middleware_classes = [m.__name__ for m in app.middleware]
             assert "RateLimitMiddleware" not in middleware_classes
         finally:
             del os.environ["ZENITH_TESTING"]
@@ -141,7 +141,7 @@ class TestTestingModeIntegration:
         ]
 
         app = Zenith(testing=True, middleware=custom_middleware)
-        middleware_classes = [m.cls.__name__ for m in app.middleware]
+        middleware_classes = [m.__name__ for m in app.middleware]
 
         # Custom middleware should be present
         assert "CORSMiddleware" in middleware_classes
@@ -153,12 +153,12 @@ class TestTestingModeIntegration:
         # Testing mode with debug enabled
         app_debug = Zenith(testing=True, debug=True)
         assert app_debug.testing is True
-        assert app_debug.debug is True
+        assert app_debug.config.debug is True
 
         # Testing mode with debug disabled
         app_no_debug = Zenith(testing=True, debug=False)
         assert app_no_debug.testing is True
-        assert app_no_debug.debug is False
+        assert app_no_debug.config.debug is False
 
     def test_testing_mode_with_rate_limit_configuration(self):
         """Test that testing mode overrides rate limit configuration."""
@@ -168,7 +168,7 @@ class TestTestingModeIntegration:
         rate_limits = [RateLimit(requests=10, window=60)]
 
         app = Zenith(testing=True)
-        middleware_classes = [m.cls.__name__ for m in app.middleware]
+        middleware_classes = [m.__name__ for m in app.middleware]
 
         # Rate limiting should still be disabled despite configuration
         assert "RateLimitMiddleware" not in middleware_classes

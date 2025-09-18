@@ -222,12 +222,22 @@ class Database:
 
     async def create_all(self) -> None:
         """Create all database tables."""
+        # Import SQLModel here to avoid circular imports
+        from sqlmodel import SQLModel
+
         async with self.engine.begin() as conn:
+            # Create tables for both Base models and SQLModel models
             await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(SQLModel.metadata.create_all)
 
     async def drop_all(self) -> None:
         """Drop all database tables. Use with caution!"""
+        # Import SQLModel here to avoid circular imports
+        from sqlmodel import SQLModel
+
         async with self.engine.begin() as conn:
+            # Drop tables for both Base models and SQLModel models
+            await conn.run_sync(SQLModel.metadata.drop_all)
             await conn.run_sync(Base.metadata.drop_all)
 
     async def close(self) -> None:
