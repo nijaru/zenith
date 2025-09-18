@@ -10,7 +10,8 @@ The `zen` command provides essential tools for developing and deploying Zenith a
 ## Quick Reference
 
 ```bash
-zen new <path>             # Create new Zenith application
+zen new <path>             # Create new Zenith application with secure defaults
+zen keygen                 # Generate secure SECRET_KEY
 zen dev                    # Start development server (hot reload)
 zen serve                  # Start production server
 zen --version              # Show Zenith version
@@ -43,6 +44,26 @@ my-app/
 - Sample API endpoints (`/` and `/health`)
 - Production-ready configuration examples
 - Clear documentation and next steps
+
+## Security Commands
+
+### `zen keygen` - Generate Secure Keys
+
+Generate cryptographically secure SECRET_KEY values for your application:
+
+```bash
+zen keygen                          # Print key to stdout
+zen keygen --output .env            # Write to .env file
+zen keygen --output .env --force    # Overwrite existing key
+zen keygen --length 32              # Generate 32-byte key (default: 64)
+```
+
+**Use cases:**
+- **Key rotation** - Generate new keys for production rotation
+- **Environment setup** - Add keys to existing .env files
+- **CI/CD pipelines** - Generate keys for automated deployments
+
+**Note:** The `zen new` command automatically generates a secure SECRET_KEY, so you typically only need `zen keygen` for key rotation or adding keys to existing projects.
 
 ## Development Commands
 
