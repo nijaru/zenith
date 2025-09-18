@@ -245,7 +245,7 @@ class RequestLoggingMiddleware:
 
         # Record metrics if available
         try:
-            from zenith.web.metrics import record_request_metrics
+            from zenith.monitoring.metrics import record_request_metrics
 
             record_request_metrics(
                 method=scope.get("method", "GET"),

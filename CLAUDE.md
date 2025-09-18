@@ -386,7 +386,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str):
 
 ### 10. Performance Monitoring
 ```python
-from zenith.performance import track_performance, cached, profiler
+from zenith.monitoring.performance import track_performance, cached, profiler
 
 @track_performance(threshold_ms=100)  # Log slow operations
 @cached(ttl=300)  # Cache for 5 minutes

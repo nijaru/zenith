@@ -133,7 +133,13 @@ class ResponseProcessor:
                 content = [item.model_dump() for item in content]
         elif isinstance(content, dict):
             pass  # Keep as-is
-        elif not isinstance(content, (str, int, float, bool, type(None))):
+        elif content is None:
+            # Wrap None values for consistent API responses
+            content = {"result": None}
+        elif isinstance(content, (str, int, float, bool)):
+            # Wrap primitive values for consistent API responses
+            content = {"result": content}
+        else:
             # Wrap complex values in a result object
             content = {"result": content}
 

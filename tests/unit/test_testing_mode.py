@@ -11,6 +11,30 @@ from unittest.mock import patch
 import pytest
 
 from zenith import Zenith
+from contextlib import contextmanager
+
+
+@contextmanager
+def temp_env(**env_vars):
+    """Temporarily set environment variables."""
+    old_values = {}
+    for key, value in env_vars.items():
+        old_values[key] = os.environ.get(key)
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+
+    try:
+        yield
+    finally:
+        # Restore old values
+        for key, old_value in old_values.items():
+            if old_value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = old_value
+
 
 
 class TestTestingModeConfiguration:
@@ -97,18 +121,19 @@ class TestTestingModeMiddleware:
 
     def test_testing_mode_preserves_essential_middleware(self):
         """Test that testing mode preserves essential middleware."""
-        app = Zenith(testing=True)
-        middleware_classes = [m.__name__ for m in app.middleware]
+        with temp_env(ZENITH_ENV='development'):
+            app = Zenith(testing=True)
+            middleware_classes = [m.cls.__name__ for m in app.middleware]
 
-        # These middleware should still be present in testing mode
-        essential_middleware = [
-            "SecurityHeadersMiddleware",
-            "RequestLoggingMiddleware",
-            "RequestIDMiddleware"
-        ]
+            # These middleware should still be present in testing mode
+            essential_middleware = [
+                "SecurityHeadersMiddleware",
+                "RequestLoggingMiddleware",
+                "RequestIDMiddleware"
+            ]
 
-        for middleware_name in essential_middleware:
-            assert middleware_name in middleware_classes, f"{middleware_name} should be present in testing mode"
+            for middleware_name in essential_middleware:
+                assert middleware_name in middleware_classes, f"{middleware_name} should be present in testing mode"
 
     def test_testing_mode_middleware_count_difference(self):
         """Test that testing mode has fewer middleware than normal mode."""
@@ -123,7 +148,7 @@ class TestTestingModeMiddleware:
         os.environ["ZENITH_TESTING"] = "true"
         try:
             app = Zenith()
-            middleware_classes = [m.__name__ for m in app.middleware]
+            middleware_classes = [m.cls.__name__ for m in app.middleware]
             assert "RateLimitMiddleware" not in middleware_classes
         finally:
             del os.environ["ZENITH_TESTING"]
@@ -141,7 +166,13 @@ class TestTestingModeIntegration:
         ]
 
         app = Zenith(testing=True, middleware=custom_middleware)
-        middleware_classes = [m.__name__ for m in app.middleware]
+        # Handle both wrapped middleware (with .cls) and unwrapped middleware classes
+        middleware_classes = []
+        for m in app.middleware:
+            if hasattr(m, 'cls'):
+                middleware_classes.append(m.cls.__name__)
+            else:
+                middleware_classes.append(m.__name__)
 
         # Custom middleware should be present
         assert "CORSMiddleware" in middleware_classes
@@ -168,7 +199,7 @@ class TestTestingModeIntegration:
         rate_limits = [RateLimit(requests=10, window=60)]
 
         app = Zenith(testing=True)
-        middleware_classes = [m.__name__ for m in app.middleware]
+        middleware_classes = [m.cls.__name__ for m in app.middleware]
 
         # Rate limiting should still be disabled despite configuration
         assert "RateLimitMiddleware" not in middleware_classes
@@ -195,7 +226,7 @@ class TestTestingModeUtilities:
 
     def test_testing_mode_with_request_context(self):
         """Test that testing mode works in request context."""
-        from zenith.testing import TestClient
+        from zenith.testing import SyncTestClient
 
         app = Zenith(testing=True)
 
@@ -203,11 +234,11 @@ class TestTestingModeUtilities:
         async def test_endpoint():
             return {"testing": app.testing}
 
-        with TestClient(app) as client:
-            response = client.get("/test")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["testing"] is True
+        client = SyncTestClient(app)
+        response = client.get("/test")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["testing"] is True
 
 
 class TestTestingModeErrorHandling:
@@ -319,7 +350,7 @@ class TestTestingModeRealWorldScenarios:
             assert app.testing is True
 
             # Should not have rate limiting
-            middleware_names = [m.__class__.__name__ for m in app.middleware_stack]
+            middleware_names = [m.cls.__name__ for m in app.middleware]
             assert "RateLimitMiddleware" not in middleware_names
 
         finally:
@@ -327,26 +358,25 @@ class TestTestingModeRealWorldScenarios:
 
     def test_testing_mode_test_client_compatibility(self):
         """Test that testing mode works with TestClient."""
-        from zenith.testing import TestClient
+        from zenith.testing import SyncTestClient
 
         # Create app in testing mode
         app = Zenith(testing=True)
 
-        @app.get("/health")
-        async def health():
+        @app.get("/test-endpoint")
+        async def test_endpoint():
             return {"status": "healthy", "testing": app.testing}
 
-        # Test with TestClient
-        with TestClient(app) as client:
-            response = client.get("/health")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["testing"] is True
+        # Test with SyncTestClient
+        client = SyncTestClient(app)
+        response = client.get("/test-endpoint")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["testing"] is True
 
     def test_testing_mode_multiple_requests_no_rate_limiting(self):
         """Test that testing mode allows multiple rapid requests without rate limiting."""
-        from zenith.testing import TestClient
-        import asyncio
+        from zenith.testing import SyncTestClient
 
         app = Zenith(testing=True)
 
@@ -354,14 +384,14 @@ class TestTestingModeRealWorldScenarios:
         async def test_endpoint():
             return {"message": "test"}
 
-        with TestClient(app) as client:
-            # Make multiple rapid requests (would normally trigger rate limiting)
-            responses = []
-            for i in range(20):  # More than typical rate limit
-                response = client.get("/api/test")
-                responses.append(response)
+        client = SyncTestClient(app)
+        # Make multiple rapid requests (would normally trigger rate limiting)
+        responses = []
+        for i in range(20):  # More than typical rate limit
+            response = client.get("/api/test")
+            responses.append(response)
 
-            # All requests should succeed (no 429 Too Many Requests)
-            for response in responses:
-                assert response.status_code == 200, f"Request failed with {response.status_code}"
-                assert response.json()["message"] == "test"
+        # All requests should succeed (no 429 Too Many Requests)
+        for response in responses:
+            assert response.status_code == 200, f"Request failed with {response.status_code}"
+            assert response.json()["message"] == "test"

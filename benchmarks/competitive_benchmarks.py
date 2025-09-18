@@ -351,7 +351,11 @@ if __name__ == "__main__":
         elif scenario == "middleware_heavy":
             return """
 import os
-from zenith.performance_optimizations import create_api_app
+from zenith import Zenith
+
+# Create optimized app for benchmarking
+def create_api_app(debug=False):
+    return Zenith(debug=debug)
 from pydantic import BaseModel
 
 class Item(BaseModel):

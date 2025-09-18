@@ -136,72 +136,8 @@ class TestMetricsIntegration:
                 assert has_timing or len(metrics_text) > 10
 
 
-class TestCustomMetrics:
-    """Test custom metrics functionality."""
-
-    @pytest.mark.asyncio
-    async def test_custom_counter_metric(self):
-        """Test custom counter metrics."""
-        try:
-            from zenith.web.metrics import counter_metric
-
-            # Create and increment counter
-            test_counter = counter_metric(
-                "test_operations_total", "Test operations count"
-            )
-            test_counter.inc()
-            test_counter.inc(3)
-
-            # Counter should have value of 4
-            assert test_counter._value == 4
-
-        except ImportError:
-            # Metrics module might not be fully implemented
-            pytest.skip("Metrics module not available")
-
-    @pytest.mark.asyncio
-    async def test_custom_gauge_metric(self):
-        """Test custom gauge metrics."""
-        try:
-            from zenith.web.metrics import gauge_metric
-
-            # Create and set gauge
-            test_gauge = gauge_metric("test_active_connections", "Active connections")
-            test_gauge.set(42)
-
-            assert test_gauge._value == 42
-
-            test_gauge.inc(8)
-            assert test_gauge._value == 50
-
-            test_gauge.dec(10)
-            assert test_gauge._value == 40
-
-        except ImportError:
-            pytest.skip("Metrics module not available")
-
-    @pytest.mark.asyncio
-    async def test_custom_histogram_metric(self):
-        """Test custom histogram metrics."""
-        try:
-            from zenith.web.metrics import histogram_metric
-
-            # Create histogram
-            test_histogram = histogram_metric(
-                "test_request_duration", "Request duration"
-            )
-
-            # Record some values
-            test_histogram.observe(0.1)
-            test_histogram.observe(0.5)
-            test_histogram.observe(1.0)
-
-            # Should have recorded 3 observations
-            assert test_histogram._count == 3
-            assert test_histogram._sum == 1.6
-
-        except ImportError:
-            pytest.skip("Metrics module not available")
+# Custom metrics tests removed - feature deferred to v0.3.1
+# The zenith.web.metrics module doesn't exist yet - these tests were for phantom features
 
 
 class TestMetricsPerformance:
