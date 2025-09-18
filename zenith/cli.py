@@ -129,7 +129,11 @@ def new(path: str, name: str | None):
 {name} - Zenith API application.
 """
 
+from dotenv import load_dotenv
 from zenith import Zenith
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create your Zenith app
 app = Zenith()
@@ -167,6 +171,7 @@ DEBUG=true
     # Create requirements.txt with current zenith version
     requirements_content = f'''zenith-web>={__version__}
 uvicorn[standard]
+python-dotenv
 '''
 
     # Create .gitignore
@@ -275,10 +280,14 @@ A modern API built with [Zenith](https://zenith-python.org).
 @click.option("--testing", is_flag=True, help="Enable testing mode (disables rate limiting)")
 def dev(host: str, port: int, app: str | None, open: bool, testing: bool):
     """Start development server with hot reload."""
+    import os
+
     if testing:
-        import os
         os.environ["ZENITH_ENV"] = "test"
         click.echo("🧪 Testing mode enabled - rate limiting and other test-interfering middleware disabled")
+    else:
+        # Set development environment by default for zen dev
+        os.environ.setdefault("ZENITH_ENV", "development")
 
     _run_server(host, port, reload=True, workers=1, open_browser=open, app_path=app)
 
@@ -290,6 +299,11 @@ def dev(host: str, port: int, app: str | None, open: bool, testing: bool):
 @click.option("--reload", is_flag=True, help="Enable reload (development)")
 def serve(host: str, port: int, workers: int, reload: bool):
     """Start production server."""
+    import os
+
+    # Set production environment by default for zen serve
+    os.environ.setdefault("ZENITH_ENV", "production")
+
     _run_server(host, port, reload=reload, workers=workers)
 
 

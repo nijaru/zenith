@@ -364,7 +364,8 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             raise ConfigError(
                 f"SECRET_KEY must be set for {self.environment} environment.\n"
                 "Generate a secure key with:\n"
-                "  python -c 'import secrets; print(secrets.token_hex(32))'"
+                "  zen keygen                    # Print to stdout\n"
+                "  zen keygen --output .env      # Save to .env file"
             )
 
         # Validate secret key strength
