@@ -147,7 +147,9 @@ class Config:
             if is_production:
                 raise ValueError(
                     "SECRET_KEY must be set in production/staging environments.\n"
-                    "Generate with: python -c 'import secrets; print(secrets.token_hex(32))'"
+                    "Generate with:\n"
+                    "  zen keygen                    # Print to stdout\n"
+                    "  zen keygen --output .env      # Save to .env file"
                 )
 
             # Development/test mode - generate temporary key

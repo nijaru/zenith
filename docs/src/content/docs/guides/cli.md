@@ -65,6 +65,8 @@ zen keygen --length 32              # Generate 32-byte key (default: 64)
 
 **Note:** The `zen new` command automatically generates a secure SECRET_KEY, so you typically only need `zen keygen` for key rotation or adding keys to existing projects.
 
+**Automatic .env Loading:** Zenith automatically loads `.env` and `.env.local` files from your project directory, so keys generated with `zen keygen --output .env` work immediately without additional configuration.
+
 ## Development Commands
 
 ### `zen dev` - Development Server
@@ -81,6 +83,7 @@ zen dev --testing                   # Enable testing mode
 ```
 
 **Features:**
+- **Development environment** - Automatically sets `ZENITH_ENV=development`
 - **Hot reload** - Automatically restarts on file changes
 - **File watching** - Watches `.py`, `.html`, `.css`, `.js` files
 - **Intelligent app discovery** - Finds your app automatically
@@ -152,6 +155,7 @@ zen serve --reload                  # Enable reload (development mode)
 ```
 
 **Features:**
+- **Production environment** - Automatically sets `ZENITH_ENV=production`
 - **Multi-process** - Automatic worker scaling based on CPU cores
 - **Production logging** - Structured logs with access logs
 - **Performance optimized** - Optimized for high throughput

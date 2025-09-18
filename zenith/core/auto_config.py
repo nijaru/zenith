@@ -135,8 +135,10 @@ class SecurityConfig(BaseModel):
         if not secret_key:
             if env in [Environment.PRODUCTION, Environment.STAGING]:
                 raise ValueError(
-                    "SECRET_KEY environment variable required for production. "
-                    "Generate with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+                    "SECRET_KEY environment variable required for production.\n"
+                    "Generate with:\n"
+                    "  zen keygen                    # Print to stdout\n"
+                    "  zen keygen --output .env      # Save to .env file"
                 )
             else:
                 # Development/testing default (insecure but convenient)
