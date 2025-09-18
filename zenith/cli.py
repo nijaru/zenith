@@ -164,9 +164,9 @@ DEBUG=true
 # REDIS_URL=redis://localhost:6379
 '''
 
-    # Create requirements.txt
-    requirements_content = '''zenith-web>=0.3.0
-uvicorn[standard]>=0.20.0
+    # Create requirements.txt with current zenith version
+    requirements_content = f'''zenith-web>={__version__}
+uvicorn[standard]
 '''
 
     # Create .gitignore
