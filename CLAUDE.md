@@ -468,17 +468,13 @@ Comprehensive performance test suite covering:
 
 ### CLI Tools
 ```bash
-# Development server with hot reload
-zen server --reload
+# Project creation and setup
+zen new my-app                 # Create new project with secure defaults
+zen keygen                     # Generate secure SECRET_KEY
 
-# Database migrations
-zen db init                    # Initialize migrations
-zen db migrate "add users"     # Create migration
-zen db upgrade                 # Apply migrations
-
-# Testing
-zen test                       # Run test suite
-zen test --coverage           # With coverage report
+# Development server
+zen dev                        # Start development server with hot reload
+zen serve                      # Start production server
 
 # Performance testing
 python scripts/run_performance_tests.py        # Basic performance tests
