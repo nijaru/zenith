@@ -208,26 +208,17 @@ python scripts/run_performance_tests.py --quick
 ## CLI Tools
 
 ```bash
-# Create new project
+# Create new project with secure defaults
 zen new my-api
 
+# Generate secure SECRET_KEY
+zen keygen
+
 # Development server with hot reload
-zen dev --open
+zen dev
 
 # Production server
 zen serve --workers 4
-
-# Interactive shell with app context
-zen shell
-
-# Debug and inspect routes
-zen routes
-
-# Application information
-zen info
-
-# Testing
-zen test --verbose
 ```
 
 ## Installation
