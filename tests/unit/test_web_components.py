@@ -55,7 +55,8 @@ class TestFileUploads:
 
             @app.post("/api/upload")
             async def upload_file(
-                file=File("file", config), current_user=Auth(required=True)
+                file=File(max_size=1024, allowed_extensions=[".txt", ".json"], field_name="file"),
+                current_user=Auth(required=True)
             ):
                 # Ensure we're working with the right object
                 if not hasattr(file, "size_bytes"):
@@ -110,7 +111,8 @@ class TestFileUploads:
 
             @app.post("/api/upload")
             async def upload_file(
-                file=File("file", config), current_user=Auth(required=True)
+                file=File(max_size=1024, allowed_extensions=[".txt", ".json"], field_name="file"),
+                current_user=Auth(required=True)
             ):
                 return {"success": True}
 

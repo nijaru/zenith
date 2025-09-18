@@ -118,7 +118,7 @@ class Config:
             elif debug_val == "false":
                 return 'production'
 
-        return 'development'  # Default to development
+        return 'production'  # Default to production (secure by default)
 
     @staticmethod
     def _get_debug_default() -> bool:

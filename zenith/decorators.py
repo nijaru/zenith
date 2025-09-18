@@ -330,12 +330,15 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
 
             # Only add individual parameters if no Paginate object is used
             if not has_paginate_param:
-                # Only add parameters the function actually accepts
-                if '_page' in func_params:
+                # Check if function has **kwargs parameter
+                has_var_keyword = any(p.kind == p.VAR_KEYWORD for p in func_params.values())
+
+                # Only add parameters the function actually accepts or has **kwargs
+                if '_page' in func_params or has_var_keyword:
                     call_kwargs["_page"] = page
-                if '_limit' in func_params:
+                if '_limit' in func_params or has_var_keyword:
                     call_kwargs["_limit"] = limit
-                if '_offset' in func_params:
+                if '_offset' in func_params or has_var_keyword:
                     call_kwargs["_offset"] = offset
 
                 # Check if function expects page/limit parameters

@@ -95,7 +95,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         version: str = "1.0.0",
         description: str | None = None,
         # Testing mode to disable problematic middleware for test suites
-        testing: bool = False,
+        testing: bool | None = None,
     ):
         # Apply performance optimizations if enabled
         if enable_optimizations:
@@ -126,24 +126,27 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # Configure based on environment (unless explicitly overridden)
         if self.environment == 'production':
-            if testing:
+            if testing is True:
                 raise ValueError("Cannot enable testing mode in production environment")
-            self.testing = False
+            self.testing = testing if testing is not None else False
             if debug is None:
                 self.config.debug = False
             self._validate_production_config()
         elif self.environment == 'staging':
-            self.testing = testing
+            self.testing = testing if testing is not None else False
             if debug is None:
                 self.config.debug = False
             self._validate_production_config()
         elif self.environment == 'test':
-            self.testing = True  # Always true in test environment
+            self.testing = testing if testing is not None else True  # Default to True in test env
             if debug is None:
                 self.config.debug = True
         else:  # development
             # Check legacy ZENITH_TESTING for backward compatibility
-            if os.getenv('ZENITH_TESTING', '').lower() in ('true', '1', 'yes'):
+            if testing is not None:
+                # Explicit testing parameter overrides everything
+                self.testing = testing
+            elif os.getenv('ZENITH_TESTING', '').lower() in ('true', '1', 'yes'):
                 warnings.warn(
                     "ZENITH_TESTING is deprecated. Use ZENITH_ENV=test instead",
                     DeprecationWarning,
@@ -151,7 +154,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 )
                 self.testing = True
             else:
-                self.testing = testing
+                self.testing = False  # Default to False in development
             if debug is None:
                 self.config.debug = True
 
