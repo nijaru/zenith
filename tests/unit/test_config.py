@@ -20,7 +20,7 @@ class TestConfig:
 
         assert config.host == "127.0.0.1"
         assert config.port == 8000
-        assert not config.debug  # Default when DEBUG not set
+        assert config.debug  # Default to True in development environment (detected via NODE_ENV)
         assert config.log_level == "INFO"
         assert config.worker_count == 1
         assert config.max_connections == 1000

@@ -47,7 +47,7 @@ class ServicesMixin:
         self.register_service(Database, self.database)
 
         # Add database health check
-        from zenith.web.health import health_manager
+        from zenith.monitoring.health import health_manager
 
         health_manager.add_simple_check(
             "database", self.database.health_check, timeout=5.0, critical=True

@@ -118,7 +118,25 @@ class Config:
             elif debug_val == "false":
                 return 'production'
 
-        return 'production'  # Default to production (secure by default)
+        # Check legacy environment variables for compatibility
+        legacy_vars = [
+            os.getenv("ENVIRONMENT", "").lower(),
+            os.getenv("ENV", "").lower(),
+            os.getenv("FLASK_ENV", "").lower(),
+            os.getenv("NODE_ENV", "").lower(),
+        ]
+
+        for var in legacy_vars:
+            if var in ('development', 'dev', 'develop'):
+                return 'development'
+            elif var in ('production', 'prod'):
+                return 'production'
+            elif var in ('test', 'testing'):
+                return 'test'
+            elif var in ('staging', 'stage'):
+                return 'staging'
+
+        return 'development'  # Default to development for local development
 
     @staticmethod
     def _get_debug_default() -> bool:

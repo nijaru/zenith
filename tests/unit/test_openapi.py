@@ -163,7 +163,6 @@ class TestOpenAPIGenerator:
         assert "modified" not in spec2
         assert spec1 != spec2
 
-    @pytest.mark.skip(reason="Minor cache cleanup edge case - not critical")
     def test_cache_size_management(self):
         """Test that cache size is managed and bounded."""
         generator = OpenAPIGenerator()

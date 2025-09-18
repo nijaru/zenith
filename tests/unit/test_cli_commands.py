@@ -13,51 +13,11 @@ from zenith.dev.generators import (
     generate_code,
     parse_field_spec,
 )
-from zenith.dev.shell import create_shell_namespace, run_shell
+# Shell functionality removed - no longer part of CLI
 
 
-class TestShellCommand:
-    """Test interactive shell functionality."""
-
-    def test_create_shell_namespace(self):
-        """Test namespace creation for shell."""
-        namespace = create_shell_namespace()
-
-        # Check core imports are present
-        assert "Zenith" in namespace
-        assert "Config" in namespace
-        assert "Router" in namespace
-        assert "Service" in namespace
-
-        # Check async helpers
-        assert "run" in namespace
-        assert "create_task" in namespace
-        assert "gather" in namespace
-
-        # Check performance utilities are imported from existing module
-        assert "track_performance" in namespace
-        assert "profile_block" in namespace
-
-    @pytest.mark.skip(reason="IPython is optional dependency")
-    def test_run_shell_with_ipython(self):
-        """Test shell starts with IPython when available."""
-        with patch("IPython.start_ipython") as mock_ipython:
-            run_shell(use_ipython=True)
-            mock_ipython.assert_called_once()
-
-    @pytest.mark.skip(
-        reason="Complex mocking required for code module imported inside function"
-    )
-    def test_run_shell_without_ipython(self):
-        """Test shell falls back to standard Python."""
-        # Shell functionality is confirmed working through manual testing
-        pass
-
-    def test_shell_loads_app(self):
-        """Test shell can load application."""
-        with patch("sys.path"):
-            create_shell_namespace(app_path="main.app")
-            # Would need actual app to test fully
+# Shell tests removed - shell functionality was removed from CLI
+# These tests were for non-existent features
 
 
 class TestCodeGenerators:

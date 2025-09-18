@@ -12,17 +12,13 @@ from .generators import (
     parse_field_spec,
     write_generated_files,
 )
-from .shell import create_shell_namespace, run_shell
+# Shell functionality removed
 
 __all__ = [
     "APIGenerator",
-    # Generators
     "ModelGenerator",
     "ServiceGenerator",
-    # Shell
-    "create_shell_namespace",
     "generate_code",
     "parse_field_spec",
-    "run_shell",
     "write_generated_files",
 ]

@@ -148,7 +148,7 @@ class DocsMixin:
             @self._app_router.get("/metrics")
             async def metrics_endpoint():
                 """Prometheus metrics endpoint."""
-                from zenith.web.metrics import metrics_endpoint as get_metrics
+                from zenith.monitoring.metrics import metrics_endpoint as get_metrics
 
                 content = await get_metrics()
                 return PlainTextResponse(

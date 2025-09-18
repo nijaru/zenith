@@ -51,14 +51,23 @@ class TestConvenienceMethods:
         routes = [route.path for route in app._app_router.routes]
         assert "/auth/login" in routes
 
-    @pytest.mark.skip(reason="Auto-generated secret keys in development is better DX")
-    def test_add_auth_without_secret_raises_error(self):
-        """Test app.add_auth() raises error when no secret available."""
-        # Note: This test is skipped because the framework now auto-generates
-        # secret keys in development mode for better DX. The auto-generation
-        # happens in config.validate() which is called during Application init.
-        # This is intentional behavior to make development easier.
-        pass
+    def test_add_auth_auto_generates_secret_in_dev(self):
+        """Test app.add_auth() auto-generates secret in development mode."""
+        # Create app without providing SECRET_KEY
+        app = Zenith()  # Should auto-generate secret in development
+
+        # Verify secret was auto-generated
+        assert app.config.secret_key is not None
+        assert len(app.config.secret_key) >= 32
+        assert app.config.secret_key != "dev-secret-change-in-prod"
+
+        # Should be able to add auth with auto-generated secret
+        result = app.add_auth()
+        assert result is app  # Returns self for chaining
+
+        # Verify auth routes were added
+        routes = [route.path for route in app._app_router.routes]
+        assert "/auth/login" in routes
 
     def test_add_auth_with_custom_settings(self, app):
         """Test app.add_auth() with custom algorithm and expiration."""

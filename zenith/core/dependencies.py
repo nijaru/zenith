@@ -137,7 +137,7 @@ def _parse_size(size: str | int | None) -> int | None:
         raise ValueError(f"Invalid size format: {size}. Use '10MB', '512KB', '1GB', or bytes as integer")
 
 
-async def get_validated_file(
+def get_validated_file(
     max_size: int | None = None,
     allowed_types: list[str] | None = None,
     allowed_extensions: list[str] | None = None,
@@ -160,8 +160,12 @@ async def get_validated_file(
     from zenith.exceptions import ValidationException
 
     # This function will be called during request handling
-    # We need to return a dependency function that gets the request
-    async def validate_file_upload(request: Request) -> StarletteUploadFile:
+    # We need to return a dependency function that gets the request from context
+    async def validate_file_upload() -> StarletteUploadFile:
+        # Get the request from the current context
+        request = get_current_request()
+        if not request:
+            raise ValueError("No request context available")
         # Get the file from the request form data
         form = await request.form()
         file_field = form.get(field_name)
@@ -254,11 +258,10 @@ def File(
     # Validate parameters at creation time for better error messages
     parsed_size = _parse_size(max_size)  # This will raise ValueError if invalid
 
-    # Create the dependency function
-    async def file_dependency(request):
-        return await get_validated_file(parsed_size, allowed_types, allowed_extensions, field_name)(request)
+    # Create the dependency function that will be resolved by the DI system
+    file_validator = get_validated_file(parsed_size, allowed_types, allowed_extensions, field_name)
 
-    return Depends(file_dependency)
+    return Depends(file_validator)
 
 
 def Inject(service_type: type[T] | None = None) -> Any:
