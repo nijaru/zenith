@@ -54,6 +54,12 @@ PORT=4000
 SECRET_KEY=test-secret
 """
 
+        # Store original env vars to restore later
+        original_env = {
+            key: os.environ.get(key)
+            for key in ["DEBUG", "HOST", "PORT", "SECRET_KEY"]
+        }
+
         with NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:
             f.write(env_content)
             env_file = f.name
@@ -66,7 +72,15 @@ SECRET_KEY=test-secret
             assert config.port == 4000
             assert config.secret_key == "test-secret"
         finally:
+            # Clean up temp file
             Path(env_file).unlink()
+
+            # Restore original environment variables
+            for key, value in original_env.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
     def test_custom_config(self):
         """Test custom configuration values."""
