@@ -645,7 +645,6 @@ app = Zenith(config=config)
 
 ### Database Issues
 - Verify async database URL format
-- Check migration status: `zen db current`
 - Test connection with health checks: `/health/detailed`
 
 ### Authentication Problems

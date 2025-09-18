@@ -9,7 +9,7 @@ Demonstrates all framework features:
 - Full middleware stack
 - OpenAPI documentation
 
-Run with: zen server
+Run with: zen serve
 """
 
 from datetime import datetime, timedelta

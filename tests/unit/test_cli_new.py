@@ -55,10 +55,11 @@ async def health():
         assert result.exit_code == 0
         assert "Zenith - Modern Python web framework" in result.output
 
-        # Should only show the three main commands
+        # Should only show the four main commands
         assert "new" in result.output
         assert "dev" in result.output
         assert "serve" in result.output
+        assert "keygen" in result.output
 
         # Should NOT show removed commands (as commands, not flags)
         assert "shell" not in result.output
@@ -227,6 +228,51 @@ async def health():
             assert "--host=127.0.0.1" in call_args
             assert "--port=80" in call_args
             assert "--workers=8" in call_args
+
+    def test_keygen_command_basic(self, runner):
+        """Test zen keygen command generates a key."""
+        result = runner.invoke(main, ["keygen"])
+        assert result.exit_code == 0
+        # Check that output looks like a secure key (base64url format)
+        output = result.output.strip()
+        assert len(output) >= 32  # Should be a reasonably long key
+        assert all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_" for c in output)
+
+    def test_keygen_command_to_file(self, runner, temp_dir):
+        """Test zen keygen --output writes to file."""
+        with runner.isolated_filesystem(temp_dir=temp_dir):
+            env_file = "test.env"
+            result = runner.invoke(main, ["keygen", "--output", env_file])
+            assert result.exit_code == 0
+            assert "✅ SECRET_KEY written to" in result.output
+
+            # Verify file was created and contains SECRET_KEY
+            assert Path(env_file).exists()
+            content = Path(env_file).read_text()
+            assert "SECRET_KEY=" in content
+
+    def test_keygen_command_force_overwrite(self, runner, temp_dir):
+        """Test zen keygen --force overwrites existing key."""
+        with runner.isolated_filesystem(temp_dir=temp_dir):
+            env_file = "test.env"
+
+            # Create initial file with SECRET_KEY
+            Path(env_file).write_text("SECRET_KEY=old_key\nOTHER_VAR=value")
+
+            # Try without --force (should fail)
+            result = runner.invoke(main, ["keygen", "--output", env_file])
+            assert result.exit_code != 0
+            assert "already exists" in result.output
+
+            # Try with --force (should succeed)
+            result = runner.invoke(main, ["keygen", "--output", env_file, "--force"])
+            assert result.exit_code == 0
+            assert "Updated SECRET_KEY" in result.output
+
+            # Verify OTHER_VAR is still there
+            content = Path(env_file).read_text()
+            assert "OTHER_VAR=value" in content
+            assert "SECRET_KEY=old_key" not in content  # Old key replaced
 
     @patch("subprocess.run")
     def test_serve_command_with_reload(self, mock_run, runner, temp_dir, test_app_file):
