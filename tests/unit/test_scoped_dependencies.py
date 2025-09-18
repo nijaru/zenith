@@ -1,7 +1,7 @@
 """
 Tests for request-scoped dependency injection.
 
-Covers the new RequestScoped, DatabaseSession, and Depends functionality
+Covers the new RequestScoped, Session, and Depends functionality
 that fixes async database issues.
 """
 
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock
 from starlette.requests import Request
 from starlette.testclient import TestClient
 
-from zenith import Zenith, DatabaseSession, RequestScoped, Depends
+from zenith import Zenith, Session, RequestScoped, Depends
 from zenith.core.scoped import get_current_request, set_current_request, clear_current_request
 
 
@@ -167,15 +167,15 @@ class TestRequestScoped:
             await scoped.get_or_create(request)
 
 
-class TestDatabaseSession:
-    """Test DatabaseSession specialized RequestScoped."""
+class TestSession:
+    """Test Session specialized RequestScoped."""
 
     def test_database_session_creation(self):
-        """Test DatabaseSession can be created."""
+        """Test Session can be created."""
         async def get_db():
             yield "db_session"
 
-        db_session = DatabaseSession(get_db)
+        db_session = Session(get_db)
         assert db_session.dependency == get_db
         assert isinstance(db_session, RequestScoped)
 
@@ -243,7 +243,7 @@ class TestIntegrationWithZenith:
 
     @pytest.mark.asyncio
     async def test_database_session_integration(self):
-        """Test DatabaseSession integration pattern."""
+        """Test Session integration pattern."""
         app = Zenith()
 
         async def get_db():
@@ -251,7 +251,7 @@ class TestIntegrationWithZenith:
             yield "mock_db_session"
 
         @app.get("/users")
-        async def get_users(db=DatabaseSession(get_db)):
+        async def get_users(db=Session(get_db)):
             return {"users": [], "db": db}
 
         # Basic structure test
