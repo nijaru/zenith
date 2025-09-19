@@ -57,14 +57,18 @@ Blog API - Zenith application demonstrating modern patterns.
 from datetime import datetime
 from typing import Optional
 
-from zenith import Zenith, Session, Model
-from sqlmodel import Field, select
+from zenith import Zenith
+from zenith.db import ZenithModel
+from sqlmodel import Field
 
-# Create Zenith application
-app = Zenith()
+# Create Zenith application with built-in features
+app = (Zenith()
+       .add_auth()
+       .add_admin()
+       .add_api("Blog API", "1.0.0"))
 
 # Enhanced SQLModel with better defaults
-class Post(Model, table=True):
+class Post(ZenithModel, table=True):
     """Blog post model with Zenith enhancements."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -89,92 +93,57 @@ async def root():
     }
 
 @app.get("/posts")
-async def get_posts(published: bool = True, db=Session):
+async def get_posts(published: bool = True):
     """Get blog posts with filtering."""
-    async with db() as session:
-        query = select(Post)
+    if published:
+        posts = await Post.where(published=True).order_by('-created_at').limit(10)
+    else:
+        posts = await Post.order_by('-created_at').limit(10)
 
-        if published:
-            query = query.where(Post.published == True)
-
-        query = query.order_by(Post.created_at.desc()).limit(10)
-        result = await session.execute(query)
-        posts = result.scalars().all()
-
-        return {
-            "posts": [post.model_dump() for post in posts],
-            "count": len(posts)
-        }
+    return {
+        "posts": [post.to_dict() for post in posts],
+        "count": len(posts)
+    }
 
 @app.post("/posts")
-async def create_post(post_data: dict, db=Session):
+async def create_post(post_data: dict):
     """Create a new blog post."""
-    async with db() as session:
-        post = Post(**post_data)
-        session.add(post)
-        await session.commit()
-        await session.refresh(post)
+    post = await Post.create(**post_data)
 
-        return {
-            "post": post.model_dump(),
-            "message": "Post created successfully"
-        }
+    return {
+        "post": post.to_dict(),
+        "message": "Post created successfully"
+    }
 
 @app.get("/posts/{post_id}")
-async def get_post(post_id: int, db=Session):
+async def get_post(post_id: int):
     """Get a specific post by ID."""
-    async with db() as session:
-        result = await session.execute(
-            select(Post).where(Post.id == post_id)
-        )
-        post = result.scalar_one_or_none()
-
-        if not post:
-            return {"error": "Post not found"}, 404
-
-        return {"post": post.model_dump()}
+    post = await Post.find_or_404(post_id)
+    return {"post": post.to_dict()}
 
 @app.put("/posts/{post_id}")
-async def update_post(post_id: int, updates: dict, db=Session):
+async def update_post(post_id: int, updates: dict):
     """Update an existing post."""
-    async with db() as session:
-        result = await session.execute(
-            select(Post).where(Post.id == post_id)
-        )
-        post = result.scalar_one_or_none()
+    post = await Post.find_or_404(post_id)
 
-        if not post:
-            return {"error": "Post not found"}, 404
+    # Update fields
+    for field, value in updates.items():
+        if hasattr(post, field):
+            setattr(post, field, value)
 
-        # Update fields
-        for field, value in updates.items():
-            if hasattr(post, field):
-                setattr(post, field, value)
+    await post.save()
 
-        await session.commit()
-        await session.refresh(post)
-
-        return {
-            "post": post.model_dump(),
-            "message": "Post updated successfully"
-        }
+    return {
+        "post": post.to_dict(),
+        "message": "Post updated successfully"
+    }
 
 @app.delete("/posts/{post_id}")
-async def delete_post(post_id: int, db=Session):
+async def delete_post(post_id: int):
     """Delete a post."""
-    async with db() as session:
-        result = await session.execute(
-            select(Post).where(Post.id == post_id)
-        )
-        post = result.scalar_one_or_none()
-
-        if not post:
-            return {"error": "Post not found"}, 404
-
-        await session.delete(post)
-        await session.commit()
-
-        return {"message": "Post deleted successfully"}
+    post = await Post.find_or_404(post_id)
+    await post.delete()
+    return {"message": "Post deleted successfully"}
 
 @app.get("/health")
 async def health():
@@ -186,8 +155,7 @@ async def health():
     }
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    app.run()
 ```
 
 ### 5. Run Your Application
@@ -242,38 +210,42 @@ curl http://localhost:8000/posts
 
 ## What You Get Out of the Box
 
-### 🚀 Zero Configuration
+### 🚀 Rails-like Developer Experience
 
-- **Automatic setup** - No complex configuration files
-- **Smart defaults** - Production-ready settings
-- **Environment detection** - Automatic dev/prod behavior
+- **Zero configuration** - `app = Zenith()` sets up everything
+- **One-liner features** - `app.add_auth().add_admin().add_api()`
+- **Built-in admin** - Dashboard at `/admin` with health checks
+- **Automatic API docs** - OpenAPI at `/docs` and `/redoc`
 
-### 📊 Enhanced SQLModel
+### 📊 Rails-like ActiveRecord Models
 
 ```python
-from zenith import Model
+from zenith.db import ZenithModel
 
-class User(Model, table=True):
-    # Enhanced configuration automatically applied:
-    # - from_attributes=True
-    # - use_enum_values=True
-    # - validate_assignment=True
+class User(ZenithModel, table=True):
     id: int | None = Field(primary_key=True)
     name: str
     email: str
+
+# Rails-style operations
+users = await User.all()
+user = await User.find(1)
+user = await User.create(name="Alice", email="alice@example.com")
+active_users = await User.where(active=True).limit(10)
 ```
 
 ### 💉 Clean Dependency Injection
 
 ```python
-from zenith import Session, Service, Inject
+from zenith.core import DB, Auth, Inject
 
 @app.get("/users")
 async def get_users(
-    db=Session,                    # Database session
+    db=DB,                         # Database session shortcut
+    user=Auth,                     # Current authenticated user
     users: UserService = Inject()  # Service injection
 ):
-    # Clean, readable code
+    # Clean, readable code with modern shortcuts
     pass
 ```
 
@@ -293,54 +265,63 @@ async def get_users(
 
 ## Next Steps
 
-### Add Authentication
+### Add Authentication (Built-in!)
 
 ```python
-from zenith.auth import configure_jwt, Auth
+# Authentication is already enabled with app.add_auth()!
+# Just use the Auth dependency:
 
-# Configure JWT
-configure_jwt(secret_key="your-secret-key")
+from zenith.core import Auth
 
 @app.get("/protected")
 async def protected_route(user=Auth):
     return {"user_id": user.id}
+
+# Login endpoint automatically available at /auth/login
+```
+
+### Add Server-Sent Events
+
+```python
+from zenith.web.sse import create_sse_response
+import asyncio
+
+@app.get("/events")
+async def stream_events():
+    """Real-time event streaming."""
+    async def events():
+        for i in range(100):
+            yield {
+                "type": "count",
+                "data": {"value": i}
+            }
+            await asyncio.sleep(1)
+
+    return create_sse_response(events())
 ```
 
 ### Add File Uploads
 
 ```python
-from zenith import File, IMAGE_TYPES, MB
+from zenith.web import File
+from starlette.responses import JSONResponse
 
 @app.post("/upload")
-async def upload_file(
-    file: UploadFile = File(
-        max_size="10MB",
-        allowed_types=IMAGE_TYPES
-    )
-):
-    return {"filename": file.filename}
-```
-
-### Add Background Tasks
-
-```python
-from zenith.tasks import BackgroundTasks
-
-@app.post("/send-email")
-async def send_email(
-    email_data: dict,
-    background: BackgroundTasks
-):
-    background.add_task(send_email_async, email_data)
-    return {"status": "email queued"}
+async def upload_file(file: File):
+    """Handle file uploads with built-in validation."""
+    contents = await file.read()
+    return JSONResponse({
+        "filename": file.filename,
+        "size": len(contents)
+    })
 ```
 
 ### Organize with Services
 
 ```python
-from zenith import Service
+from zenith.core import Inject
 
-class PostService(Service):
+class PostService:
     """Business logic for posts."""
 
     async def create_post(self, data: dict) -> Post:
@@ -354,7 +335,7 @@ async def create_post(
     posts: PostService = Inject()
 ):
     post = await posts.create_post(data)
-    return {"post": post.model_dump()}
+    return {"post": post.to_dict()}
 ```
 
 ## Key Features

@@ -43,10 +43,17 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 - Docs updated: Removed references to deleted features?
 - No temp files: `ZENITH_BUGS_*.md`, test outputs cleaned up?
 
-**DON'T CREATE RELEASE FILES:**
-- No RELEASE_NOTES_*.md files
-- No CHANGELOG_*.md files
-- No release documentation - just commit, tag, and release
+**IMPORTANT - RELEASE PROCESS:**
+- **NEVER release without explicit approval** - "prep release" means prepare only, not publish
+- When asked to "prep release": build packages, update CHANGELOG.md, stage everything - but STOP
+- Only release to PyPI/GitHub when explicitly told "release it" or "go ahead and release"
+
+**RELEASE DOCUMENTATION:**
+- Maintain `/CHANGELOG.md` following [Keep a Changelog](https://keepachangelog.com) format
+- Use GitHub Releases for rich formatting and notifications
+- Categories: Added, Changed, Fixed, Removed, Deprecated, Security
+- Always update `[Unreleased]` section during development
+- Move unreleased changes to versioned section before release
 
 ## Quick Facts
 - **Product**: Modern Python API framework with Rails-like DX and exceptional performance

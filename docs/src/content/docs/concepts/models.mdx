@@ -67,7 +67,7 @@ from sqlmodel import Field
 from datetime import datetime
 from typing import Optional
 
-class User(Model, table=True):
+class User(ZenithModel, table=True):
     """User model with enhanced configuration."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -83,7 +83,7 @@ class User(Model, table=True):
 ```python
 from sqlmodel import Relationship
 
-class Post(Model, table=True):
+class Post(ZenithModel, table=True):
     """Blog post model."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -93,7 +93,7 @@ class Post(Model, table=True):
     published: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-class Comment(Model, table=True):
+class Comment(ZenithModel, table=True):
     """Comment model."""
 
     id: Optional[int] = Field(primary_key=True)
@@ -108,7 +108,9 @@ class Comment(Model, table=True):
 ### Using with Enhanced Dependency Injection
 
 ```python
-from zenith import Zenith, Session, Model
+from zenith import Zenith
+from zenith.core import DB
+from zenith.db import ZenithModel
 from sqlmodel import select, and_
 
 app = Zenith()
@@ -213,7 +215,7 @@ class Post(BaseModel, table=True):
 ```python
 from pydantic import validator, EmailStr
 
-class User(Model, table=True):
+class User(ZenithModel, table=True):
     name: str = Field(min_length=2, max_length=100)
     email: EmailStr = Field(unique=True)
     age: int = Field(ge=13, le=120)
@@ -238,7 +240,7 @@ class User(Model, table=True):
 ### Serialization
 
 ```python
-class User(Model, table=True):
+class User(ZenithModel, table=True):
     id: int | None = Field(primary_key=True)
     name: str
     email: str
@@ -329,7 +331,7 @@ async def test_model_validation():
 ### Service Layer Integration
 
 ```python
-from zenith import Service, Session
+from zenith.core import DB, Inject
 
 class UserService(Service):
     """Business logic for user operations."""
@@ -475,7 +477,7 @@ class User(SQLModel, table=True):
 from zenith import Model
 from sqlmodel import Field
 
-class User(Model, table=True):
+class User(ZenithModel, table=True):
     # Enhanced configuration provided automatically
     id: int | None = Field(primary_key=True)
     name: str
