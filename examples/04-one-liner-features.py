@@ -14,7 +14,7 @@ from zenith import Zenith
 
 # Set up environment for the example
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///oneliner_example.db")
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only-32-chars-long")
 
 # 🚀 Create app and add features in just 4 lines!
 app = Zenith()

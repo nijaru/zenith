@@ -13,7 +13,7 @@ Then visit: http://localhost:8002/docs for interactive API
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 from zenith import Zenith
 
@@ -23,7 +23,7 @@ app = Zenith()
 # Request Models
 class CreateUserRequest(BaseModel):
     name: str
-    email: EmailStr
+    email: str
     age: int
     bio: str | None = None
 

@@ -5,29 +5,33 @@ description: Zenith's enhanced SQLModel patterns for clean, type-safe database o
 
 import { Aside } from '@astrojs/starlight/components';
 
-## Zenith Database Models
+## ZenithModel - Rails-like Database Models
 
-Zenith enhances SQLModel with better developer experience through the `Model` base class, providing enhanced configuration and cleaner patterns for production applications.
+Zenith provides `ZenithModel` - a Rails-inspired base class that adds chainable queries, automatic session management, and enhanced developer experience to SQLModel.
 
 <Aside type="note">
-  **Zenith Model** is a clean alias for SQLModel with sensible defaults and enhanced configuration for better developer experience.
+  **ZenithModel** combines SQLModel's type safety with Rails-like ActiveRecord patterns for ultimate productivity.
 </Aside>
 
-## Why Enhanced SQLModel?
+## Why ZenithModel?
 
 ### Traditional SQLModel Approach
 
 ```python
-# Standard SQLModel requires manual configuration
-from sqlmodel import SQLModel, Field
-from pydantic import ConfigDict
+# Standard SQLModel requires manual session management
+from sqlmodel import SQLModel, Field, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 class User(SQLModel, table=True):
-    # Manual configuration for each model
-    model_config = ConfigDict(
-        from_attributes=True,
-        use_enum_values=True,
-        validate_assignment=True,
+    id: int | None = Field(primary_key=True)
+    name: str
+    email: str
+
+# Manual session management required
+async def get_users(session: AsyncSession):
+    stmt = select(User).where(User.active == True).order_by(User.created_at.desc()).limit(10)
+    result = await session.execute(stmt)
+    return result.scalars().all()
     )
 
     id: int | None = Field(primary_key=True)
@@ -35,19 +39,22 @@ class User(SQLModel, table=True):
     email: str = Field(unique=True)
 ```
 
-### Zenith Approach (Enhanced DX)
+### ZenithModel Approach (Rails-like DX)
 
 ```python
-# Zenith Model provides sensible defaults automatically
-from zenith import Model
+# ZenithModel provides Rails-like patterns with automatic session management
+from zenith.db import ZenithModel
 from sqlmodel import Field
 
-class User(Model, table=True):
-    # Automatic configuration with sensible defaults
+class User(ZenithModel, table=True):
     id: int | None = Field(primary_key=True)
     name: str = Field(max_length=100)
     email: str = Field(unique=True)
     active: bool = Field(default=True)
+
+# Rails-like chainable queries - no manual session needed!
+async def get_users():
+    return await User.where(active=True).order_by('-created_at').limit(10)
 ```
 
 ## Creating Models

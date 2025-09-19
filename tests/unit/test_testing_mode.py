@@ -42,66 +42,69 @@ class TestTestingModeConfiguration:
 
     def test_testing_mode_default_false(self):
         """Test that testing mode is disabled by default."""
-        app = Zenith()
-        assert app.testing is False
+        with temp_env(ZENITH_ENV="development"):
+            app = Zenith()
+            assert app.testing is False
 
     def test_testing_mode_explicit_true(self):
         """Test that testing mode can be explicitly enabled."""
-        app = Zenith(testing=True)
-        assert app.testing is True
+        with temp_env(ZENITH_ENV="development"):
+            app = Zenith(testing=True)
+            assert app.testing is True
 
     def test_testing_mode_explicit_false(self):
         """Test that testing mode can be explicitly disabled."""
-        app = Zenith(testing=False)
-        assert app.testing is False
+        with temp_env(ZENITH_ENV="development"):
+            app = Zenith(testing=False)
+            assert app.testing is False
 
     def test_testing_mode_environment_variable_true(self):
-        """Test that ZENITH_TESTING=true enables testing mode."""
-        os.environ["ZENITH_TESTING"] = "true"
+        """Test that ZENITH_ENV=test enables testing mode."""
+        os.environ["ZENITH_ENV"] = "test"
         try:
             app = Zenith()
             assert app.testing is True
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_environment_variable_false(self):
-        """Test that ZENITH_TESTING=false disables testing mode."""
-        os.environ["ZENITH_TESTING"] = "false"
+        """Test that ZENITH_ENV=development disables testing mode."""
+        os.environ["ZENITH_ENV"] = "development"
         try:
             app = Zenith()
             assert app.testing is False
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_environment_variable_case_insensitive(self):
-        """Test that ZENITH_TESTING is case insensitive."""
-        test_values = ["True", "TRUE", "true", "1", "yes", "YES"]
+        """Test that ZENITH_ENV accepts various test formats."""
+        test_values = ["test", "TEST", "testing", "TESTING"]
 
         for value in test_values:
-            os.environ["ZENITH_TESTING"] = value
+            os.environ["ZENITH_ENV"] = value
             try:
                 app = Zenith()
-                assert app.testing is True, f"ZENITH_TESTING={value} should enable testing mode"
+                assert app.testing is True, f"ZENITH_ENV={value} should enable testing mode"
             finally:
-                del os.environ["ZENITH_TESTING"]
+                del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_parameter_overrides_environment(self):
         """Test that explicit testing parameter overrides environment variable."""
-        os.environ["ZENITH_TESTING"] = "true"
+        os.environ["ZENITH_ENV"] = "test"
         try:
             # Explicit False should override environment True
             app = Zenith(testing=False)
             assert app.testing is False
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
-        os.environ["ZENITH_TESTING"] = "false"
+        os.environ["ZENITH_ENV"] = "development"
         try:
             # Explicit True should override environment False
             app = Zenith(testing=True)
             assert app.testing is True
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
 
 class TestTestingModeMiddleware:
@@ -145,13 +148,13 @@ class TestTestingModeMiddleware:
 
     def test_testing_mode_from_environment_affects_middleware(self):
         """Test that testing mode from environment variable affects middleware."""
-        os.environ["ZENITH_TESTING"] = "true"
+        os.environ["ZENITH_ENV"] = "test"
         try:
             app = Zenith()
             middleware_classes = [m.cls.__name__ for m in app.middleware]
             assert "RateLimitMiddleware" not in middleware_classes
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
 
 class TestTestingModeIntegration:
@@ -245,34 +248,34 @@ class TestTestingModeErrorHandling:
     """Test error handling in testing mode."""
 
     def test_testing_mode_invalid_environment_value(self):
-        """Test that invalid ZENITH_TESTING values default to False."""
+        """Test that invalid ZENITH_ENV values default to development (testing=False)."""
         invalid_values = ["maybe", "invalid", "2", ""]
 
         for value in invalid_values:
-            os.environ["ZENITH_TESTING"] = value
+            os.environ["ZENITH_ENV"] = value
             try:
                 app = Zenith()
-                assert app.testing is False, f"ZENITH_TESTING={value} should default to False"
+                assert app.testing is False, f"ZENITH_ENV={value} should default to development"
             finally:
-                del os.environ["ZENITH_TESTING"]
+                del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_empty_environment_variable(self):
-        """Test that empty ZENITH_TESTING defaults to False."""
-        os.environ["ZENITH_TESTING"] = ""
+        """Test that empty ZENITH_ENV defaults to development."""
+        os.environ["ZENITH_ENV"] = ""
         try:
             app = Zenith()
             assert app.testing is False
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_whitespace_environment_variable(self):
-        """Test that whitespace-only ZENITH_TESTING defaults to False."""
-        os.environ["ZENITH_TESTING"] = "   "
+        """Test that whitespace-only ZENITH_ENV defaults to development."""
+        os.environ["ZENITH_ENV"] = "   "
         try:
             app = Zenith()
             assert app.testing is False
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
 
 class TestTestingModePerformance:
@@ -325,15 +328,15 @@ class TestTestingModeDocumentation:
         assert "Enable testing mode" in result.output or "testing mode" in result.output
 
     def test_testing_mode_environment_variable_documentation(self):
-        """Test that ZENITH_TESTING environment variable is documented."""
+        """Test that ZENITH_ENV environment variable works for testing."""
         # This would typically be checked in documentation files
         # For now, just ensure the functionality exists
-        os.environ["ZENITH_TESTING"] = "true"
+        os.environ["ZENITH_ENV"] = "test"
         try:
             app = Zenith()
             assert app.testing is True
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
 
 class TestTestingModeRealWorldScenarios:
@@ -341,8 +344,8 @@ class TestTestingModeRealWorldScenarios:
 
     def test_testing_mode_pytest_integration(self):
         """Test that testing mode works well in pytest environment."""
-        # Simulate pytest setting ZENITH_TESTING
-        os.environ["ZENITH_TESTING"] = "true"
+        # Simulate pytest setting ZENITH_ENV
+        os.environ["ZENITH_ENV"] = "test"
         try:
             app = Zenith()
 
@@ -354,7 +357,7 @@ class TestTestingModeRealWorldScenarios:
             assert "RateLimitMiddleware" not in middleware_names
 
         finally:
-            del os.environ["ZENITH_TESTING"]
+            del os.environ["ZENITH_ENV"]
 
     def test_testing_mode_test_client_compatibility(self):
         """Test that testing mode works with TestClient."""
@@ -395,3 +398,5 @@ class TestTestingModeRealWorldScenarios:
         for response in responses:
             assert response.status_code == 200, f"Request failed with {response.status_code}"
             assert response.json()["message"] == "test"
+
+
