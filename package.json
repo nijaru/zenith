@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/generate-example-pages.js && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "generate-examples": "node scripts/generate-example-pages.js"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.35.2",

@@ -6,7 +6,7 @@ hero:
   tagline: Build production-ready APIs with clean architecture and exceptional developer experience
   actions:
     - text: Get Started
-      link: /zenith/introduction/
+      link: /introduction/
       icon: right-arrow
       variant: primary
     - text: View on GitHub
@@ -16,20 +16,20 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Build Rails-like APIs in Python
+## Build Modern APIs in Python
 
 <CardGrid>
-	<Card title="Rails-like DX" icon="puzzle">
-		Zero-config setup, ActiveRecord-style models, and one-liner features deliver 85% less boilerplate.
+	<Card title="Zero-Config Setup" icon="puzzle">
+		Automatic configuration, intelligent defaults, and one-liner features deliver 85% less boilerplate.
 	</Card>
 	<Card title="ZenithModel" icon="database">
-		Rails-inspired database patterns: `User.where(active=True).order_by('-id').limit(10).all()`
+		Intuitive database patterns: `User.where(active=True).order_by('-id').limit(10).all()`
 	</Card>
 	<Card title="One-liner Features" icon="rocket">
 		`app.add_auth()`, `app.add_admin()`, `app.add_api()` - complex features in single commands.
 	</Card>
 	<Card title="Enhanced DX" icon="shield">
-		Clean dependency injection with `db=DB` instead of verbose `Depends(get_database_session)`.
+		ZenithModel handles database sessions automatically - no manual session management needed!
 	</Card>
 </CardGrid>
 
@@ -43,20 +43,20 @@ pip install zenith-web
 zen new my-api
 
 # Start development server
-zen server --reload
+zen dev
 ```
 
 ## Why Developers Choose Zenith
 
 <CardGrid>
-	<Card title="Rails-like Productivity" icon="heart">
-		Zero-config setup, ActiveRecord patterns, and automatic session management eliminate boilerplate.
+	<Card title="Maximum Productivity" icon="heart">
+		Zero-config setup, intuitive patterns, and automatic session management eliminate boilerplate.
 	</Card>
 	<Card title="Exceptional Performance" icon="rocket">
-		9,600+ req/s with Rails-like features. No performance penalty for convenience features.
+		9,600+ req/s with all features enabled. No performance penalty for convenience.
 	</Card>
 	<Card title="Production Ready" icon="shield">
-		631+ tests, zero memory leaks, automatic 404s, and comprehensive middleware out of the box.
+		776+ tests, zero memory leaks, SSE support, and comprehensive middleware out of the box.
 	</Card>
 	<Card title="Modern Python" icon="puzzle">
 		Python 3.12+ optimizations, full async/await, and complete type safety throughout.

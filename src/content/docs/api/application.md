@@ -226,17 +226,17 @@ class UserService(Service):
 
 app = Zenith()
 
-# Both patterns work (FastAPI-compatible)
+# Enhanced DI pattern with services
 @app.get("/users")
-async def get_users_zenith(
-    db: AsyncSession = DatabaseSession(get_db),  # Zenith style
+async def get_users(
     users: UserService = Inject()                 # Service injection
 ):
-    return await users.get_users(db)
+    return await users.get_users()
 
-@app.get("/users-fastapi")
-async def get_users_fastapi(
-    db: AsyncSession = Depends(get_db)            # FastAPI style
+# Traditional dependency injection also supported
+@app.get("/users-alt")
+async def get_users_alt(
+    db: AsyncSession = Depends(get_db)            # Traditional style
 ):
     # Direct database access
     pass
@@ -294,7 +294,7 @@ async def handler2(db = DatabaseSession(get_db)):  # Database-specific
     pass
 
 @app.get("/data3")
-async def handler3(db = Depends(get_db)):  # FastAPI-compatible
+async def handler3(db = Depends(get_db)):  # Traditional dependency injection
     pass
 ```
 

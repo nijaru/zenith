@@ -1,0 +1,106 @@
+---
+title: "CORS middleware example for Zenith."
+description: "Demonstrates how to enable cross-origin requests."
+---
+
+import { Code } from '@astrojs/starlight/components';
+import { Badge } from '@astrojs/starlight/components';
+
+<div class="example-header">
+  <Badge text="Beginner" variant="success" />
+  
+  
+  
+</div>
+
+## Overview
+
+Demonstrates how to enable cross-origin requests.
+
+
+
+## Running This Example
+
+```bash
+# Clone the repository
+git clone https://github.com/nijaru/zenith.git
+cd zenith
+
+# Set required environment variable
+export SECRET_KEY="your-secret-key-at-least-32-characters-long"
+
+# Run the example
+uv run python examples/04-cors-middleware.py
+```
+
+## Source Code
+
+<Code code={`"""
+CORS middleware example for Zenith.
+
+Demonstrates how to enable cross-origin requests.
+"""
+
+from zenith import Zenith
+from zenith.middleware import CORSMiddleware
+
+# Create app with CORS for development
+app = Zenith()
+
+# Add CORS middleware - allows all origins in dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],  # Common frontend dev ports
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    allow_credentials=True,
+    max_age_secs=3600,
+)
+
+
+@app.get("/api/data")
+async def get_data():
+    """API endpoint accessible from browser."""
+    return \{"message": "This API supports CORS", "data": [1, 2, 3, 4, 5]\}
+
+
+@app.post("/api/users")
+async def create_user(name: str, email: str):
+    """Create user endpoint."""
+    return \{"id": 1, "name": name, "email": email\}
+
+
+@app.get("/health")
+async def health():
+    return \{"status": "healthy", "cors": "enabled"\}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    print("🌐 CORS-enabled API running at http://localhost:8004")
+    print("Test from browser console:")
+    print(
+        "  fetch('http://localhost:8004/api/data').then(r => r.json()).then(console.log)"
+    )
+    uvicorn.run(app, host="127.0.0.1", port=8004, reload=False)
+`} lang="python" title="examples/04-cors-middleware.py" />
+
+## What This Example Demonstrates
+
+**Route Handlers**: HTTP endpoint definition and request handling
+
+## Next Steps
+
+- **Modify the code**: Try changing the routes or adding new features
+- **Run tests**: Add test cases for your modifications
+- **Explore more**: Check out other examples in the [examples directory](https://github.com/nijaru/zenith/tree/main/examples)
+- **Read the docs**: Learn more about [Zenith concepts](/concepts/)
+
+---
+
+*This page is auto-generated from [`examples/04-cors-middleware.py`](https://github.com/nijaru/zenith/blob/main/examples/04-cors-middleware.py).
+To suggest changes, edit the source file and the documentation will update automatically.*

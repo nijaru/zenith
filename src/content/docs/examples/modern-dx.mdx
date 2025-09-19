@@ -1,13 +1,13 @@
 ---
 title: Modern Developer Experience
-description: Zero-config setup with Rails-like patterns and 85% less boilerplate
+description: Zero-config setup with intuitive patterns and 85% less boilerplate
 ---
 
 import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
-Zenith v0.3.0 introduces a modern developer experience with zero-configuration setup, intuitive APIs, and dramatic reduction in boilerplate code. This example showcases the key improvements.
+Zenith v0.3.1 introduces a modern developer experience with zero-configuration setup, intuitive APIs, and dramatic reduction in boilerplate code. This example showcases the key improvements.
 
 ## Key Features
 
@@ -49,11 +49,9 @@ active_users = await User.where(active=True).order_by('-created_at').limit(10)
 ### Enhanced Dependency Injection
 
 ```python
-from zenith import Session
-
 @app.get("/users")
-async def get_users(session=Session):  # Clean shortcut
-    """No more verbose Depends() patterns!"""
+async def get_users():  # No session management needed!
+    """ZenithModel handles database sessions automatically!"""
     users = await User.where(active=True).all()
     return {"users": [u.to_dict() for u in users]}
 ```
@@ -70,5 +68,5 @@ This demonstrates:
 - 85% less boilerplate
 
 <Aside type="tip">
-  **Migration Tip**: Moving from FastAPI? Simply replace `Depends()` with our shortcuts and enjoy cleaner code with better performance!
+  **Migration Tip**: Simply replace verbose `Depends()` patterns with our shortcuts and enjoy cleaner code with better performance!
 </Aside>

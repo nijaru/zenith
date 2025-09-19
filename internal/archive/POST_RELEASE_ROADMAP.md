@@ -1,6 +1,6 @@
-# 🗺️ Post v0.2.7 Release Roadmap
+# 🗺️ Post v0.3.1 Release Roadmap
 
-## ✅ v0.2.7 Release (Critical Fix)
+## ✅ v0.3.1 Release (Critical Fix)
 **Status**: Ready for Release
 - **Fix**: Async database event loop binding bug (WeakKeyDictionary per-loop engines)
 - **Validated**: Production-tested in finterm/WealthScope project
@@ -9,7 +9,7 @@
 
 ---
 
-## 🚀 v0.3.0 DX Improvements (Next Major Focus)
+## 🚀 v0.3.1 DX Improvements (Next Major Focus)
 
 ### Rails-Inspired Developer Experience
 **Target**: Reduce boilerplate by 70%, zero-config database setup
@@ -77,7 +77,7 @@ async def get_users(session = DB):  # Auto-injected
 
 ## 📋 Immediate Post-Release Tasks
 
-### 1. Release v0.2.7
+### 1. Release v0.3.1
 ```bash
 # Version already bumped to 0.2.7
 uv build
@@ -90,18 +90,18 @@ twine upload dist/zenith-web-0.2.7*
 - [ ] Monitor for any issues
 
 ### 3. Communication
-- [ ] Update CHANGELOG.md with v0.2.7 details
+- [ ] Update CHANGELOG.md with v0.3.1 details
 - [ ] GitHub release with critical fix details
 - [ ] Update documentation if needed
 
-### 4. Prepare for v0.3.0 Development
+### 4. Prepare for v0.3.1 Development
 - [ ] Create feature branch: `git checkout -b feature/dx-improvements`
 - [ ] Set up development environment for DX work
 - [ ] Review Rails/Django patterns for inspiration
 
 ---
 
-## 🎯 Success Metrics for v0.3.0
+## 🎯 Success Metrics for v0.3.1
 
 ### Developer Experience Goals
 - **Setup Time**: From 15+ lines to 3 lines for basic database app
@@ -117,7 +117,7 @@ twine upload dist/zenith-web-0.2.7*
 
 ---
 
-## 🔮 Future Considerations (v0.4.0+)
+## 🔮 Future Considerations (v0.3.1+)
 
 ### Advanced Features
 - GraphQL auto-schema generation
@@ -136,4 +136,4 @@ twine upload dist/zenith-web-0.2.7*
 ---
 
 *This roadmap is living document - update as priorities evolve*
-*Created: 2025-09-15 | Status: Pre-v0.2.7 Release*
+*Created: 2025-09-15 | Status: Pre-v0.3.1 Release*

@@ -150,7 +150,7 @@ DATABASE_URL=postgresql://user:password@localhost/zenith_dev
 # Redis (optional)
 REDIS_URL=redis://localhost:6379
 
-# Security
+# Security (generate with: zen keygen --output .env)
 SECRET_KEY=your-secret-key-here
 
 # Environment

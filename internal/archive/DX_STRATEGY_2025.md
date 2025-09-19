@@ -364,7 +364,7 @@ zen docs serve               # Serve docs locally
 - [ ] Performance optimization
 - [ ] Comprehensive testing
 - [ ] Documentation completion
-- [ ] v0.3.0 release preparation
+- [ ] v0.3.1 release preparation
 
 ---
 
@@ -442,6 +442,6 @@ zen docs serve               # Serve docs locally
 
 ---
 
-*This strategy document guides internal development decisions for Zenith v0.3.0. External communications should focus on productivity, performance, and developer experience benefits rather than competitive positioning.*
+*This strategy document guides internal development decisions for Zenith v0.3.1. External communications should focus on productivity, performance, and developer experience benefits rather than competitive positioning.*
 
 **Next Action**: Begin Phase 1 implementation with SQLModel integration and enhanced dependency injection patterns.

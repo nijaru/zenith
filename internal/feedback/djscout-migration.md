@@ -2,7 +2,7 @@
 
 ## Status: ✅ Zenith 0.3.0 Compatible
 
-DJScout Cloud is **fully compatible** with Zenith v0.3.0. No breaking changes affect our codebase as we already use the correct import patterns.
+DJScout Cloud is **fully compatible** with Zenith v0.3.1. No breaking changes affect our codebase as we already use the correct import patterns.
 
 ## Current Integration Assessment
 
