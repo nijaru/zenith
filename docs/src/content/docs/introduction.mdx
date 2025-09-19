@@ -1,0 +1,155 @@
+---
+title: Introduction
+description: Zenith is a modern Python web framework with clean architecture and exceptional performance
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<div class="hero">
+  <h1>⚡ Zenith Framework</h1>
+  <p>Modern Python web framework with clean architecture and exceptional developer experience</p>
+</div>
+
+## Why Zenith?
+
+Zenith combines the best of modern Python web development with clean architecture patterns. Built on top of Starlette with modern async patterns, Zenith provides the performance you need with the developer experience you deserve.
+
+<CardGrid>
+  <Card title="🏗️ Clean Architecture" icon="puzzle">
+    Service-based business logic separation. Keep your domain logic clean, testable, and independent of web concerns.
+  </Card>
+  <Card title="📊 SQLModel Integration" icon="database">
+    Unified Pydantic + SQLAlchemy models. Write once, use everywhere - API validation, database models, and OpenAPI documentation.
+  </Card>
+  <Card title="⚡ Exceptional Performance" icon="rocket">
+    Built on Starlette with modern async patterns. Leverages Python 3.12+ features including TaskGroups for optimal concurrency.
+  </Card>
+  <Card title="🔒 Type Safety" icon="shield">
+    Full type hints throughout. Inject() and Auth() dependency injection with complete IDE support and compile-time checking.
+  </Card>
+</CardGrid>
+
+## Quick Example
+
+**Basic App:**
+```python
+from zenith import Zenith
+
+app = Zenith()
+
+@app.get("/")
+async def hello():
+    return {"message": "Welcome to Zenith!"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+```
+
+**With Service:**
+```python
+from zenith import Zenith, Service, Inject
+from zenith.db import SQLModel, Field
+
+app = Zenith()
+
+class User(SQLModel, table=True):
+    name: str = Field(description="User name")
+    email: str = Field(description="User email")
+
+class UserService(Service):
+    async def create_user(self, user: User) -> User:
+        # Business logic here
+        return user
+
+@app.post("/users")
+async def create_user(
+    user: User,
+    service: UserService = Inject()
+):
+    return await service.create_user(user)
+```
+
+**Full Featured:**
+```python
+from zenith import Zenith
+from zenith.middleware import (
+    CORSMiddleware,
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware
+)
+
+app = Zenith(
+    title="Production API",
+    version="1.0.0",
+    middleware=[
+        CORSMiddleware({"allow_origins": ["https://myapp.com"]}),
+        RateLimitMiddleware({"requests_per_minute": 60}),
+        SecurityHeadersMiddleware({"force_https": True})
+    ]
+)
+
+# Serve your React/Vue/Angular app
+app.spa("dist")
+
+# Health checks
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+```
+
+## Key Features
+
+### Production Ready
+
+- ✅ **100% Test Coverage** - 293 tests passing
+- ✅ **Zero Memory Leaks** - Bounded caches and automatic cleanup
+- ✅ **Production Middleware** - Security, CORS, rate limiting, compression
+- ✅ **Health Checks** - `/health` and `/health/detailed` endpoints
+- ✅ **Metrics & Monitoring** - Prometheus `/metrics` endpoint
+- ✅ **Background Tasks** - Built-in task queues and scheduling
+
+### Developer Experience
+
+- 🛠️ **Modern CLI** - `zen new`, `zen server`, `zen test`
+- 🌐 **SPA Serving** - One command: `app.spa("dist")`
+- 🔄 **Hot Reload** - Instant feedback during development
+- 📚 **Auto Documentation** - OpenAPI/Swagger built-in
+- 🧪 **Testing Utilities** - TestClient, TestService, fixtures
+- 🎯 **Type Safety** - Full IDE support with type hints
+
+## Philosophy
+
+Zenith follows these core principles:
+
+1. **Business Logic First** - Your domain logic should be independent of web concerns
+2. **Type Safety** - Catch errors at development time, not runtime
+3. **Performance** - Fast by default, optimized when needed
+4. **Developer Joy** - The framework should make you productive and happy
+5. **Production Focus** - Built for real-world applications, not just demos
+
+## Next Steps
+
+Ready to build with Zenith?
+
+<CardGrid>
+  <Card title="Installation" icon="download" link="/installation">
+    Get Zenith installed and set up your development environment
+  </Card>
+  <Card title="Quick Start" icon="rocket" link="/quick-start">
+    Build your first Zenith application in 5 minutes
+  </Card>
+  <Card title="Service System" icon="puzzle" link="/concepts/services">
+    Learn about Zenith's unique approach to organizing business logic
+  </Card>
+  <Card title="Examples" icon="code" link="https://github.com/nijaru/zenith/tree/main/examples">
+    Explore real-world examples and patterns
+  </Card>
+</CardGrid>
+
+---
+
+<div style="text-align: center; margin-top: 3rem;">
+  <a href="/quick-start" class="button">Get Started →</a>
+  <a href="https://github.com/nijaru/zenith" class="button button-outline" style="margin-left: 1rem;">View on GitHub</a>
+</div>

@@ -1,0 +1,193 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["zenith"]
+exclude = [
+    "docs/**",
+    "docs-mkdocs/**",
+    "examples/**",
+    "tests/**",
+    "benchmarks/**",
+    ".github/**",
+    "*.md",
+    ".gitignore",
+    ".pre-commit-config.yaml",
+    "scripts/",
+    "pixi.toml",
+    "MANIFEST.in"
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "docs/**",
+    "docs-mkdocs/**",
+    "examples/**",
+    "tests/**",
+    "benchmarks/**",
+    ".github/**",
+    ".pre-commit-config.yaml",
+    "scripts/",
+    "pixi.toml"
+]
+
+[tool.hatch.version]
+path = "zenith/__version__.py"
+
+[project]
+name = "zenith-web"
+dynamic = ["version"]
+description = "Modern Python web framework with clean architecture and type-safe dependency injection"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.12"
+authors = [
+    {name = "Nick Russo", email = "nijaru7@gmail.com"}
+]
+keywords = ["web", "framework", "realtime", "liveview", "websockets", "http3", "quic"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+dependencies = [
+    "uvicorn[standard]>=0.24.0",
+    "websockets>=12.0",
+    "jinja2>=3.1.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.13.0",
+    "asyncpg>=0.29.0",
+    "aiosqlite>=0.19.0",
+    "redis>=5.0.0",
+    "sqlmodel>=0.0.22",
+    "structlog>=23.0.0",
+    "click>=8.1.0",
+    "pyjwt>=2.8.0",
+    "bcrypt>=4.1.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.6",
+    "uvloop>=0.21.0",
+    "orjson>=3.11.3",
+    "msgspec>=0.19.0",
+    "prometheus-client>=0.22.1",
+    "greenlet>=3.2.4",
+    "psutil>=7.0.0",
+    "pydantic>=2.11.9",
+    "starlette>=0.32.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "httpx>=0.25.0",
+    "ruff>=0.1.6",
+    "pyright>=1.1.350",
+    "ipdb>=0.13.0",
+]
+benchmark = [
+    "fastapi>=0.104.0",
+    "flask>=3.0.0",
+    "flask-sqlalchemy>=3.1.0",
+    "httpx>=0.25.0",
+    "psutil>=5.9.0",
+    "aiosqlite>=0.19.0",
+]
+performance = [
+    "msgspec>=0.18.0",  # Ultra-fast serialization with validation (already have uvloop and orjson in main deps)
+]
+http3 = [
+    "aioquic>=1.2.0",  # HTTP/3 and QUIC protocol support
+    "cryptography>=42.0.0",  # For self-signed certificates
+]
+compression = [
+    "brotli>=1.1.0",  # Brotli compression (20-30% better than gzip)
+    "zstandard>=0.23.0",  # Zstandard compression (fast with good ratio)
+]
+
+[project.scripts]
+zen = "zenith.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/nijaru/zenith"
+Documentation = "https://nijaru.github.io/zenith"
+Repository = "https://github.com/nijaru/zenith.git"
+Issues = "https://github.com/nijaru/zenith/issues"
+
+[dependency-groups]
+benchmark = [
+    "fastapi>=0.116.1",
+]
+dev = [
+    "httpx>=0.28.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.3.0",
+]
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "RUF", # ruff-specific
+    "SIM", # flake8-simplify
+    "PTH", # flake8-use-pathlib
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.per-file-ignores]
+# Allow dependency injection patterns in framework code, examples, and tests
+"zenith/**/*.py" = ["B008", "RUF006", "B024", "B027", "SIM102"]  # Allow Context(), Auth(), asyncio patterns, ABC design, readable if nesting
+"examples/**/*.py" = ["B008"]  # Allow DI patterns in examples
+"benchmarks/**/*.py" = ["B008"]  # Allow Depends() in benchmarks
+"tests/**/*.py" = ["B008", "SIM102", "SIM117"]  # Allow DI patterns, readable if/with nesting
+
+[tool.ruff.lint.isort]
+known-first-party = ["zenith"]
+
+[tool.pyright]
+include = ["zenith"]  # Focus strict type checking on core framework
+exclude = ["**/__pycache__", "examples/**", "tests/**"]  # Tests use mocking patterns that are intentionally looser
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.12"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*", "!*TestClient"]
+python_functions = ["test_*"]
+addopts = "--strict-markers --strict-config --verbose"
+markers = [
+    "asyncio: marks tests as async",
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "slow: marks tests as slow running",
+    "performance: marks tests as performance tests",
+]

@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include zenith *.py
+recursive-include zenith *.pyi
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude tests *
+recursive-exclude examples *
+recursive-exclude docs *
+recursive-exclude website *

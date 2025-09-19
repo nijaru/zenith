@@ -1,0 +1,11 @@
+# Development tools
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+black>=23.0.0
+ruff>=0.0.250
+mypy>=1.0.0
+
+# Testing utilities
+httpx>=0.24.0          # For TestClient
+factory-boy>=3.2.0     # Test data factories

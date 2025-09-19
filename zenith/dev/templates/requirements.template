@@ -1,0 +1,18 @@
+# Zenith Framework
+zenith-web>=1.0.0
+
+# ASGI Server
+uvicorn[standard]>=0.20.0
+
+# Environment management
+python-dotenv>=1.0.0
+
+# Database (optional - uncomment what you need)
+# asyncpg>=0.28.0        # PostgreSQL
+# aiosqlite>=0.19.0      # SQLite
+# aiomysql>=0.2.0        # MySQL
+
+# Redis (optional)
+# redis>=4.5.0
+
+# Development dependencies (install with: pip install -r requirements-dev.txt)
