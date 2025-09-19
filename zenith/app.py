@@ -70,19 +70,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                     # Clean up context
                     set_current_db_session(None)
 
-    # Supported environment names and their aliases
-    ENVIRONMENT_ALIASES = {
-        'dev': 'development',
-        'develop': 'development',
-        'development': 'development',
-        'prod': 'production',
-        'production': 'production',
-        'test': 'test',
-        'testing': 'test',
-        'tests': 'test',
-        'stage': 'staging',
-        'staging': 'staging',
-    }
 
     def __init__(
         self,
@@ -118,11 +105,11 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # Set up logger
         self.logger = logging.getLogger("zenith.application")
 
-        # Detect environment using new ZENITH_ENV system
-        import os
-        import warnings
+        # Use unified environment detection from Config
+        self.environment = self.config._environment
 
-        self.environment = self._detect_environment()
+        # Import os for environment variable access
+        import os
 
         # Configure based on environment (unless explicitly overridden)
         if self.environment == 'production':
@@ -143,17 +130,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             if debug is None:
                 self.config.debug = True
         else:  # development
-            # Check legacy ZENITH_TESTING for backward compatibility
             if testing is not None:
                 # Explicit testing parameter overrides everything
                 self.testing = testing
-            elif os.getenv('ZENITH_TESTING', '').lower() in ('true', '1', 'yes'):
-                warnings.warn(
-                    "ZENITH_TESTING is deprecated. Use ZENITH_ENV=test instead",
-                    DeprecationWarning,
-                    stacklevel=2
-                )
-                self.testing = True
             else:
                 self.testing = False  # Default to False in development
             if debug is None:
@@ -267,58 +246,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                         f"Auto-mounted static files: {url_path} -> {static_path}"
                     )
 
-    def _detect_environment(self) -> str:
-        """Detect the current environment from ZENITH_ENV or other indicators."""
-        import os
-        import warnings
-
-        # Check ZENITH_ENV first (new standard)
-        zenith_env = os.getenv('ZENITH_ENV', '').lower().strip()
-        if zenith_env:
-            if zenith_env in self.ENVIRONMENT_ALIASES:
-                return self.ENVIRONMENT_ALIASES[zenith_env]
-            else:
-                valid_envs = sorted(set(self.ENVIRONMENT_ALIASES.keys()))
-                raise ValueError(
-                    f"Invalid ZENITH_ENV='{zenith_env}'. "
-                    f"Valid options: {', '.join(valid_envs)}"
-                )
-
-        # Legacy environment detection for backward compatibility
-        # Check other common environment indicators
-        legacy_indicators = [
-            os.getenv("ENVIRONMENT", "").lower(),
-            os.getenv("ENV", "").lower(),
-            os.getenv("FLASK_ENV", "").lower(),
-            os.getenv("NODE_ENV", "").lower(),
-        ]
-
-        for indicator in legacy_indicators:
-            if indicator:
-                warnings.warn(
-                    f"Using legacy environment variable. Please use ZENITH_ENV instead",
-                    DeprecationWarning,
-                    stacklevel=3
-                )
-                if indicator in self.ENVIRONMENT_ALIASES:
-                    return self.ENVIRONMENT_ALIASES[indicator]
-
-        # Check if we're in a production-like environment
-        if self._looks_like_production():
-            from zenith.exceptions import ConfigError
-            raise ConfigError(
-                "Production environment detected but ZENITH_ENV is not set.\n"
-                "For safety, ZENITH_ENV must be explicitly set in production.\n"
-                "Set ZENITH_ENV=production or ZENITH_ENV=development"
-            )
-
-        # Check if we're running under pytest (common test runner)
-        import sys
-        if 'pytest' in sys.modules or 'pytest' in ' '.join(sys.argv):
-            return 'development'  # Default to development during tests
-
-        # Default to development for local development
-        return 'development'
 
     def _looks_like_production(self) -> bool:
         """Detect if we're running in a production-like environment."""

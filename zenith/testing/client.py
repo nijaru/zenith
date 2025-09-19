@@ -61,7 +61,9 @@ class ZenithTestClient:
 
     async def __aenter__(self):
         """Start application and create HTTP client."""
-        await self.app.startup()
+        # Only call startup() if the app has this method (Zenith apps do, Starlette apps don't)
+        if hasattr(self.app, 'startup'):
+            await self.app.startup()
 
         # Create ASGI transport and client
         transport = httpx.ASGITransport(app=self.app)
@@ -73,7 +75,9 @@ class ZenithTestClient:
         """Shutdown client and application."""
         if self._client:
             await self._client.aclose()
-        await self.app.shutdown()
+        # Only call shutdown() if the app has this method (Zenith apps do, Starlette apps don't)
+        if hasattr(self.app, 'shutdown'):
+            await self.app.shutdown()
 
     def set_auth_token(
         self,

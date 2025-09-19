@@ -38,7 +38,7 @@ class SSEConnectionState(Enum):
     DISCONNECTED = "disconnected"
 
 
-@dataclass(slots=True)
+@dataclass
 class SSEConnection:
     """Server-Sent Events connection with built-in performance tracking."""
 
@@ -55,7 +55,7 @@ class SSEConnection:
     client_buffer_estimate: int = 0  # Estimated client buffer usage
 
     # Built-in flow control optimizations
-    send_rate_limit: float = 1.0  # Events per second limit
+    send_rate_limit: float = 10.0  # Events per second limit (increased for normal usage)
     max_buffer_size: int = 65536  # 64KB buffer limit
     adaptive_throttling: bool = True
 
@@ -156,7 +156,7 @@ class ServerSentEvents:
     async def _stream_events_with_backpressure(
         self, event_generator: AsyncGenerator[dict[str, Any], None]
     ) -> AsyncGenerator[str, None]:
-        """Stream events with intelligent backpressure handling and concurrent processing."""
+        """Stream events with intelligent backpressure handling."""
         # Create connection for tracking
         connection_id = self._generate_connection_id()
         connection = SSEConnection(
@@ -172,19 +172,54 @@ class ServerSentEvents:
         connection.state = SSEConnectionState.CONNECTED
 
         try:
-            # Enhanced concurrent event processing using TaskGroups
-            async with asyncio.TaskGroup() as tg:
-                # Concurrent: event generation + backpressure monitoring + heartbeat
-                stream_task = tg.create_task(
-                    self._process_events_concurrent(connection, event_generator)
-                )
-                tg.create_task(self._monitor_connection_backpressure(connection))
+            # Simplified streaming approach
+            heartbeat_counter = 0
 
-                # Stream events with backpressure control
-                async for formatted_event in self._generate_sse_stream(
-                    connection, stream_task
-                ):
-                    yield formatted_event
+            async for event in event_generator:
+                # Check backpressure before sending
+                if await self._should_throttle_connection(connection):
+                    connection.state = SSEConnectionState.THROTTLED
+                    await asyncio.sleep(0.1)  # Brief throttle delay
+                    continue
+                else:
+                    connection.state = SSEConnectionState.CONNECTED
+
+                # Format and yield SSE message
+                formatted_event = self._format_sse_message(event)
+
+                # Update connection statistics
+                connection.events_sent += 1
+                connection.bytes_sent += len(formatted_event)
+                connection.last_send_time = time.time()
+                connection.last_activity = time.time()
+
+                # Update client buffer estimate (simplified model)
+                event_size = len(formatted_event)
+                connection.client_buffer_estimate += event_size
+
+                # Simulate client buffer consumption
+                self._update_client_buffer_estimate(connection)
+
+                # Update global stats
+                self._stats["events_sent"] += 1
+                self._stats["bytes_streamed"] += event_size
+
+                yield formatted_event
+
+                # Send periodic heartbeat
+                heartbeat_counter += 1
+                if heartbeat_counter % 10 == 0:  # Every 10 events
+                    heartbeat = self._format_sse_message(
+                        {
+                            "type": "heartbeat",
+                            "data": {
+                                "timestamp": time.time(),
+                                "connection_id": connection.connection_id,
+                                "events_sent": connection.events_sent,
+                            },
+                        }
+                    )
+                    yield heartbeat
 
         except asyncio.CancelledError:
             logger.info(f"SSE connection {connection_id} cancelled by client")
@@ -311,10 +346,11 @@ class ServerSentEvents:
 
         current_time = time.time()
 
-        # Check send rate limit
-        time_since_last_send = current_time - connection.last_send_time
-        if time_since_last_send < (1.0 / connection.send_rate_limit):
-            return True
+        # Check send rate limit - but only if we've actually sent events before
+        if connection.events_sent > 0:
+            time_since_last_send = current_time - connection.last_send_time
+            if time_since_last_send < (1.0 / connection.send_rate_limit):
+                return True
 
         # Check estimated client buffer usage
         buffer_usage_ratio = (
@@ -360,12 +396,15 @@ class ServerSentEvents:
         """Update client buffer estimate based on consumption model."""
         current_time = time.time()
 
+        # Initialize last update time if not set
+        if not hasattr(connection, "_last_buffer_update"):
+            connection._last_buffer_update = current_time
+            return
+
         # Simulate client buffer consumption (simplified model)
         # In real implementation, this could be based on client feedback
         buffer_consumption_rate = 1024  # 1KB/sec assumed consumption
-        time_since_last_update = current_time - getattr(
-            connection, "_last_buffer_update", current_time
-        )
+        time_since_last_update = current_time - connection._last_buffer_update
         consumed_bytes = int(buffer_consumption_rate * time_since_last_update)
 
         connection.client_buffer_estimate = max(

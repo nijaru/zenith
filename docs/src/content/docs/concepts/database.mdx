@@ -12,36 +12,33 @@ Zenith provides seamless database integration with async SQLAlchemy, automatic m
 ## Quick Start
 
 ```python
-from zenith import Zenith
-from zenith.db import SQLModel, Field, create_engine, Session
-from sqlmodel import select
+from zenith import Zenith, Session  # Enhanced dependency injection
+from zenith.db import ZenithModel  # Rails-like model with built-in methods
+from sqlmodel import Field
 from typing import Optional
 from datetime import datetime
 
-# Create engine
-engine = create_engine("postgresql://user:pass@localhost/dbname")
+app = Zenith()  # Zero-config setup!
 
-app = Zenith()
-
-# Define models
-class User(SQLModel, table=True):
+# Define models with ZenithModel for Rails-like experience
+class User(ZenithModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
     name: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-# Create tables on startup
-@app.on_event("startup")
-async def startup():
-    SQLModel.metadata.create_all(engine)
-
-# Use in routes
+# Use in routes with enhanced dependency injection
 @app.post("/users")
-async def create_user(user: User, session: Session = Depends(get_session)):
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    return user
+async def create_user(user: User, db=Session):  # Clean DI - no Depends()!
+    # ZenithModel automatically uses the request-scoped session
+    new_user = await User.create(name=user.name, email=user.email)
+    return new_user
+
+@app.get("/users")
+async def get_users():
+    # Rails-like chainable queries
+    users = await User.where(active=True).order_by('-created_at').limit(10)
+    return {"users": users}
 ```
 
 ## Database Configuration

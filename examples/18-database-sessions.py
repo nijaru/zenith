@@ -21,7 +21,7 @@ from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
-from zenith import DatabaseSession, RequestScoped, Zenith
+from zenith import Session, RequestScoped, Zenith
 
 # SQLAlchemy models
 Base = declarative_base()
@@ -93,7 +93,7 @@ async def shutdown():
 
 
 @app.get("/users", response_model=list[User])
-async def get_users(db: AsyncSession = DatabaseSession(get_db)):
+async def get_users(db: AsyncSession = RequestScoped(get_db)):
     """
     Get all users.
 
@@ -106,7 +106,7 @@ async def get_users(db: AsyncSession = DatabaseSession(get_db)):
 
 
 @app.post("/users", response_model=User)
-async def create_user(user_data: UserCreate, db: AsyncSession = DatabaseSession(get_db)):
+async def create_user(user_data: UserCreate, db: AsyncSession = RequestScoped(get_db)):
     """
     Create a new user.
 
@@ -121,7 +121,7 @@ async def create_user(user_data: UserCreate, db: AsyncSession = DatabaseSession(
 
 
 @app.get("/users/{user_id}", response_model=User)
-async def get_user(user_id: int, db: AsyncSession = DatabaseSession(get_db)):
+async def get_user(user_id: int, db: AsyncSession = RequestScoped(get_db)):
     """
     Get a specific user by ID.
 
@@ -140,7 +140,7 @@ async def get_users_alt(db: AsyncSession = RequestScoped(get_db)):
     """
     Alternative syntax using RequestScoped directly.
 
-    DatabaseSession is just a specialized RequestScoped for clarity.
+    RequestScoped ensures proper async context handling for database sessions.
     """
     result = await db.execute(select(UserModel))
     users = result.scalars().all()

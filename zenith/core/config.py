@@ -100,16 +100,6 @@ class Config:
         elif env in ('development', 'production', 'test', 'staging'):
             return env
 
-        # Legacy fallback for ZENITH_TESTING
-        if os.getenv("ZENITH_TESTING"):
-            import warnings
-            warnings.warn(
-                "ZENITH_TESTING is deprecated. Use ZENITH_ENV=test instead",
-                DeprecationWarning,
-                stacklevel=2
-            )
-            return 'test'
-
         # Check explicit DEBUG env var as secondary option
         if os.getenv("DEBUG"):
             debug_val = os.getenv("DEBUG", "").lower()

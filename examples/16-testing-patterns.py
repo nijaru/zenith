@@ -18,8 +18,8 @@ Key Testing Features Demonstrated:
 This file serves both as an executable example AND as a comprehensive test suite
 that demonstrates testing best practices.
 
-Run tests with: python -m pytest examples/13-testing-patterns.py -v
-Run as demo: python examples/13-testing-patterns.py
+Run tests with: uv run pytest examples/16-testing-patterns.py -v
+Run as demo: uv run python examples/16-testing-patterns.py
 
 Testing Endpoints:
 - GET /                      - Public endpoint
@@ -35,7 +35,7 @@ import time
 from datetime import datetime, timedelta
 
 import pytest
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, field_validator
 
 from zenith import Auth, Inject, Service, Zenith
 
@@ -57,7 +57,7 @@ class User(BaseModel):
     """User model for testing."""
 
     id: int | None = None
-    email: EmailStr
+    email: str
     name: str
     role: str = "user"
     is_active: bool = True
@@ -81,16 +81,15 @@ class User(BaseModel):
 class UserCreate(BaseModel):
     """User creation model."""
 
-    email: EmailStr
+    email: str
     name: str
     role: str = "user"
 
 
-class UserService(Service):
+class UserService:
     """User service for business logic testing."""
 
     def __init__(self):
-        super().__init__()
         # In-memory store for testing
         self.users: dict[int, User] = {}
         self.next_id = 1

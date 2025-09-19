@@ -434,21 +434,17 @@ class TestCLIAppDiscovery:
 class TestTestingModeIntegration:
     """Test testing mode functionality integration."""
 
-    def test_testing_mode_legacy_environment_variable(self):
-        """Test that legacy ZENITH_TESTING environment variable is still respected."""
+    def test_testing_mode_explicit_parameter(self):
+        """Test that explicit testing parameter works."""
         from zenith import Zenith
 
         # Test without testing mode
         app1 = Zenith()
         assert app1.testing is False
 
-        # Test with legacy environment variable
-        os.environ["ZENITH_TESTING"] = "true"
-        try:
-            app2 = Zenith()
-            assert app2.testing is True
-        finally:
-            del os.environ["ZENITH_TESTING"]
+        # Test with explicit testing=True
+        app2 = Zenith(testing=True)
+        assert app2.testing is True
 
     def test_testing_mode_zenith_env_variable(self):
         """Test that ZENITH_ENV=test environment variable enables testing mode."""

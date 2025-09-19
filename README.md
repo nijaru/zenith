@@ -284,9 +284,9 @@ pytest  # Run tests
 
 ## Status
 
-**Latest Version**: v0.2.6
+**Latest Version**: v0.3.0
 **Python Support**: 3.12+
-**Test Suite**: 100% passing (471 tests)
+**Test Suite**: 100% passing (776 tests)
 **Performance**: Production-ready with 9,600+ req/s capability  
 **Architecture**: Clean separation with Service system and dependency injection  
 

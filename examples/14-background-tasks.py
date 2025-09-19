@@ -7,7 +7,7 @@ Demonstrates async background task execution.
 import asyncio
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 from zenith import BackgroundTasks, Zenith, background_task
 
@@ -20,7 +20,7 @@ email_queue = []
 
 # Request models
 class RegisterRequest(BaseModel):
-    email: EmailStr
+    email: str
     name: str
 
 

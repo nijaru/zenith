@@ -30,6 +30,7 @@ app = Zenith()
 # 📋 Define models - they'll automatically work with app's database sessions
 class User(Model, table=True):
     """User model with seamless database integration."""
+    __tablename__ = "seamless_users"  # Unique table name to avoid conflicts
 
     id: Optional[int] = Field(primary_key=True)
     name: str = Field(max_length=100)
@@ -40,12 +41,13 @@ class User(Model, table=True):
 
 class Post(Model, table=True):
     """Post model with seamless database integration."""
+    __tablename__ = "seamless_posts"  # Unique table name to avoid conflicts
 
     id: Optional[int] = Field(primary_key=True)
     title: str = Field(max_length=200)
     content: str
     published: bool = Field(default=False)
-    user_id: int = Field(foreign_key="user.id")
+    user_id: int = Field(foreign_key="seamless_users.id")  # Updated foreign key reference
     created_at: datetime = Field(default_factory=datetime.now)
 
 

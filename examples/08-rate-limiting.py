@@ -156,7 +156,7 @@ async def api_endpoint():
 
 
 @app.get("/protected/user-data")
-async def protected_endpoint(current_user=Auth(required=True)):
+async def protected_endpoint(current_user=Auth):
     """Protected endpoint with user-based rate limits (20/min, 200/hour per user)."""
     return {
         "message": "This is a protected endpoint with user-based rate limits",
