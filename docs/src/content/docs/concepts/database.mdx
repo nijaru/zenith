@@ -12,7 +12,8 @@ Zenith provides seamless database integration with async SQLAlchemy, automatic m
 ## Quick Start
 
 ```python
-from zenith import Zenith, Session  # Enhanced dependency injection
+from zenith import Zenith
+from zenith.core import DB  # Enhanced dependency injection shortcut
 from zenith.db import ZenithModel  # Rails-like model with built-in methods
 from sqlmodel import Field
 from typing import Optional
@@ -29,7 +30,7 @@ class User(ZenithModel, table=True):
 
 # Use in routes with enhanced dependency injection
 @app.post("/users")
-async def create_user(user: User, db=Session):  # Clean DI - no Depends()!
+async def create_user(user: User, db=DB):  # Clean DI - no Depends()!
     # ZenithModel automatically uses the request-scoped session
     new_user = await User.create(name=user.name, email=user.email)
     return new_user
@@ -201,12 +202,12 @@ class Comment(TimestampMixin, table=True):
 
 ```python
 from zenith import Depends
-from zenith.db import Session, get_session
+from zenith.core import DB
 
 @app.get("/users")
-async def list_users(session: Session = Depends(get_session)):
-    statement = select(User)
-    users = session.exec(statement).all()
+async def list_users(db=DB):
+    # Use ZenithModel for Rails-like queries
+    users = await User.all()
     return users
 ```
 
@@ -233,7 +234,7 @@ async def transfer_funds(
     from_account: int,
     to_account: int,
     amount: float,
-    session: Session = Depends(get_session)
+    db=DB
 ):
     async with session.begin():  # Auto-commit or rollback
         # Get accounts
@@ -338,7 +339,7 @@ class Page(BaseModel, Generic[T]):
 async def list_users(
     page: int = 1,
     per_page: int = 20,
-    session: Session = Depends(get_session)
+    db=DB
 ):
     # Count total
     count_statement = select(func.count(User.id))
