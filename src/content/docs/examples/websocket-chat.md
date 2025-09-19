@@ -370,9 +370,9 @@ curl http://localhost:8000/api/rooms/general
 
 ## Next Steps
 
-- Explore **[Background Tasks](/examples/background-tasks/)** for message persistence
-- Learn **[Database Integration](/examples/database-todo-api/)** for chat history
-- See **[Rate Limiting](/examples/rate-limiting/)** for message throttling
+- Explore **[Background Tasks](/zenith/examples/auto-generated/05-background-tasks/)** for message persistence
+- Learn **[Database Models](/zenith/concepts/models/)** for persistent storage
+- See **[Rate Limiting](/zenith/examples/auto-generated/08-rate-limiting/)** for message throttling
 
 ---
 

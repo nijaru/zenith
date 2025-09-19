@@ -455,9 +455,9 @@ This example is production-ready and includes:
 
 ## Next Steps
 
-- Add **[Database Integration](/examples/database-todo-api/)** for data persistence
-- Explore **[Authentication](/concepts/authentication/)** for user security
-- Learn **[Production Deployment](/guides/deployment/)** patterns
+- Add **[Database Models](/zenith/concepts/models/)** for data persistence
+- Explore **[Authentication](/zenith/concepts/authentication/)** for user security
+- Learn **[SQLModel Integration](/zenith/examples/auto-generated/16-sqlmodel-integration/)** for advanced patterns
 
 ---
 
