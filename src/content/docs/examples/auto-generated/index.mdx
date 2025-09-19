@@ -1,0 +1,111 @@
+---
+title: Examples
+description: Learn Zenith through practical examples
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+# Zenith Examples
+
+Learn Zenith framework through practical, working examples. Each example builds on previous concepts while introducing new features.
+
+
+## Getting Started (00-03)
+
+<CardGrid>
+  <Card title="hello world" link="./00-hello-world">
+    Example 00: hello world
+  </Card>
+  <Card title="basic routing" link="./01-basic-routing">
+    Example 01: basic routing
+  </Card>
+  <Card title="pydantic validation" link="./02-pydantic-validation">
+    Example 02: pydantic validation
+  </Card>
+  <Card title="context system" link="./03-context-system">
+    Example 03: context system
+  </Card>
+</CardGrid>
+
+
+## Essential Features (04-09)
+
+<CardGrid>
+  <Card title="cors middleware" link="./04-cors-middleware">
+    Example 04: cors middleware
+  </Card>
+  <Card title="background tasks" link="./05-background-tasks">
+    Example 05: background tasks
+  </Card>
+  <Card title="file upload" link="./06-file-upload">
+    Example 06: file upload
+  </Card>
+  <Card title="websocket chat" link="./07-websocket-chat">
+    Example 07: websocket chat
+  </Card>
+  <Card title="rate limiting" link="./08-rate-limiting">
+    Example 08: rate limiting
+  </Card>
+</CardGrid>
+
+
+## Advanced Features (10-19)
+
+<CardGrid>
+  <Card title="security middleware" link="./11-security-middleware">
+    Example 11: security middleware
+  </Card>
+  <Card title="performance monitoring" link="./12-performance-monitoring">
+    Example 12: performance monitoring
+  </Card>
+  <Card title="testing patterns" link="./13-testing-patterns">
+    Example 13: testing patterns
+  </Card>
+  <Card title="advanced background processing" link="./14-advanced-background-processing">
+    Example 14: advanced background processing
+  </Card>
+  <Card title="router grouping" link="./15-router-grouping">
+    Example 15: router grouping
+  </Card>
+  <Card title="async database scoped" link="./16-async-database-scoped">
+    Example 16: async database scoped
+  </Card>
+  <Card title="sqlmodel integration" link="./16-sqlmodel-integration">
+    Example 16: sqlmodel integration
+  </Card>
+  <Card title="fullstack spa" link="./17-fullstack-spa">
+    Example 17: fullstack spa
+  </Card>
+  <Card title="frontend serving dx" link="./18-frontend-serving-dx">
+    Example 18: frontend serving dx
+  </Card>
+  <Card title="proper middleware architecture" link="./19-proper-middleware-architecture">
+    Example 19: proper middleware architecture
+  </Card>
+</CardGrid>
+
+
+## Production Patterns (20+)
+
+<CardGrid>
+  <Card title="server sent events" link="./22-server-sent-events">
+    Example 22: server sent events
+  </Card>
+</CardGrid>
+
+
+## Running Examples
+
+All examples are available in the [GitHub repository](https://github.com/nijaru/zenith/tree/main/examples):
+
+```bash
+# Clone and run any example
+git clone https://github.com/nijaru/zenith.git
+cd zenith
+export SECRET_KEY="your-secret-key-at-least-32-characters-long"
+uv run python examples/[example-name].py
+```
+
+---
+
+*This page is auto-generated from the examples directory. Each example page shows the complete source code and explanation.*

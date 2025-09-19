@@ -12,20 +12,20 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Why Zenith?
 
-Zenith delivers **Rails-like DX in Python** with 85% less boilerplate while maintaining exceptional performance. Zero-config setup, ActiveRecord patterns, and one-liner features make Python web development as productive as Rails.
+Zenith delivers **exceptional developer experience** with 85% less boilerplate while maintaining peak performance. Zero-config setup, intuitive patterns, and one-liner features make Python web development incredibly productive.
 
 <CardGrid>
-  <Card title="🚀 Rails-like DX" icon="puzzle">
+  <Card title="🚀 Zero-Config Setup" icon="puzzle">
     Zero-config setup with `app = Zenith()` - just works with intelligent defaults and environment detection.
   </Card>
-  <Card title="🏗️ ActiveRecord Patterns" icon="database">
-    Rails-inspired ZenithModel: `User.where(active=True).order_by('-id').limit(10).all()` with automatic session management.
+  <Card title="🏗️ Intuitive Database Patterns" icon="database">
+    ZenithModel: `User.where(active=True).order_by('-id').limit(10).all()` with automatic session management.
   </Card>
   <Card title="⚡ One-liner Features" icon="rocket">
     `app.add_auth()`, `app.add_admin()`, `app.add_api()` - complex functionality in single commands with production-ready defaults.
   </Card>
   <Card title="🎯 Enhanced DX" icon="shield">
-    Clean dependency injection with `db=DB` instead of verbose `Depends(get_database_session)`. Full type safety included.
+    ZenithModel handles database sessions automatically - no manual session management needed!
   </Card>
 </CardGrid>
 
@@ -40,10 +40,10 @@ app = Zenith()
 
 @app.get("/")
 async def hello():
-    return {"message": "Rails-like DX in Python!"}
+    return {"message": "Modern Python web development!"}
 ```
 
-**Rails-like Models:**
+**Enhanced Models:**
 ```python
 from zenith import Zenith
 from zenith.core import DB
@@ -53,7 +53,7 @@ from typing import Optional
 
 app = Zenith()
 
-# 🏗️ Rails-like model with ActiveRecord patterns
+# 🏗️ Enhanced model with intuitive patterns
 class User(ZenithModel, table=True):
     id: Optional[int] = Field(primary_key=True)
     name: str = Field(max_length=100)
@@ -61,15 +61,15 @@ class User(ZenithModel, table=True):
     active: bool = Field(default=True)
 
 @app.get("/users")
-async def list_users(db=DB):  # ✨ Enhanced DI
-    # Rails-style chaining
+async def list_users():  # ✨ No session management!
+    # Chainable queries work automatically
     query = await User.where(active=True)
     users = await query.order_by('-id').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
-async def create_user(user_data: dict, db=DB):
-    # Rails-style: User.create() - no session management!
+async def create_user(user_data: dict):
+    # Simple: User.create() - no session management!
     user = await User.create(**user_data)
     return {"user": user.to_dict()}
 ```
@@ -91,19 +91,19 @@ app.spa("dist")
 
 ## Key Features
 
-### Rails-like Productivity
+### Maximum Productivity
 
 - 🚀 **85% Less Boilerplate** - Zero-config setup with intelligent defaults
-- 🏗️ **ActiveRecord Patterns** - `User.where().order_by().limit().all()` database operations
+- 🏗️ **Intuitive Patterns** - `User.where().order_by().limit().all()` database operations
 - ⚡ **One-liner Features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
-- 🎯 **Enhanced DX** - Clean dependency injection with `db=DB` shortcuts
+- 🎯 **Enhanced DX** - ZenithModel handles sessions automatically
 - 🔍 **Automatic 404s** - `User.find_or_404()` with proper error handling
 - 📦 **Request-scoped Sessions** - No manual database session management
 
 ### Production Ready
 
 - ✅ **631+ Tests Passing** - Comprehensive test coverage with zero memory leaks
-- 🏎️ **9,600+ req/s** - Exceptional performance with Rails-like features
+- 🏎️ **9,600+ req/s** - Exceptional performance with all features enabled
 - 🛡️ **Security by Default** - CORS, CSRF, security headers automatic
 - 🏥 **Built-in Monitoring** - `/health`, `/metrics`, request tracing
 - ⚡ **Background Tasks** - TaskGroups with Python 3.12+ optimizations
@@ -113,28 +113,28 @@ app.spa("dist")
 
 Zenith follows these core principles:
 
-1. **Rails-like Productivity** - Zero-config setup and ActiveRecord patterns eliminate boilerplate
+1. **Maximum Productivity** - Zero-config setup and intuitive patterns eliminate boilerplate
 2. **Type Safety** - Full type hints and Pydantic validation catch errors at development time
 3. **Performance First** - 9,600+ req/s with no performance penalty for convenience features
-4. **Developer Joy** - One-liner features and enhanced DX make Python as productive as Rails
+4. **Developer Joy** - One-liner features and enhanced DX maximize Python productivity
 5. **Production Focus** - Security, monitoring, and scalability built-in from day one
 
 ## Next Steps
 
-Ready to build with Rails-like DX in Python?
+Ready to build with modern Python?
 
 <CardGrid>
   <Card title="Installation" icon="download" link="/installation">
     Get Zenith installed and set up your development environment
   </Card>
   <Card title="Quick Start" icon="rocket" link="/quick-start">
-    Build your first Rails-like API in 5 minutes with zero configuration
+    Build your first API in 5 minutes with zero configuration
   </Card>
   <Card title="ZenithModel" icon="database" link="/concepts/models">
-    Learn ActiveRecord-style database patterns and automatic session management
+    Learn intuitive database patterns and automatic session management
   </Card>
   <Card title="Examples" icon="code" link="https://github.com/nijaru/zenith/tree/main/examples">
-    Explore Rails-like DX patterns and real-world examples
+    Explore modern patterns and real-world examples
   </Card>
 </CardGrid>
 
