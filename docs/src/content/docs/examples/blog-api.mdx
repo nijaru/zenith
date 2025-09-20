@@ -213,6 +213,8 @@ class PostResponse(SQLModel):
 
 ## Authentication Service
 
+The authentication service handles user registration, login, and token generation. It separates business logic from route handlers for better testing and reusability:
+
 ```python
 # app/services/auth.py
 from zenith import Service, Inject
@@ -224,43 +226,50 @@ from typing import Optional
 from datetime import datetime
 
 class AuthService(Service):
-    """Authentication business logic."""
-    
+    """
+    Authentication business logic.
+    Service classes automatically get database access via self.db
+    """
+
     async def register_user(self, user_data: UserCreate) -> dict:
-        """Register a new user."""
-        # Check if email exists
+        """Register a new user with validation and token generation."""
+
+        # Step 1: Validate email uniqueness
         existing = await self.get_user_by_email(user_data.email)
         if existing:
             raise ValueError("Email already registered")
-        
-        # Check if username exists
+
+        # Step 2: Validate username uniqueness
         existing = await self.get_user_by_username(user_data.username)
         if existing:
             raise ValueError("Username already taken")
-        
-        # Create user
+
+        # Step 3: Create user with hashed password
         user = User(
             email=user_data.email,
             username=user_data.username,
             full_name=user_data.full_name,
+            # hash_password() uses bcrypt for secure password storage
+            # Never store plaintext passwords!
             password_hash=hash_password(user_data.password)
         )
-        
-        self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        
-        # Generate token
+
+        # Step 4: Save to database
+        self.db.add(user)        # Add to session
+        await self.db.commit()   # Persist to database
+        await self.db.refresh(user)  # Get generated ID and defaults
+
+        # Step 5: Generate JWT token for immediate login
         token = create_access_token({
-            "sub": user.email,
-            "user_id": user.id,
-            "role": user.role
+            "sub": user.email,    # JWT subject (primary identifier)
+            "user_id": user.id,   # Our internal user ID
+            "role": user.role     # For authorization checks
         })
-        
+
         return {
             "user": user,
             "access_token": token,
-            "token_type": "bearer"
+            "token_type": "bearer"  # OAuth2 standard
         }
     
     async def authenticate_user(self, credentials: UserLogin) -> dict:
@@ -364,52 +373,62 @@ class PostsService(Service):
     
     async def get_posts(
         self,
-        skip: int = 0,
-        limit: int = 20,
+        skip: int = 0,           # For pagination: skip first N results
+        limit: int = 20,         # Max results per page
         status: Optional[PostStatus] = None,
         category_id: Optional[int] = None,
         author_id: Optional[int] = None,
         search: Optional[str] = None,
         featured_only: bool = False
     ) -> List[Post]:
-        """Get posts with filtering and pagination."""
+        """
+        Get posts with flexible filtering and pagination.
+        Builds SQL query dynamically based on provided filters.
+        """
+        # Start with base query
         statement = select(Post)
-        
-        # Apply filters
+
+        # Build filter conditions dynamically
         conditions = []
-        
+
+        # Each filter is only applied if provided
         if status:
             conditions.append(Post.status == status)
-        
+
         if category_id:
             conditions.append(Post.category_id == category_id)
-        
+
         if author_id:
             conditions.append(Post.author_id == author_id)
-        
+
         if featured_only:
-            conditions.append(Post.is_featured == True)
-        
+            conditions.append(Post.is_featured == True)  # noqa: E712
+
         if search:
+            # For text search, use ILIKE (case-insensitive LIKE)
+            # % wildcards match any characters
             search_term = f"%{search}%"
             conditions.append(
+                # or_() combines conditions with OR logic
                 or_(
-                    Post.title.ilike(search_term),
-                    Post.content.ilike(search_term),
-                    Post.excerpt.ilike(search_term)
+                    Post.title.ilike(search_term),     # Search in title
+                    Post.content.ilike(search_term),   # Search in content
+                    Post.excerpt.ilike(search_term)    # Search in excerpt
                 )
             )
-        
+
+        # Apply all conditions with AND logic
         if conditions:
             statement = statement.where(and_(*conditions))
-        
-        # Order by published date (newest first)
+
+        # Add ordering and pagination
         statement = (
-            statement.order_by(Post.published_at.desc())
-            .offset(skip)
-            .limit(limit)
+            statement
+            .order_by(Post.published_at.desc())  # Newest first
+            .offset(skip)    # Skip for pagination
+            .limit(limit)    # Limit results per page
         )
-        
+
         result = await self.db.exec(statement)
         return result.all()
     
@@ -478,34 +497,53 @@ class PostsService(Service):
         return True
     
     def generate_slug(self, title: str) -> str:
-        """Generate URL-friendly slug from title."""
+        """
+        Generate URL-friendly slug from title.
+        Example: "My Blog Post!" -> "my-blog-post"
+        """
+        # Step 1: Remove special characters, keep only letters, numbers, spaces, hyphens
         slug = re.sub(r'[^\w\s-]', '', title).strip().lower()
+        # Step 2: Replace multiple spaces/hyphens with single hyphen
         slug = re.sub(r'[-\s]+', '-', slug)
-        return slug[:50]  # Limit length
-    
+        # Step 3: Limit length for URL friendliness
+        return slug[:50]
+
     async def ensure_unique_slug(self, slug: str, exclude_id: Optional[int] = None) -> str:
-        """Ensure slug is unique by adding suffix if needed."""
+        """
+        Ensure slug uniqueness by appending number if needed.
+        Example: "my-post" exists -> returns "my-post-1"
+        """
         original_slug = slug
         counter = 1
-        
+
         while True:
+            # Check if slug exists in database
             statement = select(Post).where(Post.slug == slug)
             if exclude_id:
+                # When updating, exclude current post from check
                 statement = statement.where(Post.id != exclude_id)
-            
+
             result = await self.db.exec(statement)
             if not result.first():
-                return slug
-            
+                return slug  # Slug is unique, use it
+
+            # Slug exists, try with counter: my-post-1, my-post-2, etc.
             slug = f"{original_slug}-{counter}"
             counter += 1
-    
+
     def generate_excerpt(self, content: str, length: int = 200) -> str:
-        """Generate excerpt from content."""
-        # Strip HTML tags (basic)
+        """
+        Generate excerpt from content for preview.
+        Strips HTML and truncates at word boundary.
+        """
+        # Remove HTML tags (basic regex approach)
         text = re.sub(r'<[^>]+>', '', content)
+
         if len(text) <= length:
-            return text
+            return text  # Content is already short enough
+
+        # Truncate at word boundary to avoid cutting words
+        # rsplit(' ', 1)[0] removes the last partial word
         return text[:length].rsplit(' ', 1)[0] + '...'
 ```
 
