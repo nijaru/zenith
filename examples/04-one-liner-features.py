@@ -1,5 +1,5 @@
 """
-One-liner Features Example - Showcasing v0.3.0 Convenience Methods
+One-liner Features Example - Showcasing v0.3.1 Convenience Methods
 
 This example demonstrates the new one-liner convenience methods:
 - app.add_auth() - JWT authentication in one line
@@ -13,7 +13,9 @@ import os
 from zenith import Zenith
 
 # Set up environment for the example
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///oneliner_example.db")
+example_dir = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(example_dir, "oneliner_example.db")
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only-32-chars-long")
 
 # 🚀 Create app and add features in just 4 lines!

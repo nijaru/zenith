@@ -5,7 +5,7 @@ description: Learn Zenith's routing capabilities with path parameters, query par
 
 # Basic Routing Example
 
-This example demonstrates Zenith's powerful routing system including path parameters, query parameters, and HTTP method handling.
+This example demonstrates Zenith's comprehensive routing system including path parameters, query parameters, and HTTP method handling.
 
 ## Code Example
 

@@ -1,12 +1,12 @@
 ---
-title: ⚡ Zenith Framework
-description: Modern Python web framework with clean architecture and exceptional performance
+title:  Zenith Framework
+description: Python web framework for building APIs
 template: splash
 hero:
-  tagline: Build production-ready APIs with clean architecture and exceptional developer experience
+  tagline: A Python web framework with built-in authentication, database models, and API documentation
   actions:
     - text: Get Started
-      link: /introduction/
+      link: /zenith/quick-start/
       icon: right-arrow
       variant: primary
     - text: View on GitHub
@@ -16,20 +16,20 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Build Rails-like APIs in Python
+## Build Current APIs in Python
 
 <CardGrid>
-	<Card title="Rails-like DX" icon="puzzle">
-		Zero-config setup, ActiveRecord-style models, and one-liner features deliver 85% less boilerplate.
+	<Card title="Automatic Configuration" icon="puzzle">
+		Sensible defaults that work out of the box without configuration files.
 	</Card>
 	<Card title="ZenithModel" icon="database">
-		Rails-inspired database patterns: `User.where(active=True).order_by('-id').limit(10).all()`
+		Intuitive database patterns with chainable queries and automatic session management.
 	</Card>
-	<Card title="One-liner Features" icon="rocket">
-		`app.add_auth()`, `app.add_admin()`, `app.add_api()` - complex features in single commands.
+	<Card title="Built-in Features" icon="rocket">
+		Authentication, admin panel, and API documentation included.
 	</Card>
-	<Card title="Enhanced DX" icon="shield">
-		Clean dependency injection with `db=DB` instead of verbose `Depends(get_database_session)`.
+	<Card title="Type Safety" icon="shield">
+		Full type hints and Pydantic validation throughout.
 	</Card>
 </CardGrid>
 
@@ -46,19 +46,19 @@ zen new my-api
 zen dev
 ```
 
-## Why Developers Choose Zenith
+## Features
 
 <CardGrid>
-	<Card title="Rails-like Productivity" icon="heart">
-		Zero-config setup, ActiveRecord patterns, and automatic session management eliminate boilerplate.
+	<Card title="Fast Development" icon="heart">
+		Automatic configuration and built-in features speed up development.
 	</Card>
-	<Card title="Exceptional Performance" icon="rocket">
-		9,600+ req/s with Rails-like features. No performance penalty for convenience features.
+	<Card title="High Performance" icon="rocket">
+		9,600+ requests per second with middleware enabled.
 	</Card>
 	<Card title="Production Ready" icon="shield">
-		776+ tests, zero memory leaks, SSE support, and comprehensive middleware out of the box.
+		Comprehensive test suite, SSE support, and security middleware included.
 	</Card>
-	<Card title="Modern Python" icon="puzzle">
-		Python 3.12+ optimizations, full async/await, and complete type safety throughout.
+	<Card title="Python 3.12+" icon="puzzle">
+		Async/await support with type safety.
 	</Card>
 </CardGrid>

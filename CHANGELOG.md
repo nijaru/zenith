@@ -7,13 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-09-19
+
+### Added
+- **Automated Version Management**: `scripts/version_manager.py` and `scripts/bump_version.sh` for consistent version updates
+- **Auto-Generated Documentation**: GitHub API integration for automatically generating website example pages
+- **Documentation Standards**: `DOC_PATTERNS.md` for AI agent and human developer documentation organization
+
+### Fixed
+- **Example Import Consistency**: All examples now use `ZenithModel as Model` with enhanced methods
+- **Documentation Accuracy**: Removed misleading `session=Session` parameters from all documentation
+- **Database File Management**: Examples now create databases in `examples/` directory instead of project root
+- **Repository Organization**: Cleaned up test artifacts, cache files, and temporary directories
+
+### Changed
+- **Enhanced Release Process**: Automated version management across 20+ files
+- **Improved Repository Structure**: Better organization following documentation standards
+- **Website Maintenance**: Reduced maintenance overhead through auto-generation from examples
+
+### Performance
+- **Repository Cleanup**: Eliminated accumulation of database files and test artifacts
+- **Documentation Sync**: Zero-maintenance documentation that stays synchronized with code
+
 ## [0.3.0] - 2025-09-18
 
 ### Added
-- **Rails-like Developer Experience**: Zero-config setup with `app = Zenith()`
+- **Modern Developer Experience**: Zero-config setup with `app = Zenith()`
 - **One-liner Features**: `app.add_auth()`, `app.add_admin()`, `app.add_api()` convenience methods
 - **Server-Sent Events (SSE)**: Complete SSE implementation with backpressure handling and adaptive throttling
-- **ZenithModel**: Rails-like ActiveRecord patterns with `User.all()`, `User.find()`, `User.create()`, `User.where()`
+- **ZenithModel**: Intuitive database patterns with `User.all()`, `User.find()`, `User.create()`, `User.where()`
 - **Enhanced Dependency Injection**: Clean shortcuts like `db=DB`, `user=Auth`, `service=Inject()`
 - **Comprehensive SSE Testing**: 39 unit tests and 18 integration tests for SSE functionality
 - **Automatic Admin Dashboard**: `/admin` endpoint with health checks and statistics
@@ -22,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Enhanced TestClient**: Now supports both Zenith and Starlette applications
 - **Improved Example Organization**: Fixed duplicate numbering, now examples 00-23
-- **Updated Documentation**: Comprehensive docs refresh with v0.3.0 patterns
+- **Updated Documentation**: Comprehensive docs refresh with v0.3.1 patterns
 - **Modernized Import Patterns**: Cleaner imports with `from zenith.core import DB, Auth`
 
 ### Fixed
@@ -30,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TestClient Compatibility**: Resolved startup/shutdown issues with Starlette apps
 - **SSE Integration Tests**: Fixed timing issues with rate limiting
 - **Example Syntax**: All examples now compile and run correctly
-- **Documentation Imports**: Updated all docs to use new v0.3.0 import patterns
+- **Documentation Imports**: Updated all docs to use new v0.3.1 import patterns
 
 ### Performance
 - **SSE Rate Limiting**: Optimized to 10 events/second with intelligent backpressure

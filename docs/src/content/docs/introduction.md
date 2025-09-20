@@ -5,7 +5,7 @@ description: Welcome to Zenith - A modern Python web framework
 
 # Welcome to Zenith
 
-**Zenith** is a modern Python web framework designed for building production-ready APIs with clean architecture and exceptional developer experience.
+**Zenith** is a Python web framework designed for building production-ready APIs with clean architecture and good developer experience.
 
 ## What is Zenith?
 
@@ -18,7 +18,7 @@ Zenith combines the best ideas from modern web frameworks with Python's ecosyste
 
 ## Key Features
 
-### 🏗️ **Context System**
+###  **Context System**
 Organize your business logic in contexts, keeping domain concerns separate from HTTP handling:
 
 ```python
@@ -28,7 +28,7 @@ class UserService(Service):
         return await self.users.create(data)
 ```
 
-### 🔒 **Type-Safe by Default**  
+###  **Type-Safe by Default**  
 Leverage Python's type system for bulletproof APIs:
 
 ```python
@@ -38,7 +38,7 @@ async def create_user(user: UserCreate) -> User:
     return {"id": 1, "name": user.name}
 ```
 
-### 🚀 **SQLModel Integration**
+###  **SQLModel Integration**
 One model for everything - API, database, and documentation:
 
 ```python
@@ -48,13 +48,13 @@ class User(SQLModel, table=True):
     email: str = Field(regex=r'^[\w\.-]+@[\w\.-]+\.\w+$')
 ```
 
-### ⚡ **Exceptional Performance**
+###  **Performance**
 - **9,557 req/s** for simple endpoints
 - **9,602 req/s** for JSON responses
 - **70% performance retained** with full middleware stack (6,694 req/s)
 - Zero memory leaks with bounded caches and comprehensive optimizations
 
-### 🛡️ **Production Features**
+###  **Production Features**
 Built-in middleware for enterprise needs:
 - Security headers (HSTS, CSP, X-Frame-Options)
 - CORS with flexible configuration
@@ -77,7 +77,7 @@ Zenith is built on these core principles:
 Zenith is great for:
 
 - **APIs** - REST APIs, GraphQL backends, and microservices at any scale
-- **Frontends** - Serve SPAs (React, Vue, Angular) and static sites seamlessly  
+- **Frontends** - Serve SPAs (React, Vue, Angular) and static sites effectively  
 - **Full-Stack Applications** - Complete web applications with clean architecture
 - **Production Systems** - Built for reliability, performance, and maintainability
 

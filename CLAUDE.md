@@ -2,7 +2,7 @@
 *Comprehensive context for AI assistants working with the Zenith Python web framework*
 
 ## Release Strategy
-**Dual Release Approach** (following Python framework conventions like FastAPI, Django):
+**Dual Release Approach** (following Python framework conventions):
 
 ### PyPI Release (Primary - for users)
 **IMPORTANT**: Use `twine` for PyPI uploads, not `uv publish`:
@@ -56,14 +56,14 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 - Move unreleased changes to versioned section before release
 
 ## Quick Facts
-- **Product**: Modern Python API framework with Rails-like DX and exceptional performance
+- **Product**: Modern Python API framework with exceptional developer experience and performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.3.0 - Rails-like developer experience with zero-config setup and ActiveRecord patterns
+- **Status**: v0.3.1 - Modern developer experience with zero-config setup and intuitive patterns
 - **Performance**: 9,600+ req/s with optimized middleware stack and database session reuse
-- **Test Coverage**: 100% integration tests (770+ tests passing, +260 new tests for v0.3.0 features)
+- **Test Coverage**: 100% integration tests (770+ tests passing, +260 new tests for v0.3.1 features)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
-- **DX**: 85% boilerplate reduction vs traditional FastAPI with Rails-inspired patterns
+- **DX**: 85% boilerplate reduction with intuitive patterns
 
 ## Framework Philosophy & Design
 
@@ -75,14 +75,14 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 5. **Production Ready** - Security, monitoring, scalability, and reliability built-in
 6. **Automation Over Validation** - Eliminate manual steps rather than trying to predict deployment success
 
-### Key Differentiators from FastAPI/Flask
-- **Rails-like ActiveRecord Models**: `User.where(active=True).limit(10)` instead of raw SQLAlchemy
+### Key Differentiators
+- **Intuitive Database Models**: `User.where(active=True).limit(10)` instead of raw SQLAlchemy
 - **One-liner Setup**: `app.add_auth()`, `app.add_admin()`, `app.add_api()` for instant features
 - **Zero-Configuration**: `app = Zenith()` auto-detects environment and configures everything
 - **Seamless Database Integration**: ZenithModel automatically uses request-scoped sessions
 - **Enhanced DI Shortcuts**: `db=DB`, `Auth`, `Cache` instead of verbose `Depends()` patterns
 - **Context System**: Organizes business logic outside route handlers
-- **Performance**: 10%+ faster than FastAPI with intelligent session reuse
+- **Performance**: Exceptional performance with intelligent session reuse
 - **Testing Framework**: Built-in TestClient with auth helpers and context testing
 - **Comprehensive Middleware**: Production-ready CORS, security, rate limiting, logging
 
@@ -188,7 +188,7 @@ examples/               # Working example applications
 ├── 02-auth-api.py           # API with authentication
 ├── 03-complete-api.py       # Full-featured application
 ├── 04-websocket-chat.py     # WebSocket example
-├── 16-rails-like-dx.py      # Rails-like DX showcase (v0.3.0)
+├── 16-modern-dx.py          # Modern DX showcase (v0.3.1)
 ├── 17-one-liner-features.py # One-liner convenience methods
 └── 18-seamless-integration.py # ZenithModel seamless integration
 
@@ -199,7 +199,7 @@ scripts/                # Development scripts
 
 ## Core Framework Components
 
-### 1. Rails-like Zero-Config Setup (NEW in v0.3.0)
+### 1. Zero-Config Setup (NEW in v0.3.1)
 ```python
 from zenith import Zenith
 
@@ -222,7 +222,7 @@ app = (Zenith()
        .add_api("My API", "1.0.0", "API description"))
 ```
 
-### 2. Rails-like ActiveRecord Models (NEW in v0.3.0)
+### 2. Enhanced Database Models (NEW in v0.3.1)
 ```python
 from zenith.db import ZenithModel
 from sqlmodel import Field
@@ -233,13 +233,13 @@ class User(ZenithModel, table=True):
     email: str
     active: bool = Field(default=True)
 
-# Rails-style model operations - all seamlessly integrated with Zenith app
+# Intuitive model operations - all seamlessly integrated with Zenith app
 users = await User.all()                           # Get all users
 user = await User.find(1)                         # Find by ID, returns None if not found
 user = await User.find_or_404(1)                  # Find by ID, raises 404 if not found
 user = await User.create(name="Alice", email="alice@example.com")  # Create and save
 
-# Rails-style chainable queries
+# Chainable queries
 active_users = await User.where(active=True).order_by('-created_at').limit(10)
 recent_posts = await Post.where(published=True).includes('author').all()
 
@@ -247,11 +247,11 @@ recent_posts = await Post.where(published=True).includes('author').all()
 # the request-scoped database session from Zenith app middleware!
 ```
 
-### 3. Enhanced Dependency Injection (NEW in v0.3.0)
+### 3. Enhanced Dependency Injection (NEW in v0.3.1)
 ```python
 from zenith.core import DB, Auth, Cache
 
-# Clean, Rails-like dependency shortcuts instead of verbose Depends()
+# Clean dependency shortcuts instead of verbose Depends()
 @app.get("/users")
 async def get_users(db=DB):  # Instead of db: AsyncSession = Depends(get_session)
     users = await User.all()  # ZenithModel seamlessly uses the db session
@@ -587,14 +587,14 @@ app = Zenith(config=config)
 
 ## Migration from Other Frameworks
 
-### From FastAPI
+### Migration Guide
 - **Routes**: Minimal changes, same decorator patterns
 - **Dependencies**: Replace `Depends()` with `Inject()` for business logic
 - **Middleware**: Enhanced built-in middleware, less configuration needed
 - **Testing**: More comprehensive testing utilities
 - **Performance**: Immediate performance improvements
 
-### From Flask
+### Architecture Benefits
 - **Async support**: Full async/await throughout
 - **Type safety**: Automatic request/response validation
 - **Architecture**: Service system for better organization

@@ -17,13 +17,13 @@ from typing import Optional
 
 from zenith import Zenith, Router
 from zenith import Session
-from zenith.db import Model, Field
+from zenith.db import ZenithModel as Model, Field  # Enhanced model with where/find/create methods
 
 # 🎯 Zero-config setup - just works!
 app = Zenith()
 
 # ============================================================================
-# MODERN MODELS - ActiveRecord-Style Database Operations
+# MODERN MODELS - Intuitive Database Operations
 # ============================================================================
 
 class Product(Model, table=True):
@@ -121,7 +121,7 @@ async def root():
 # ============================================================================
 
 @products_router.get("/", response_model=list[Product])
-async def list_products(category: str | None = None, session=Session) -> list[Product]:
+async def list_products(category: str | None = None) -> list[Product]:
     """List products with Modern query patterns."""
     if category:
         # Clean: Product.where(category=category)
@@ -134,7 +134,7 @@ async def list_products(category: str | None = None, session=Session) -> list[Pr
 
 
 @products_router.post("/", response_model=Product)
-async def create_product(product_data: dict, session=Session) -> Product:
+async def create_product(product_data: dict) -> Product:
     """Create product using Modern patterns."""
     # Clean: Product.create() - no session management!
     product = await Product.create(**product_data)
@@ -142,7 +142,7 @@ async def create_product(product_data: dict, session=Session) -> Product:
 
 
 @products_router.get("/{product_id}", response_model=Product)
-async def get_product(product_id: int, session=Session) -> Product:
+async def get_product(product_id: int) -> Product:
     """Get product by ID with automatic 404 handling."""
     # Clean: automatic 404 if not found
     product = await Product.find_or_404(product_id)
@@ -150,7 +150,7 @@ async def get_product(product_id: int, session=Session) -> Product:
 
 
 @orders_router.get("/", response_model=list[Order])
-async def list_orders(session=Session) -> list[Order]:
+async def list_orders() -> list[Order]:
     """List all orders with Modern patterns."""
     # Clean: Order.all() with automatic ordering
     orders = await Order.order_by('-created_at').all()
@@ -158,7 +158,7 @@ async def list_orders(session=Session) -> list[Order]:
 
 
 @orders_router.post("/", response_model=Order)
-async def create_order(order_data: dict, session=Session) -> Order:
+async def create_order(order_data: dict) -> Order:
     """Create order with Modern business logic."""
     product_id = order_data["product_id"]
     quantity = order_data["quantity"]
@@ -191,7 +191,7 @@ async def health():
     """Health check."""
     return {
         "status": "healthy",
-        "example": "03-rails-like-patterns",
+        "example": "03-modern-patterns",
         "patterns": ["Modern DX", "Enhanced Model", "Router grouping", "Enhanced DI"],
     }
 
@@ -226,7 +226,7 @@ if __name__ == "__main__":
     print("   • Product.where(category='Electronics').order_by('-created_at').all()")
     print("   • Product.find_or_404(id) - automatic 404 handling")
     print("   • Product.create(**data) - no session management")
-    print("   • Enhanced DI with session=Session shortcuts")
+    print("   • No session management - ZenithModel handles it automatically")
     print("   • Zero-config setup with intelligent defaults")
     print("   • Router grouping for API organization")
     print()

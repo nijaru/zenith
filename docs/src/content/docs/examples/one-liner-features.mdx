@@ -1,13 +1,13 @@
 ---
-title: One-Liner Features
-description: Add authentication, admin, and API docs with single method calls
+title: Built-in Features
+description: Add authentication, admin panel, and API documentation
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 ## Overview
 
-Zenith v0.3.0 introduces one-liner convenience methods that add complete features with a single method call. Each method saves 20-50 lines of configuration code.
+Zenith includes built-in methods for common features like authentication, admin panels, and API documentation.
 
 ## Authentication in One Line
 
@@ -15,9 +15,9 @@ Zenith v0.3.0 introduces one-liner convenience methods that add complete feature
 from zenith import Zenith
 
 app = Zenith()
-app.add_auth()  # ✅ Complete JWT authentication added!
+app.add_auth()  # Add JWT authentication
 
-# This single line adds:
+# This adds:
 # - POST /auth/login endpoint
 # - JWT token generation
 # - User authentication middleware
@@ -27,7 +27,7 @@ app.add_auth()  # ✅ Complete JWT authentication added!
 ## Admin Dashboard in One Line
 
 ```python
-app.add_admin()  # ✅ Admin dashboard added!
+app.add_admin()  # Add admin dashboard
 
 # This adds:
 # - GET /admin - Admin dashboard
@@ -52,29 +52,21 @@ app.add_api("My API", "1.0.0", "API description")
 ```python
 from zenith import Zenith
 
-# Add all features in 4 lines!
+# Chain methods together
 app = (Zenith()
        .add_auth()
-       .add_admin("/dashboard")  # Custom path
+       .add_admin("/dashboard")  # Optional custom path
        .add_api("My API", "1.0.0"))
 ```
 
 ## Complete Example
 
-Run the example: `python examples/04-one-liner-features.py`
+Run the example: `python examples/04-built-in-features.py`
 
 <Aside type="tip">
-  **Productivity Tip**: These one-liner methods are perfect for prototypes and MVPs. You can always customize later!
+  **Note**: These methods provide sensible defaults that can be customized as needed.
 </Aside>
 
-## Traditional Alternative
+## Manual Configuration
 
-Without these methods, you'd need:
-
-```python
-# 50+ lines of JWT configuration
-# 30+ lines of admin route setup
-# 20+ lines of OpenAPI configuration
-```
-
-With Zenith v0.3.0: **Just 3 lines!**
+These built-in methods replace manual setup of JWT tokens, admin routes, and OpenAPI configuration. Each method configures multiple endpoints and middleware automatically.

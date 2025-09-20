@@ -1,11 +1,69 @@
 ---
-title: Routing
-description: Define and organize API endpoints in Zenith
+title: Routing & Request Handling
+description: Build type-safe, organized API endpoints with automatic validation
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-## Route Definition
+## Routing Overview
+
+As APIs grow, endpoint management can become complex:
+- **Scattered routes** across multiple files with no clear organization
+- **Manual validation** of query parameters, path variables, and request bodies
+- **Type mismatches** between what you expect and what you receive
+- **Manual validation** for parsing and serializing data
+- **Inconsistent error handling** across different endpoints
+
+<Aside type="caution">
+  **Without proper routing:** A 50-endpoint API can have validation code scattered across 500+ lines, making bugs inevitable and maintenance painful.
+</Aside>
+
+## Type-Safe, Organized Routing
+
+Zenith's routing system provides:
+- **Decorator-based routing** - Clean, intuitive endpoint definition
+- **Automatic validation** - Pydantic models validate all inputs
+- **Type safety** - Full IDE support with autocomplete
+- **Router organization** - Group related endpoints together
+- **Minimal configuration** - Focus on business logic
+
+## When to Use Different Routing Patterns
+
+| Use Case | Pattern | Example |
+|----------|---------|----------|
+| Simple APIs | Flat routing | `@app.get("/users")` |
+| Large APIs | Router groups | `users_router = Router()` |
+| Microservices | Versioned routes | `/api/v1/users` |
+| Multi-tenant | Prefix routing | `/{tenant}/users` |
+| File serving | Path matching | `/{file_path:path}` |
+
+## Quick Example
+
+```python
+# Before: Manual validation nightmare
+async def get_users(request):
+    # Manual query param extraction
+    page = request.query_params.get('page', '1')
+    try:
+        page = int(page)
+        if page < 1:
+            return JSONResponse({"error": "Invalid page"}, 400)
+    except ValueError:
+        return JSONResponse({"error": "Page must be integer"}, 400)
+
+    limit = request.query_params.get('limit', '10')
+    # ... more manual validation ...
+
+# After: Zenith automatic validation
+@app.get("/users")
+async def get_users(page: int = 1, limit: int = 10):
+    # Types validated, converted, and ready to use!
+    return await fetch_users(page, limit)
+```
+
+## Core Concepts
+
+### 1. Route Definition
 
 Zenith provides an intuitive decorator-based routing system with full type safety.
 
@@ -129,6 +187,85 @@ async def get_post(post_id: int) -> PostResponse:
         created_at=datetime.utcnow(),
         tags=["example"]
     )
+```
+
+## Common Patterns
+
+### API Versioning
+
+```python
+# Versioned API structure
+v1_router = Router(prefix="/api/v1")
+v2_router = Router(prefix="/api/v2")
+
+@v1_router.get("/users")
+async def get_users_v1():
+    # V1 implementation
+    return {"version": "1.0", "users": []}
+
+@v2_router.get("/users")
+async def get_users_v2():
+    # V2 with pagination
+    return {
+        "version": "2.0",
+        "users": [],
+        "pagination": {"page": 1, "total": 0}
+    }
+
+app.include_router(v1_router)
+app.include_router(v2_router)
+```
+
+### RESTful CRUD Pattern
+
+```python
+from zenith import Router, HTTPException
+from typing import List
+
+router = Router(prefix="/api/items", tags=["Items"])
+
+@router.get("/", response_model=List[Item])
+async def list_items(skip: int = 0, limit: int = 100):
+    """List all items with pagination."""
+    return await get_items(skip, limit)
+
+@router.get("/{item_id}", response_model=Item)
+async def get_item(item_id: int):
+    """Get a single item by ID."""
+    item = await find_item(item_id)
+    if not item:
+        raise HTTPException(404, "Item not found")
+    return item
+
+@router.post("/", response_model=Item, status_code=201)
+async def create_item(item: ItemCreate):
+    """Create a new item."""
+    return await save_item(item)
+
+@router.put("/{item_id}", response_model=Item)
+async def update_item(item_id: int, item: ItemUpdate):
+    """Update an existing item."""
+    return await modify_item(item_id, item)
+
+@router.delete("/{item_id}", status_code=204)
+async def delete_item(item_id: int):
+    """Delete an item."""
+    await remove_item(item_id)
+```
+
+### Multi-tenant Routing
+
+```python
+@app.get("/{tenant_id}/dashboard")
+async def tenant_dashboard(
+    tenant_id: str,
+    user = Depends(get_current_user)
+):
+    # Verify user has access to tenant
+    if not user.has_tenant_access(tenant_id):
+        raise HTTPException(403, "Access denied")
+
+    return await get_tenant_data(tenant_id)
 ```
 
 ## Router Organization
@@ -332,6 +469,91 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_text(f"Echo: {data}")
 ```
 
+## Best Practices
+
+###  DO
+- **Group related endpoints** in router modules
+- **Use consistent naming** (plural for collections, singular for items)
+- **Version your API** from the start (`/api/v1/`)
+- **Return proper status codes** (201 for creation, 204 for deletion)
+- **Document endpoints** with docstrings and OpenAPI metadata
+- **Validate everything** with Pydantic models
+
+### ❌ DON'T
+- Don't mix business logic in route handlers
+- Don't use generic exception messages
+- Don't forget to handle edge cases (404, 409, etc.)
+- Don't expose internal errors to clients
+- Don't use synchronous operations in async routes
+
+## Troubleshooting
+
+### Common Issues
+
+**"Route not found (404)"**
+- Check route registration order (specific before generic)
+- Verify router is included in app
+- Check for typos in path parameters
+
+**"Validation error"**
+- Ensure request body matches Pydantic model
+- Check required vs optional fields
+- Verify type annotations are correct
+
+**"Method not allowed (405)"**
+- Verify HTTP method matches decorator
+- Check if route supports the method
+
+**"Depends() not working"**
+- Import from `zenith` not `fastapi`
+- Ensure dependency returns/yields value
+- Check async vs sync consistency
+
+### Debugging Routes
+
+```python
+# List all routes
+for route in app.routes:
+    print(f"{route.methods} {route.path}")
+
+# Test route matching
+from zenith.testing import TestClient
+
+async with TestClient(app) as client:
+    response = await client.get("/api/users")
+    print(f"Status: {response.status_code}")
+    print(f"Body: {response.json()}")
+```
+
+## Performance Tips
+
+1. **Use path parameters for IDs** - Faster than query params
+   ```python
+   # Good: O(1) lookup
+   @app.get("/users/{user_id}")
+
+   # Slower: Requires parsing
+   @app.get("/users?id={user_id}")
+   ```
+
+2. **Limit query results** - Always paginate
+   ```python
+   @app.get("/items")
+   async def list_items(limit: int = 100):
+       if limit > 1000:
+           limit = 1000  # Cap maximum
+   ```
+
+3. **Cache route handlers** - For expensive operations
+   ```python
+   from zenith.cache import cached
+
+   @app.get("/stats")
+   @cached(ttl=60)  # Cache for 1 minute
+   async def get_stats():
+       return await calculate_expensive_stats()
+   ```
+
 ## Testing Routes
 
 ```python
@@ -358,8 +580,74 @@ async def test_routes():
         assert response.status_code == 200
 ```
 
+## Migration Guide
+
+### From Flask
+```python
+# Flask
+@app.route('/users/<int:user_id>', methods=['GET', 'POST'])
+def user_detail(user_id):
+    if request.method == 'POST':
+        data = request.get_json()
+        # manual validation
+    return jsonify({"user_id": user_id})
+
+# Zenith
+@app.get("/users/{user_id}")
+async def get_user(user_id: int):
+    return {"user_id": user_id}
+
+@app.post("/users/{user_id}")
+async def update_user(user_id: int, data: UserUpdate):
+    # Automatic validation!
+    return {"updated": user_id}
+```
+
+### From FastAPI
+```python
+# FastAPI - Almost identical!
+# Main difference: Zenith has automatic setup
+from fastapi import FastAPI, Depends
+app = FastAPI()
+
+# Zenith - Cleaner imports, same power
+from zenith import Zenith
+app = Zenith()  # Auto-configures everything
+```
+
+### From Express.js
+```javascript
+// Express.js
+app.get('/users/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({error: 'Invalid ID'});
+  }
+  res.json({user_id: id});
+});
+```
+
+```python
+# Zenith
+@app.get("/users/{user_id}")
+async def get_user(user_id: int):  # Auto-validates int!
+    return {"user_id": user_id}
+```
+
+## Related Topics
+
+- **[Middleware](/zenith/concepts/middleware/)** - Process requests before routes
+- **[Authentication](/zenith/concepts/authentication/)** - Secure your endpoints
+- **[Models](/zenith/concepts/models/)** - Database integration
+- **[Services](/zenith/concepts/services/)** - Organize business logic
+- **[Testing](/zenith/api/testing/)** - Test your routes
+
 ## Next Steps
 
-- Learn about [Middleware](/concepts/middleware) for request processing
-- Explore [Authentication](/concepts/authentication) for securing routes
-- Understand [Database](/concepts/database) integration
+- Try the **[Basic Routing Example](/zenith/examples/basic-routing/)**
+- Build a **[Complete API](/zenith/examples/blog-api/)**
+- Learn about **[Router Organization](/zenith/examples/auto-generated/15-router-grouping/)**
+
+---
+
+*Learn more in the [API Reference](/zenith/api/router/) or explore [routing examples](/zenith/examples/basic-routing/).*
