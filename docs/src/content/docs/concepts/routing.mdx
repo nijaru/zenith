@@ -39,25 +39,36 @@ Zenith's routing system provides:
 
 ## Quick Example
 
+See how Zenith eliminates boilerplate validation code:
+
 ```python
-# Before: Manual validation nightmare
+# Before: Manual validation nightmare (what you'd write without Zenith)
 async def get_users(request):
-    # Manual query param extraction
+    # Step 1: Manually extract query parameter
     page = request.query_params.get('page', '1')
+
+    # Step 2: Try to convert to integer
     try:
         page = int(page)
+        # Step 3: Validate the value
         if page < 1:
             return JSONResponse({"error": "Invalid page"}, 400)
     except ValueError:
+        # Step 4: Handle conversion errors
         return JSONResponse({"error": "Page must be integer"}, 400)
 
+    # Step 5: Repeat for EVERY parameter...
     limit = request.query_params.get('limit', '10')
-    # ... more manual validation ...
+    # ... 10+ more lines of validation per parameter ...
 
 # After: Zenith automatic validation
 @app.get("/users")
 async def get_users(page: int = 1, limit: int = 10):
-    # Types validated, converted, and ready to use!
+    # That's it! Zenith handles:
+    # - Extracting 'page' and 'limit' from query string
+    # - Converting to int type
+    # - Applying defaults if missing
+    # - Returning 422 error if validation fails
     return await fetch_users(page, limit)
 ```
 
@@ -93,29 +104,52 @@ async def delete_item(item_id: int):
 
 ### Path Parameters
 
+Extract values directly from the URL path:
+
 ```python
 @app.get("/users/{user_id}")
-async def get_user(user_id: int):
+async def get_user(user_id: int):  # Type hint enforces integer
+    # URL: /users/123     -> user_id = 123 ✅
+    # URL: /users/alice   -> 422 error (not an integer) ❌
     return {"user_id": user_id}
+
+@app.get("/posts/{year}/{month}/{slug}")
+async def get_post(year: int, month: int, slug: str):
+    # URL: /posts/2024/03/my-post
+    # Extracts: year=2024, month=3, slug="my-post"
+    return {"year": year, "month": month, "slug": slug}
 
 @app.get("/files/{file_path:path}")
 async def get_file(file_path: str):
-    # Matches /files/documents/report.pdf
+    # Special :path converter captures everything including slashes
+    # URL: /files/documents/2024/report.pdf
+    # Captures: file_path = "documents/2024/report.pdf"
     return {"file": file_path}
 ```
 
 ### Query Parameters
+
+Extract values from the URL query string (after the ?):
 
 ```python
 from typing import Optional
 
 @app.get("/search")
 async def search(
-    q: str,
-    limit: int = 10,
-    offset: int = 0,
-    sort: Optional[str] = None
+    q: str,                      # Required (no default value)
+    limit: int = 10,             # Optional with default
+    offset: int = 0,             # Optional with default
+    sort: Optional[str] = None   # Optional, can be None
 ):
+    # URL: /search?q=python
+    #   -> q="python", limit=10, offset=0, sort=None
+    #
+    # URL: /search?q=python&limit=5&sort=date
+    #   -> q="python", limit=5, offset=0, sort="date"
+    #
+    # URL: /search   (missing required 'q')
+    #   -> 422 validation error
+
     return {
         "query": q,
         "limit": limit,

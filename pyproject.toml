@@ -129,6 +129,7 @@ benchmark = [
 dev = [
     "aiosqlite>=0.21.0",
     "httpx>=0.28.1",
+    "pip-audit>=2.9.0",
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.3.0",
 ]

@@ -47,68 +47,90 @@ This creates:
 
 ## Your First Application
 
-Create a file `app.py` with a blog API:
+Let's build a complete blog API. This example showcases Zenith's key features: database models, authentication, and API documentation - all with minimal code:
+
+Create a file `app.py`:
 
 ```python
 """
-Blog API - Zenith application demonstrating modern patterns.
+Blog API - A complete API with authentication, database, and documentation.
 """
 
 from datetime import datetime
 from typing import Optional
 
 from zenith import Zenith
-from zenith.db import ZenithModel
+from zenith.db import ZenithModel  # Enhanced SQLModel base class
 from sqlmodel import Field
 
-# Create Zenith application with built-in features
-app = (Zenith()
-       .add_auth()
-       .add_admin()
-       .add_api("Blog API", "1.0.0"))
+# Chain methods to add features - each returns the app for chaining
+app = (Zenith()              # Create base application
+       .add_auth()           # Add JWT authentication endpoints (/auth/login, /auth/register)
+       .add_admin()          # Add admin dashboard (/admin)
+       .add_api("Blog API", "1.0.0"))  # Add OpenAPI docs (/docs, /redoc)
 
-#  SQLModel with better defaults
-class Post(ZenithModel, table=True):
-    """Blog post model with Zenith enhancements."""
+# Database Models
+# ZenithModel extends SQLModel with convenience methods like .find(), .create(), .where()
+class Post(ZenithModel, table=True):  # table=True creates database table
+    """Blog post model - automatically gets CRUD operations."""
 
+    # Optional[int] with primary_key=True means auto-incrementing ID
     id: Optional[int] = Field(primary_key=True)
-    title: str = Field(max_length=200)
-    content: str
-    author: str = Field(max_length=100)
-    published: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    # Field constraints are validated at database AND API level
+    title: str = Field(max_length=200)          # Max 200 characters
+    content: str                                # No length limit
+    author: str = Field(max_length=100)         # Max 100 characters
+
+    # Default values for new records
+    published: bool = Field(default=False)      # Draft by default
+    created_at: datetime = Field(default_factory=datetime.utcnow)  # Auto-timestamp
 
 # API Endpoints
 @app.get("/")
 async def root():
-    """API root with information."""
+    """API root - provides discovery information for clients."""
     return {
         "message": "Welcome to Blog API",
         "version": "1.0.0",
         "endpoints": {
-            "posts": "/posts",
-            "health": "/health",
-            "docs": "/docs"
+            "posts": "/posts",     # Main content endpoints
+            "health": "/health",   # Service health check
+            "docs": "/docs"        # Interactive API documentation
         }
     }
 
 @app.get("/posts")
-async def get_posts(published: bool = True):
-    """Get blog posts with filtering."""
+async def get_posts(published: bool = True):  # Query param: ?published=false for drafts
+    """
+    List posts with optional filtering.
+    Query parameters are automatically parsed from the URL.
+    """
     if published:
+        # ZenithModel provides chainable query methods:
+        # .where() adds filter, .order_by() sorts, .limit() restricts count
+        # The '-' prefix means descending order (newest first)
         posts = await Post.where(published=True).order_by('-created_at').limit(10)
     else:
+        # Get all posts, including drafts
         posts = await Post.order_by('-created_at').limit(10)
 
     return {
-        "posts": [post.to_dict() for post in posts],
+        "posts": [post.to_dict() for post in posts],  # .to_dict() converts model to JSON-safe dict
         "count": len(posts)
     }
 
 @app.post("/posts")
-async def create_post(post_data: dict):
-    """Create a new blog post."""
-    post = await Post.create(**post_data)
+async def create_post(post_data: dict):  # Request body automatically parsed from JSON
+    """
+    Create a new blog post.
+    Zenith automatically validates the JSON request body.
+    """
+    # Post.create() is a ZenithModel convenience method that:
+    # 1. Creates the model instance
+    # 2. Saves to database
+    # 3. Returns the saved instance with generated ID
+    post = await Post.create(**post_data)  # ** unpacks dict as keyword arguments
 
     return {
         "post": post.to_dict(),
@@ -116,21 +138,31 @@ async def create_post(post_data: dict):
     }
 
 @app.get("/posts/{post_id}")
-async def get_post(post_id: int):
-    """Get a specific post by ID."""
+async def get_post(post_id: int):  # Path param with type validation
+    """
+    Get a specific post by ID.
+    The {post_id} in the path becomes a function parameter.
+    """
+    # .find_or_404() is a ZenithModel convenience that:
+    # - Returns the model if found
+    # - Raises HTTP 404 exception if not found
     post = await Post.find_or_404(post_id)
     return {"post": post.to_dict()}
 
 @app.put("/posts/{post_id}")
-async def update_post(post_id: int, updates: dict):
-    """Update an existing post."""
+async def update_post(post_id: int, updates: dict):  # Combines path param + request body
+    """Update an existing post - partial updates supported."""
+    # First, find the post (404 if not exists)
     post = await Post.find_or_404(post_id)
 
-    # Update fields
+    # Apply updates - only modify fields present in the request
     for field, value in updates.items():
+        # hasattr() checks if the field exists on the model
+        # This prevents setting invalid attributes
         if hasattr(post, field):
-            setattr(post, field, value)
+            setattr(post, field, value)  # Python's way to set object.field = value
 
+    # Save changes to database
     await post.save()
 
     return {
@@ -140,9 +172,9 @@ async def update_post(post_id: int, updates: dict):
 
 @app.delete("/posts/{post_id}")
 async def delete_post(post_id: int):
-    """Delete a post."""
-    post = await Post.find_or_404(post_id)
-    await post.delete()
+    """Delete a post - permanent removal from database."""
+    post = await Post.find_or_404(post_id)  # Find or 404
+    await post.delete()                      # Remove from database
     return {"message": "Post deleted successfully"}
 
 @app.get("/health")
