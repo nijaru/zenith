@@ -17,7 +17,7 @@ Master the core concepts of Zenith web development:
 ### **Essential Features**
 Learn the key middleware and features you'll use in real applications:
 
-- **[04-one-liner-features.py](04-one-liner-features.py)** - ⚡ Rails-like one-liner convenience methods
+- **[04-one-liner-features.py](04-one-liner-features.py)** - ⚡ One-liner convenience methods
 - **[05-context-system.py](05-context-system.py)** - 🏗️ Business logic organization with Zenith's Context system
 - **[06-file-upload.py](06-file-upload.py)** - 📁 Enhanced file upload with improved UX and Starlette compatibility
 - **[07-websocket-chat.py](07-websocket-chat.py)** - 💬 Real-time WebSocket chat application
@@ -108,4 +108,4 @@ Found an issue or want to improve an example? Contributions welcome!
 
 ---
 
-*These examples demonstrate Zenith v0.3.0 features. Check the [documentation](https://docs.zenith-python.org) for complete guides.*
+*These examples demonstrate Zenith v0.3.1 features. Check the [documentation](https://docs.zenith-python.org) for complete guides.*

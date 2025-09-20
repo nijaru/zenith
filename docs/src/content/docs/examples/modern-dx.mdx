@@ -1,22 +1,22 @@
 ---
-title: Modern Developer Experience
-description: Zero-config setup with Rails-like patterns and 85% less boilerplate
+title: Automatic Configuration Setup
+description: Build applications without configuration files
 ---
 
 import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
-Zenith v0.3.0 introduces a modern developer experience with zero-configuration setup, intuitive APIs, and dramatic reduction in boilerplate code. This example showcases the key improvements.
+This example demonstrates Zenith's automatic configuration features that allow you to start building without setup files.
 
 ## Key Features
 
-### Zero-Config Application
+### Automatic Configuration Application
 
 ```python
 from zenith import Zenith
 
-# Zero-config application - automatically detects environment and configures:
+# Automatic application configuration - detects environment and configures:
 # - Database (SQLite for dev, requires DATABASE_URL for prod)
 # - CORS (permissive for dev, secure for prod)
 # - Security (dev key for dev, requires SECRET_KEY for prod)
@@ -24,7 +24,7 @@ from zenith import Zenith
 app = Zenith()
 ```
 
-### Modern Database Models
+### Database Models
 
 ```python
 from zenith.db import ZenithModel
@@ -36,24 +36,22 @@ class User(ZenithModel, table=True):
     email: str = Field(unique=True)
     active: bool = Field(default=True)
 
-# Modern query methods - no session management!
+# Query methods
 users = await User.all()
 user = await User.find(1)
-user = await User.find_or_404(1)  # Auto 404 handling
+user = await User.find_or_404(1)  # Returns 404 if not found
 user = await User.create(name="Alice", email="alice@example.com")
 
 # Chainable queries
 active_users = await User.where(active=True).order_by('-created_at').limit(10)
 ```
 
-### Enhanced Dependency Injection
+### Dependency Injection
 
 ```python
-from zenith import Session
-
 @app.get("/users")
-async def get_users(session=Session):  # Clean shortcut
-    """No more verbose Depends() patterns!"""
+async def get_users():
+    """Get active users."""
     users = await User.where(active=True).all()
     return {"users": [u.to_dict() for u in users]}
 ```
@@ -62,13 +60,12 @@ async def get_users(session=Session):  # Clean shortcut
 
 Run the example: `python examples/03-modern-developer-experience.py`
 
-This demonstrates:
-- Zero-config setup
-- Modern model operations  
-- Enhanced dependency injection
-- Automatic 404 handling
-- 85% less boilerplate
+This example demonstrates:
+- Automatic configuration
+- Database model queries
+- Dependency injection
+- Error handling
 
 <Aside type="tip">
-  **Migration Tip**: Moving from FastAPI? Simply replace `Depends()` with our shortcuts and enjoy cleaner code with better performance!
+  **Note**: The database session is managed automatically within request scope.
 </Aside>

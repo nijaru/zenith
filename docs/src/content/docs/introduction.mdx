@@ -1,59 +1,52 @@
 ---
 title: Introduction
-description: Zenith is a modern Python web framework with clean architecture and exceptional performance
+description: Zenith is a Python web framework for building APIs
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
 <div class="hero">
-  <h1>⚡ Zenith Framework</h1>
-  <p>Modern Python web framework with clean architecture and exceptional developer experience</p>
+  <h1> Zenith Framework</h1>
+  <p>Python web framework with built-in features for rapid API development</p>
 </div>
 
-## Why Zenith?
+## What is Zenith?
 
-Zenith delivers **Rails-like DX in Python** with 85% less boilerplate while maintaining exceptional performance. Zero-config setup, ActiveRecord patterns, and one-liner features make Python web development as productive as Rails.
+Zenith is a modern Python web framework designed for building APIs quickly. It includes authentication, database models, and API documentation out of the box.
 
 <CardGrid>
-  <Card title="🚀 Rails-like DX" icon="puzzle">
-    Zero-config setup with `app = Zenith()` - just works with intelligent defaults and environment detection.
+  <Card title="Fast to Code" icon="rocket">
+    Minimal configuration with sensible defaults.
   </Card>
-  <Card title="🏗️ ActiveRecord Patterns" icon="database">
-    Rails-inspired ZenithModel: `User.where(active=True).order_by('-id').limit(10).all()` with automatic session management.
+  <Card title="Type Safe" icon="shield">
+    Full type hints with Pydantic validation.
   </Card>
-  <Card title="⚡ One-liner Features" icon="rocket">
-    `app.add_auth()`, `app.add_admin()`, `app.add_api()` - complex functionality in single commands with production-ready defaults.
+  <Card title="Batteries Included" icon="puzzle">
+    Authentication, database, and documentation built-in.
   </Card>
-  <Card title="🎯 Enhanced DX" icon="shield">
-    Clean dependency injection with `db=DB` instead of verbose `Depends(get_database_session)`. Full type safety included.
+  <Card title="Production Ready" icon="check">
+    Security middleware and monitoring included.
   </Card>
 </CardGrid>
 
 ## Quick Example
 
-**Zero-Config Setup:**
 ```python
 from zenith import Zenith
 
-# 🎯 Zero-config - just works!
 app = Zenith()
 
 @app.get("/")
 async def hello():
-    return {"message": "Rails-like DX in Python!"}
+    return {"message": "Hello from Zenith!"}
 ```
 
-**Rails-like Models:**
+**Database Models:**
 ```python
-from zenith import Zenith
-from zenith.core import DB
 from zenith.db import ZenithModel
 from sqlmodel import Field
 from typing import Optional
 
-app = Zenith()
-
-# 🏗️ Rails-like model with ActiveRecord patterns
 class User(ZenithModel, table=True):
     id: Optional[int] = Field(primary_key=True)
     name: str = Field(max_length=100)
@@ -61,86 +54,78 @@ class User(ZenithModel, table=True):
     active: bool = Field(default=True)
 
 @app.get("/users")
-async def list_users(db=DB):  # ✨ Enhanced DI
-    # Rails-style chaining
-    query = await User.where(active=True)
-    users = await query.order_by('-id').limit(10).all()
+async def list_users():
+    users = await User.where(active=True).order_by('-id').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
-async def create_user(user_data: dict, db=DB):
-    # Rails-style: User.create() - no session management!
+async def create_user(user_data: dict):
     user = await User.create(**user_data)
     return {"user": user.to_dict()}
 ```
 
-**One-liner Features:**
+**Built-in Features:**
 ```python
-from zenith import Zenith
-
 app = Zenith()
 
-# ⚡ Add features in one line each
-app.add_auth()    # JWT authentication + /auth/login
-app.add_admin()   # Admin dashboard at /admin
-app.add_api("My API", "1.0.0")  # API docs at /docs
+# Add authentication, admin panel, and API documentation
+app.add_auth()                   # JWT authentication
+app.add_admin()                  # Admin dashboard
+app.add_api("My API", "1.0.0")   # OpenAPI docs
 
-# 🌐 Serve your SPA
+# Serve static files or SPA
 app.spa("dist")
 ```
 
 ## Key Features
 
-### Rails-like Productivity
+### Developer Experience
 
-- 🚀 **85% Less Boilerplate** - Zero-config setup with intelligent defaults
-- 🏗️ **ActiveRecord Patterns** - `User.where().order_by().limit().all()` database operations
-- ⚡ **One-liner Features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
-- 🎯 **Enhanced DX** - Clean dependency injection with `db=DB` shortcuts
-- 🔍 **Automatic 404s** - `User.find_or_404()` with proper error handling
-- 📦 **Request-scoped Sessions** - No manual database session management
+- **Minimal configuration** - Sensible defaults that just work
+- **Chainable queries** - `User.where().order_by().limit().all()`
+- **Automatic validation** - Type-safe with Pydantic
+- **Built-in auth** - JWT authentication included
+- **API documentation** - Auto-generated OpenAPI docs
+- **Database sessions** - Automatic session management
 
 ### Production Ready
 
-- ✅ **631+ Tests Passing** - Comprehensive test coverage with zero memory leaks
-- 🏎️ **9,600+ req/s** - Exceptional performance with Rails-like features
-- 🛡️ **Security by Default** - CORS, CSRF, security headers automatic
-- 🏥 **Built-in Monitoring** - `/health`, `/metrics`, request tracing
-- ⚡ **Background Tasks** - TaskGroups with Python 3.12+ optimizations
-- 🌐 **SPA Support** - One command: `app.spa("dist")`
+- **Comprehensive testing** - 770+ tests with full coverage
+- **High performance** - 9,600+ requests per second
+- **Security middleware** - CORS, CSRF, security headers
+- **Health monitoring** - Built-in health checks and metrics
+- **Background tasks** - Async task processing
+- **Static file serving** - SPA and static file support
 
-## Philosophy
+## Design Principles
 
-Zenith follows these core principles:
-
-1. **Rails-like Productivity** - Zero-config setup and ActiveRecord patterns eliminate boilerplate
-2. **Type Safety** - Full type hints and Pydantic validation catch errors at development time
-3. **Performance First** - 9,600+ req/s with no performance penalty for convenience features
-4. **Developer Joy** - One-liner features and enhanced DX make Python as productive as Rails
-5. **Production Focus** - Security, monitoring, and scalability built-in from day one
+1. **Convention over configuration** - Sensible defaults that work out of the box
+2. **Type safety** - Catch errors early with type hints and validation
+3. **Performance** - Fast by default without sacrificing features
+4. **Batteries included** - Common features built-in, not bolted on
+5. **Production ready** - Security and monitoring from the start
 
 ## Next Steps
 
-Ready to build with Rails-like DX in Python?
 
 <CardGrid>
   <Card title="Installation" icon="download" link="/installation">
-    Get Zenith installed and set up your development environment
+    Install Zenith and set up your environment
   </Card>
   <Card title="Quick Start" icon="rocket" link="/quick-start">
-    Build your first Rails-like API in 5 minutes with zero configuration
+    Build your first API in 5 minutes
   </Card>
-  <Card title="ZenithModel" icon="database" link="/concepts/models">
-    Learn ActiveRecord-style database patterns and automatic session management
+  <Card title="Documentation" icon="book" link="/concepts/routing">
+    Learn the framework concepts
   </Card>
-  <Card title="Examples" icon="code" link="https://github.com/nijaru/zenith/tree/main/examples">
-    Explore Rails-like DX patterns and real-world examples
+  <Card title="Examples" icon="code" link="/examples">
+    Browse example applications
   </Card>
 </CardGrid>
 
 ---
 
 <div style="text-align: center; margin-top: 3rem;">
-  <a href="/quick-start" class="button">Get Started →</a>
+  <a href="/zenith/quick-start" class="button">Get Started →</a>
   <a href="https://github.com/nijaru/zenith" class="button button-outline" style="margin-left: 1rem;">View on GitHub</a>
 </div>

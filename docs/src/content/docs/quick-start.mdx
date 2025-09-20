@@ -1,15 +1,22 @@
 ---
 title: Quick Start
-description: Build your first Zenith application in 5 minutes
+description: Build your first Zenith API in 5 minutes
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
-## Create Your First Zenith API
+In this tutorial, you'll build a blog API with Zenith. You'll learn how to:
 
-Let's build a simple blog API to demonstrate Zenith's modern Python web development patterns.
+- Create a Zenith application
+- Define data models
+- Build API endpoints
+- Test your API
 
-### 1. Install Zenith
+<Aside type="tip">
+  **Prerequisites**: Python 3.12 or higher. If you don't have it, [download Python here](https://python.org).
+</Aside>
+
+## Installation
 
 ```bash
 pip install zenith-web
@@ -21,7 +28,7 @@ Or with uv (recommended):
 uv add zenith-web
 ```
 
-### 2. Generate a New Project
+## Create a New Project
 
 Use the Zenith CLI to create a new project with all the essentials:
 
@@ -37,17 +44,10 @@ This creates:
 - `.gitignore` - Git ignore rules
 - `README.md` - Quick start guide
 
-### 3. Install Dependencies
 
-```bash
-pip install -r requirements.txt
-# or with uv
-uv sync
-```
+## Your First Application
 
-### 4. Customize Your Application
-
-Edit `app.py` to create a blog API:
+Create a file `app.py` with a blog API:
 
 ```python
 """
@@ -67,7 +67,7 @@ app = (Zenith()
        .add_admin()
        .add_api("Blog API", "1.0.0"))
 
-# Enhanced SQLModel with better defaults
+#  SQLModel with better defaults
 class Post(ZenithModel, table=True):
     """Blog post model with Zenith enhancements."""
 
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     app.run()
 ```
 
-### 5. Run Your Application
+## Run the Server
 
 Start the development server:
 
@@ -178,7 +178,7 @@ Your API is now running at http://localhost:8000!
   The `zen dev` command includes hot reload, so your server will automatically restart when you make changes to your code.
 </Aside>
 
-### 6. Explore Your API
+## Interactive API Documentation
 
 Visit these endpoints in your browser or API client:
 
@@ -187,9 +187,9 @@ Visit these endpoints in your browser or API client:
 - **Health Check**: http://localhost:8000/health
 - **Blog Posts**: http://localhost:8000/posts
 
-### 7. Test Your API
+## Test Your API
 
-Create your first blog post:
+Create a blog post using curl or your API client:
 
 ```bash
 curl -X POST http://localhost:8000/posts \
@@ -208,16 +208,9 @@ Get all posts:
 curl http://localhost:8000/posts
 ```
 
-## What You Get Out of the Box
+## Key Features
 
-### 🚀 Rails-like Developer Experience
-
-- **Zero configuration** - `app = Zenith()` sets up everything
-- **One-liner features** - `app.add_auth().add_admin().add_api()`
-- **Built-in admin** - Dashboard at `/admin` with health checks
-- **Automatic API docs** - OpenAPI at `/docs` and `/redoc`
-
-### 📊 Rails-like ActiveRecord Models
+### Database Models
 
 ```python
 from zenith.db import ZenithModel
@@ -227,14 +220,14 @@ class User(ZenithModel, table=True):
     name: str
     email: str
 
-# Rails-style operations
+# Intuitive operations
 users = await User.all()
 user = await User.find(1)
 user = await User.create(name="Alice", email="alice@example.com")
 active_users = await User.where(active=True).limit(10)
 ```
 
-### 💉 Clean Dependency Injection
+### Dependency Injection
 
 ```python
 from zenith.core import DB, Auth, Inject
@@ -249,19 +242,14 @@ async def get_users(
     pass
 ```
 
-### 🔧 Development Tools
+### Built-in Features
 
-- **Hot reload** with `zen dev`
-- **Automatic API docs** at `/docs`
-- **Health checks** at `/health`
-- **Project generation** with `zen new`
-
-### 🏭 Production Ready
-
-- **Automatic middleware** - CORS, security headers, compression
-- **Rate limiting** - Configurable per endpoint
-- **Request logging** - Structured logs with correlation IDs
-- **Performance monitoring** - Built-in metrics
+- **Hot reload** - Automatic restart on code changes
+- **API documentation** - Interactive docs at `/docs` and `/redoc`
+- **Health checks** - Monitoring endpoints at `/health`
+- **Authentication** - JWT auth with `app.add_auth()`
+- **Admin panel** - Dashboard with `app.add_admin()`
+- **Middleware** - Security, CORS, compression included
 
 ## Next Steps
 
@@ -340,7 +328,7 @@ async def create_post(
 
 ## Key Features
 
-### Modern Python
+### Current Python
 
 - **Python 3.12+** with latest features
 - **Type hints** throughout for better IDE support
@@ -349,8 +337,8 @@ async def create_post(
 
 ### Developer Experience
 
-- **Minimal boilerplate** - Focus on business logic
-- **Excellent tooling** - CLI, hot reload, debugging
+- **Minimal setup code** - Focus on business logic
+- **Good tooling** - CLI, hot reload, debugging
 - **Clear patterns** - Consistent code organization
 - **Great defaults** - Secure and performant out of the box
 
@@ -361,14 +349,46 @@ async def create_post(
 - **Monitoring** - Health checks, metrics, logging
 - **Scalability** - Async throughout, connection pooling
 
-## Learn More
+## Advanced Features
 
-- [Enhanced Models](./concepts/models) - Database patterns and best practices
-- [Services & DI](./concepts/services) - Business logic organization
-- [File Uploads](./examples/file-upload) - Handle file uploads securely
-- [Authentication](./concepts/authentication) - JWT and custom auth
-- [CLI Tools](./guides/cli) - Development and deployment tools
+### WebSockets
+
+```python
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Echo: {data}")
+```
+
+### Background Tasks
+
+```python
+from zenith.background import BackgroundTasks
+
+@app.post("/send-email")
+async def send_email(email: str, background: BackgroundTasks):
+    background.add_task(send_email_async, email)
+    return {"status": "queued"}
+```
+
+### Rate Limiting
+
+```python
+@app.get("/api/data")
+@rate_limit("10/minute")
+async def get_data():
+    return {"data": "rate limited"}
+
+## Next Steps
+
+- [Routing](./concepts/routing) - Path parameters, query strings, request bodies
+- [Models](./concepts/models) - Database models and queries
+- [Authentication](./concepts/authentication) - Securing your API
+- [Testing](./api/testing) - Writing tests for your API
+- [Deployment](./guides/deployment) - Deploy to production
 
 ---
 
-**Ready to build something amazing?** Zenith provides the foundation for modern, production-ready Python web applications! 🚀
+*Learn more in the [complete documentation](/zenith/concepts/routing/) or explore [example applications](/zenith/examples/).*

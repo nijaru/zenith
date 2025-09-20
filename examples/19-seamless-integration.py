@@ -18,10 +18,13 @@ from sqlmodel import Field
 
 from zenith import Zenith
 from zenith import Session
-from zenith.db import Model
+from zenith.db import ZenithModel as Model  # Enhanced model with where/find/create methods
 
 # Set up environment
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///seamless_integration.db")
+# Set up database in examples directory
+example_dir = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(example_dir, "seamless_integration.db")
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only")
 
 # 🚀 Zero-config app setup

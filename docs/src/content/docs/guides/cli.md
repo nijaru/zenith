@@ -21,7 +21,7 @@ zen --version              # Show Zenith version
 
 ### `zen new` - Create New Application
 
-Create a new Zenith application with modern best practices:
+Create a new Zenith application:
 
 ```bash
 zen new my-app                      # Create in ./my-app/
@@ -117,7 +117,7 @@ The CLI automatically discovers your application:
 2. **Common app files**: `app.py`, `main.py`, `application.py`
 3. **Nested structures**: `src/app.py`, `src/api/app.py`, `app/main.py`
 
-**Enhanced error messages:**
+**Error messages:**
 ```bash
 ❌ No Zenith app found
 
@@ -126,14 +126,14 @@ The CLI automatically discovers your application:
    • src/app.py, src/api/app.py, src/main.py
    • app/main.py, api/app.py
 
-💡 Quick solutions:
+ Quick solutions:
    1. Specify explicitly: zen dev --app=my_module:app
    2. Create main.py: from src.api.app import app
    3. Generate new app: zen new .
 
-🧪 For testing: zen dev --testing --app=your.module:app
+ For testing: zen dev --testing --app=your.module:app
 
-📁 Current directory contents:
+ Current directory contents:
    • main.py
    • config.py
    Subdirectories with Python files:
@@ -327,7 +327,7 @@ lsof -i :8000
 zen dev --port 8001
 
 # Check app file imports
-python -c "from app import app; print('✅ App loads successfully')"
+python -c "from app import app; print(' App loads successfully')"
 ```
 
 ## Migration from Previous Versions

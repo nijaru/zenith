@@ -1,7 +1,7 @@
 """
-Modern Developer Experience Example - Showcasing v0.3.0 Improvements
+Modern Developer Experience Example - Showcasing v0.3.1 Improvements
 
-This example demonstrates the new patterns in Zenith v0.3.0:
+This example demonstrates the new patterns in Zenith v0.3.1:
 - Enhanced Model with intuitive query methods
 - Enhanced dependency injection shortcuts
 - Zero-configuration auto-setup
@@ -16,15 +16,17 @@ from typing import Optional
 
 from sqlmodel import Field
 
-# Zenith v0.3.0 imports - much cleaner!
+# Zenith v0.3.1 imports - much cleaner!
 from zenith import Zenith
 from zenith import Session
 from zenith import Auth
 from zenith.core import is_development
-from zenith.db import Model
+from zenith.db import ZenithModel as Model  # Enhanced model with where/find/create methods
 
-# Set up a test database for the example
-os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///modern_dx_example.db")
+# Set up database in examples directory
+example_dir = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(example_dir, "modern_dx_example.db")
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 
 # 🚀 Zero-config application setup
 # This automatically detects environment and configures:
@@ -64,7 +66,7 @@ async def home():
     """Homepage showing framework info."""
     return {
         "message": "Modern DX Example",
-        "framework": "Zenith v0.3.0",
+        "framework": "Zenith v0.3.1",
         "features": [
             "Zero-config setup",
             "Modern models",
@@ -83,7 +85,7 @@ async def home():
 
 
 @app.get("/users")
-async def list_users(session=Session):
+async def list_users():
     """
     List users with Modern query methods.
 
@@ -99,7 +101,7 @@ async def list_users(session=Session):
 
 
 @app.post("/users")
-async def create_user(user_data: dict, session=Session):
+async def create_user(user_data: dict):
     """
     Create a user with Modern convenience.
 
@@ -114,7 +116,7 @@ async def create_user(user_data: dict, session=Session):
 
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, session=Session):
+async def get_user(user_id: int):
     """
     Get user with automatic 404 handling.
 
@@ -127,7 +129,7 @@ async def get_user(user_id: int, session=Session):
 
 
 @app.get("/posts")
-async def list_posts(published: bool = True, session=Session):
+async def list_posts(published: bool = True):
     """
     List posts with conditional filtering.
 
@@ -147,7 +149,7 @@ async def list_posts(published: bool = True, session=Session):
 
 
 @app.post("/posts")
-async def create_post(post_data: dict, session=Session):
+async def create_post(post_data: dict):
     """
     Create a post.
 
@@ -171,7 +173,7 @@ async def create_post(post_data: dict, session=Session):
 
 
 @app.get("/stats")
-async def get_stats(session=Session):
+async def get_stats():
     """
     Get database statistics using Modern count methods.
 
@@ -231,7 +233,7 @@ if __name__ == "__main__":
     print("🎨 DX Improvements showcased:")
     print("   ✨ Zero-config setup - app = Zenith() just works")
     print("   ✨ Modern models - User.where(active=True).limit(10)")
-    print("   ✨ Enhanced DI - session=Session instead of verbose Depends()")
+    print("   ✨ No session management - ZenithModel handles it automatically")
     print("   ✨ Automatic 404s - User.find_or_404(id)")
     print("   ✨ 85% less boilerplate than verbose alternatives")
 

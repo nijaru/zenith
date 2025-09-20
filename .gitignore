@@ -223,5 +223,6 @@ build/
 uploads/
 test_migrations/
 *.db
+examples/*.db
 CLAUDE_CODE_REFERENCE.md
 

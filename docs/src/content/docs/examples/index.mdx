@@ -1,0 +1,213 @@
+---
+title: Examples Overview
+description: Learn Zenith through practical, real-world examples
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+import { Aside } from '@astrojs/starlight/components';
+
+## Learning Through Examples
+
+Reading API documentation alone rarely provides the complete picture. You need to see how concepts work together in practice, understand common patterns, and learn from real implementations.
+
+<Aside type="tip">
+  **Start Here**: If you're new to Zenith, begin with [Hello World](/zenith/examples/hello-world/) then progress to [ DX](/zenith/examples/modern-dx/) to see the framework's power.
+</Aside>
+
+## Learning Paths
+
+###  Quick Start Path
+If you want to get productive fast:
+
+<CardGrid>
+  <Card title="Hello World" icon="rocket">
+    Your first Zenith app in under 20 lines
+    [View Example →](/zenith/examples/hello-world/)
+  </Card>
+  <Card title=" DX" icon="puzzle">
+    See Zenith's features in action
+    [View Example →](/zenith/examples/modern-dx/)
+  </Card>
+  <Card title="One-liner Features" icon="sparkles">
+    Add complex features with single commands
+    [View Example →](/zenith/examples/built-in-features/)
+  </Card>
+</CardGrid>
+
+###  Building APIs Path
+Learn to build production-ready APIs:
+
+<CardGrid>
+  <Card title="Basic Routing" icon="directions">
+    RESTful endpoints with validation
+    [View Example →](/zenith/examples/basic-routing/)
+  </Card>
+  <Card title="Blog API" icon="pen">
+    Complete CRUD API with database
+    [View Example →](/zenith/examples/blog-api/)
+  </Card>
+  <Card title="File Upload" icon="file">
+    Handle file uploads and downloads
+    [View Example →](/zenith/examples/file-upload/)
+  </Card>
+</CardGrid>
+
+### 💬 Real-time Features Path
+Build interactive applications:
+
+<CardGrid>
+  <Card title="WebSocket Chat" icon="chat">
+    Real-time chat with rooms
+    [View Example →](/zenith/examples/websocket-chat/)
+  </Card>
+  <Card title="Chat Application" icon="users">
+    Complete chat system with persistence
+    [View Example →](/zenith/examples/chat/)
+  </Card>
+</CardGrid>
+
+###  Full-Stack Path
+Build complete applications:
+
+<CardGrid>
+  <Card title="Full-Stack SPA" icon="application">
+    Serve React/Vue/Angular with API
+    [View Example →](/zenith/examples/fullstack-spa/)
+  </Card>
+</CardGrid>
+
+## Auto-Generated Examples
+
+We automatically generate documentation from our example files to ensure they're always up-to-date:
+
+[Browse All Auto-Generated Examples →](/zenith/examples/auto-generated/)
+
+### Highlights from Auto-Generated Collection:
+
+- **[Pydantic Validation](/zenith/examples/auto-generated/02-pydantic-validation/)** - Type-safe request/response handling
+- **[Context System](/zenith/examples/auto-generated/03-context-system/)** - Business logic organization
+- **[Rate Limiting](/zenith/examples/auto-generated/08-rate-limiting/)** - Protect your API
+- **[Security Middleware](/zenith/examples/auto-generated/11-security-middleware/)** - Production-ready security
+- **[Testing Patterns](/zenith/examples/auto-generated/13-testing-patterns/)** - Comprehensive testing strategies
+- **[Performance Monitoring](/zenith/examples/auto-generated/12-performance-monitoring/)** - Track and optimize
+- **[Server-Sent Events](/zenith/examples/auto-generated/22-server-sent-events/)** - Real-time data streaming
+
+## Example Categories
+
+### By Complexity
+
+#### Beginner (5 minutes)
+- [Hello World](/zenith/examples/hello-world/) - Minimal viable app
+- [Basic Routing](/zenith/examples/basic-routing/) - Routes and parameters
+
+#### Intermediate (15 minutes)
+- [ DX](/zenith/examples/modern-dx/) - Zero-config setup
+- [Blog API](/zenith/examples/blog-api/) - CRUD with database
+- [File Upload](/zenith/examples/file-upload/) - File handling
+
+#### Advanced (30+ minutes)
+- [WebSocket Chat](/zenith/examples/websocket-chat/) - Real-time features
+- [Full-Stack SPA](/zenith/examples/fullstack-spa/) - Complete application
+
+### By Feature
+
+#### Core Features
+- **Routing**: [Basic Routing](/zenith/examples/basic-routing/), [Router Grouping](/zenith/examples/auto-generated/15-router-grouping/)
+- **Validation**: [Pydantic Validation](/zenith/examples/auto-generated/02-pydantic-validation/)
+- **Database**: [SQLModel Integration](/zenith/examples/auto-generated/16-sqlmodel-integration/)
+
+#### Middleware
+- **CORS**: [CORS Middleware](/zenith/examples/auto-generated/04-cors-middleware/)
+- **Security**: [Security Middleware](/zenith/examples/auto-generated/11-security-middleware/)
+- **Rate Limiting**: [Rate Limiting](/zenith/examples/auto-generated/08-rate-limiting/)
+
+#### Real-time
+- **WebSockets**: [WebSocket Chat](/zenith/examples/websocket-chat/)
+- **SSE**: [Server-Sent Events](/zenith/examples/auto-generated/22-server-sent-events/)
+
+#### Background Processing
+- **Tasks**: [Background Tasks](/zenith/examples/auto-generated/05-background-tasks/)
+- **Advanced**: [Advanced Background Processing](/zenith/examples/auto-generated/14-advanced-background-processing/)
+
+## Running Examples
+
+### Quick Run
+```bash
+# Clone the repository
+git clone https://github.com/nijaru/zenith
+cd zenith
+
+# Install Zenith
+pip install -e .
+
+# Run any example
+python examples/00-hello-world.py
+```
+
+### With Virtual Environment
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install zenith-web
+
+# Run example
+python examples/03-modern-developer-experience.py
+```
+
+## Common Patterns
+
+### API Structure
+Most examples follow this pattern:
+```python
+from zenith import Zenith
+
+app = Zenith()  # Zero-config setup
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+### Testing Examples
+Many examples include test code:
+```bash
+# Run the example
+python examples/16-testing-patterns.py
+
+# In another terminal, test the API
+curl http://localhost:8000/
+```
+
+## Contributing Examples
+
+We welcome new examples! When creating examples:
+
+1. **Keep it focused** - One concept per example
+2. **Add comments** - Explain non-obvious code
+3. **Include a docstring** - Describe what the example demonstrates
+4. **Test it works** - Ensure the example runs without errors
+5. **Follow conventions** - Use consistent style with other examples
+
+## Next Steps
+
+After exploring examples:
+
+- **[Concepts](/zenith/concepts/routing/)** - Deep dive into framework concepts
+- **[API Reference](/zenith/api/application/)** - Complete API documentation
+- **[Guides](/zenith/guides/cli/)** - Task-oriented tutorials
+
+## Need Help?
+
+- **GitHub Issues**: [Report problems or request examples](https://github.com/nijaru/zenith/issues)
+- **Discussions**: [Ask questions and share tips](https://github.com/nijaru/zenith/discussions)
+
+---
+
+*Examples are the fastest way to learn Zenith. Start with Hello World and build your way up!* 

@@ -17,7 +17,7 @@ Zenith brings together **exceptional productivity**, **outstanding performance**
 - **🚀 Zero-config setup** - `app = Zenith()` just works with intelligent defaults
 - **🏗️ Intuitive models** - `User.where(active=True).order_by('-created_at').limit(10)`
 - **⚡ One-liner features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
-- **🎯 Enhanced DX** - `session=Session` instead of verbose `Depends(get_database_session)`
+- **🎯 Enhanced DX** - No session management, ZenithModel handles it automatically
 - **🏎️ Exceptional performance** - 9,600+ req/s with full async support
 - **🛡️ Production-ready** - Security, monitoring, and middleware built-in
 
@@ -55,20 +55,20 @@ async def home():
     return {"message": "Modern DX in Python!"}
 
 @app.get("/users")
-async def list_users(session=Session):  # ✨ Enhanced DI - no verbose Depends()
+async def list_users():  # ✨ No session management needed!
     # Clean chaining: User.where().order_by().limit()
     query = await User.where(active=True)
     users = await query.order_by('-id').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
-async def create_user(user_data: dict, session=Session):
+async def create_user(user_data: dict):
     # Clean API: User.create() - no session management!
     user = await User.create(**user_data)
     return {"user": user.to_dict()}
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, session=Session):
+async def get_user(user_id: int):
     # Automatic 404 handling
     user = await User.find_or_404(user_id)
     return {"user": user.to_dict()}
@@ -94,7 +94,7 @@ app = Zenith()  # Just works! No complex configuration needed
 - **Automatic middleware** - Security, CORS, logging configured automatically
 - **Environment-aware** - Uses `ZENITH_ENV` or sensible detection
 
-### 🏗️ **ActiveRecord-Style Models**
+### 🏗️ **Intuitive Database Models**
 ```python
 # Intuitive database operations
 users = await User.where(active=True).order_by('-created_at').limit(10).all()
@@ -284,7 +284,7 @@ pytest  # Run tests
 
 ## Status
 
-**Latest Version**: v0.3.0
+**Latest Version**: v0.3.1
 **Python Support**: 3.12+
 **Test Suite**: 100% passing (776 tests)
 **Performance**: Production-ready with 9,600+ req/s capability  

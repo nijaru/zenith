@@ -189,10 +189,10 @@ else:
         </head>
         <body>
             <div id="app">
-                <h1>🚀 Full-Stack Todo App with Zenith</h1>
+                <h1> Full-Stack Todo App with Zenith</h1>
                 
                 <div class="stats">
-                    <h3>📊 Statistics</h3>
+                    <h3> Statistics</h3>
                     <p>Total Users: {{ stats.total_users }}</p>
                     <p>Total Todos: {{ stats.total_todos }}</p>
                     <p>Completed: {{ stats.completed_todos }} ({{ stats.completion_rate.toFixed(1) }}%)</p>
@@ -209,7 +209,7 @@ else:
                 </div>
                 
                 <div v-if="selectedUserId" class="user-section">
-                    <h3>✅ Add New Todo</h3>
+                    <h3> Add New Todo</h3>
                     <input 
                         v-model="newTodo.title" 
                         placeholder="Todo title" 
@@ -355,10 +355,10 @@ async def spa_404_handler(request, exc):
 if __name__ == "__main__":
     import uvicorn
     
-    print("🚀 Starting Full-Stack Todo App")
-    print("📍 API available at: http://localhost:8000/api/")
-    print("🌐 Web app available at: http://localhost:8000/")
-    print("📊 API docs at: http://localhost:8000/docs")
+    print(" Starting Full-Stack Todo App")
+    print(" API available at: http://localhost:8000/api/")
+    print(" Web app available at: http://localhost:8000/")
+    print(" API docs at: http://localhost:8000/docs")
     
     uvicorn.run(app, host="0.0.0.0", port=8000)
 ```
@@ -455,9 +455,9 @@ This example is production-ready and includes:
 
 ## Next Steps
 
-- Add **[Database Integration](/examples/database-todo-api/)** for data persistence
-- Explore **[Authentication](/concepts/authentication/)** for user security
-- Learn **[Production Deployment](/guides/deployment/)** patterns
+- Add **[Database Models](/zenith/concepts/models/)** for data persistence
+- Explore **[Authentication](/zenith/concepts/authentication/)** for user security
+- Learn **[SQLModel Integration](/zenith/examples/auto-generated/16-sqlmodel-integration/)** for advanced patterns
 
 ---
 

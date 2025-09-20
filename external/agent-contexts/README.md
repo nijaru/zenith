@@ -1,4 +1,4 @@
-# Zenith Framework v0.3.0 - Agent Context
+# Zenith Framework v0.3.1 - Agent Context
 
 ## Framework Status
 - **Version**: 0.3.0 (Rails-like DX release)
@@ -112,7 +112,7 @@ examples/
 └── 17-one-liner-features.py # Conveniences
 ```
 
-## Recent v0.3.0 Changes
+## Recent v0.3.1 Changes
 
 ### Critical Fixes
 1. **Database Metadata**: Fixed SQLModel table creation
@@ -255,4 +255,4 @@ async def send_email(
 - **Issues**: https://github.com/nijaru/zenith/issues
 
 ---
-*Updated: September 2025 - v0.3.0 Release*
+*Updated: September 2025 - v0.3.1 Release*

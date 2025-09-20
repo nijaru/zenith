@@ -1,0 +1,35 @@
+# Pre-commit hooks for automatic code formatting and quality checks
+# Install with: pip install pre-commit && pre-commit install
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Run the formatter first
+      - id: ruff-format
+        name: Auto-format with ruff
+        
+      # Then run the linter
+      - id: ruff
+        name: Lint with ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Optional: Add pyright for type checking (slower)
+  # - repo: https://github.com/RobertCraigie/pyright-python
+  #   rev: v1.1.350
+  #   hooks:
+  #     - id: pyright

@@ -18,7 +18,7 @@ Services are Zenith's way of organizing business logic. They provide a clean sep
 ### Traditional Approach (Without Services)
 
 ```python
-# ❌ Business logic mixed with web layer
+# Business logic mixed with web layer
 @app.post("/users")
 async def create_user(user_data: UserCreate, db: Session):
     # Validation logic
@@ -53,7 +53,7 @@ async def create_user(user_data: UserCreate, db: Session):
 ### Zenith Approach (With Services)
 
 ```python
-# ✅ Clean separation of concerns
+# Clean separation of concerns
 class UserService(Service):
     """Encapsulates all user-related business logic."""
     
@@ -431,7 +431,7 @@ class AuditedService(Service):
   5. **Testing** - Test services independently from web layer
 </Aside>
 
-### Do's ✅
+### Do's 
 
 - Keep services focused on a single domain
 - Use type hints for all methods
