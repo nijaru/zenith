@@ -25,7 +25,7 @@ By the end of this part, you'll understand:
 
 ### The Problem (Traditional SQLAlchemy)
 ```python
-# What you'd normally write for database models
+# Traditional SQLAlchemy approach
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, Session
@@ -142,25 +142,22 @@ async def get_user_projects(user_id: int):
 
 # No manual session management needed - ZenithModel handles it!
 # No manual CRUD functions - built into the models!
-# No dependency injection boilerplate - just works!
+# Clean, integrated approach
 ```
 
-**Code comparison:**
-- Traditional: ~200+ lines for basic setup
-- ZenithModel: ~30 lines with more features
-- **Result: Significantly less boilerplate**
+ZenithModel provides clean, type-safe models with built-in functionality.
 
 ### Install Database Dependencies
 
 ```bash
-# With Zenith, database drivers are already included!
-# But let's add some optional tools:
+# Database drivers are included with Zenith
+# Optional: Add migration tools
 
 # Using uv
 uv add alembic  # For advanced migrations (optional)
 
 # Or using pip
-pip install alembic  # ZenithModel includes SQLModel, async drivers
+pip install alembic
 ```
 
 <Aside type="tip">

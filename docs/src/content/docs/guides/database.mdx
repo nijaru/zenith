@@ -10,13 +10,13 @@ import { Aside, Card, Tabs, TabItem } from '@astrojs/starlight/components';
 
 # Database Guide
 
-This comprehensive guide shows how Zenith eliminates database complexity - from connection setup to advanced operations that would normally require hundreds of lines of boilerplate code.
+This comprehensive guide covers Zenith's database integration, from basic setup to advanced patterns.
 
 ## Overview
 
-Zenith provides seamless database integration that eliminates traditional ORM complexity:
+Zenith provides seamless database integration with modern development patterns:
 
-**What you get automatically:**
+**Key Features:**
 - **Zero Configuration**: Works out of the box, no setup files needed
 - **Request-Scoped Sessions**: Automatic session management, no manual `get_db()` functions
 - **Rails-like Query API**: `User.where(active=True).limit(10).all()`
@@ -27,7 +27,7 @@ Zenith provides seamless database integration that eliminates traditional ORM co
 - **Connection Pooling**: Optimized for high performance
 - **Transaction Safety**: Automatic rollback on errors
 
-**Code reduction:** Dramatically simplified database code vs traditional SQLAlchemy
+**Architecture:** Clean database operations with intuitive APIs
 
 <Aside type="tip">
   **Zero Configuration in v0.3.1+**: Zenith automatically configures your database connection based on environment. SQLite for development, production databases via DATABASE_URL.
@@ -77,7 +77,7 @@ async def get_all_users():
 </TabItem>
 <TabItem label="Zenith Zero Config">
 ```python
-# With Zenith - all that complexity disappears!
+# With Zenith - clean and streamlined
 from zenith import Zenith
 from zenith.db import ZenithModel
 from sqlmodel import Field

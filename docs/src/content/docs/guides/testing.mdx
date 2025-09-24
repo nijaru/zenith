@@ -10,11 +10,11 @@ import { Aside, Card, Tabs, TabItem } from '@astrojs/starlight/components';
 
 # Testing Guide
 
-This comprehensive guide shows how Zenith's built-in testing framework eliminates the complexity of traditional Python API testing. See how tests that would normally take 100+ lines become simple and intuitive.
+This comprehensive guide covers Zenith's built-in testing framework designed for modern Python API development.
 
 ## Overview
 
-Zenith provides a robust testing framework that replaces dozens of external packages:
+Zenith provides a robust testing framework with integrated tools:
 
 **Built-in Testing Features:**
 - **TestClient**: Full async HTTP client with automatic app lifecycle
@@ -26,10 +26,9 @@ Zenith provides a robust testing framework that replaces dozens of external pack
 - **Performance Testing**: Built-in benchmarking and timing utilities
 - **Error Simulation**: Test error conditions and edge cases
 
-**What this replaces:**
-- Traditional: 10+ testing packages, complex configuration
-- Zenith: Built-in framework, zero configuration
-- **Time saved:** 4-6 hours per project on testing setup alone
+**Integrated Components:**
+- Built-in framework with zero configuration required
+- Comprehensive testing utilities in a single package
 
 <Aside type="tip">
   **Test-First Development**: While not required, writing tests before code (TDD) often leads to better design and fewer bugs. Tests are your safety net for refactoring.
@@ -37,41 +36,23 @@ Zenith provides a robust testing framework that replaces dozens of external pack
 
 ## Testing Setup
 
-### The Problem (Traditional Testing Setup)
+### Zenith Testing Installation
+
 ```bash
-# What you normally have to install for API testing
-uv add --dev pytest                    # Base testing framework
-uv add --dev pytest-asyncio            # Async test support
-uv add --dev pytest-cov                # Coverage reporting
-uv add --dev httpx                     # HTTP client for tests
-uv add --dev faker                     # Fake data generation
-uv add --dev factory-boy               # Model factories
-uv add --dev pytest-mock               # Mocking utilities
-uv add --dev pytest-benchmark          # Performance testing
-uv add --dev responses                 # HTTP mocking
-uv add --dev freezegun                 # Time mocking
-uv add --dev pytest-framework          # Framework-specific helpers
-# ... and many more packages
-
-# Then spend hours configuring each one and making them work together
-```
-
-### The Solution (Zenith Testing)
-```bash
-# With Zenith - testing framework included!
-# All testing utilities are already built-in:
-# - TestClient for HTTP testing
-# - MockAuth for authentication testing
-# - TestService for business logic testing
-# - Database transaction rollback
-# - Async support throughout
-# - Performance benchmarking
-# - Fixture factories
-
-# Optional: Add specialized tools if needed
+# Zenith testing utilities are built-in
+# Optional: Add coverage and data generation tools
 uv add --dev pytest-cov                # Coverage reporting (optional)
 uv add --dev faker                     # If you need custom fake data
 ```
+
+**Available Tools:**
+- TestClient for HTTP testing
+- MockAuth for authentication testing
+- TestService for business logic testing
+- Database transaction rollback
+- Async support throughout
+- Performance benchmarking
+- Fixture factories
 
 ### Configuration
 
