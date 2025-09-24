@@ -349,7 +349,7 @@ if __name__ == "__main__":
 1. **Save the code** as `websocket_chat.py`
 2. **Install dependencies**:
    ```bash
-   pip install zenith-web uvicorn
+   pip install zenithweb uvicorn
    ```
 3. **Run the server**:
    ```bash

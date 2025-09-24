@@ -3,184 +3,133 @@ title: Installation
 description: Get Zenith installed and set up your development environment
 ---
 
-## Installation Overview
+## Installation
 
-### The Problem (Traditional Python Web Development)
+Zenith is a batteries-included Python web framework that comes with everything you need to build production APIs.
+
+### Quick Install
+
 ```bash
-# What you usually have to install manually
-pip install web-framework        # Core framework
-pip install uvicorn              # ASGI server
-pip install sqlalchemy           # Database ORM
-pip install psycopg2-binary      # PostgreSQL driver
-pip install redis                # Redis client
-pip install python-jose          # JWT handling
-pip install passlib              # Password hashing
-pip install python-multipart     # File uploads
-pip install bcrypt               # Password encryption
-pip install alembic              # Database migrations
-pip install pytest               # Testing
-pip install pytest-asyncio       # Async testing
-pip install aioredis             # Async Redis
-# ... and 20+ more packages
+pip install zenithweb
 
-# Then spend hours configuring each one:
-# - Database connection strings
-# - Authentication settings
-# - Middleware order
-# - Testing setup
-# - CORS configuration
-# - Security headers
-# And pray they all work together! 😫
+# Verify installation
+zen --version
 ```
 
-### The Solution (Zenith "Batteries Included" Approach)
-```bash
-# With Zenith - everything in one install
-pip install zenith-web  # That's literally it!
+## What's Included
 
-# Zenith includes these dependencies:
-# ✓ SQLAlchemy 2.0+ with async support
-# ✓ SQLModel for type-safe models
-# ✓ PostgreSQL driver (asyncpg)
-# ✓ SQLite driver (aiosqlite)
-# ✓ Redis client for caching
-# ✓ JWT libraries (PyJWT)
-# ✓ Password hashing (bcrypt + passlib)
-# ✓ WebSocket support
-# ✓ Alembic for migrations
-# ✓ Performance monitoring (prometheus-client)
-# ✓ JSON serialization (orjson, msgspec)
-# ✓ File upload support (python-multipart)
-# ✓ Async server (uvicorn)
+Zenith bundles commonly needed dependencies so you can start building immediately:
 
-# What Zenith provides on top:
-# ✓ Automatic configuration
-# ✓ Request-scoped database sessions
-# ✓ ActiveRecord-style query methods
-# ✓ Built-in authentication helpers
-# ✓ Admin dashboard foundation
-# ✓ Testing utilities
-# ✓ CLI tools
-```
+**Database & ORM**
+- SQLAlchemy 2.0+ with async support
+- SQLModel for type-safe models
+- PostgreSQL driver (asyncpg)
+- SQLite driver (aiosqlite)
+- Alembic for migrations
 
-**Installation Benefits:**
-- **Batteries included**: Core dependencies pre-selected and tested together
-- **Version compatibility**: All packages guaranteed to work together
-- **Sensible defaults**: Production-ready configuration out of the box
-- **Time saved**: Start building immediately instead of configuring
+**Authentication & Security**
+- JWT libraries (PyJWT)
+- Password hashing (bcrypt + passlib)
+- Security headers middleware
+
+**Performance & Caching**
+- Redis client for caching
+- JSON serialization (orjson, msgspec)
+- Performance monitoring (prometheus-client)
+- Async server (uvicorn)
+
+**Development Tools**
+- WebSocket support
+- File upload support (python-multipart)
+- Testing utilities
+- CLI tools
 
 ## Requirements
 
-Before installing Zenith, ensure you have:
-
-- **Python 3.12 or higher** (required for Zenith framework)
+- **Python 3.12 or higher**
 - **pip** or **uv** package manager
 - **PostgreSQL** or **SQLite** for database (optional)
 - **Redis** for caching and background tasks (optional)
 
-## When to Use Each Installation Method
-
-| Method | Best For | Why Choose This |
-|--------|----------|----------------|
-| **pip** | Quick start, tutorials | Universal, works everywhere |
-| **uv** | Modern development | 10-100x faster installs, better dependency resolution |
-| **Poetry** | Team projects | Lock files, reproducible builds |
-| **Docker** | Microservices | Consistent environments |
-
 ## Installation Methods
 
-### Method 1: pip (Most Common)
-```bash
-# Install Zenith with all dependencies
-pip install zenith-web
+### Using pip
 
-# Verify installation
-zen --version
-# Should output: Zenith 0.3.1 (or latest version)
+The standard Python package manager:
+
+```bash
+# Install Zenith
+pip install zenithweb
 
 # Create your first project
 zen new my-api
-# This creates:
-# - app.py (main application with examples)
-# - .env (environment variables with secure secret key)
-# - requirements.txt (pinned dependencies)
-# - .gitignore (sensible defaults)
-# - README.md (quick start guide)
+cd my-api
 
 # Start development server
-cd my-api
 zen dev
-# Automatically:
-# - Detects your app file
-# - Enables hot reload
-# - Shows pretty error pages
-# - Opens browser (optional: --open flag)
-```
-# Redis, PostgreSQL, and other drivers are already included
 ```
 
-**uv (Recommended):**
+### Using uv (Recommended)
+
+[uv](https://github.com/astral-sh/uv) is a fast, modern Python package manager:
+
 ```bash
 # Install uv if you haven't
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install Zenith
-uv add zenith-web
+uv add zenithweb
 
-# All dependencies are included by default
+# Run with uv
+uv run zen dev
 ```
 
-**Poetry:**
+### Using Poetry
+
+For projects that use Poetry for dependency management:
+
 ```bash
 # Add to your project
-poetry add zenith-web
+poetry add zenithweb
 
-# All dependencies are included by default
+# Run commands
+poetry run zen dev
 ```
 
-## What's Included (No Extra Installs Needed!)
+### Installation Options
 
-Zenith includes all essential dependencies out of the box:
+| Method | Best For | Key Benefit |
+|--------|----------|-------------|
+| **pip** | Quick start, tutorials | Universal, works everywhere |
+| **uv** | Modern development | 10-100x faster installs |
+| **Poetry** | Team projects | Lock files, reproducible builds |
+| **Docker** | Microservices | Consistent environments |
 
-| Component | Description | Packages Included |
-|-----------|-------------|-------------------|
-| **Web Framework** | ASGI server and routing | `uvicorn`, `starlette`, `websockets` |
-| **Database** | Async database support | `sqlalchemy`, `alembic`, `sqlmodel`, `asyncpg`, `aiosqlite` |
-| **Caching** | Redis support | `redis` |
-| **Validation** | Request/response validation | `pydantic` |
-| **Authentication** | JWT and password handling | `pyjwt`, `bcrypt`, `passlib` |
-| **Performance** | High-performance serialization | `orjson`, `msgspec`, `uvloop` |
-| **Monitoring** | Metrics and health checks | `prometheus-client`, `structlog`, `psutil` |
-| **Templates** | Jinja2 templating | `jinja2` |
-| **File Uploads** | Multipart form support | `python-multipart` |
+## Optional Extras
 
-Optional extras for development:
-
-| Extra | Description | Install Command |
-|-------|-------------|----------------|
-| `dev` | Testing and development tools | `pip install "zenith-web[dev]"` |
-| `benchmark` | Performance benchmarking tools | `pip install "zenith-web[benchmark]"` |
-| `performance` | Additional performance optimizations | `pip install "zenith-web[performance]"` |
-| `http3` | HTTP/3 and QUIC support | `pip install "zenith-web[http3]"` |
-| `compression` | Advanced compression algorithms | `pip install "zenith-web[compression]"`
-
-## Verify Installation
-
-After installation, verify everything is working:
+Install additional features as needed:
 
 ```bash
-# Check Zenith CLI is available
-zen --version
+# Development tools (testing, linting)
+pip install "zenithweb[dev]"
 
-# Check Python import works
-python -c "import zenith; print(zenith.__version__)"
+# Performance benchmarking
+pip install "zenithweb[benchmark]"
+
+# Additional performance optimizations
+pip install "zenithweb[performance]"
+
+# HTTP/3 support
+pip install "zenithweb[http3]"
+
+# Advanced compression
+pip install "zenithweb[compression]"
 ```
 
-## Development Setup
+## Environment Setup
 
-For development, we recommend setting up a virtual environment:
+### Virtual Environment (Recommended)
 
-**venv:**
 ```bash
 # Create virtual environment
 python -m venv venv
@@ -188,56 +137,13 @@ python -m venv venv
 # Activate it
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install Zenith (production dependencies included)
-pip install zenith-web
-
-# Add development tools
-pip install "zenith-web[dev]"
+# Install Zenith
+pip install zenithweb
 ```
 
-**uv:**
-```bash
-# uv manages virtual environments automatically
-uv init my-project
-cd my-project
+### Environment Variables
 
-# Add Zenith (production dependencies included)
-uv add zenith-web
-
-# Add development tools if needed
-uv add "zenith-web[dev]"
-
-# Run commands
-uv run zen --version
-```
-
-## IDE Setup
-
-### VS Code
-
-Install recommended extensions for the best experience:
-
-```json
-{
-  "recommendations": [
-    "ms-python.python",
-    "ms-python.vscode-pylance",
-    "ms-python.black-formatter",
-    "charliermarsh.ruff",
-    "tamasfe.even-better-toml"
-  ]
-}
-```
-
-### PyCharm
-
-1. Set Python interpreter to your virtual environment
-2. Enable type checking in settings
-3. Configure Black as the code formatter
-
-## Environment Variables
-
-Create a `.env` file in your project root:
+Create a `.env` file for your configuration:
 
 ```bash
 # Database
@@ -246,7 +152,7 @@ DATABASE_URL=postgresql://user:password@localhost/zenith_dev
 # Redis (optional)
 REDIS_URL=redis://localhost:6379
 
-# Security (generate with: zen keygen --output .env)
+# Security
 SECRET_KEY=your-secret-key-here
 
 # Environment
@@ -254,7 +160,7 @@ DEBUG=true
 ENVIRONMENT=development
 ```
 
-## Docker Setup (Optional)
+## Docker Setup
 
 For containerized development:
 
@@ -289,13 +195,56 @@ Start services:
 docker-compose up -d
 ```
 
-## Common Patterns
+## Verify Installation
 
-### Production Setup
+After installation, verify everything works:
+
+```bash
+# Check CLI
+zen --version
+
+# Check Python import
+python -c "import zenith; print(zenith.__version__)"
+
+# Create test project
+zen new test-project
+cd test-project
+
+# Run development server
+zen dev
+
+# Visit http://localhost:8000
+```
+
+## IDE Setup
+
+### VS Code
+
+Install recommended extensions for the best experience:
+
+```json
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "tamasfe.even-better-toml"
+  ]
+}
+```
+
+### PyCharm
+
+1. Set Python interpreter to your virtual environment
+2. Enable type checking in settings
+3. Configure Black as the code formatter
+
+## Production Setup
 
 ```bash
 # Install with production optimizations
-pip install "zenith-web[performance]"
+pip install "zenithweb[performance]"
 
 # Set production environment variables
 export DATABASE_URL=postgresql://...
@@ -307,132 +256,24 @@ export DEBUG=false
 zen serve --workers 4
 ```
 
-### Development with Database
-
-```bash
-# Start PostgreSQL and Redis
-docker-compose up -d
-
-# Run migrations
-zen db upgrade
-
-# Start dev server with hot reload
-zen dev --reload
-```
-
-### Testing Environment
-
-```bash
-# Install test dependencies
-pip install "zenith-web[dev]"
-
-# Run tests with coverage
-zen test --coverage
-
-# Run specific test file
-zen test tests/test_api.py
-```
-
-## Performance Impact
-
-| Installation Type | Startup Time | Memory Usage | Request/sec |
-|------------------|-------------|--------------|-------------|
-| Basic | <100ms | 45MB | 9,600 |
-| With [performance] | <80ms | 42MB | 11,200 |
-| With [dev] | <150ms | 65MB | 9,600 |
-| Docker | <200ms | 50MB | 9,400 |
-
 ## Troubleshooting
 
 ### Import Errors
-
-If you get import errors, ensure:
-- Python 3.12+ is being used
-- Virtual environment is activated
-- Zenith is installed in the current environment
+- Ensure Python 3.12+ is being used
+- Check virtual environment is activated
+- Reinstall: `pip install --force-reinstall zenithweb`
 
 ### Command Not Found
-
-If `zen` command is not found:
-- Check if it's in your PATH
+- Check if `zen` is in your PATH
 - Try `python -m zenith.cli` instead
-- Reinstall with `pip install --force-reinstall zenith-web`
+- Ensure virtual environment is activated
 
-## Verification Checklist
-
-After installation, verify everything works:
-
-```bash
-#  CLI installed
-zen --version
-# Expected: zenith-cli 0.3.1 or higher
-
-#  Python import works
-python -c "import zenith; print(f'Zenith {zenith.__version__} ready!')"
-# Expected: Zenith 0.3.1 ready!
-
-#  Create test project
-zen new test-project
-cd test-project
-
-#  Run development server
-zen dev
-# Expected: Server running on http://localhost:8000
-
-#  Check API docs
-curl http://localhost:8000/docs
-# Expected: HTML response with Swagger UI
-```
-
-If all checks pass, you're ready to build!
-
-## Migration from Other Frameworks
-
-### Migrating from Other Frameworks
-
-If you're coming from another Python web framework:
-
-```bash
-# Traditional approach - install core + many extensions
-pip install framework-core
-pip install framework-orm
-pip install framework-auth
-pip install framework-cors
-pip install framework-validation
-pip install redis
-pip install celery
-# ... many more packages
-
-# With Zenith - everything included
-pip install zenith-web  # All batteries included!
-```
-
-**What's different:**
-- **Single package**: No need to hunt for compatible extensions
-- **Pre-configured**: Sensible defaults that work immediately
-- **Async-first**: Built for modern async Python from the ground up
-- **Type-safe**: Full type hints and validation throughout
-
-## Best Practices
-
-###  DO
-- Use virtual environments (venv, uv, poetry)
-- Pin versions in production (`zenith-web==0.3.1`)
-- Use `.env` files for configuration
-- Keep `requirements.txt` updated
-- Use `uv` for faster installs
-
-### DON'T
-- Don't install in system Python
-- Don't mix pip and poetry in same project
-- Don't forget to activate virtual environment
-- Don't commit `.env` files to git
-- Don't use outdated Python versions
+### Port Already in Use
+- Stop other processes: `lsof -i :8000`
+- Use different port: `zen dev --port 8001`
 
 ## Next Steps
 
-Now that Zenith is installed, you're ready to:
-
-- [Create your first application](/quick-start)
-- [Understand the project structure](/project-structure)
-- [Learn about the Service system](/concepts/contexts)
+- [Quick Start Guide](/quick-start) - Build your first API
+- [Project Structure](/project-structure) - Understand the layout
+- [Tutorial](/tutorial/01-getting-started) - Step-by-step learning

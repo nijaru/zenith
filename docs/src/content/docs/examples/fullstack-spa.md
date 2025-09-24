@@ -417,7 +417,7 @@ python fullstack_spa.py
 1. **Save the code** as `fullstack_spa.py`
 2. **Install dependencies**:
    ```bash
-   pip install zenith-web uvicorn
+   pip install zenithweb uvicorn
    ```
 3. **Run the server**:
    ```bash

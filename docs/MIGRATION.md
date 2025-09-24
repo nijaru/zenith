@@ -1,6 +1,6 @@
-# Zenith v0.2.6 Migration Guide
+# Migrating to Zenith v0.1.0
 
-This guide helps you migrate from previous versions of Zenith to v0.2.6, which includes critical fixes for async database operations and enhanced dependency injection.
+This guide helps you migrate to Zenith v0.1.0 from other Python web frameworks or set up your first Zenith application with modern patterns.
 
 ## 🚨 Critical Fixes (Action Required)
 

@@ -1,8 +1,8 @@
-# Zenith v0.2.6 Release Notes
+# Zenith v0.1.0 Release Notes
 
-## 🚀 Major Release: Production-Ready Async & FastAPI Compatibility
+## 🚀 Initial Release: Modern Python Web Framework
 
-This release resolves critical production issues and adds FastAPI-compatible dependency injection, making Zenith fully production-ready for async database applications.
+Zenith v0.1.0 introduces a modern Python web framework with zero-configuration setup, intuitive ZenithModel patterns, and exceptional developer experience.
 
 ---
 

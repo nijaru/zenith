@@ -335,7 +335,7 @@ if __name__ == "__main__":
 
 ```bash
 # Install Zenith
-pip install zenith-web
+pip install zenithweb
 
 # Run the example
 python examples/01-basic-routing.py

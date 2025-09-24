@@ -13,7 +13,7 @@ Traditional frameworks require extensive setup code for basic features. Zenith p
 
 ## Creating an Application
 
-### Zero-Configuration Setup (v0.3.1+)
+### Zero-Configuration Setup (v0.1.0+)
 
 The simplest way to create a Zenith application - automatic configuration based on your environment:
 
@@ -55,7 +55,7 @@ app = Zenith(
 
 ### Chain Features with Convenience Methods
 
-Zenith v0.3.1+ provides chainable methods to add common features with one line:
+Zenith v0.1.0+ provides chainable methods to add common features with one line:
 
 ```python
 # Each method returns the app, allowing chaining
@@ -563,7 +563,7 @@ from datetime import datetime
 app = (Zenith()
     .add_auth()      # Authentication system
     .add_admin()     # Admin dashboard
-    .add_api("Production API", "1.0.0"))  # API documentation
+    .add_api("Production API", "1.0.0"))  # Adds /docs and /redoc endpoints
 
 # Database model using ZenithModel for enhanced functionality
 class Article(ZenithModel, table=True):

@@ -31,7 +31,7 @@ app.add_auth()
 ### Using Authentication
 
 ```python
-from zenith.core.routing.dependencies import Auth
+from zenith import Auth
 
 @app.get("/protected")
 async def protected_route(user=Auth):
@@ -214,7 +214,7 @@ Here's a working application using these features:
 ```python
 # examples/04-one-liner-features.py
 from zenith import Zenith
-from zenith.auth import Auth
+from zenith import Auth
 from zenith.db import ZenithModel
 from sqlmodel import Field
 from datetime import datetime

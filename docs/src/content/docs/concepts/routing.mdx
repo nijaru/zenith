@@ -7,18 +7,9 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## Routing Overview
 
-As APIs grow, endpoint management can become complex:
-- **Scattered routes** across multiple files with no clear organization
-- **Manual validation** of query parameters, path variables, and request bodies
-- **Type mismatches** between what you expect and what you receive
-- **Manual validation** for parsing and serializing data
-- **Inconsistent error handling** across different endpoints
+Zenith's routing system provides type-safe, organized API endpoints with automatic validation and minimal configuration.
 
-<Aside type="caution">
-  **Without proper routing:** A 50-endpoint API can have validation code scattered across 500+ lines, making bugs inevitable and maintenance painful.
-</Aside>
-
-## Type-Safe, Organized Routing
+## Core Features
 
 Zenith's routing system provides:
 - **Decorator-based routing** - Clean, intuitive endpoint definition
@@ -39,42 +30,16 @@ Zenith's routing system provides:
 
 ## Quick Example
 
-See how Zenith eliminates boilerplate validation code:
+Zenith provides automatic validation and type conversion:
 
 ```python
-# Before: Manual validation nightmare (what you'd write without Zenith)
-async def get_users(request):
-    # Step 1: Manually extract query parameter from the request object
-    page = request.query_params.get('page', '1')  # Default to string '1'
-
-    # Step 2: Try to convert string to integer (can fail!)
-    try:
-        page = int(page)
-        # Step 3: Validate the converted value is within bounds
-        if page < 1:
-            return JSONResponse({"error": "Invalid page"}, 400)
-    except ValueError:
-        # Step 4: Handle conversion errors when user sends "abc" instead of number
-        return JSONResponse({"error": "Page must be integer"}, 400)
-
-    # Step 5: Repeat this painful process for EVERY parameter...
-    limit = request.query_params.get('limit', '10')
-    try:
-        limit = int(limit)
-        if limit < 1 or limit > 100:  # More validation logic to maintain
-            return JSONResponse({"error": "Limit must be 1-100"}, 400)
-    except ValueError:
-        return JSONResponse({"error": "Limit must be integer"}, 400)
-
-    # ... Imagine doing this for 10+ parameters! 🤯
-
-# After: Zenith automatic validation - clean and type-safe
+# Zenith automatic validation - clean and type-safe
 @app.get("/users")
 async def get_users(
-    page: int = 1,      # Zenith knows this is an integer from query string
-    limit: int = 10     # Type hint = automatic validation!
+    page: int = 1,      # Type hints enable automatic validation
+    limit: int = 10     # Values converted from query string
 ):
-    # That's it! Zenith automatically:
+    # Zenith automatically:
     # 1. Extracts 'page' and 'limit' from query string (?page=2&limit=20)
     # 2. Converts string values to integers
     # 3. Applies defaults if parameters are missing
@@ -1214,7 +1179,7 @@ async def test_routes():
 
 ### Traditional Routing Patterns
 ```python
-# Traditional approach - multiple HTTP methods on same route
+# Multiple HTTP methods on same route
 # Route: /users/<user_id>
 def user_detail(user_id_str, method):
     if method == 'POST':

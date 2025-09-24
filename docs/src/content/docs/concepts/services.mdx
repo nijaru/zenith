@@ -101,7 +101,7 @@ class UserService(Service):
 @app.post("/users")
 async def create_user(
     user_data: UserCreate,
-    users: UserService = Inject()  # Service injected automatically
+    users: UserService = Inject(UserService)  # Service injected automatically
 ) -> User:
     # That's it! Route only handles HTTP concerns:
     # 1. Receive request (handled by Zenith)
@@ -281,9 +281,9 @@ class OrderService(Service):
     def __init__(
         self,
         # Inject() automatically provides instances
-        products: ProductService = Inject(),
-        payments: PaymentService = Inject(),
-        notifications: NotificationService = Inject()
+        products: ProductService = Inject(ProductService),
+        payments: PaymentService = Inject(PaymentService),
+        notifications: NotificationService = Inject(NotificationService)
     ):
         """Initialize with required services.
 
@@ -500,7 +500,7 @@ class UserService(Service):
     focuses on business rules and orchestration.
     """
 
-    def __init__(self, repo: UserRepository = Inject()):
+    def __init__(self, repo: UserRepository = Inject(UserService)):
         """Initialize with repository dependency."""
         self.repo = repo
 
@@ -591,21 +591,21 @@ Services are easy to test in isolation:
 
 ```python
 import pytest
-from zenith.testing import TestContext
+from zenith.testing import TestService
 
 @pytest.mark.asyncio
 async def test_user_creation():
     """Test user creation logic.
 
-    TestContext provides:
+    TestService provides:
     - Isolated database (in-memory)
     - Automatic cleanup
     - Mocked dependencies
     - No HTTP layer needed
     """
 
-    # TestContext creates isolated environment for testing
-    async with TestContext(UserService) as users:
+    # TestService creates isolated environment for testing
+    async with TestService(UserService) as users:
         # Step 1: Prepare test data
         user_data = UserCreate(
             email="test@example.com",
@@ -638,7 +638,7 @@ async def test_duplicate_email():
     This tests a business rule, not HTTP validation!
     """
 
-    async with TestContext(UserService) as users:
+    async with TestService(UserService) as users:
         # Create first user successfully
         await users.create_user(UserCreate(
             email="test@example.com",
@@ -659,7 +659,7 @@ async def test_duplicate_email():
 async def test_order_processing():
     """Test complex order processing with mocked dependencies."""
 
-    async with TestContext(OrderService) as orders:
+    async with TestService(OrderService) as orders:
         # Mock the payment service
         orders.payments.process_payment = AsyncMock(
             return_value=Payment(id=123, status="completed")
@@ -696,7 +696,7 @@ async def test_order_processing():
 async def test_order_fails_on_insufficient_stock():
     """Test that orders fail gracefully when stock is insufficient."""
 
-    async with TestContext(OrderService) as orders:
+    async with TestService(OrderService) as orders:
         # Setup: Create product with limited stock
         product = await orders.products.create_product(
             ProductCreate(name="Limited Item", price=10.00, stock_quantity=1)
@@ -736,11 +736,11 @@ class CheckoutService(Service):
     def __init__(
         self,
         # Each service handles its own domain
-        cart: CartService = Inject(),
-        inventory: InventoryService = Inject(),
-        payment: PaymentService = Inject(),
-        shipping: ShippingService = Inject(),
-        email: EmailService = Inject()
+        cart: CartService = Inject(CartService),
+        inventory: InventoryService = Inject(InventoryService),
+        payment: PaymentService = Inject(PaymentService),
+        shipping: ShippingService = Inject(ShippingService),
+        email: EmailService = Inject(EmailService)
     ):
         """Initialize with all required services.
 

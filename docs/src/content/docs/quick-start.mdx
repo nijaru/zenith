@@ -5,13 +5,13 @@ description: Build your first Zenith API in 5 minutes
 
 import { Aside } from '@astrojs/starlight/components';
 
-In this tutorial, you'll build a complete blog API with Zenith in just 5 minutes. You'll see how Zenith eliminates the complexity of traditional Python web development.
+Build a complete blog API with Zenith in just 5 minutes. This tutorial shows you Zenith's core features and how they work together.
 
 **What you'll learn:**
-- How Zenith replaces hundreds of lines of boilerplate with simple commands
-- Why ZenithModel makes database operations intuitive
-- How one-liner features add authentication, admin panels, and docs
-- The dramatic difference between traditional vs modern Python web development
+- Creating a Zenith application with automatic configuration
+- Using ZenithModel for intuitive database operations
+- Adding authentication, admin panels, and documentation with one-liners
+- Building a complete CRUD API with minimal code
 
 <Aside type="tip">
   **Prerequisites**: Python 3.12 or higher. If you don't have it, [download Python here](https://python.org).
@@ -20,13 +20,13 @@ In this tutorial, you'll build a complete blog API with Zenith in just 5 minutes
 ## Installation
 
 ```bash
-pip install zenith-web
+pip install zenithweb
 ```
 
 Or with uv (recommended):
 
 ```bash
-uv add zenith-web
+uv add zenithweb
 ```
 
 ## Create a New Project
@@ -45,575 +45,319 @@ This creates:
 - `.gitignore` - Git ignore rules
 - `README.md` - Quick start guide
 
+## Building a Blog API
 
-## Your First Application
+Create a file called `blog.py`:
 
-### Building a Blog API: Traditional Approach
 ```python
-# Modern Python with SQLModel (combining Pydantic + SQLAlchemy)
-from typing import Optional, List
-from sqlmodel import Field, Session, SQLModel, create_engine, select
-from datetime import datetime
-from contextlib import asynccontextmanager
-import os
-
-# Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./blog.db")
-engine = create_engine(DATABASE_URL)
-
-# Model definition using SQLModel (Pydantic + SQLAlchemy)
-class PostBase(SQLModel):
-    title: str = Field(index=True)
-    content: str
-    published: bool = Field(default=False)
-
-class Post(PostBase, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-class PostCreate(PostBase):
-    pass
-
-class PostRead(PostBase):
-    id: int
-    created_at: datetime
-
-# Application setup with lifespan
-@asynccontextmanager
-async def lifespan(app):
-    # Create tables on startup
-    SQLModel.metadata.create_all(engine)
-    yield
-
-# Application initialization (framework-specific)
-app = create_application(
-    title="Blog API",
-    version="1.0.0",
-    lifespan=lifespan
-)
-
-# Session dependency
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-# CRUD endpoints
-@app.post("/posts/", response_model=PostRead)
-def create_post(post: PostCreate, session: Session):  # Session injection pattern
-    db_post = Post.model_validate(post)
-    session.add(db_post)
-    session.commit()
-    session.refresh(db_post)
-    return db_post
-
-@app.get("/posts/", response_model=List[PostRead])
-def list_posts(
-    published: Optional[bool] = None,
-    skip: int = 0,
-    limit: int = 10,
-    session: Session  # Framework handles injection
-):
-    statement = select(Post)
-    if published is not None:
-        statement = statement.where(Post.published == published)
-    statement = statement.offset(skip).limit(limit)
-    posts = session.exec(statement).all()
-    return posts
-
-# Still missing:
-# - Authentication (JWT setup, login endpoints, user management)
-# - Admin interface (doesn't exist without third-party packages)
-# - Advanced query methods (complex filtering, sorting)
-# - Background tasks
-# - WebSocket support
-# - Production middleware (CORS, security headers, rate limiting)
-```
-
-### Building the Same API with Zenith
-```python
-# Zenith - Enhanced developer experience
 from zenith import Zenith
 from zenith.db import ZenithModel
+from zenith import Auth
 from sqlmodel import Field
 from datetime import datetime
 from typing import Optional
 
-# Application setup with automatic configuration
-app = Zenith()  # Auto-configures database, middleware, error handling
+# Create application with automatic configuration
+app = Zenith()
 
-# Optional: Add additional features with one-liners
-app.add_auth()              # JWT authentication with login endpoint
-app.add_admin("/admin")     # Admin dashboard for monitoring
-app.add_api("Blog API", "1.0.0")  # Enhanced API documentation
+# Add built-in features with one-liners
+app.add_auth()                      # JWT authentication system
+app.add_admin("/admin")             # Admin dashboard
+app.add_api("Blog API", "1.0.0")    # Adds /docs and /redoc endpoints
 
-# Model with ActiveRecord-style methods
+# Define blog post model
 class Post(ZenithModel, table=True):
-    """Blog post model with built-in query methods."""
-    id: Optional[int] = Field(default=None, primary_key=True)
+    """Blog post with automatic session management."""
+    id: Optional[int] = Field(primary_key=True)
     title: str = Field(index=True)
     content: str
     published: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    author_id: int
+    created_at: datetime = Field(default_factory=datetime.now)
 
-# CRUD endpoints with automatic session management
+# User model for authentication
+class User(ZenithModel, table=True):
+    """User model for authentication."""
+    id: Optional[int] = Field(primary_key=True)
+    email: str = Field(unique=True, index=True)
+    name: str
+    hashed_password: str
+
+# Blog endpoints with automatic session management
 @app.post("/posts")
-async def create_post(title: str, content: str, published: bool = False):
-    """Create a new blog post.
-
-    ZenithModel provides:
-    - Automatic session management (no Depends needed)
-    - Built-in validation
-    - Transaction handling
-    """
+async def create_post(title: str, content: str, user=Auth):
+    """Create a new blog post."""
     post = await Post.create(
         title=title,
         content=content,
-        published=published
+        author_id=user.id
     )
-    return {"post": post.to_dict()}
+    return {"message": "Post created", "post": post.model_dump()}
 
 @app.get("/posts")
 async def list_posts(
     published: Optional[bool] = None,
-    skip: int = 0,
-    limit: int = 10
+    limit: int = 10,
+    offset: int = 0
 ):
-    """List blog posts with filtering.
-
-    ZenithModel provides chainable query methods similar to Rails ActiveRecord.
-    """
-    query = Post.query()  # Start query builder
-
+    """List blog posts with optional filtering."""
+    # Build query based on filters
     if published is not None:
-        query = query.where(published=published)
+        query = await Post.where(published=published)
+    else:
+        query = await Post.where()  # All posts
 
-    posts = await query.order_by('-created_at').offset(skip).limit(limit).all()
+    posts = await query.order_by('-created_at').limit(limit).offset(offset).all()
 
     return {
-        "posts": [p.to_dict() for p in posts],
-        "total": await query.count(),
-        "skip": skip,
-        "limit": limit
+        "posts": [p.model_dump() for p in posts],
+        "total": await Post.count(),  # Use class method for total count
+        "limit": limit,
+        "offset": offset
     }
 
 @app.get("/posts/{post_id}")
 async def get_post(post_id: int):
-    """Get a single post by ID.
-
-    find_or_404() automatically raises HTTPException if not found.
-    """
+    """Get a single post by ID."""
     post = await Post.find_or_404(post_id)
-    return {"post": post.to_dict()}
+    return {"post": post.model_dump()}
 
-# That's it! You now have:
-# Complete CRUD API
-# Authentication (/auth/login)
-# Admin dashboard (/admin)
-# Interactive docs (/docs)
-# Type safety throughout
-# Automatic session management
-# Security middleware
-```
-
-**Comparison:**
-
-| Feature | Traditional Approach | Zenith |
-|---------|---------------------|--------|
-| **Lines of Code** | ~80-100 (basic CRUD only) | ~40-50 (with more features) |
-| **Database Sessions** | Manual `Depends(get_session)` | Automatic per-request |
-| **Query Methods** | SQLAlchemy syntax | Rails-like chainable |
-| **404 Handling** | Manual check and raise | `find_or_404()` method |
-| **Serialization** | Pydantic models | Built-in `to_dict()` |
-| **Authentication** | Build yourself (~150 lines) | `app.add_auth()` |
-| **Admin Interface** | Third-party or none | `app.add_admin()` |
-| **Setup Time** | 30-60 minutes | 5-10 minutes |
-
-**What Zenith Provides:**
-- Cleaner, more intuitive API (subjective but important for DX)
-- Automatic session management reduces boilerplate
-- Rails-like query methods familiar to many developers
-- Optional batteries-included features (auth, admin)
-- Faster initial development, especially for prototypes
-- Convention over configuration philosophy
-
-**Trade-offs to Consider:**
-- Traditional frameworks may have larger ecosystems
-- Raw SQLAlchemy offers more flexibility for complex queries
-- Zenith's conventions may not fit all use cases
-- Learning curve if unfamiliar with Rails-like patterns
-
-Create a file `app.py`:
-
-```python
-"""
-Blog API - A complete API with authentication, database, and documentation.
-"""
-
-from datetime import datetime
-from typing import Optional
-
-from zenith import Zenith
-from zenith.db import ZenithModel  # Enhanced SQLModel base class
-from sqlmodel import Field
-
-# Chain methods to add features - each returns the app for chaining
-app = (Zenith()              # Create base application
-       .add_auth()           # Add JWT authentication endpoints (/auth/login, /auth/register)
-       .add_admin()          # Add admin dashboard (/admin)
-       .add_api("Blog API", "1.0.0"))  # Add OpenAPI docs (/docs, /redoc)
-
-# Database Models
-# ZenithModel extends SQLModel with convenience methods like .find(), .create(), .where()
-class Post(ZenithModel, table=True):  # table=True creates database table
-    """Blog post model - automatically gets CRUD operations."""
-
-    # Optional[int] with primary_key=True means auto-incrementing ID
-    id: Optional[int] = Field(primary_key=True)
-
-    # Field constraints are validated at database AND API level
-    title: str = Field(max_length=200)          # Max 200 characters
-    content: str                                # No length limit
-    author: str = Field(max_length=100)         # Max 100 characters
-
-    # Default values for new records
-    published: bool = Field(default=False)      # Draft by default
-    created_at: datetime = Field(default_factory=datetime.utcnow)  # Auto-timestamp
-
-# API Endpoints
-@app.get("/")
-async def root():
-    """API root - provides discovery information for clients."""
-    return {
-        "message": "Welcome to Blog API",
-        "version": "1.0.0",
-        "endpoints": {
-            "posts": "/posts",     # Main content endpoints
-            "health": "/health",   # Service health check
-            "docs": "/docs"        # Interactive API documentation
-        }
-    }
-
-@app.get("/posts")
-async def get_posts(published: bool = True):  # Query param: ?published=false for drafts
-    """
-    List posts with optional filtering.
-    Query parameters are automatically parsed from the URL.
-    """
-    if published:
-        # ZenithModel provides chainable query methods:
-        # .where() adds filter, .order_by() sorts, .limit() restricts count
-        # The '-' prefix means descending order (newest first)
-        posts = await Post.where(published=True).order_by('-created_at').limit(10)
-    else:
-        # Get all posts, including drafts
-        posts = await Post.order_by('-created_at').limit(10)
-
-    return {
-        "posts": [post.to_dict() for post in posts],  # .to_dict() converts model to JSON-safe dict
-        "count": len(posts)
-    }
-
-@app.post("/posts")
-async def create_post(post_data: dict):  # Request body automatically parsed from JSON
-    """
-    Create a new blog post.
-    Zenith automatically validates the JSON request body.
-    """
-    # Post.create() is a ZenithModel convenience method that:
-    # 1. Creates the model instance
-    # 2. Saves to database
-    # 3. Returns the saved instance with generated ID
-    post = await Post.create(**post_data)  # ** unpacks dict as keyword arguments
-
-    return {
-        "post": post.to_dict(),
-        "message": "Post created successfully"
-    }
-
-@app.get("/posts/{post_id}")
-async def get_post(post_id: int):  # Path param with type validation
-    """
-    Get a specific post by ID.
-    The {post_id} in the path becomes a function parameter.
-    """
-    # .find_or_404() is a ZenithModel convenience that:
-    # - Returns the model if found
-    # - Raises HTTP 404 exception if not found
-    post = await Post.find_or_404(post_id)
-    return {"post": post.to_dict()}
-
-@app.put("/posts/{post_id}")
-async def update_post(post_id: int, updates: dict):  # Combines path param + request body
-    """Update an existing post - partial updates supported."""
-    # First, find the post (404 if not exists)
+@app.patch("/posts/{post_id}")
+async def update_post(post_id: int, title: str = None, content: str = None, user=Auth):
+    """Update a blog post."""
     post = await Post.find_or_404(post_id)
 
-    # Apply updates - only modify fields present in the request
-    for field, value in updates.items():
-        # hasattr() checks if the field exists on the model
-        # This prevents setting invalid attributes
-        if hasattr(post, field):
-            setattr(post, field, value)  # Python's way to set object.field = value
+    # Simple authorization check
+    if post.author_id != user.id:
+        raise HTTPException(403, "Not authorized to edit this post")
 
-    # Save changes to database
-    await post.save()
+    updates = {}
+    if title is not None:
+        updates["title"] = title
+    if content is not None:
+        updates["content"] = content
 
-    return {
-        "post": post.to_dict(),
-        "message": "Post updated successfully"
-    }
+    if updates:
+        await post.update(**updates)
+
+    return {"message": "Post updated", "post": post.model_dump()}
 
 @app.delete("/posts/{post_id}")
-async def delete_post(post_id: int):
-    """Delete a post - permanent removal from database."""
-    post = await Post.find_or_404(post_id)  # Find or 404
-    await post.delete()                      # Remove from database
-    return {"message": "Post deleted successfully"}
+async def delete_post(post_id: int, user=Auth):
+    """Delete a blog post."""
+    post = await Post.find_or_404(post_id)
 
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "service": "blog-api"
-    }
+    if post.author_id != user.id:
+        raise HTTPException(403, "Not authorized to delete this post")
 
-if __name__ == "__main__":
-    app.run()
+    await post.delete()
+    return {"message": "Post deleted"}
+
+@app.patch("/posts/{post_id}/publish")
+async def publish_post(post_id: int, user=Auth):
+    """Publish a blog post."""
+    post = await Post.find_or_404(post_id)
+
+    if post.author_id != user.id:
+        raise HTTPException(403, "Not authorized")
+
+    await post.update(published=True)
+    return {"message": "Post published", "post": post.to_dict()}
+
+# Optional: Add custom endpoint for user's posts
+@app.get("/my-posts")
+async def my_posts(user=Auth):
+    """Get current user's posts."""
+    posts = await Post.where(author_id=user.id).order_by('-created_at').all()
+    return {"posts": [p.to_dict() for p in posts]}
 ```
 
-## Run the Server
+## Run Your API
 
 Start the development server:
 
 ```bash
-zen dev
+# Using uvicorn directly
+uvicorn blog:app --reload
+
+# Or using Zenith CLI
+zen dev blog.py
 ```
 
-Or run directly:
+Visit `http://localhost:8000` and you'll see your API running!
 
+## What You Get
+
+Your blog API now includes:
+
+### Automatic Features
+- **Database**: SQLite for development (configures PostgreSQL for production)
+- **Migrations**: Automatic table creation and schema updates
+- **Session management**: Request-scoped database sessions
+- **Type safety**: Full validation with Pydantic models
+- **Error handling**: Structured error responses
+
+### Authentication System (`/auth/login`)
 ```bash
-python app.py
-```
-
-Your API is now running at http://localhost:8000!
-
-<Aside type="tip">
-  The `zen dev` command includes hot reload, so your server will automatically restart when you make changes to your code.
-</Aside>
-
-## Interactive API Documentation
-
-Visit these endpoints in your browser or API client:
-
-- **API Root**: http://localhost:8000/
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
-- **Blog Posts**: http://localhost:8000/posts
-
-## Test Your API
-
-Create a blog post using curl or your API client:
-
-```bash
-curl -X POST http://localhost:8000/posts \
+# Create a user account (you'll need to add a registration endpoint)
+curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "title": "My First Post",
-    "content": "This is my first blog post using Zenith!",
-    "author": "Developer",
-    "published": true
-  }'
+  -d '{"username": "demo@example.com", "password": "password"}'
 ```
 
-Get all posts:
+### Admin Dashboard (`/admin`)
+- System health monitoring
+- Database statistics
+- Application metrics
+- Request logs
 
+### Interactive Documentation (`/docs`)
+- Try all endpoints directly in your browser
+- Automatic request/response examples
+- Authentication testing
+- OpenAPI schema export
+
+### API Endpoints
 ```bash
+# List posts
 curl http://localhost:8000/posts
+
+# Get specific post
+curl http://localhost:8000/posts/1
+
+# Create post (requires authentication)
+curl -X POST http://localhost:8000/posts \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My First Post", "content": "Hello, World!"}'
+
+# Publish post
+curl -X PATCH http://localhost:8000/posts/1/publish \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
-## Key Features
+## ZenithModel Features
 
-### Database Models
+The `ZenithModel` class provides Rails-like query methods:
 
 ```python
-from zenith.db import ZenithModel
+# Finding records
+post = await Post.find(1)              # Returns None if not found
+post = await Post.find_or_404(1)       # Raises 404 if not found
+posts = await Post.all()               # Get all records
 
-class User(ZenithModel, table=True):
-    id: int | None = Field(primary_key=True)
-    name: str
-    email: str
+# Querying with conditions
+published = await Post.where(published=True).all()
+recent = await Post.where(published=True).order_by('-created_at').limit(5).all()
 
-# Intuitive operations
-users = await User.all()
-user = await User.find(1)
-user = await User.create(name="Alice", email="alice@example.com")
-active_users = await User.where(active=True).limit(10)
+# Creating records
+post = await Post.create(title="New Post", content="Content", author_id=1)
+
+# Updating records
+await post.update(published=True)
+
+# Deleting records
+await post.delete()
+
+# Counting
+count = await Post.where(published=True).count()
+
+# Serialization
+data = post.to_dict()                   # Convert to dictionary
+post = Post.from_dict(data)             # Create from dictionary
 ```
-
-### Dependency Injection
-
-```python
-from zenith.core import DB, Auth, Inject
-
-@app.get("/users")
-async def get_users(
-    db=DB,                         # Database session shortcut
-    user=Auth,                     # Current authenticated user
-    users: UserService = Inject()  # Service injection
-):
-    # Clean, readable code with modern shortcuts
-    pass
-```
-
-### Built-in Features
-
-- **Hot reload** - Automatic restart on code changes
-- **API documentation** - Interactive docs at `/docs` and `/redoc`
-- **Health checks** - Monitoring endpoints at `/health`
-- **Authentication** - JWT auth with `app.add_auth()`
-- **Admin panel** - Dashboard with `app.add_admin()`
-- **Middleware** - Security, CORS, compression included
 
 ## Next Steps
 
-### Add Authentication (Built-in!)
+### Add User Registration
 
 ```python
-# Authentication is already enabled with app.add_auth()!
-# Just use the Auth dependency:
+from zenith.auth.password import hash_password
 
-from zenith.core import Auth
+@app.post("/register")
+async def register(email: str, name: str, password: str):
+    """Register a new user."""
+    # Check if user exists
+    existing = await User.where(email=email).first()
+    if existing:
+        raise HTTPException(400, "Email already registered")
 
-@app.get("/protected")
-async def protected_route(user=Auth):
-    return {"user_id": user.id}
+    # Create user
+    user = await User.create(
+        email=email,
+        name=name,
+        hashed_password=hash_password(password)
+    )
 
-# Login endpoint automatically available at /auth/login
+    return {"message": "User registered", "user_id": user.id}
 ```
 
-### Add Server-Sent Events
+### Add Pagination
 
 ```python
-from zenith.web.sse import create_sse_response
-import asyncio
+@app.get("/posts")
+async def list_posts(page: int = 1, per_page: int = 10):
+    """List posts with pagination."""
+    offset = (page - 1) * per_page
 
-@app.get("/events")
-async def stream_events():
-    """Real-time event streaming."""
-    async def events():
-        for i in range(100):
-            yield {
-                "type": "count",
-                "data": {"value": i}
-            }
-            await asyncio.sleep(1)
+    posts = await Post.where(published=True).limit(per_page).offset(offset).all()
+    total = await Post.where(published=True).count()
 
-    return create_sse_response(events())
+    return {
+        "posts": [p.to_dict() for p in posts],
+        "page": page,
+        "per_page": per_page,
+        "total": total,
+        "pages": (total + per_page - 1) // per_page
+    }
 ```
 
-### Add File Uploads
+### Add Search
 
 ```python
-from zenith.web import File
-from starlette.responses import JSONResponse
+from sqlalchemy import or_
 
-@app.post("/upload")
-async def upload_file(file: File):
-    """Handle file uploads with built-in validation."""
-    contents = await file.read()
-    return JSONResponse({
-        "filename": file.filename,
-        "size": len(contents)
-    })
+@app.get("/search")
+async def search_posts(q: str):
+    """Search posts by title or content."""
+    session = await Post._get_session()
+
+    stmt = select(Post).where(
+        or_(
+            Post.title.ilike(f"%{q}%"),
+            Post.content.ilike(f"%{q}%")
+        )
+    )
+
+    result = await session.execute(stmt)
+    posts = result.scalars().all()
+
+    return {"query": q, "posts": [p.to_dict() for p in posts]}
 ```
 
-### Organize with Services
+## Key Benefits
 
-```python
-from zenith.core import Inject
+### Development Speed
+- Start building immediately with zero configuration
+- Built-in authentication saves hours of setup
+- Auto-generated admin interface
+- Interactive documentation
 
-class PostService:
-    """Business logic for posts."""
-
-    async def create_post(self, data: dict) -> Post:
-        # Validation, business rules, etc.
-        return await Post.create(**data)
-
-# Use in routes
-@app.post("/posts")
-async def create_post(
-    data: dict,
-    posts: PostService = Inject()
-):
-    post = await posts.create_post(data)
-    return {"post": post.to_dict()}
-```
-
-## Key Features
-
-### Current Python
-
-- **Python 3.12+** with latest features
-- **Type hints** throughout for better IDE support
-- **Async/await** for high performance
-- **Pydantic v2** for validation and serialization
-
-### Developer Experience
-
-- **Minimal setup code** - Focus on business logic
-- **Good tooling** - CLI, hot reload, debugging
-- **Clear patterns** - Consistent code organization
-- **Great defaults** - Secure and performant out of the box
+### Code Quality
+- Type safety throughout with full IDE support
+- Automatic validation prevents common bugs
+- Clean, readable query methods
+- Consistent error handling
 
 ### Production Ready
+- Environment-aware configuration
+- Security middleware included
+- Performance monitoring built-in
+- Scalable async architecture
 
-- **Security** - CSRF, rate limiting, secure headers
-- **Performance** - Optimized middleware stack
-- **Monitoring** - Health checks, metrics, logging
-- **Scalability** - Async throughout, connection pooling
+## Learn More
 
-## Advanced Features
-
-### WebSockets
-
-```python
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Echo: {data}")
-```
-
-### Background Tasks
-
-```python
-from zenith.background import BackgroundTasks
-
-@app.post("/send-email")
-async def send_email(email: str, background: BackgroundTasks):
-    background.add_task(send_email_async, email)
-    return {"status": "queued"}
-```
-
-### Rate Limiting
-
-```python
-@app.get("/api/data")
-@rate_limit("10/minute")
-async def get_data():
-    return {"data": "rate limited"}
-
-## Next Steps
-
-- [Routing](./concepts/routing) - Path parameters, query strings, request bodies
-- [Models](./concepts/models) - Database models and queries
-- [Authentication](./concepts/authentication) - Securing your API
-- [Testing](./api/testing) - Writing tests for your API
-- [Deployment](./guides/deployment) - Deploy to production
-
----
-
-*Learn more in the [complete documentation](/zenith/concepts/routing/) or explore [example applications](/zenith/examples/).*
+- [Tutorial](/tutorial/01-getting-started) - Step-by-step guide building a complete application
+- [Database Guide](/guides/database) - Advanced ZenithModel patterns
+- [Authentication](/concepts/authentication) - JWT setup and user management
+- [API Reference](/api/application) - Complete framework documentation

@@ -31,13 +31,6 @@ from .utils import (
 )
 
 
-# LiveViewRouter for Phoenix-style patterns
-class LiveViewRouter(Router):
-    """Router for Phoenix-style LiveView routes."""
-
-    def live(self, path: str, **kwargs):
-        """LiveView route decorator."""
-        return self.route(path, ["GET", "POST"], **kwargs)
 
 
 __all__ = [
@@ -51,7 +44,6 @@ __all__ = [
     "HTTPMethod",
     "Inject",
     "InjectDependency",
-    "LiveViewRouter",
     "ResponseProcessor",
     "RouteExecutor",
     "RouteSpec",
