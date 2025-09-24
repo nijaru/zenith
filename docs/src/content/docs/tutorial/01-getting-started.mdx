@@ -9,13 +9,13 @@ import { Aside, Card } from '@astrojs/starlight/components';
 
 # Tutorial Part 1: Getting Started with Zenith
 
-Welcome to the Zenith tutorial! Over the next seven parts, we'll build **TaskFlow** - a complete task management API that demonstrates how Zenith eliminates the complexity of traditional Python web development.
+Welcome to the Zenith tutorial! Over the next seven parts, we'll build **TaskFlow** - a complete task management API that demonstrates Zenith's capabilities.
 
-**Why this tutorial is different:**
-- We show you what you'd have to build manually vs what Zenith does automatically
-- Real production patterns, not toy examples
-- You'll see the dramatic code reduction Zenith provides
-- By the end, you'll have a deployable API that would normally take weeks to build
+**What you'll learn:**
+- Production-ready patterns and best practices
+- Building APIs with Zenith's integrated features
+- Database operations, authentication, and deployment
+- Creating a fully functional task management system
 
 ## What We're Building
 
@@ -43,66 +43,29 @@ Don't worry if you're new to async Python or web APIs - we'll explain everything
 
 ## Installation
 
-### The Problem (Traditional Setup)
+### Quick Start with Zenith
+
 ```bash
-# Traditional setup for a task management API
-python -m venv taskflow-env
-source taskflow-env/bin/activate
+# Install Zenith with all dependencies
+pip install zenith-web
 
-# Install dependencies one by one
-pip install framework-core
-pip install uvicorn
-pip install sqlalchemy
-pip install psycopg2-binary
-pip install alembic
-pip install python-jose
-pip install passlib
-pip install bcrypt
-pip install python-multipart
-pip install pytest
-pip install pytest-asyncio
-pip install redis
-pip install celery
-pip install pydantic
-pip install pydantic-settings
-# ... and many more
-
-# Create project structure manually
-mkdir taskflow
-cd taskflow
-mkdir app
-mkdir migrations
-mkdir tests
-touch app/__init__.py
-touch app/main.py
-touch app/models.py
-touch app/database.py
-touch app/auth.py
-touch app/config.py
-# ... dozens more files
-
-# Configure each component manually
-# (spend hours figuring out how they work together)
-```
-
-### The Solution (Zenith Way)
-```bash
-# With Zenith - everything in 3 commands
-pip install zenith-web     # All dependencies included
-zen new taskflow           # Complete project structure generated
+# Create new project (or follow manual setup below)
+zen new taskflow           # Complete project structure
 cd taskflow && zen dev     # Running with hot reload!
 
-# You now have:
-# - All dependencies pre-configured
-# - Project structure with best practices
+# Includes:
+# - Pre-configured dependencies
+# - Best practice project structure
 # - Database models ready to use
 # - Authentication system
-# - Admin dashboard
 # - API documentation
 # - Testing framework
 # - Security middleware
-# All working together perfectly!
 ```
+
+### Manual Setup
+
+For this tutorial, we'll set up the project manually to understand each component:
 
 ### Option 1: Using uv (Recommended)
 
@@ -124,7 +87,7 @@ uv add --dev pytest pytest-asyncio black ruff
 ```
 
 <Aside>
-  **Why uv?** It's 10-100x faster than pip, handles virtual environments automatically, and has better dependency resolution. But pip works fine too!
+  **Why uv?** It's faster than pip and handles virtual environments automatically. Standard pip works fine too!
 </Aside>
 
 ### Option 2: Using pip and venv

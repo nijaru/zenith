@@ -22,14 +22,14 @@ By the end of this part, you'll have:
 - Input validation and sanitization
 
 <Aside type="tip">
-  **Why CRUD matters**: These four operations form the backbone of 90% of web APIs. The difference is that with traditional ORMs, you write 200+ lines of boilerplate per model. With ZenithModel, you get more features in 40 lines!
+  **Why CRUD matters**: These four operations form the backbone of most web APIs. ZenithModel provides clean, type-safe CRUD operations with built-in validation and error handling.
 </Aside>
 
-## ZenithModel vs Traditional ORMs
+## ZenithModel CRUD Operations
 
-Before we start, let's see why Zenith's patterns are so much cleaner than traditional approaches:
+Let's explore Zenith's approach to CRUD operations:
 
-<Card title="Traditional SQLAlchemy - Complex and Error-Prone" icon="down-caret">
+<Card title="ZenithModel - Clean and Type-Safe" icon="up-caret">
 ```python
 # Creating a user - so many manual steps!
 from passlib.context import CryptContext
@@ -195,11 +195,11 @@ total = await User.where(is_active=True).count()
 ```
 </Card>
 
-**Why Zenith is better:**
-- 📝 **Readable**: `User.where(active=True)` vs `select(User).where(User.active == True)`
+**ZenithModel Benefits:**
+- 📝 **Readable**: `User.where(active=True)` - clean, intuitive syntax
 - 🔗 **Chainable**: Method chaining flows naturally
-- 🚫 **Less boilerplate**: No manual session management in business logic
 - 🎯 **Focused**: Write business logic, not database plumbing
+- 🔒 **Type Safe**: Full type hints and IDE support
 
 ## Service Layer Pattern
 
