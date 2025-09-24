@@ -3,7 +3,7 @@ Main Zenith class - the entry point for creating Zenith applications.
 
 Combines the power of:
 - FastAPI-style routing and dependency injection
-- Phoenix contexts and real-time features
+- Service-based business logic organization
 - Rails-style conventions and developer experience
 """
 
@@ -26,8 +26,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
     The high-level API for creating Zenith applications with:
     - FastAPI-style decorators and dependency injection
-    - Phoenix contexts for business logic
-    - Built-in real-time features via LiveView
+    - Service-based architecture for business logic
     - Rails-style conventions and tooling
     - Automatic database performance optimizations
 
@@ -35,7 +34,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         app = Zenith()
 
         @app.get("/items/{id}")
-        async def get_item(id: int, items: ItemsContext = Inject()) -> dict:
+        async def get_item(id: int, items: ItemService = Inject()) -> dict:
             return await items.get_item(id)
     """
 

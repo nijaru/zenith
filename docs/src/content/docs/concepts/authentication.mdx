@@ -12,8 +12,8 @@ Zenith provides a comprehensive authentication system with JWT tokens, password 
 ## Quick Start (Complete Auth in 5 Minutes)
 
 ```python
-from zenith import Zenith, Depends, HTTPException
-from zenith.auth import Auth, create_access_token, get_current_user
+from zenith import Zenith, Depends, HTTPException, Auth
+from zenith.auth import create_access_token, get_current_user
 from zenith.auth.password import hash_password, verify_password
 from pydantic import BaseModel, EmailStr
 

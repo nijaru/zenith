@@ -120,7 +120,7 @@ The `archive/` directory contains experimental and testing examples that showcas
 
 ### **🧪 Testing Excellence** (Example 13)
 - `TestClient` for API endpoint testing
-- `TestContext` for isolated business logic testing
+- `TestService` for isolated business logic testing
 - `MockAuth` for authentication testing
 - Performance and load testing patterns
 - Test factories and fixtures

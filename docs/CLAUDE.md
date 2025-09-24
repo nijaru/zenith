@@ -29,7 +29,7 @@ twine upload dist/zenith_web-{version}*
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.2.5 - Latest dependencies with Pydantic 2.11.9+ and enhanced security
+- **Status**: v0.1.0 - Fresh release with zero-configuration setup and modern developer experience
 - **Performance**: 9,500+ req/s with optimized middleware stack
 - **Test Coverage**: 100% integration tests (446 tests passing)
 - **CLI**: `zen` command for development tools
@@ -238,7 +238,8 @@ async def create_user(user: UserCreate) -> User:
 
 ### 4. Authentication System
 ```python
-from zenith.auth import Auth, JWTAuth, User
+from zenith import Auth
+from zenith.auth import JWTAuth, User
 
 # JWT Authentication
 @app.get("/protected")
@@ -335,7 +336,7 @@ with profiler.time_function("database_query"):
 
 ### Testing Framework
 ```python
-from zenith.testing import TestClient, TestContext
+from zenith.testing import TestClient, TestService
 
 # Endpoint testing
 async with TestClient(app) as client:
@@ -344,8 +345,8 @@ async with TestClient(app) as client:
     user = response.json()
     assert user["name"] == "Alice"
 
-# Context testing (business logic)
-async with TestContext(UserService) as users:
+# Service testing (business logic)
+async with TestService(UserService) as users:
     user = await users.create_user(UserCreate(name="Bob", email="bob@example.com", age=30))
     assert user.name == "Bob"
 
@@ -571,7 +572,7 @@ app = Zenith(config=config)
 
 1. **Architecture**: Use Service classes for business logic, keep routes thin
 2. **Type Safety**: Always use type hints, Pydantic models for validation
-3. **Testing**: Include both endpoint tests (TestClient) and business logic tests (TestContext)
+3. **Testing**: Include both endpoint tests (TestClient) and business logic tests (TestService)
 4. **Performance**: Consider performance impact, use profiling decorators, follow optimization patterns in `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
 5. **Standards**: Follow existing patterns in codebase, maintain consistency
 6. **Documentation**: Update docs for any API changes or new features

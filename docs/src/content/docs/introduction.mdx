@@ -71,7 +71,7 @@ app = Zenith()
 # Add authentication, admin panel, and API documentation
 app.add_auth()                   # JWT authentication
 app.add_admin()                  # Admin dashboard
-app.add_api("My API", "1.0.0")   # OpenAPI docs
+app.add_api("My API", "1.0.0")   # Adds /docs and /redoc endpoints
 
 # Serve static files or SPA
 app.spa("dist")

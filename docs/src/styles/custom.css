@@ -131,6 +131,16 @@ td {
   --pagefind-ui-text: var(--sl-color-text);
 }
 
+/* Fix hero section spacing on splash pages */
+.hero + * {
+  margin-top: 2rem !important;
+}
+
+/* Reduce gap after hero buttons */
+[data-page-template="splash"] .hero {
+  margin-bottom: 2rem !important;
+}
+
 /* Mobile responsive */
 @media (max-width: 50rem) {
   .sl-markdown-content {

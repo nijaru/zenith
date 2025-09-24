@@ -7,11 +7,7 @@ import { Aside } from '@astrojs/starlight/components';
 
 ## Database Model Overview
 
-Traditional ORMs require manual session management, explicit transaction handling, and verbose query syntax. This leads to repetitive setup code that obscures your actual business logic.
-
-<Aside type="caution">
-  **Without ZenithModel:** Every query needs session management, transaction handling, and result processing - turning simple operations into 10+ lines of code.
-</Aside>
+ZenithModel provides a streamlined database interface with automatic session management and intuitive query patterns.
 
 ## ZenithModel
 
@@ -35,33 +31,17 @@ ZenithModel simplifies database operations with:
 ## Quick Example
 
 ```python
-# Before: Traditional SQLModel/SQLAlchemy (verbose and error-prone)
-async def get_active_users(session: AsyncSession):
-    # Step 1: Build the SQL statement (verbose syntax)
-    stmt = select(User).where(User.active == True).order_by(User.created_at.desc()).limit(10)
-
-    # Step 2: Execute the statement (easy to forget await)
-    result = await session.execute(stmt)
-
-    # Step 3: Extract scalar results (confusing API)
-    return result.scalars().all()  # Why scalars()? Why all()?
-
-# Oh wait, where does the session come from?
-# You need ANOTHER function:
-async def endpoint():
-    async with get_session() as session:  # More boilerplate!
-        return await get_active_users(session)
-
-# After: ZenithModel (clean, intuitive, no session management)
+# ZenithModel provides intuitive, chainable queries
 async def get_active_users():
-    # That's it! One line, reads like English:
+    # One line that reads like English:
     # "Get users where active is true, order by created_at descending, limit to 10"
     return await User.where(active=True).order_by('-created_at').limit(10).all()
 
-    # No session management needed!
-    # No confusing scalars() or first()
-    # No dependency injection boilerplate
-    # Just clean, readable code
+    # Features:
+    # • Automatic session management
+    # • Type-safe query building
+    # • No boilerplate code
+    # • Clean, readable syntax
 ```
 
 ## Core Concepts

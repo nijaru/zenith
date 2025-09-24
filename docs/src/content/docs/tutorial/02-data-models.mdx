@@ -9,7 +9,7 @@ import { Aside, Code } from '@astrojs/starlight/components';
 
 # Tutorial Part 2: Data Models and Database
 
-In Part 1, we stored tasks in memory - not very useful for a real API! Now we'll add a proper database and see how ZenithModel eliminates the complexity of traditional ORM setup.
+In Part 1, we stored tasks in memory - not very useful for a real API! Now we'll add a proper database and explore how ZenithModel streamlines traditional ORM setup.
 
 ## What You'll Learn
 
@@ -23,7 +23,7 @@ By the end of this part, you'll understand:
 
 ## Database Setup
 
-### The Problem (Traditional SQLAlchemy)
+### Standard SQLAlchemy Approach
 ```python
 # Traditional SQLAlchemy approach
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey
@@ -84,7 +84,7 @@ async def create_user(db: AsyncSession, email: str, password: str):
 # This is just the beginning - you need hundreds more lines!
 ```
 
-### The Solution (ZenithModel)
+### Using ZenithModel
 ```python
 # With ZenithModel - same functionality, cleaner and more concise
 from zenith import Zenith

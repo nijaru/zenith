@@ -82,7 +82,7 @@ class UserService(Service):
 # @app.post("/users")
 # async def create_user(
 #     user_data: UserCreate,
-#     users: UserService = Inject()  # Service injected automatically!
+#     users: UserService = Inject(UserService)  # Service injected automatically!
 # ):
 #     user = await users.create_user(user_data.email, user_data.name)
 #     return user  # Route decides the HTTP response
@@ -109,11 +109,11 @@ class UserService(Service):
     def __init__(
         self,
         # Inject() automatically provides service instances
-        email_service: EmailService = Inject(),
-        storage: StorageService = Inject()
+        email_service: EmailService = Inject(EmailService),
+        storage: StorageService = Inject(StorageService)
         # Add more as needed:
-        # payments: PaymentService = Inject(),
-        # analytics: AnalyticsService = Inject()
+        # payments: PaymentService = Inject(PaymentService),
+        # analytics: AnalyticsService = Inject(AnalyticsService)
     ):
         """Initialize with injected dependencies.
 
@@ -288,7 +288,7 @@ router = Router()
 @router.post("/users")
 async def create_user(
     user_data: UserCreate,  # Pydantic model from request body
-    users: UserService = Inject()  # ✨ Magic dependency injection!
+    users: UserService = Inject(UserService)  # ✨ Magic dependency injection!
 ) -> User:
     """Create a new user.
 
@@ -314,7 +314,7 @@ async def create_user(
 @router.get("/users/{user_id}")
 async def get_user(
     user_id: int,  # From URL path
-    users: UserService = Inject()  # Injected service
+    users: UserService = Inject(UserService)  # Injected service
 ) -> User:
     """Get user by ID.
 
@@ -368,9 +368,9 @@ async def create_order(
 
     # Inject multiple services and dependencies
     current_user: User = Inject(get_current_user),  # Auth dependency
-    orders: OrderService = Inject(),                # Order logic
-    inventory: InventoryService = Inject(),         # Stock management
-    payments: PaymentService = Inject()            # Payment processing
+    orders: OrderService = Inject(OrderService),                # Order logic
+    inventory: InventoryService = Inject(InventoryService),         # Stock management
+    payments: PaymentService = Inject(PaymentService)            # Payment processing
 ) -> Order:
     """Create an order - orchestrating multiple services.
 
@@ -456,9 +456,9 @@ async def create_order(
 class OrderService(Service):
     def __init__(
         self,
-        users: UserService = Inject(),
-        products: ProductService = Inject(),
-        notifications: NotificationService = Inject()
+        users: UserService = Inject(UserService),
+        products: ProductService = Inject(ProductService),
+        notifications: NotificationService = Inject(NotificationService)
     ):
         super().__init__()
         self.users = users

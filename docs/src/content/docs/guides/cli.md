@@ -271,13 +271,13 @@ If `zen` command is not available:
 
 ```bash
 # Check installation
-pip show zenith-web
+pip show zenithweb
 
 # Alternative command
 python -m zenith.cli --version
 
 # Reinstall if needed
-pip install --force-reinstall zenith-web
+pip install --force-reinstall zenithweb
 ```
 
 ### App Discovery Issues
