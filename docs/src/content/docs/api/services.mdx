@@ -9,36 +9,86 @@ import { Aside } from '@astrojs/starlight/components';
 
 The Service system is Zenith's approach to organizing business logic separately from web concerns. Services provide dependency injection, database access, and service composition.
 
-### Basic Service
+### Basic Service (Your Business Logic Home)
 
 ```python
 from zenith import Service, Inject
 from zenith.db import Session
 from sqlmodel import select
+from typing import Optional
+
+# WHY SERVICES?
+# Problem: Putting business logic in routes makes them huge and untestable
+# Solution: Services organize business logic in reusable, testable classes
 
 class UserService(Service):
-    """User-related business logic."""
-    
+    """All user-related business logic in one place.
+
+    Services provide:
+    - Database access (self.db)
+    - Current user info (self.current_user)
+    - Request context (self.request)
+    - Caching (self.cache)
+    - Logging (self.logger)
+    """
+
     def __init__(self):
-        super().__init__()
-        # Database session available as self.db
-    
+        super().__init__()  # Sets up all the magic properties
+        # That's it! Database session is automatically available as self.db
+        # No need to inject database or manage connections
+
     async def create_user(self, email: str, name: str) -> User:
-        """Create a new user."""
+        """Create a new user - business logic, not HTTP logic.
+
+        This method:
+        1. Creates user object
+        2. Saves to database
+        3. Returns fresh user with ID
+
+        Notice: No HTTP status codes, no request/response objects!
+        """
+
+        # Step 1: Create the user object (in memory)
         user = User(email=email, name=name)
-        self.db.add(user)
+
+        # Step 2: Add to database session (staged for insert)
+        self.db.add(user)  # self.db is automatically injected!
+
+        # Step 3: Commit the transaction (actually saves)
         await self.db.commit()
+
+        # Step 4: Refresh to get generated fields (ID, timestamps)
         await self.db.refresh(user)
-        return user
-    
+
+        return user  # Now has ID from database
+
     async def get_user_by_email(self, email: str) -> Optional[User]:
-        """Find user by email address."""
+        """Find user by email address.
+
+        Returns None if not found (not HTTP 404!).
+        Let the route decide what HTTP response to send.
+        """
+
+        # Build SQL query using SQLModel
         statement = select(User).where(User.email == email)
+
+        # Execute query using injected database session
         result = await self.db.exec(statement)
+
+        # Get first result or None
         return result.first()
+
+# HOW TO USE IN ROUTES:
+# @app.post("/users")
+# async def create_user(
+#     user_data: UserCreate,
+#     users: UserService = Inject()  # Service injected automatically!
+# ):
+#     user = await users.create_user(user_data.email, user_data.name)
+#     return user  # Route decides the HTTP response
 ```
 
-### Service with Dependency Injection
+### Service with Dependency Injection (Composing Services)
 
 ```python
 from zenith import Service, Inject
@@ -46,34 +96,96 @@ from app.services.email import EmailService
 from app.services.storage import StorageService
 
 class UserService(Service):
-    """User service with service dependencies."""
-    
+    """User service that depends on other services.
+
+    Real-world services often need:
+    - Email sending
+    - File storage
+    - Payment processing
+    - Notification systems
+    - Analytics tracking
+    """
+
     def __init__(
         self,
+        # Inject() automatically provides service instances
         email_service: EmailService = Inject(),
         storage: StorageService = Inject()
+        # Add more as needed:
+        # payments: PaymentService = Inject(),
+        # analytics: AnalyticsService = Inject()
     ):
-        super().__init__()
+        """Initialize with injected dependencies.
+
+        Zenith creates these services for you!
+        No need to manually instantiate or manage them.
+        """
+
+        super().__init__()  # Important: Sets up Service base features
+
+        # Store injected services for later use
         self.email_service = email_service
         self.storage = storage
-    
+
     async def register_user(self, user_data: UserCreate) -> User:
-        """Register user with email verification."""
-        # Check if email exists
+        """Complete user registration flow.
+
+        This method orchestrates multiple services:
+        1. Database (inherited from Service)
+        2. Email service (injected)
+        3. Storage service (injected)
+        """
+
+        # Step 1: Check if email already exists (business rule)
         existing = await self.get_user_by_email(user_data.email)
         if existing:
+            # Raise domain exception (not HTTP exception!)
             raise ValueError("Email already registered")
-        
-        # Create user
-        user = User(**user_data.model_dump())
-        self.db.add(user)
-        await self.db.commit()
-        await self.db.refresh(user)
-        
-        # Send welcome email
-        await self.email_service.send_welcome_email(user)
-        
-        return user
+            # The route will convert this to HTTP 400
+
+        # Step 2: Create user in database
+        user = User(**user_data.model_dump())  # Convert Pydantic to SQLModel
+        self.db.add(user)  # Stage for insert
+        await self.db.commit()  # Save to database
+        await self.db.refresh(user)  # Get generated ID
+
+        # Step 3: Send welcome email (using injected service)
+        try:
+            await self.email_service.send_welcome_email(user)
+        except Exception as e:
+            # Log but don't fail registration
+            self.logger.error(f"Failed to send welcome email: {e}")
+            # Could queue for retry instead
+
+        # Step 4: Create default avatar (using injected service)
+        if self.storage:
+            await self.storage.create_default_avatar(user.id)
+
+        return user  # Registration complete!
+
+    async def get_user_by_email(self, email: str) -> Optional[User]:
+        """Helper method used by register_user."""
+        statement = select(User).where(User.email == email)
+        result = await self.db.exec(statement)
+        return result.first()
+
+# TESTING IS EASY WITH DI:
+# async def test_register_user():
+#     # Mock the dependencies
+#     mock_email = Mock()
+#     mock_storage = Mock()
+#
+#     # Create service with mocks
+#     service = UserService(
+#         email_service=mock_email,
+#         storage=mock_storage
+#     )
+#
+#     # Test the business logic
+#     user = await service.register_user(test_data)
+#
+#     # Verify mocks were called
+#     mock_email.send_welcome_email.assert_called_once()
 ```
 
 ## Service Properties
@@ -164,66 +276,176 @@ class ProductService(Service):
 
 ## Using Services in Routes
 
-### Basic Usage
+### Basic Usage (Services in Your Routes)
 
 ```python
-from zenith import Router, Inject
+from zenith import Router, Inject, HTTPException
 from app.services.users import UserService
+from app.models import UserCreate, User
 
 router = Router()
 
 @router.post("/users")
 async def create_user(
-    user_data: UserCreate,
-    users: UserService = Inject()  # Automatic injection
+    user_data: UserCreate,  # Pydantic model from request body
+    users: UserService = Inject()  # ✨ Magic dependency injection!
 ) -> User:
+    """Create a new user.
+
+    WHAT HAPPENS HERE:
+    1. Zenith creates UserService instance
+    2. Injects database session into service
+    3. Passes service to this function
+    4. You use service for business logic
+    5. Zenith cleans up after request
+
+    YOU DON'T WORRY ABOUT:
+    - Creating service instances
+    - Managing database connections
+    - Cleaning up resources
+    - Transaction management
+    """
+
+    # Just call the service method!
     return await users.create_user(user_data)
+    # Service handles all business logic
+    # Route just connects HTTP to business logic
 
 @router.get("/users/{user_id}")
 async def get_user(
-    user_id: int,
-    users: UserService = Inject()
+    user_id: int,  # From URL path
+    users: UserService = Inject()  # Injected service
 ) -> User:
+    """Get user by ID.
+
+    SEPARATION OF CONCERNS:
+    - Service: Finds user (business logic)
+    - Route: Returns 404 if not found (HTTP logic)
+    """
+
+    # Service returns None if not found (business logic)
     user = await users.get_user(user_id)
+
+    # Route decides HTTP response (web logic)
     if not user:
-        raise HTTPException(404, "User not found")
-    return user
+        raise HTTPException(
+            status_code=404,
+            detail=f"User with ID {user_id} not found"
+        )
+
+    return user  # Zenith converts to JSON automatically
+
+# COMPARE TO DOING IT WITHOUT SERVICES:
+# @router.post("/users")
+# async def create_user_bad(user_data: UserCreate):
+#     # All this logic in the route!
+#     async with get_session() as db:
+#         existing = db.query(User).filter_by(email=user_data.email).first()
+#         if existing:
+#             raise HTTPException(400, "Email taken")
+#
+#         user = User(**user_data.model_dump())
+#         db.add(user)
+#         await db.commit()
+#
+#         send_email(user.email, "Welcome!")  # What if this fails?
+#
+#         return user
+#
+#     # Problems:
+#     # - Can't test without HTTP
+#     # - Can't reuse in CLI/background tasks
+#     # - Route is doing too much
+#     # - Hard to maintain
 ```
 
-### Multiple Services
+### Multiple Services (Complex Business Operations)
 
 ```python
 @router.post("/orders")
 async def create_order(
-    order_data: OrderCreate,
-    current_user: User = Inject(get_current_user),
-    orders: OrderService = Inject(),
-    inventory: InventoryService = Inject(),
-    payments: PaymentService = Inject()
+    order_data: OrderCreate,  # From request body
+
+    # Inject multiple services and dependencies
+    current_user: User = Inject(get_current_user),  # Auth dependency
+    orders: OrderService = Inject(),                # Order logic
+    inventory: InventoryService = Inject(),         # Stock management
+    payments: PaymentService = Inject()            # Payment processing
 ) -> Order:
-    # Check inventory
+    """Create an order - orchestrating multiple services.
+
+    This endpoint shows real-world complexity:
+    - Multiple services working together
+    - Transaction coordination
+    - Error handling across services
+    - Business rule validation
+
+    Each service handles its own domain!
+    """
+
+    # Step 1: CHECK INVENTORY (before taking payment!)
     available = await inventory.check_availability(order_data.items)
     if not available:
-        raise HTTPException(400, "Items not available")
-    
-    # Process payment
-    payment = await payments.process_payment(
-        current_user.id,
-        order_data.payment_method,
-        order_data.total
-    )
-    
-    # Create order
+        # Return user-friendly error
+        unavailable_items = await inventory.get_unavailable_items(order_data.items)
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Some items are not available",
+                "unavailable": unavailable_items
+            }
+        )
+
+    # Step 2: PROCESS PAYMENT (might fail!)
+    try:
+        payment = await payments.process_payment(
+            user_id=current_user.id,
+            payment_method=order_data.payment_method,
+            amount=order_data.total
+        )
+    except PaymentFailedError as e:
+        # Payment failed - don't create order!
+        raise HTTPException(
+            status_code=402,  # Payment Required
+            detail={
+                "error": "Payment failed",
+                "reason": str(e),
+                "suggestion": "Please check your payment method"
+            }
+        )
+
+    # Step 3: CREATE ORDER (payment succeeded)
     order = await orders.create_order(
         current_user,
         order_data,
-        payment_id=payment.id
+        payment_id=payment.id  # Link to payment
     )
-    
-    # Update inventory
-    await inventory.reserve_items(order_data.items)
-    
+
+    # Step 4: RESERVE INVENTORY (mark items as sold)
+    try:
+        await inventory.reserve_items(
+            order_data.items,
+            order_id=order.id
+        )
+    except Exception as e:
+        # Inventory reservation failed - need to refund!
+        await payments.refund(payment.id)
+        await orders.cancel_order(order.id)
+
+        raise HTTPException(
+            status_code=500,
+            detail="Order processing failed. Payment will be refunded."
+        )
+
+    # Success! All services coordinated successfully
     return order
+
+# WHY SERVICES MAKE THIS BETTER:
+# 1. Each service is independently testable
+# 2. Services can be mocked for testing
+# 3. Business logic is reusable (CLI, background jobs)
+# 4. Clear separation of concerns
+# 5. Easy to add new services (shipping, tax, etc.)
 ```
 
 ## Service Composition

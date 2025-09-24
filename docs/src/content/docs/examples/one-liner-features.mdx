@@ -1,72 +1,280 @@
 ---
 title: Built-in Features
-description: Add authentication, admin panel, and API documentation
+description: Add authentication, admin panel, and API documentation with simple methods
 ---
 
 import { Aside } from '@astrojs/starlight/components';
 
 ## Overview
 
-Zenith includes built-in methods for common features like authentication, admin panels, and API documentation.
+Zenith provides convenient methods to quickly add common features to your application. These methods give you working implementations that you can customize as needed.
 
-## Authentication in One Line
+## Authentication
+
+Add JWT authentication to your application:
 
 ```python
 from zenith import Zenith
 
 app = Zenith()
-app.add_auth()  # Add JWT authentication
 
-# This adds:
-# - POST /auth/login endpoint
-# - JWT token generation
-# - User authentication middleware
-# - Token refresh capability
+# Add authentication system
+app.add_auth()
+
+# This creates:
+# - POST /auth/login endpoint for token generation
+# - JWT token validation infrastructure
+# - Authentication middleware for protected routes
+# - Configurable token expiration
 ```
 
-## Admin Dashboard in One Line
+### Using Authentication
 
 ```python
-app.add_admin()  # Add admin dashboard
+from zenith.core.routing.dependencies import Auth
 
-# This adds:
-# - GET /admin - Admin dashboard
-# - GET /admin/health - System health check
-# - GET /admin/stats - Application statistics
-# - GET /admin/logs - Recent logs viewer
+@app.get("/protected")
+async def protected_route(user=Auth):
+    """This route requires authentication."""
+    return {"message": "You are authenticated", "user_id": user.id}
+
+@app.get("/public")
+async def public_route():
+    """This route is publicly accessible."""
+    return {"message": "Anyone can access this"}
 ```
 
-## API Documentation in One Line
+### Login Flow
 
 ```python
-app.add_api("My API", "1.0.0", "API description")
+# Your users can authenticate:
+# POST /auth/login
+# Body: {"username": "alice", "password": "secret123"}
+# Response: {"access_token": "eyJ...", "token_type": "bearer"}
 
-# This adds:
+# Then use the token:
+# GET /protected
+# Headers: {"Authorization": "Bearer eyJ..."}
+```
+
+<Aside type="note">
+  The basic authentication provides a foundation. You'll need to implement user storage, password hashing, and customize the login logic for production use.
+</Aside>
+
+## Admin Panel
+
+Add an admin dashboard to monitor your application:
+
+```python
+# Add admin panel with default path
+app.add_admin()  # Available at /admin
+
+# Or specify a custom path
+app.add_admin("/dashboard")  # Available at /dashboard
+```
+
+### Admin Features
+
+The admin panel provides:
+- **System health monitoring** at `/admin/health`
+- **Application statistics** at `/admin/stats`
+- **Recent logs viewer** at `/admin/logs`
+- **Basic metrics dashboard** at `/admin`
+
+```python
+# Complete example with admin panel
+app = Zenith()
+app.add_admin()
+
+# The admin endpoints are now available:
+# GET /admin - Dashboard overview
+# GET /admin/health - System health status
+# GET /admin/stats - Application statistics
+# GET /admin/logs - Recent application logs
+```
+
+<Aside type="tip">
+  For production, add authentication to admin routes and integrate with your monitoring tools for comprehensive observability.
+</Aside>
+
+## API Documentation
+
+Generate interactive API documentation automatically:
+
+```python
+# Add OpenAPI documentation
+app.add_api("My API", "1.0.0", "API for my application")
+
+# This creates:
 # - GET /docs - Interactive Swagger UI
-# - GET /redoc - Alternative ReDoc UI
+# - GET /redoc - Alternative ReDoc interface
 # - GET /openapi.json - OpenAPI schema
 ```
 
-## Chain Everything Together
+### Documentation Features
+
+Your API documentation includes:
+- **Interactive testing** - Try endpoints directly from the browser
+- **Request/response schemas** - Automatic from your Pydantic models
+- **Authentication testing** - Test protected endpoints
+- **Code examples** - Multiple programming languages
+- **Export capability** - Download OpenAPI spec for Postman/Insomnia
+
+### Automatic Documentation
+
+```python
+from pydantic import BaseModel
+
+class UserCreate(BaseModel):
+    """Schema for creating a user."""
+    name: str
+    email: str
+    age: int
+
+@app.post("/users", response_model=User)
+async def create_user(user: UserCreate):
+    """
+    Create a new user.
+
+    This docstring becomes the endpoint description in the docs!
+    The UserCreate model is automatically documented with examples.
+    """
+    return await User.create(**user.model_dump())
+
+# This endpoint appears in /docs with:
+# - Full schema documentation
+# - Try-it-out functionality
+# - Example requests and responses
+```
+
+## Combining Features
+
+Chain methods together for a complete setup:
 
 ```python
 from zenith import Zenith
 
-# Chain methods together
+# Configure everything at once
 app = (Zenith()
-       .add_auth()
-       .add_admin("/dashboard")  # Optional custom path
-       .add_api("My API", "1.0.0"))
+       .add_auth()                          # Authentication system
+       .add_admin("/dashboard")             # Admin panel
+       .add_api("My API", "1.0.0"))        # API documentation
+
+# Your application now has:
+# - JWT authentication at /auth/login
+# - Protected route support with Auth dependency
+# - Admin dashboard at /dashboard
+# - Interactive API docs at /docs and /redoc
+
+# Add your business logic
+@app.get("/users")
+async def list_users(user=Auth):
+    """List all users (requires authentication)."""
+    return await User.all()
+
+@app.get("/status")
+async def status():
+    """Public status endpoint."""
+    return {"status": "operational"}
+```
+
+## Customization
+
+All features can be customized:
+
+```python
+# Custom authentication settings
+app.add_auth(
+    secret_key="your-secret-key",
+    algorithm="RS256",
+    expire_minutes=60
+)
+
+# Custom admin configuration
+app.add_admin(
+    path="/admin",
+    title="MyApp Admin",
+    enable_metrics=True
+)
+
+# Custom API documentation
+app.add_api(
+    title="My API",
+    version="2.0.0",
+    description="Production API",
+    terms_of_service="https://example.com/terms",
+    contact={"email": "api@example.com"}
+)
 ```
 
 ## Complete Example
 
-Run the example: `python examples/04-built-in-features.py`
+Here's a working application using these features:
 
-<Aside type="tip">
-  **Note**: These methods provide sensible defaults that can be customized as needed.
-</Aside>
+```python
+# examples/04-one-liner-features.py
+from zenith import Zenith
+from zenith.auth import Auth
+from zenith.db import ZenithModel
+from sqlmodel import Field
+from datetime import datetime
+from typing import Optional
 
-## Manual Configuration
+# Create app with features
+app = (Zenith()
+       .add_auth()
+       .add_admin()
+       .add_api("Feature Demo", "1.0.0"))
 
-These built-in methods replace manual setup of JWT tokens, admin routes, and OpenAPI configuration. Each method configures multiple endpoints and middleware automatically.
+# Define a model
+class Task(ZenithModel, table=True):
+    id: Optional[int] = Field(primary_key=True)
+    title: str
+    completed: bool = Field(default=False)
+    user_id: int
+    created_at: datetime = Field(default_factory=datetime.now)
+
+@app.get("/")
+async def home():
+    """API information endpoint."""
+    return {
+        "name": "Zenith Feature Demo",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "admin": "/admin",
+        "login": "/auth/login"
+    }
+
+@app.get("/tasks")
+async def list_tasks(user=Auth):
+    """List tasks for authenticated user."""
+    tasks = await Task.where(user_id=user.id).all()
+    return {"tasks": [t.to_dict() for t in tasks]}
+
+@app.post("/tasks")
+async def create_task(title: str, user=Auth):
+    """Create a new task."""
+    task = await Task.create(title=title, user_id=user.id)
+    return {"task": task.to_dict()}
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Feature Demo Running")
+    print("📝 API Docs: http://localhost:8004/docs")
+    print("🔧 Admin Panel: http://localhost:8004/admin")
+    print("🔐 Login: POST http://localhost:8004/auth/login")
+    uvicorn.run(app, host="0.0.0.0", port=8004)
+```
+
+Run the example:
+
+```bash
+python examples/04-one-liner-features.py
+```
+
+Then visit:
+- `http://localhost:8004/docs` - Interactive API documentation
+- `http://localhost:8004/admin` - Admin dashboard
+- `http://localhost:8004/auth/login` - Authentication endpoint
+
+These convenience methods help you get started quickly while maintaining flexibility to customize and extend as your application grows.

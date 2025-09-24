@@ -13,13 +13,20 @@ Zenith provides comprehensive testing utilities that make it easy to test your A
 
 The `TestClient` provides an async HTTP client for testing your Zenith applications.
 
-### Basic Usage
+### Basic Usage (Test Your API Like a User Would)
 
 ```python
 from zenith.testing import TestClient
 from zenith import Zenith
 import pytest
 
+# WHY TEST WITH TestClient?
+# - Tests the ENTIRE request/response cycle
+# - Catches middleware issues
+# - Validates serialization/deserialization
+# - Tests like a real HTTP client would
+
+# Your app (usually imported from main.py)
 app = Zenith()
 
 @app.get("/")
@@ -30,18 +37,41 @@ async def root():
 async def create_item(item: dict):
     return {"created": item}
 
-@pytest.mark.asyncio
+# TEST FUNCTION - async because we're testing async endpoints
+@pytest.mark.asyncio  # Tells pytest this is async
 async def test_api_endpoints():
+    """Test our API endpoints.
+
+    TestClient simulates HTTP requests WITHOUT a real server.
+    It's fast and perfect for testing!
+    """
+
+    # Create test client - automatically handles setup/teardown
     async with TestClient(app) as client:
-        # Test GET request
-        response = await client.get("/")
-        assert response.status_code == 200
-        assert response.json() == {"message": "Hello World"}
-        
-        # Test POST request
-        response = await client.post("/items", json={"name": "test"})
-        assert response.status_code == 200
-        assert response.json() == {"created": {"name": "test"}}
+        # Think of 'client' like Postman or curl, but in Python!
+
+        # TEST 1: GET request to root endpoint
+        response = await client.get("/")  # Makes fake HTTP GET request
+
+        # Verify the response
+        assert response.status_code == 200  # Should succeed
+        assert response.json() == {"message": "Hello World"}  # Check body
+
+        # TEST 2: POST request with JSON body
+        response = await client.post(
+            "/items",
+            json={"name": "test"}  # Automatically serialized to JSON
+        )
+
+        assert response.status_code == 200  # Should succeed
+        assert response.json() == {"created": {"name": "test"}}  # Echo back
+
+    # When context exits, TestClient cleans up automatically
+    # No servers left running, no ports occupied!
+
+# RUN WITH: pytest test_api.py
+# Or: pytest -v for verbose output
+# Or: pytest -s to see print statements
 ```
 
 ### HTTP Methods
@@ -161,30 +191,81 @@ async def test_response_assertions():
 
 ## Testing with Authentication
 
-### MockAuth Context Manager
+### MockAuth Context Manager (Skip Real Authentication)
 
 ```python
 from zenith.testing import TestClient, MockAuth
-from zenith.auth import get_current_user
+from zenith.auth import get_current_user, Inject
+
+# PROBLEM: Testing authenticated endpoints is hard!
+# - Need real JWT tokens
+# - Need user in database
+# - Need to handle expiration
+# SOLUTION: MockAuth bypasses all that!
 
 @app.get("/profile")
-async def get_profile(user = Inject(get_current_user)):
+async def get_profile(
+    user = Inject(get_current_user)  # Requires authentication
+):
+    """Protected endpoint - needs valid user."""
     return {"user_id": user.id, "email": user.email}
 
 @pytest.mark.asyncio
 async def test_authenticated_endpoint():
+    """Test endpoint that requires authentication."""
+
     async with TestClient(app) as client:
-        # Test without authentication (should fail)
+
+        # TEST 1: Without authentication - should fail!
         response = await client.get("/profile")
-        assert response.status_code == 401
-        
-        # Test with mock authentication
+        assert response.status_code == 401  # 401 Unauthorized
+        # This proves our auth protection works!
+
+        # TEST 2: With mock authentication - should work!
         with MockAuth(user={"id": 123, "email": "test@example.com"}):
+            # Inside this block, ALL requests are authenticated
+            # as the mock user we specified
+
             response = await client.get("/profile")
-            assert response.status_code == 200
+            # No need for Authorization header!
+            # MockAuth injects the user automatically
+
+            assert response.status_code == 200  # Success!
+
+            # Verify we got the mocked user data
             data = response.json()
             assert data["user_id"] == 123
             assert data["email"] == "test@example.com"
+
+        # Outside the block, auth is removed again
+        response = await client.get("/profile")
+        assert response.status_code == 401  # Back to unauthenticated
+
+# WHY MockAuth IS AWESOME:
+# 1. No JWT token generation needed
+# 2. No database users needed
+# 3. Test any user scenario instantly
+# 4. Perfect for testing authorization logic
+
+# Example: Testing different user roles
+@pytest.mark.asyncio
+async def test_role_scenarios():
+    async with TestClient(app) as client:
+
+        # Test as regular user
+        with MockAuth(user={"id": 1, "role": "user"}):
+            response = await client.get("/admin")
+            assert response.status_code == 403  # Forbidden
+
+        # Test as admin
+        with MockAuth(user={"id": 2, "role": "admin"}):
+            response = await client.get("/admin")
+            assert response.status_code == 200  # Allowed!
+
+        # Test as premium user
+        with MockAuth(user={"id": 3, "subscription": "premium"}):
+            response = await client.get("/premium-content")
+            assert response.status_code == 200  # Has access
 ```
 
 ### JWT Token Testing
@@ -230,36 +311,101 @@ async def test_role_based_access():
 
 Test business logic independently of HTTP endpoints.
 
-### TestService
+### TestService (Test Business Logic Without HTTP)
 
 ```python
 from zenith.testing import TestService
 from app.services.users import UserService
 from app.models.user import UserCreate
 
+# WHY TestService?
+# - Tests business logic DIRECTLY (no HTTP layer)
+# - Faster than TestClient (no request/response cycle)
+# - Perfect for unit testing services
+# - Automatic database rollback after each test
+
 @pytest.mark.asyncio
 async def test_user_service():
+    """Test UserService business logic.
+
+    This tests the SERVICE, not the HTTP endpoint.
+    Much faster and more focused!
+    """
+
+    # Create isolated test environment for the service
     async with TestService(UserService) as users:
-        # Test user creation
+        # 'users' is a real UserService instance with:
+        # - Test database (in-memory)
+        # - Automatic cleanup after test
+        # - All dependencies injected
+
+        # TEST 1: User creation
         user_data = UserCreate(
             email="test@example.com",
             name="Test User",
-            password="securepass123"
+            password="securepass123"  # Will be hashed
         )
-        
+
+        # Call service method directly (no HTTP!)
         user = await users.create_user(user_data)
-        
+
+        # Verify the user was created correctly
         assert user.email == "test@example.com"
         assert user.name == "Test User"
-        assert user.id is not None
-        
-        # Test user retrieval
+        assert user.id is not None  # Database generated ID
+        # Password should be hashed, not plain text!
+        assert not hasattr(user, 'password')  # Should not expose
+
+        # TEST 2: User retrieval
         found_user = await users.get_user_by_email("test@example.com")
-        assert found_user is not None
-        assert found_user.id == user.id
+
+        assert found_user is not None  # Should find the user
+        assert found_user.id == user.id  # Same user we created
+
+        # TEST 3: Duplicate email (business rule)
+        duplicate_data = UserCreate(
+            email="test@example.com",  # Same email!
+            name="Another User",
+            password="different123"
+        )
+
+        # Should raise business exception
+        with pytest.raises(ValueError, match="already exists"):
+            await users.create_user(duplicate_data)
+
+    # When context exits, test database is wiped clean
+    # Next test starts fresh!
+
+# COMPARE TO TESTING VIA HTTP:
+@pytest.mark.asyncio
+async def test_user_via_http():
+    """Same test but through HTTP - slower and more complex."""
+
+    async with TestClient(app) as client:
+        response = await client.post(
+            "/users",
+            json={
+                "email": "test@example.com",
+                "name": "Test User",
+                "password": "securepass123"
+            }
+        )
+        assert response.status_code == 201
+        # More setup, slower, tests more than just service logic
+
+# USE TestService WHEN:
+# - Testing business logic
+# - Testing service methods
+# - Need fast unit tests
+#
+# USE TestClient WHEN:
+# - Testing full request/response cycle
+# - Testing middleware
+# - Testing authentication/authorization
+# - Integration testing
 ```
 
-### Service with Dependencies
+### Service with Dependencies (Mock External Services)
 
 ```python
 from unittest.mock import Mock, AsyncMock
@@ -267,36 +413,109 @@ from app.services.orders import OrderService
 from app.services.email import EmailService
 from app.services.payment import PaymentService
 
+# PROBLEM: OrderService depends on email and payment services
+# - Don't want to send real emails in tests
+# - Don't want to charge real credit cards
+# - Don't want tests to depend on external services
+# SOLUTION: Mock the dependencies!
+
 @pytest.mark.asyncio
 async def test_order_service_with_mocks():
-    # Create mock services
-    mock_email = Mock(spec=EmailService)
-    mock_email.send_order_confirmation = AsyncMock()
-    
+    """Test OrderService with mocked dependencies."""
+
+    # STEP 1: Create mock services
+
+    # Mock email service
+    mock_email = Mock(spec=EmailService)  # spec ensures same interface
+    mock_email.send_order_confirmation = AsyncMock()  # Async method
+    # This mock will pretend to send emails but do nothing
+
+    # Mock payment service
     mock_payment = Mock(spec=PaymentService)
-    mock_payment.process_payment = AsyncMock(return_value={
-        "id": "pay_123",
-        "status": "completed"
-    })
-    
-    # Test with mocked dependencies
-    async with TestService(OrderService, {
-        'email_service': mock_email,
-        'payment_service': mock_payment
-    }) as orders:
+    mock_payment.process_payment = AsyncMock(
+        return_value={  # Define what the mock returns
+            "id": "pay_123",
+            "status": "completed"
+        }
+    )
+    # This mock will pretend to process payments successfully
+
+    # STEP 2: Inject mocks into service
+    async with TestService(
+        OrderService,
+        dependencies={  # Override real dependencies with mocks
+            'email_service': mock_email,
+            'payment_service': mock_payment
+        }
+    ) as orders:
+        # 'orders' now uses our mocks instead of real services!
+
+        # STEP 3: Test the service
         order_data = OrderCreate(
             items=[{"product_id": 1, "quantity": 2}],
             total=29.99
         )
-        
+
+        # Create order (uses mocked payment and email)
         order = await orders.create_order(order_data, user_id=123)
-        
+
+        # STEP 4: Verify business logic worked
         assert order.total == 29.99
         assert order.user_id == 123
-        
-        # Verify mocks were called
+        assert order.status == "completed"  # From mock payment
+
+        # STEP 5: Verify mocks were called correctly
+        # This ensures OrderService is using dependencies properly
+
+        # Payment should be processed once
         mock_payment.process_payment.assert_called_once()
+        # Check the arguments passed to payment
+        call_args = mock_payment.process_payment.call_args
+        assert call_args[1]['amount'] == 29.99  # Correct amount
+
+        # Email should be sent once
         mock_email.send_order_confirmation.assert_called_once()
+        # Check email was sent for this order
+        email_call = mock_email.send_order_confirmation.call_args
+        assert email_call[0][0].id == order.id  # Correct order
+
+# TEST ERROR SCENARIOS WITH MOCKS:
+@pytest.mark.asyncio
+async def test_payment_failure():
+    """Test how OrderService handles payment failures."""
+
+    # Mock that simulates payment failure
+    mock_payment = Mock(spec=PaymentService)
+    mock_payment.process_payment = AsyncMock(
+        side_effect=PaymentFailedError("Card declined")  # Raises error!
+    )
+
+    mock_email = Mock(spec=EmailService)
+    mock_email.send_order_confirmation = AsyncMock()
+
+    async with TestService(OrderService, {
+        'payment_service': mock_payment,
+        'email_service': mock_email
+    }) as orders:
+
+        order_data = OrderCreate(
+            items=[{"product_id": 1, "quantity": 1}],
+            total=19.99
+        )
+
+        # Should handle payment failure gracefully
+        with pytest.raises(PaymentFailedError):
+            await orders.create_order(order_data, user_id=123)
+
+        # Email should NOT be sent if payment failed
+        mock_email.send_order_confirmation.assert_not_called()
+
+# BENEFITS OF MOCKING:
+# 1. Tests run fast (no network calls)
+# 2. Tests are reliable (no external dependencies)
+# 3. Can test error scenarios easily
+# 4. No side effects (no real emails/charges)
+# 5. Focus on YOUR code, not external services
 ```
 
 ### Database Testing

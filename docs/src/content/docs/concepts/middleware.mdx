@@ -9,62 +9,175 @@ import { Aside } from '@astrojs/starlight/components';
 
 Middleware are functions that process requests before they reach your route handlers and responses before they're sent to clients. Zenith provides a comprehensive set of production-ready middleware.
 
-## Built-in Middleware
+## Built-in Middleware (Production-Ready Security)
 
-### Security Headers
-
-Protect your application with industry-standard security headers:
+### Security Headers (Your First Line of Defense)
 
 ```python
 from zenith import Zenith
-from zenith.middleware import SecurityHeadersMiddleware
+from zenith.middleware import SecurityHeadersMiddleware, SecurityConfig
 
+# Configure security headers to protect against common attacks
 app = Zenith(
     middleware=[
-        SecurityHeadersMiddleware({
-            "force_https": True,
-            "hsts_max_age": 31536000,  # 1 year
-            "content_type_nosniff": True,
-            "frame_deny": True,
-            "xss_protection": True,
-            "csp": "default-src 'self'"
-        })
+        SecurityHeadersMiddleware(SecurityConfig(
+            # FORCE HTTPS - Redirect all HTTP to HTTPS
+            force_https=True,
+            # Why: Prevents man-in-the-middle attacks
+            # Sets: Redirect 301 from http:// to https://
+
+            # HSTS - HTTP Strict Transport Security
+            hsts_max_age=31536000,  # 1 year in seconds
+            # Why: Tells browsers "NEVER use HTTP for this site"
+            # Sets: Strict-Transport-Security: max-age=31536000
+
+            # CONTENT TYPE SNIFFING PROTECTION
+            content_type_nosniff=True,
+            # Why: Prevents browsers from guessing content types
+            # Sets: X-Content-Type-Options: nosniff
+            # Blocks: <script> tags served as text/plain
+
+            # CLICKJACKING PROTECTION
+            frame_deny=True,
+            # Why: Prevents your site in hidden iframes
+            # Sets: X-Frame-Options: DENY
+            # Use "SAMEORIGIN" to allow your own iframes
+
+            # XSS PROTECTION (for older browsers)
+            xss_protection=True,
+            # Why: Enables browser XSS filters
+            # Sets: X-XSS-Protection: 1; mode=block
+
+            # CONTENT SECURITY POLICY (CSP)
+            csp="default-src 'self'"
+            # Why: Controls what resources can load
+            # Sets: Content-Security-Policy: default-src 'self'
+            # Means: Only load scripts/styles/images from same origin
+            # Advanced example:
+            # csp=(
+            #     "default-src 'self'; "
+            #     "script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; "
+            #     "style-src 'self' 'unsafe-inline' fonts.googleapis.com; "
+            #     "img-src 'self' data: https:; "
+            #     "font-src 'self' fonts.gstatic.com"
+            # )
+        ))
     ]
 )
+
+# These headers prevent:
+# XSS attacks (Cross-Site Scripting)
+# Clickjacking (hidden iframes)
+# MIME type confusion
+# Protocol downgrade attacks
+# Content injection
 ```
 
-### CORS (Cross-Origin Resource Sharing)
+### CORS (Let Your API Talk to Other Websites)
 
 ```python
-from zenith.middleware import CORSMiddleware
+from zenith.middleware import CORSMiddleware, CORSConfig
 
-app.add_middleware(CORSMiddleware, {
-    "allow_origins": ["https://example.com", "http://localhost:3000"],
-    "allow_methods": ["GET", "POST", "PUT", "DELETE"],
-    "allow_headers": ["*"],
-    "allow_credentials": True,
-    "max_age": 86400  # 24 hours
-})
+# CORS = Cross-Origin Resource Sharing
+# Problem: Browsers block requests between different domains
+# Solution: CORS headers tell browser "it's OK to share"
+
+app.add_middleware(CORSMiddleware, CORSConfig(
+    # ALLOWED ORIGINS - Who can call your API?
+    allow_origins=[
+        "https://example.com",      # Your production frontend
+        "http://localhost:3000"     # Local development
+    ],
+    # Use ["*"] to allow ALL origins (risky!)
+
+    # ALLOWED METHODS - What HTTP methods can they use?
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    # GET: Read data
+    # POST: Create data
+    # PUT/PATCH: Update data
+    # DELETE: Remove data
+
+    # ALLOWED HEADERS - What headers can they send?
+    allow_headers=["*"],  # Allow all headers
+    # Or be specific: ["Content-Type", "Authorization"]
+
+    # CREDENTIALS - Can they send cookies/auth?
+    allow_credentials=True,
+    # True: Browser sends cookies and auth headers
+    # False: No cookies (more secure if not needed)
+    # ⚠️ Can't use credentials=True with origins=["*"]
+
+    # PREFLIGHT CACHE - How long to cache OPTIONS response
+    max_age=86400  # 24 hours in seconds
+    # Browser remembers "this origin is OK" for 24 hours
+    # Reduces preflight OPTIONS requests
+))
+
+# How CORS works:
+# 1. Browser: "Can I call api.example.com from app.example.com?"
+# 2. Your API: "Yes, here are the CORS headers"
+# 3. Browser: "OK, making the actual request now"
 ```
 
-### Rate Limiting
-
-Prevent abuse with configurable rate limits:
+### Rate Limiting (Prevent Abuse & DDoS)
 
 ```python
-from zenith.middleware import RateLimitMiddleware
+from zenith.middleware import RateLimitMiddleware, RateLimitConfig
 
-app.add_middleware(RateLimitMiddleware, {
-    "default_limits": ["100/minute", "1000/hour"],
-    "key_func": lambda request: request.client.host,
-    "storage": "redis://localhost:6379",  # Or "memory" for in-memory
-    "headers_enabled": True  # Add X-RateLimit-* headers
-})
+# Rate limiting prevents:
+# - DDoS attacks
+# - API abuse
+# - Server overload
+# - Expensive operation spam
 
-# Per-endpoint limits
+app.add_middleware(RateLimitMiddleware, RateLimitConfig(
+    # DEFAULT LIMITS - Apply to all endpoints
+    default_limits=[
+        "100/minute",   # Max 100 requests per minute
+        "1000/hour"     # Max 1000 requests per hour
+    ],
+    # Format: "count/period"
+    # Periods: second, minute, hour, day
+
+    # KEY FUNCTION - How to identify users?
+    key_func=lambda request: request.client.host,
+    # Options:
+    # - request.client.host (IP address - default)
+    # - request.headers.get("X-API-Key") (API key)
+    # - request.user.id (authenticated user)
+
+    # STORAGE BACKEND - Where to track counts?
+    storage="redis://localhost:6379",  # Redis (distributed)
+    # OR
+    # storage="memory"  # In-memory (single server only)
+
+    # Redis pros: Works across multiple servers
+    # Memory pros: No dependencies, faster
+
+    # RESPONSE HEADERS - Tell clients their limits
+    headers_enabled=True
+    # Adds headers:
+    # X-RateLimit-Limit: 100
+    # X-RateLimit-Remaining: 45
+    # X-RateLimit-Reset: 1634567890
+))
+
+# PER-ENDPOINT LIMITS - Override for specific routes
 @app.get("/api/expensive", rate_limit="10/minute")
 async def expensive_operation():
-    return {"result": "processed"}
+    """This endpoint is expensive, limit to 10 calls/minute."""
+    result = await perform_heavy_computation()
+    return {"result": result}
+
+@app.post("/api/free", rate_limit="1000/minute")
+async def free_operation():
+    """This is cheap, allow more calls."""
+    return {"timestamp": datetime.utcnow()}
+
+# What happens when rate limit exceeded:
+# 1. Returns 429 Too Many Requests
+# 2. Body: {"error": "Rate limit exceeded"}
+# 3. Headers show when they can try again
 ```
 
 ### Authentication
@@ -140,32 +253,57 @@ app.add_middleware(CSRFMiddleware, {
 
 ## Custom Middleware
 
-### Basic Middleware
+### Basic Middleware (Measure Response Time)
 
 ```python
 from zenith import Request, Response
 from typing import Callable, Awaitable
+import time
 
 class TimingMiddleware:
-    """Add response time header."""
-    
+    """Add response time header to all responses.
+
+    Middleware structure:
+    1. __init__: Store the next middleware/app
+    2. __call__: Process request and response
+    """
+
     def __init__(self, app: Callable[[Request], Awaitable[Response]]):
-        self.app = app
-    
+        """Initialize with the next middleware in chain."""
+        self.app = app  # Next middleware or actual app
+
     async def __call__(self, request: Request) -> Response:
-        import time
+        """Process the request/response.
+
+        This method:
+        1. Runs BEFORE the request is handled
+        2. Calls the next middleware/handler
+        3. Runs AFTER the response is generated
+        """
+
+        # BEFORE REQUEST: Start timing
         start = time.time()
-        
-        # Process request
+        # Could also log: print(f"Request: {request.method} {request.url.path}")
+
+        # PROCESS REQUEST: Call next middleware or route handler
         response = await self.app(request)
-        
-        # Add timing header
+        # This goes through all remaining middleware and the actual route
+
+        # AFTER RESPONSE: Calculate and add timing
         duration = time.time() - start
         response.headers["X-Response-Time"] = f"{duration:.3f}s"
-        
-        return response
 
+        # Could also log slow requests:
+        if duration > 1.0:  # Longer than 1 second
+            print(f"⚠️ Slow request: {request.url.path} took {duration:.3f}s")
+
+        return response  # Pass response back up the chain
+
+# Register the middleware
 app.add_middleware(TimingMiddleware)
+
+# Now every response includes:
+# X-Response-Time: 0.042s
 ```
 
 ### Middleware with Configuration
@@ -230,18 +368,59 @@ app.add_middleware(DatabaseMiddleware, {
 })
 ```
 
-## Middleware Order
-
-Middleware are executed in the order they're added (for requests) and reverse order (for responses):
+## Middleware Order (First In, Last Out)
 
 ```python
 app = Zenith(
     middleware=[
-        SecurityHeadersMiddleware({}),  # 1st request, last response
-        CORSMiddleware({}),             # 2nd request, 2nd-last response
-        RateLimitMiddleware({}),        # 3rd request, 3rd-last response
-        AuthMiddleware({}),             # 4th request, 4th-last response
-        LoggingMiddleware({})           # Last request, 1st response
+        # REQUEST FLOW ↓         RESPONSE FLOW ↑
+        SecurityHeadersMiddleware({}),  # 1st →    ← 5th (last)
+        CORSMiddleware({}),             # 2nd →    ← 4th
+        RateLimitMiddleware({}),        # 3rd →    ← 3rd
+        AuthMiddleware({}),             # 4th →    ← 2nd
+        LoggingMiddleware({})           # 5th →    ← 1st (first)
+    ]
+)
+
+# How it works (like Russian dolls):
+#
+# REQUEST comes in:
+#   1. SecurityHeaders checks protocol
+#   2. CORS validates origin
+#   3. RateLimit counts request
+#   4. Auth verifies user
+#   5. Logging records request
+#   6. → Your route handler runs ←
+#
+# RESPONSE goes out:
+#   5. Logging records response (first)
+#   4. Auth adds user headers
+#   3. RateLimit adds limit headers
+#   2. CORS adds access headers
+#   1. SecurityHeaders adds security headers (last)
+
+# WHY ORDER MATTERS:
+#
+# Good order:
+app = Zenith(
+    middleware=[
+        SecurityHeadersMiddleware({}),  # Security first
+        CORSMiddleware({}),             # Then CORS
+        RateLimitMiddleware({}),        # Limit before auth (prevent brute force)
+        AuthMiddleware({}),             # Authenticate valid requests
+        CompressionMiddleware({}),      # Compress authenticated responses
+        LoggingMiddleware({})           # Log everything
+    ]
+)
+
+# Bad order:
+app = Zenith(
+    middleware=[
+        LoggingMiddleware({}),          # Logs before rate limit
+        AuthMiddleware({}),             # Auth before rate limit (wastes resources)
+        RateLimitMiddleware({}),        # Too late, already did work
+        SecurityHeadersMiddleware({}),  # Security should be first
+        CORSMiddleware({}),             # CORS should be early
     ]
 )
 ```

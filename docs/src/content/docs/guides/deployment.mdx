@@ -1,0 +1,1493 @@
+---
+title: "Deployment Guide"
+description: "Production deployment strategies for Zenith applications"
+sidebar:
+  order: 5
+  badge:
+    text: "Essential"
+    variant: "tip"
+---
+
+import { Card, CardGrid, Tabs, TabItem, Code, Aside, Badge } from '@astrojs/starlight/components';
+
+# Deployment Guide
+
+Deploy your Zenith applications to production with confidence using Docker, cloud platforms, and best practices.
+
+<CardGrid>
+  <Card title="Docker" icon="seti:docker">
+    Containerize with multi-stage builds
+  </Card>
+  <Card title="CI/CD" icon="github">
+    Automated testing and deployment
+  </Card>
+  <Card title="Cloud" icon="rocket">
+    Deploy to AWS, Railway, Fly.io
+  </Card>
+  <Card title="Monitoring" icon="magnifier">
+    Production observability
+  </Card>
+</CardGrid>
+
+## Quick Deployment
+
+<Aside type="tip">
+  Zenith's zero-config setup makes deployment simple - just set environment variables and deploy!
+</Aside>
+
+```bash
+# 1. Set production environment variables
+export DATABASE_URL="postgresql://user:pass@host/db"
+export SECRET_KEY="your-secret-key"
+export ENVIRONMENT="production"
+
+# 2. Deploy with one command
+docker build -t my-app . && docker run -p 8000:8000 my-app
+```
+
+## Docker Containerization
+
+### Dockerfile Template
+
+<Tabs>
+  <TabItem label="Production Dockerfile">
+    ```dockerfile
+    # Use Python 3.12+ for optimal performance
+    FROM python:3.12-slim as base
+
+    # Set environment variables
+    ENV PYTHONUNBUFFERED=1 \
+        PYTHONDONTWRITEBYTECODE=1 \
+        PIP_NO_CACHE_DIR=1 \
+        PIP_DISABLE_PIP_VERSION_CHECK=1
+
+    # Install system dependencies
+    RUN apt-get update && apt-get install -y \
+        curl \
+        build-essential \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install uv for fast dependency management
+    RUN pip install uv
+
+    # Production stage
+    FROM base as production
+
+    # Create app user
+    RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+    # Set working directory
+    WORKDIR /app
+
+    # Copy dependency files
+    COPY pyproject.toml uv.lock ./
+
+    # Install dependencies
+    RUN uv sync --frozen --no-dev
+
+    # Copy application code
+    COPY . .
+
+    # Change ownership to app user
+    RUN chown -R appuser:appuser /app
+    USER appuser
+
+    # Expose port
+    EXPOSE 8000
+
+    # Health check
+    HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+      CMD curl -f http://localhost:8000/health || exit 1
+
+    # Start application
+    CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ```
+  </TabItem>
+
+  <TabItem label="Multi-stage Build">
+    ```dockerfile
+    # Build stage
+    FROM python:3.12-slim as builder
+
+    ENV PYTHONUNBUFFERED=1
+
+    RUN apt-get update && apt-get install -y \
+        build-essential \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+
+    RUN pip install uv
+
+    WORKDIR /app
+
+    # Copy and install dependencies
+    COPY pyproject.toml uv.lock ./
+    RUN uv sync --frozen
+
+    # Copy source code
+    COPY . .
+
+    # Build application
+    RUN uv build
+
+    # Production stage
+    FROM python:3.12-slim as production
+
+    ENV PYTHONUNBUFFERED=1 \
+        PATH="/app/.venv/bin:$PATH"
+
+    # Install runtime dependencies only
+    RUN apt-get update && apt-get install -y \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Create app user
+    RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+    WORKDIR /app
+
+    # Copy virtual environment from builder
+    COPY --from=builder /app/.venv /app/.venv
+
+    # Copy application
+    COPY --from=builder /app .
+
+    # Set ownership
+    RUN chown -R appuser:appuser /app
+    USER appuser
+
+    EXPOSE 8000
+
+    HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+      CMD curl -f http://localhost:8000/health || exit 1
+
+    CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ```
+  </TabItem>
+
+  <TabItem label="Development Dockerfile">
+    ```dockerfile
+    FROM python:3.12-slim
+
+    ENV PYTHONUNBUFFERED=1
+
+    RUN apt-get update && apt-get install -y \
+        curl \
+        build-essential \
+        git \
+        && rm -rf /var/lib/apt/lists/*
+
+    RUN pip install uv
+
+    WORKDIR /app
+
+    # Install development dependencies
+    COPY pyproject.toml uv.lock ./
+    RUN uv sync
+
+    # Copy source
+    COPY . .
+
+    EXPOSE 8000
+
+    # Start with hot reload
+    CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    ```
+  </TabItem>
+</Tabs>
+
+### Docker Compose
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/zenith
+      - REDIS_URL=redis://redis:6379
+      - SECRET_KEY=${SECRET_KEY}
+      - ENVIRONMENT=production
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=zenith
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    driver: bridge
+```
+
+### Production Configuration
+
+```python
+# config/production.py
+import os
+from zenith.config import Config
+
+# Production configuration
+config = Config(
+    # Database
+    database_url=os.getenv("DATABASE_URL"),
+    database_pool_size=20,
+    database_max_overflow=0,
+
+    # Security
+    secret_key=os.getenv("SECRET_KEY"),
+    allowed_hosts=os.getenv("ALLOWED_HOSTS", "").split(","),
+
+    # Performance
+    debug=False,
+    workers=int(os.getenv("WORKERS", "4")),
+
+    # Logging
+    log_level=os.getenv("LOG_LEVEL", "INFO"),
+    log_format="json",
+
+    # Monitoring
+    enable_metrics=True,
+    metrics_endpoint="/metrics",
+
+    # Caching
+    redis_url=os.getenv("REDIS_URL"),
+    cache_ttl=int(os.getenv("CACHE_TTL", "3600")),
+
+    # CORS
+    cors_origins=os.getenv("CORS_ORIGINS", "").split(","),
+    cors_credentials=True,
+
+    # Rate limiting
+    rate_limit_enabled=True,
+    rate_limit_default="100/minute",
+
+    # SSL
+    force_https=True,
+    secure_cookies=True
+)
+```
+
+## Cloud Deployments
+
+### Railway
+
+<Tabs>
+  <TabItem label="Deploy to Railway">
+    ```bash
+    # Install Railway CLI
+    npm install -g @railway/cli
+
+    # Login
+    railway login
+
+    # Initialize project
+    railway init
+
+    # Set environment variables
+    railway variables set SECRET_KEY="your-secret-key"
+    railway variables set DATABASE_URL="postgresql://..."
+
+    # Deploy
+    railway up
+
+    # Connect PostgreSQL addon
+    railway add postgresql
+
+    # Deploy with auto-generated domain
+    railway domain
+    ```
+  </TabItem>
+
+  <TabItem label="railway.json">
+    ```json
+    {
+      "$schema": "https://railway.app/railway.schema.json",
+      "build": {
+        "builder": "DOCKERFILE",
+        "buildCommand": "uv sync && uv build"
+      },
+      "deploy": {
+        "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
+        "healthcheckPath": "/health",
+        "healthcheckTimeout": 30,
+        "restartPolicyType": "ON_FAILURE",
+        "restartPolicyMaxRetries": 10
+      }
+    }
+    ```
+  </TabItem>
+</Tabs>
+
+### Fly.io
+
+<Tabs>
+  <TabItem label="Deploy to Fly.io">
+    ```bash
+    # Install flyctl
+    curl -L https://fly.io/install.sh | sh
+
+    # Login
+    flyctl auth login
+
+    # Initialize app
+    flyctl launch
+
+    # Set secrets
+    flyctl secrets set SECRET_KEY="your-secret-key"
+    flyctl secrets set DATABASE_URL="postgresql://..."
+
+    # Deploy
+    flyctl deploy
+
+    # Scale app
+    flyctl scale count 3
+
+    # Add PostgreSQL
+    flyctl postgres create
+    flyctl postgres attach --app my-app my-postgres
+    ```
+  </TabItem>
+
+  <TabItem label="fly.toml">
+    ```toml
+    app = "my-zenith-app"
+    primary_region = "ord"
+
+    [build]
+      dockerfile = "Dockerfile"
+
+    [env]
+      PORT = "8000"
+      ENVIRONMENT = "production"
+
+    [http_service]
+      internal_port = 8000
+      force_https = true
+      auto_stop_machines = true
+      auto_start_machines = true
+      min_machines_running = 1
+      processes = ["app"]
+
+      [[http_service.checks]]
+        grace_period = "10s"
+        interval = "30s"
+        method = "GET"
+        timeout = "5s"
+        path = "/health"
+
+    [[vm]]
+      memory = "1gb"
+      cpu_kind = "shared"
+      cpus = 1
+
+    [metrics]
+      port = 9091
+      path = "/metrics"
+    ```
+  </TabItem>
+</Tabs>
+
+### AWS ECS
+
+<Tabs>
+  <TabItem label="ECS Task Definition">
+    ```json
+    {
+      "family": "zenith-app",
+      "networkMode": "awsvpc",
+      "requiresCompatibilities": ["FARGATE"],
+      "cpu": "512",
+      "memory": "1024",
+      "executionRoleArn": "arn:aws:iam::account:role/ecsTaskExecutionRole",
+      "taskRoleArn": "arn:aws:iam::account:role/ecsTaskRole",
+      "containerDefinitions": [
+        {
+          "name": "zenith-app",
+          "image": "your-account.dkr.ecr.region.amazonaws.com/zenith-app:latest",
+          "portMappings": [
+            {
+              "containerPort": 8000,
+              "protocol": "tcp"
+            }
+          ],
+          "environment": [
+            {
+              "name": "ENVIRONMENT",
+              "value": "production"
+            }
+          ],
+          "secrets": [
+            {
+              "name": "SECRET_KEY",
+              "valueFrom": "arn:aws:secretsmanager:region:account:secret:zenith/secret-key"
+            },
+            {
+              "name": "DATABASE_URL",
+              "valueFrom": "arn:aws:secretsmanager:region:account:secret:zenith/database-url"
+            }
+          ],
+          "healthCheck": {
+            "command": ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"],
+            "interval": 30,
+            "timeout": 5,
+            "retries": 3,
+            "startPeriod": 60
+          },
+          "logConfiguration": {
+            "logDriver": "awslogs",
+            "options": {
+              "awslogs-group": "/ecs/zenith-app",
+              "awslogs-region": "us-east-1",
+              "awslogs-stream-prefix": "ecs"
+            }
+          }
+        }
+      ]
+    }
+    ```
+  </TabItem>
+
+  <TabItem label="CDK Deployment">
+    ```typescript
+    // cdk/app.ts
+    import * as cdk from 'aws-cdk-lib';
+    import * as ecs from 'aws-cdk-lib/aws-ecs';
+    import * as ec2 from 'aws-cdk-lib/aws-ec2';
+    import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+
+    export class ZenithStack extends cdk.Stack {
+      constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+        super(scope, id, props);
+
+        // VPC
+        const vpc = new ec2.Vpc(this, 'ZenithVPC', {
+          maxAzs: 2
+        });
+
+        // ECS Cluster
+        const cluster = new ecs.Cluster(this, 'ZenithCluster', {
+          vpc,
+          enableFargateCapacityProviders: true
+        });
+
+        // Task Definition
+        const taskDefinition = new ecs.FargateTaskDefinition(this, 'ZenithTask', {
+          memoryLimitMiB: 1024,
+          cpu: 512
+        });
+
+        const container = taskDefinition.addContainer('zenith-app', {
+          image: ecs.ContainerImage.fromRegistry('your-app:latest'),
+          portMappings: [{ containerPort: 8000 }],
+          environment: {
+            ENVIRONMENT: 'production'
+          },
+          secrets: {
+            SECRET_KEY: ecs.Secret.fromSecretsManager(secretKey),
+            DATABASE_URL: ecs.Secret.fromSecretsManager(databaseUrl)
+          },
+          healthCheck: {
+            command: ['CMD-SHELL', 'curl -f http://localhost:8000/health || exit 1'],
+            interval: cdk.Duration.seconds(30),
+            timeout: cdk.Duration.seconds(5),
+            retries: 3,
+            startPeriod: cdk.Duration.seconds(60)
+          },
+          logging: ecs.LogDrivers.awsLogs({
+            streamPrefix: 'zenith-app'
+          })
+        });
+
+        // ECS Service
+        const service = new ecs.FargateService(this, 'ZenithService', {
+          cluster,
+          taskDefinition,
+          desiredCount: 2,
+          enableExecuteCommand: true
+        });
+
+        // Load Balancer
+        const lb = new elbv2.ApplicationLoadBalancer(this, 'ZenithLB', {
+          vpc,
+          internetFacing: true
+        });
+
+        const listener = lb.addListener('Listener', {
+          port: 80,
+          defaultAction: elbv2.ListenerAction.redirect({
+            protocol: 'HTTPS',
+            port: '443'
+          })
+        });
+
+        listener.addTargets('ZenithTargets', {
+          port: 8000,
+          targets: [service],
+          healthCheckPath: '/health',
+          healthCheckInterval: cdk.Duration.seconds(30)
+        });
+      }
+    }
+    ```
+  </TabItem>
+</Tabs>
+
+### Google Cloud Run
+
+```yaml
+# cloudbuild.yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/zenith-app:$COMMIT_SHA', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/zenith-app:$COMMIT_SHA']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'zenith-app'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/zenith-app:$COMMIT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'ENVIRONMENT=production'
+      - '--set-secrets'
+      - 'SECRET_KEY=secret-key:latest,DATABASE_URL=database-url:latest'
+
+images:
+  - 'gcr.io/$PROJECT_ID/zenith-app:$COMMIT_SHA'
+```
+
+## CI/CD Pipelines
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install uv
+      run: pip install uv
+
+    - name: Install dependencies
+      run: uv sync
+
+    - name: Run tests
+      run: uv run pytest
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+
+    - name: Run security scan
+      run: uv run bandit -r zenith/
+
+    - name: Check code quality
+      run: |
+        uv run ruff check .
+        uv run mypy zenith/
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - name: Deploy to Railway
+      run: |
+        curl -X POST "${{ secrets.RAILWAY_WEBHOOK_URL }}" \
+          -H "Content-Type: application/json" \
+          -d '{"image": "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}"}'
+
+    - name: Health check
+      run: |
+        sleep 30
+        curl -f ${{ secrets.PRODUCTION_URL }}/health
+```
+
+### GitLab CI/CD
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+test:
+  stage: test
+  image: python:3.12
+  services:
+    - postgres:15
+  variables:
+    POSTGRES_DB: test_db
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    DATABASE_URL: postgresql://postgres:postgres@postgres:5432/test_db
+  before_script:
+    - pip install uv
+    - uv sync
+  script:
+    - uv run pytest --cov=zenith --cov-report=xml
+    - uv run bandit -r zenith/
+    - uv run ruff check .
+    - uv run mypy zenith/
+  coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  image: alpine/helm:latest
+  before_script:
+    - kubectl config set-cluster k8s --server="$KUBE_URL" --insecure-skip-tls-verify=true
+    - kubectl config set-credentials admin --token="$KUBE_TOKEN"
+    - kubectl config set-context default --cluster=k8s --user=admin
+    - kubectl config use-context default
+  script:
+    - helm upgrade --install zenith-app ./helm/zenith \
+        --set image.tag=$CI_COMMIT_SHA \
+        --set secrets.secretKey="$SECRET_KEY" \
+        --set secrets.databaseUrl="$DATABASE_URL"
+  environment:
+    name: production
+    url: https://api.example.com
+  only:
+    - main
+```
+
+## Production Monitoring
+
+### Prometheus Metrics
+
+```python
+# monitoring/metrics.py
+from prometheus_client import Counter, Histogram, Gauge, generate_latest
+from zenith import Zenith
+
+app = Zenith()
+
+# Custom metrics
+REQUEST_COUNT = Counter(
+    'zenith_requests_total',
+    'Total number of requests',
+    ['method', 'endpoint', 'status']
+)
+
+REQUEST_LATENCY = Histogram(
+    'zenith_request_duration_seconds',
+    'Request latency distribution',
+    ['method', 'endpoint']
+)
+
+ACTIVE_CONNECTIONS = Gauge(
+    'zenith_active_connections',
+    'Number of active connections'
+)
+
+DATABASE_CONNECTIONS = Gauge(
+    'zenith_database_connections',
+    'Number of database connections',
+    ['state']
+)
+
+@app.middleware("http")
+async def metrics_middleware(request, call_next):
+    method = request.method
+    endpoint = request.url.path
+
+    # Track request
+    with REQUEST_LATENCY.labels(method=method, endpoint=endpoint).time():
+        response = await call_next(request)
+
+    # Count request
+    REQUEST_COUNT.labels(
+        method=method,
+        endpoint=endpoint,
+        status=response.status_code
+    ).inc()
+
+    return response
+
+@app.get("/metrics")
+async def metrics():
+    # Update database connection metrics
+    pool = app.state.db_engine.pool
+    DATABASE_CONNECTIONS.labels(state="idle").set(pool.checkedout())
+    DATABASE_CONNECTIONS.labels(state="active").set(pool.size() - pool.checkedout())
+
+    return Response(
+        generate_latest(),
+        media_type="text/plain"
+    )
+```
+
+### Health Checks
+
+```python
+# monitoring/health.py
+from zenith.web.health import HealthCheck
+import asyncio
+import httpx
+
+health = HealthCheck()
+
+@health.check("database")
+async def check_database():
+    """Check database connectivity."""
+    try:
+        async with get_session() as session:
+            await session.execute(text("SELECT 1"))
+        return True, "Database is healthy"
+    except Exception as e:
+        return False, f"Database error: {str(e)}"
+
+@health.check("redis")
+async def check_redis():
+    """Check Redis connectivity."""
+    try:
+        redis = get_redis()
+        await redis.ping()
+        return True, "Redis is healthy"
+    except Exception as e:
+        return False, f"Redis error: {str(e)}"
+
+@health.check("external_api")
+async def check_external_api():
+    """Check external API dependency."""
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://api.external.com/health",
+                timeout=5.0
+            )
+            if response.status_code == 200:
+                return True, "External API is healthy"
+            return False, f"External API returned {response.status_code}"
+    except Exception as e:
+        return False, f"External API error: {str(e)}"
+
+# Add to app
+app.include_router(health.router)
+```
+
+### Structured Logging
+
+```python
+# logging/setup.py
+import logging
+import sys
+from pythonjsonlogger import jsonlogger
+
+def setup_logging(app_name: str, log_level: str = "INFO"):
+    """Configure structured logging for production."""
+
+    # Create formatter
+    formatter = jsonlogger.JsonFormatter(
+        fmt="%(asctime)s %(name)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(getattr(logging, log_level.upper()))
+
+    # Remove default handlers
+    for handler in root_logger.handlers:
+        root_logger.removeHandler(handler)
+
+    # Console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
+
+    # Request logging
+    logging.getLogger("uvicorn.access").disabled = True
+
+    return logging.getLogger(app_name)
+
+# Usage in main.py
+logger = setup_logging("zenith-app")
+
+@app.middleware("http")
+async def logging_middleware(request, call_next):
+    start_time = time.time()
+
+    response = await call_next(request)
+
+    process_time = time.time() - start_time
+
+    logger.info(
+        "Request processed",
+        extra={
+            "method": request.method,
+            "url": str(request.url),
+            "status_code": response.status_code,
+            "process_time": process_time,
+            "user_agent": request.headers.get("user-agent"),
+            "remote_addr": request.client.host
+        }
+    )
+
+    return response
+```
+
+### APM Integration
+
+<Tabs>
+  <TabItem label="Datadog">
+    ```python
+    # monitoring/datadog.py
+    from ddtrace import tracer, patch_all
+    from ddtrace.contrib.asyncio import context_provider
+
+    # Auto-instrument popular libraries
+    patch_all()
+
+    # Configure tracer
+    tracer.configure(
+        hostname="localhost",
+        port=8126,
+        service_name="zenith-app",
+        env="production"
+    )
+
+    @app.middleware("http")
+    async def datadog_middleware(request, call_next):
+        with tracer.trace("http.request") as span:
+            span.set_tag("http.method", request.method)
+            span.set_tag("http.url", str(request.url))
+
+            response = await call_next(request)
+
+            span.set_tag("http.status_code", response.status_code)
+
+            return response
+    ```
+  </TabItem>
+
+  <TabItem label="Sentry">
+    ```python
+    # monitoring/sentry.py
+    import sentry_sdk
+    from sentry_sdk.integrations.asyncio import AsyncioIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+
+    sentry_sdk.init(
+        dsn="https://your-dsn@sentry.io/project",
+        environment="production",
+        release="v1.0.0",
+        integrations=[
+            AsyncioIntegration(),
+            SqlalchemyIntegration(),
+        ],
+        traces_sample_rate=0.1,  # 10% of transactions
+        profiles_sample_rate=0.1,  # 10% of transactions for profiling
+    )
+
+    # Custom error handling
+    @app.exception_handler(Exception)
+    async def sentry_exception_handler(request, exc):
+        sentry_sdk.capture_exception(exc)
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal server error"}
+        )
+    ```
+  </TabItem>
+
+  <TabItem label="New Relic">
+    ```python
+    # monitoring/newrelic.py
+    import newrelic.agent
+
+    # Initialize New Relic
+    newrelic.agent.initialize('newrelic.ini')
+
+    @app.middleware("http")
+    @newrelic.agent.web_transaction()
+    async def newrelic_middleware(request, call_next):
+        # Add custom attributes
+        newrelic.agent.add_custom_attribute("user.id", getattr(request.user, "id", None))
+        newrelic.agent.add_custom_attribute("request.method", request.method)
+
+        response = await call_next(request)
+
+        newrelic.agent.add_custom_attribute("response.status", response.status_code)
+
+        return response
+
+    # Custom function tracing
+    @newrelic.agent.function_trace()
+    async def expensive_operation():
+        # This function will be traced
+        pass
+    ```
+  </TabItem>
+</Tabs>
+
+## Security Hardening
+
+### HTTPS and SSL
+
+```python
+# security/ssl.py
+from zenith.middleware.security import SecurityHeadersMiddleware
+
+app = Zenith(
+    middleware=[
+        SecurityHeadersMiddleware(
+            force_https=True,
+            hsts_max_age=31536000,  # 1 year
+            hsts_include_subdomains=True,
+            hsts_preload=True,
+            content_type_nosniff=True,
+            x_frame_options="DENY",
+            x_content_type_options="nosniff",
+            referrer_policy="strict-origin-when-cross-origin",
+            csp="default-src 'self'; script-src 'self' 'unsafe-inline'",
+            permissions_policy="geolocation=(), microphone=(), camera=()"
+        )
+    ]
+)
+```
+
+### Secrets Management
+
+<Tabs>
+  <TabItem label="AWS Secrets Manager">
+    ```python
+    # secrets/aws.py
+    import boto3
+    from botocore.exceptions import ClientError
+    import json
+
+    class AWSSecretsManager:
+        def __init__(self, region_name="us-east-1"):
+            self.client = boto3.client("secretsmanager", region_name=region_name)
+
+        async def get_secret(self, secret_name: str) -> str:
+            try:
+                response = self.client.get_secret_value(SecretId=secret_name)
+                return response["SecretString"]
+            except ClientError as e:
+                raise Exception(f"Failed to retrieve secret {secret_name}: {e}")
+
+        async def get_secret_dict(self, secret_name: str) -> dict:
+            secret_value = await self.get_secret(secret_name)
+            return json.loads(secret_value)
+
+    # Usage
+    secrets = AWSSecretsManager()
+
+    @app.on_event("startup")
+    async def load_secrets():
+        app.state.database_config = await secrets.get_secret_dict("prod/database")
+        app.state.api_keys = await secrets.get_secret_dict("prod/api-keys")
+    ```
+  </TabItem>
+
+  <TabItem label="HashiCorp Vault">
+    ```python
+    # secrets/vault.py
+    import hvac
+    import os
+
+    class VaultClient:
+        def __init__(self):
+            self.client = hvac.Client(
+                url=os.getenv("VAULT_URL", "http://localhost:8200"),
+                token=os.getenv("VAULT_TOKEN")
+            )
+
+        async def get_secret(self, path: str) -> dict:
+            try:
+                response = self.client.secrets.kv.v2.read_secret_version(path=path)
+                return response["data"]["data"]
+            except Exception as e:
+                raise Exception(f"Failed to retrieve secret {path}: {e}")
+
+        async def renew_token(self):
+            """Renew the Vault token periodically."""
+            self.client.auth.token.renew_self()
+
+    # Usage
+    vault = VaultClient()
+
+    @app.on_event("startup")
+    async def load_vault_secrets():
+        database_secrets = await vault.get_secret("secret/database")
+        app.state.database_url = database_secrets["url"]
+    ```
+  </TabItem>
+</Tabs>
+
+### Environment Separation
+
+```python
+# config/environments.py
+from enum import Enum
+from dataclasses import dataclass
+import os
+
+class Environment(Enum):
+    DEVELOPMENT = "development"
+    STAGING = "staging"
+    PRODUCTION = "production"
+
+@dataclass
+class EnvironmentConfig:
+    environment: Environment
+    debug: bool
+    log_level: str
+    database_pool_size: int
+    allowed_hosts: list[str]
+    cors_origins: list[str]
+    rate_limit_enabled: bool
+
+def get_config() -> EnvironmentConfig:
+    env = Environment(os.getenv("ENVIRONMENT", "development"))
+
+    if env == Environment.DEVELOPMENT:
+        return EnvironmentConfig(
+            environment=env,
+            debug=True,
+            log_level="DEBUG",
+            database_pool_size=5,
+            allowed_hosts=["localhost", "127.0.0.1"],
+            cors_origins=["*"],
+            rate_limit_enabled=False
+        )
+    elif env == Environment.STAGING:
+        return EnvironmentConfig(
+            environment=env,
+            debug=False,
+            log_level="INFO",
+            database_pool_size=10,
+            allowed_hosts=["staging.example.com"],
+            cors_origins=["https://staging-frontend.example.com"],
+            rate_limit_enabled=True
+        )
+    else:  # Production
+        return EnvironmentConfig(
+            environment=env,
+            debug=False,
+            log_level="WARNING",
+            database_pool_size=20,
+            allowed_hosts=os.getenv("ALLOWED_HOSTS", "").split(","),
+            cors_origins=os.getenv("CORS_ORIGINS", "").split(","),
+            rate_limit_enabled=True
+        )
+```
+
+## Database Migrations
+
+### Alembic Configuration
+
+```python
+# alembic/env.py
+import asyncio
+from logging.config import fileConfig
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
+from alembic import context
+from zenith.models import Base
+import os
+
+# Alembic Config object
+config = context.config
+
+# Configure logging
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+# Target metadata
+target_metadata = Base.metadata
+
+def get_url():
+    return os.getenv("DATABASE_URL", "sqlite:///./app.db")
+
+def run_migrations_offline() -> None:
+    """Run migrations in 'offline' mode."""
+    url = get_url()
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(connection=connection, target_metadata=target_metadata)
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+async def run_async_migrations() -> None:
+    """Run migrations in 'online' mode."""
+    configuration = config.get_section(config.config_ini_section)
+    configuration["sqlalchemy.url"] = get_url()
+
+    connectable = async_engine_from_config(
+        configuration,
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+
+    await connectable.dispose()
+
+def run_migrations_online() -> None:
+    """Run migrations in 'online' mode."""
+    asyncio.run(run_async_migrations())
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+```
+
+### Migration Scripts
+
+```bash
+#!/bin/bash
+# scripts/migrate.sh
+
+set -e
+
+echo "Starting database migration..."
+
+# Wait for database to be ready
+echo "Waiting for database..."
+while ! nc -z $DB_HOST $DB_PORT; do
+  sleep 1
+done
+
+echo "Database is ready!"
+
+# Run migrations
+echo "Running Alembic migrations..."
+alembic upgrade head
+
+echo "Migration complete!"
+```
+
+## Load Balancing
+
+### Nginx Configuration
+
+```nginx
+# nginx/nginx.conf
+user nginx;
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+    use epoll;
+    multi_accept on;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Logging
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+    access_log /var/log/nginx/access.log main;
+
+    # Performance
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    types_hash_max_size 2048;
+
+    # Compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1000;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req_zone $binary_remote_addr zone=login:10m rate=1r/s;
+
+    # Upstream servers
+    upstream zenith_backend {
+        least_conn;
+        server app1:8000 max_fails=3 fail_timeout=30s;
+        server app2:8000 max_fails=3 fail_timeout=30s;
+        server app3:8000 max_fails=3 fail_timeout=30s;
+        keepalive 32;
+    }
+
+    server {
+        listen 80;
+        server_name api.example.com;
+        return 301 https://$server_name$request_uri;
+    }
+
+    server {
+        listen 443 ssl http2;
+        server_name api.example.com;
+
+        # SSL Configuration
+        ssl_certificate /etc/nginx/ssl/cert.pem;
+        ssl_certificate_key /etc/nginx/ssl/key.pem;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers off;
+
+        # Security headers
+        add_header Strict-Transport-Security "max-age=63072000" always;
+        add_header X-Frame-Options DENY;
+        add_header X-Content-Type-Options nosniff;
+
+        # API routes
+        location /api/ {
+            limit_req zone=api burst=20 nodelay;
+
+            proxy_pass http://zenith_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+
+            # Timeouts
+            proxy_connect_timeout 5s;
+            proxy_send_timeout 10s;
+            proxy_read_timeout 30s;
+        }
+
+        # Auth routes (stricter rate limiting)
+        location /auth/ {
+            limit_req zone=login burst=5 nodelay;
+
+            proxy_pass http://zenith_backend;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Health checks (no rate limiting)
+        location /health {
+            proxy_pass http://zenith_backend;
+            access_log off;
+        }
+
+        # Metrics (restrict access)
+        location /metrics {
+            allow 10.0.0.0/8;
+            allow 172.16.0.0/12;
+            allow 192.168.0.0/16;
+            deny all;
+
+            proxy_pass http://zenith_backend;
+        }
+    }
+}
+```
+
+## Deployment Checklist
+
+### Pre-Deployment
+- [ ] All tests passing
+- [ ] Security scan completed
+- [ ] Performance benchmarks run
+- [ ] Environment variables configured
+- [ ] Secrets properly managed
+- [ ] Database migrations prepared
+- [ ] Health checks implemented
+- [ ] Monitoring configured
+
+### Deployment
+- [ ] Blue-green deployment strategy
+- [ ] Database migration executed
+- [ ] Application deployed
+- [ ] Health checks passing
+- [ ] Load balancer updated
+- [ ] SSL certificates valid
+- [ ] Monitoring alerts active
+
+### Post-Deployment
+- [ ] Application responding correctly
+- [ ] Metrics being collected
+- [ ] Logs flowing properly
+- [ ] Performance within acceptable ranges
+- [ ] Error rates normal
+- [ ] Database connections healthy
+- [ ] Cache hit rates optimal
+
+### Rollback Plan
+- [ ] Previous version available
+- [ ] Database rollback strategy
+- [ ] Quick rollback procedure documented
+- [ ] Monitoring for rollback triggers
+- [ ] Team notification process
+- [ ] Customer communication plan
+
+## Next Steps
+
+<CardGrid>
+  <Card title="Monitor Your App" icon="magnifier">
+    Set up comprehensive monitoring and alerting
+    [Learn Monitoring →](/guides/monitoring)
+  </Card>
+  <Card title="Scale Further" icon="rocket">
+    Advanced scaling and optimization techniques
+    [Performance Guide →](/guides/performance)
+  </Card>
+</CardGrid>

@@ -16,132 +16,126 @@ Middleware in Zenith processes requests and responses, providing cross-cutting f
 Adds security headers to protect against common attacks:
 
 ```python
-from zenith.middleware import SecurityHeadersMiddleware
+from zenith.middleware import SecurityHeadersMiddleware, SecurityConfig
 
-app.add_middleware(SecurityHeadersMiddleware, {
+# Recommended: Using SecurityConfig class
+config = SecurityConfig(
     # HTTPS enforcement
-    "force_https": True,
-    
+    force_https=True,
+
     # HSTS (HTTP Strict Transport Security)
-    "hsts_enabled": True,
-    "hsts_max_age": 31536000,  # 1 year
-    "hsts_include_subdomains": True,
-    "hsts_preload": True,
-    
+    hsts_max_age=31536000,  # 1 year
+    hsts_include_subdomains=True,
+    hsts_preload=True,
+
     # Content security
-    "content_type_nosniff": True,
-    "frame_deny": True,
-    "xss_protection": True,
-    
+    content_type_nosniff=True,
+    frame_options="DENY",
+    xss_protection="1; mode=block",
+
     # Content Security Policy
-    "csp": "default-src 'self'; script-src 'self' 'unsafe-inline'",
-    "csp_report_only": False,
-    
+    csp_policy="default-src 'self'; script-src 'self' 'unsafe-inline'",
+    csp_report_only=False,
+
     # Referrer policy
-    "referrer_policy": "strict-origin-when-cross-origin",
-    
-    # Feature policy
-    "feature_policy": "geolocation 'none'; microphone 'none'",
-    
-    # Custom headers
-    "custom_headers": {
-        "X-API-Version": "1.0",
-        "X-Powered-By": "Zenith"
-    }
-})
+    referrer_policy="strict-origin-when-cross-origin",
+
+    # Permissions policy (formerly Feature Policy)
+    permissions_policy="geolocation=(), microphone=()"
+)
+
+app.add_middleware(SecurityHeadersMiddleware, config=config)
 ```
 
-#### SecurityHeadersMiddleware Options
+#### SecurityConfig Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `force_https` | `bool` | `False` | Redirect HTTP to HTTPS |
-| `hsts_enabled` | `bool` | `True` | Enable HSTS header |
+| `force_https_permanent` | `bool` | `False` | Use 301 redirect instead of 302 |
 | `hsts_max_age` | `int` | `31536000` | HSTS max age in seconds |
 | `hsts_include_subdomains` | `bool` | `True` | Include subdomains in HSTS |
+| `hsts_preload` | `bool` | `False` | Enable HSTS preload |
 | `content_type_nosniff` | `bool` | `True` | Add X-Content-Type-Options: nosniff |
-| `frame_deny` | `bool` | `True` | Add X-Frame-Options: DENY |
-| `xss_protection` | `bool` | `True` | Add X-XSS-Protection header |
-| `csp` | `str` | `None` | Content Security Policy |
+| `frame_options` | `str` | `"DENY"` | X-Frame-Options header value |
+| `xss_protection` | `str` | `"1; mode=block"` | X-XSS-Protection header value |
+| `csp_policy` | `str` | `None` | Content Security Policy |
+| `csp_report_only` | `bool` | `False` | Use CSP report-only mode |
 | `referrer_policy` | `str` | `"strict-origin-when-cross-origin"` | Referrer policy |
+| `permissions_policy` | `str` | `None` | Permissions policy header |
+| `trusted_proxies` | `list[str]` | `[]` | List of trusted proxy IPs |
 
 ### CORSMiddleware
 
 Handles Cross-Origin Resource Sharing:
 
 ```python
-from zenith.middleware import CORSMiddleware
+from zenith.middleware import CORSMiddleware, CORSConfig
 
-app.add_middleware(CORSMiddleware, {
-    # Origins
-    "allow_origins": ["https://example.com", "https://app.example.com"],
-    "allow_origin_regex": r"https://.*\.example\.com",
-    
-    # Methods
-    "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    
-    # Headers
-    "allow_headers": ["*"],  # Or specific headers
-    "expose_headers": ["X-Request-ID", "X-Process-Time"],
-    
-    # Credentials
-    "allow_credentials": True,
-    
-    # Preflight
-    "preflight_max_age": 86400,  # 24 hours
-    
-    # Vary header
-    "vary_header": True
-})
+# Recommended: Using CORSConfig class
+config = CORSConfig(
+    allow_origins=["https://example.com", "https://app.example.com"],
+    allow_origin_regex=r"https://.*\.example\.com",
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["X-Request-ID", "X-Process-Time"],
+    allow_credentials=True,
+    max_age_secs=86400  # 24 hours
+)
+
+app.add_middleware(CORSMiddleware, config=config)
+
+# Alternative: Direct parameters (backward compatibility)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://example.com"],
+    allow_methods=["GET", "POST"],
+    allow_credentials=True
+)
 ```
 
-#### CORSMiddleware Options
+#### CORSConfig Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `allow_origins` | `List[str]` | `["*"]` | Allowed origins |
-| `allow_origin_regex` | `str` | `None` | Regex for allowed origins |
-| `allow_methods` | `List[str]` | `["GET"]` | Allowed HTTP methods |
-| `allow_headers` | `List[str]` | `[]` | Allowed headers |
-| `allow_credentials` | `bool` | `False` | Allow credentials |
-| `expose_headers` | `List[str]` | `[]` | Headers to expose to client |
-| `max_age` | `int` | `600` | Preflight cache duration |
+| `allow_origins` | `list[str]` | `[]` | Allowed origin URLs |
+| `allow_origin_regex` | `str` | `None` | Regex pattern for allowed origins |
+| `allow_methods` | `list[str]` | `["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]` | Allowed HTTP methods |
+| `allow_headers` | `list[str]` | `["*"]` | Allowed request headers |
+| `allow_credentials` | `bool` | `False` | Allow credentials in CORS requests |
+| `expose_headers` | `list[str]` | `[]` | Headers exposed to browser |
+| `max_age_secs` | `int` | `600` | Preflight cache duration in seconds |
 
 ### RateLimitMiddleware
 
 Implements rate limiting with multiple strategies:
 
 ```python
-from zenith.middleware import RateLimitMiddleware
+from zenith.middleware import RateLimitMiddleware, RateLimitConfig, RateLimit
+from zenith.middleware import MemoryRateLimitStorage, RedisRateLimitStorage
 
-app.add_middleware(RateLimitMiddleware, {
-    # Default limits
-    "default_limits": ["100/minute", "1000/hour", "10000/day"],
-    
-    # Per-endpoint limits
-    "endpoint_limits": {
-        "/auth/login": ["5/minute", "20/hour"],
-        "/api/upload": ["10/minute"],
-        "/api/search": ["200/minute"]
-    },
-    
-    # Key function (how to identify clients)
-    "key_func": lambda request: request.client.host,
-    
-    # Storage backend
-    "storage": "redis://localhost:6379/0",  # or "memory"
-    
-    # Headers
-    "headers_enabled": True,
-    "header_retry_after": "Retry-After",
-    "header_limit": "X-RateLimit-Limit",
-    "header_remaining": "X-RateLimit-Remaining",
-    "header_reset": "X-RateLimit-Reset",
-    
-    # Error handling
-    "error_message": "Rate limit exceeded",
-    "exempt_paths": ["/health", "/metrics"]
-})
+# Basic configuration
+config = RateLimitConfig(
+    default_limits=[
+        RateLimit(requests=100, window=60),    # 100/minute
+        RateLimit(requests=1000, window=3600), # 1000/hour
+    ],
+    storage=MemoryRateLimitStorage(),
+    exempt_paths=["/health", "/metrics"],
+    error_message="Rate limit exceeded",
+    include_headers=True
+)
+
+app.add_middleware(RateLimitMiddleware, config=config)
+
+# Redis storage for distributed systems
+redis_storage = RedisRateLimitStorage("redis://localhost:6379/0")
+redis_config = RateLimitConfig(
+    default_limits=[RateLimit(requests=1000, window=60)],
+    storage=redis_storage
+)
+
+app.add_middleware(RateLimitMiddleware, config=redis_config)
 ```
 
 #### Custom Rate Limit Key Functions

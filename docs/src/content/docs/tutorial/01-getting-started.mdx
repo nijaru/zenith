@@ -1,0 +1,626 @@
+---
+title: "Part 1: Getting Started"
+description: Build your first Zenith application - a task management API
+sidebar:
+  order: 1
+---
+
+import { Aside, Card } from '@astrojs/starlight/components';
+
+# Tutorial Part 1: Getting Started with Zenith
+
+Welcome to the Zenith tutorial! Over the next seven parts, we'll build **TaskFlow** - a complete task management API that demonstrates how Zenith eliminates the complexity of traditional Python web development.
+
+**Why this tutorial is different:**
+- We show you what you'd have to build manually vs what Zenith does automatically
+- Real production patterns, not toy examples
+- You'll see the dramatic code reduction Zenith provides
+- By the end, you'll have a deployable API that would normally take weeks to build
+
+## What We're Building
+
+We're creating **TaskFlow** - a task management API similar to Todoist or Asana. Users can:
+- Register and authenticate
+- Create projects to organize work
+- Add tasks with due dates and priorities
+- Assign tasks to team members
+- Get email notifications
+- Track task completion
+
+<Aside type="tip">
+  **Why a task manager?** It's complex enough to showcase real patterns (auth, relationships, background jobs) but simple enough to understand. Plus, you can actually use it!
+</Aside>
+
+## Prerequisites
+
+Before we begin, you should have:
+- **Python 3.12 or higher** - Check with `python --version`
+- **Basic Python knowledge** - Functions, classes, async/await basics
+- **Terminal comfort** - Running commands, navigating directories
+- **A code editor** - VS Code, PyCharm, or your favorite
+
+Don't worry if you're new to async Python or web APIs - we'll explain everything as we go!
+
+## Installation
+
+### The Problem (Traditional Setup)
+```bash
+# Traditional setup for a task management API
+python -m venv taskflow-env
+source taskflow-env/bin/activate
+
+# Install dependencies one by one
+pip install framework-core
+pip install uvicorn
+pip install sqlalchemy
+pip install psycopg2-binary
+pip install alembic
+pip install python-jose
+pip install passlib
+pip install bcrypt
+pip install python-multipart
+pip install pytest
+pip install pytest-asyncio
+pip install redis
+pip install celery
+pip install pydantic
+pip install pydantic-settings
+# ... and many more
+
+# Create project structure manually
+mkdir taskflow
+cd taskflow
+mkdir app
+mkdir migrations
+mkdir tests
+touch app/__init__.py
+touch app/main.py
+touch app/models.py
+touch app/database.py
+touch app/auth.py
+touch app/config.py
+# ... dozens more files
+
+# Configure each component manually
+# (spend hours figuring out how they work together)
+```
+
+### The Solution (Zenith Way)
+```bash
+# With Zenith - everything in 3 commands
+pip install zenith-web     # All dependencies included
+zen new taskflow           # Complete project structure generated
+cd taskflow && zen dev     # Running with hot reload!
+
+# You now have:
+# - All dependencies pre-configured
+# - Project structure with best practices
+# - Database models ready to use
+# - Authentication system
+# - Admin dashboard
+# - API documentation
+# - Testing framework
+# - Security middleware
+# All working together perfectly!
+```
+
+### Option 1: Using uv (Recommended)
+
+[uv](https://github.com/astral-sh/uv) is a fast Python package manager:
+
+```bash
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create our project with Zenith
+uv init taskflow-api
+cd taskflow-api
+
+# Add Zenith
+uv add zenith-web
+
+# Add development dependencies we'll need
+uv add --dev pytest pytest-asyncio black ruff
+```
+
+<Aside>
+  **Why uv?** It's 10-100x faster than pip, handles virtual environments automatically, and has better dependency resolution. But pip works fine too!
+</Aside>
+
+### Option 2: Using pip and venv
+
+Traditional approach with Python's built-in tools:
+
+```bash
+# Create project directory
+mkdir taskflow-api
+cd taskflow-api
+
+# Create virtual environment
+python -m venv venv
+
+# Activate it (Linux/Mac)
+source venv/bin/activate
+# Or on Windows
+# venv\Scripts\activate
+
+# Install Zenith
+pip install zenith-web
+
+# Install dev dependencies
+pip install pytest pytest-asyncio black ruff
+
+# Save dependencies
+pip freeze > requirements.txt
+```
+
+## Project Structure
+
+Let's organize our project properly from the start. Good structure makes everything easier as the project grows:
+
+```bash
+# Create our project structure
+mkdir -p app/{models,services,routes,utils}
+mkdir -p tests/{unit,integration}
+touch app/__init__.py app/{models,services,routes,utils}/__init__.py
+```
+
+Your project should now look like this:
+
+```
+taskflow-api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py           # Application entry point (we'll create this)
+│   ├── config.py         # Configuration settings
+│   ├── models/           # Database models
+│   │   └── __init__.py
+│   ├── services/         # Business logic
+│   │   └── __init__.py
+│   ├── routes/           # API endpoints
+│   │   └── __init__.py
+│   └── utils/            # Helper functions
+│       └── __init__.py
+├── tests/                # Test files
+│   ├── unit/
+│   └── integration/
+├── .env                  # Environment variables (we'll create this)
+├── .gitignore            # Git ignore file
+└── requirements.txt      # Dependencies (if using pip)
+```
+
+<Aside type="note">
+  **Why this structure?** Separation of concerns. Models define data, services contain business logic, routes handle HTTP, and utils are helpers. This makes testing and maintenance much easier.
+</Aside>
+
+## Your First Zenith Application
+
+Now let's create our application. Create `app/main.py`:
+
+```python
+"""
+TaskFlow API - Task management system built with Zenith.
+
+This is our main application file that creates and configures
+the Zenith app instance.
+"""
+
+from zenith import Zenith
+from datetime import datetime
+
+# Create the Zenith application
+# In development, Zenith auto-configures based on environment
+app = Zenith(
+    title="TaskFlow API",
+    description="Task management system API",
+    version="0.1.0"
+)
+
+# Our first endpoint - API root information
+@app.get("/")
+async def root():
+    """
+    API root endpoint.
+
+    Returns basic information about the API including
+    available endpoints and current status.
+    """
+    return {
+        "name": "TaskFlow API",
+        "version": "0.1.0",
+        "status": "online",
+        "timestamp": datetime.utcnow().isoformat(),
+        "endpoints": {
+            "api": "/",
+            "health": "/health",
+            "docs": "/docs"  # Will be auto-generated!
+        }
+    }
+
+# Health check endpoint - important for production
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for monitoring.
+
+    Used by:
+    - Load balancers to check if the server is alive
+    - Monitoring systems (Datadog, New Relic, etc.)
+    - Container orchestrators (Kubernetes, ECS)
+    """
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "service": "taskflow-api",
+        "checks": {
+            "api": "operational",
+            # We'll add database check here later
+        }
+    }
+
+# Development runner
+if __name__ == "__main__":
+    # This allows us to run the app directly with: python app/main.py
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True  # Auto-reload on code changes
+    )
+```
+
+## Understanding What We Built
+
+Let's break down what's happening in our code:
+
+### The Zenith Application
+
+```python
+app = Zenith(
+    title="TaskFlow API",
+    description="Task management system API",
+    version="0.1.0"
+)
+```
+
+This creates our application instance. Zenith automatically:
+- Sets up error handling
+- Configures JSON serialization
+- Adds CORS headers (in development)
+- Prepares OpenAPI documentation
+- Sets up logging
+
+### Async Functions
+
+```python
+async def root():
+    return {...}
+```
+
+Notice the `async` keyword? This makes our function asynchronous, allowing it to:
+- Handle thousands of concurrent requests
+- Not block while waiting for database queries
+- Use modern Python async features
+
+<Aside>
+  **New to async?** Think of it like a restaurant. Sync code = one waiter serves one table completely before moving to the next. Async = waiter takes orders from multiple tables while kitchen prepares food. Much more efficient!
+</Aside>
+
+### Route Decorators
+
+```python
+@app.get("/")
+```
+
+This decorator tells Zenith:
+- Handle GET requests to the root path (`/`)
+- Call the function below when this path is accessed
+- Automatically convert the return value to JSON
+
+## Running Your Application
+
+Let's start our API! You have three ways to run it:
+
+### Method 1: Direct Python
+```bash
+python app/main.py
+```
+
+### Method 2: Uvicorn Command
+```bash
+uvicorn app.main:app --reload
+```
+
+### Method 3: Zenith CLI (if installed)
+```bash
+zen serve --reload
+```
+
+You should see output like:
+```
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [28720] using WatchFiles
+INFO:     Started server process [28722]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+```
+
+## Testing Your API
+
+Open a new terminal and let's test our endpoints:
+
+### Using curl
+```bash
+# Test the root endpoint
+curl http://localhost:8000/
+
+# You should see:
+{
+  "name": "TaskFlow API",
+  "version": "0.1.0",
+  "status": "online",
+  "timestamp": "2024-09-20T10:30:00",
+  "endpoints": {
+    "api": "/",
+    "health": "/health",
+    "docs": "/docs"
+  }
+}
+
+# Test the health endpoint
+curl http://localhost:8000/health
+```
+
+### Using Python (httpx)
+```python
+# Install httpx first: pip install httpx
+import httpx
+
+# Test our API
+response = httpx.get("http://localhost:8000/")
+print(response.json())
+```
+
+### Using the Browser
+
+Open your browser and visit:
+- `http://localhost:8000/` - See the JSON response
+- `http://localhost:8000/docs` - Interactive API documentation (auto-generated!)
+- `http://localhost:8000/redoc` - Alternative documentation style
+
+<Aside type="tip">
+  **Automatic Documentation!** Zenith generates interactive API docs from your code. No manual writing needed. Try the "Try it out" button in /docs!
+</Aside>
+
+## Adding Configuration
+
+Real applications need configuration. Let's create `app/config.py`:
+
+```python
+"""
+Application configuration.
+
+Loads settings from environment variables with sensible defaults
+for development.
+"""
+
+import os
+from typing import Optional
+
+class Settings:
+    """Application settings loaded from environment."""
+
+    # Application
+    APP_NAME: str = os.getenv("APP_NAME", "TaskFlow API")
+    APP_VERSION: str = os.getenv("APP_VERSION", "0.1.0")
+    DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
+
+    # Server
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("PORT", "8000"))
+
+    # Database (we'll use this in Part 2)
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///./taskflow.db"  # SQLite for development
+    )
+
+    # Security (we'll use this in Part 4)
+    SECRET_KEY: str = os.getenv(
+        "SECRET_KEY",
+        "development-secret-change-in-production"
+    )
+
+    # Email (we'll use this in Part 6)
+    SMTP_HOST: Optional[str] = os.getenv("SMTP_HOST")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER: Optional[str] = os.getenv("SMTP_USER")
+    SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD")
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production."""
+        return not self.DEBUG
+
+    @property
+    def is_development(self) -> bool:
+        """Check if running in development."""
+        return self.DEBUG
+
+# Create singleton instance
+settings = Settings()
+```
+
+Now create a `.env` file for local development:
+
+```bash
+# .env
+APP_NAME=TaskFlow API
+APP_VERSION=0.1.0
+DEBUG=true
+
+# Database
+DATABASE_URL=sqlite:///./taskflow.db
+
+# Security - CHANGE IN PRODUCTION!
+SECRET_KEY=dev-secret-key-change-this-in-production
+
+# Email (optional for now)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASSWORD=your-app-password
+```
+
+And update `app/main.py` to use our configuration:
+
+```python
+from app.config import settings
+
+app = Zenith(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    debug=settings.DEBUG
+)
+```
+
+## Adding Your First Feature
+
+Let's add a simple feature - a placeholder for tasks. Update `app/main.py`:
+
+```python
+# Temporary in-memory storage (we'll add a database in Part 2)
+tasks = []
+task_counter = 0
+
+@app.get("/tasks")
+async def list_tasks(
+    completed: bool = None,  # Optional filter
+    limit: int = 10         # Pagination limit
+):
+    """
+    List all tasks with optional filtering.
+
+    Query Parameters:
+    - completed: Filter by completion status
+    - limit: Maximum number of tasks to return
+    """
+    filtered_tasks = tasks
+
+    # Apply completed filter if provided
+    if completed is not None:
+        filtered_tasks = [
+            task for task in tasks
+            if task["completed"] == completed
+        ]
+
+    # Apply limit
+    filtered_tasks = filtered_tasks[:limit]
+
+    return {
+        "tasks": filtered_tasks,
+        "total": len(filtered_tasks)
+    }
+
+@app.post("/tasks")
+async def create_task(task_data: dict):
+    """
+    Create a new task.
+
+    For now, accepts any JSON. We'll add validation in Part 2.
+    """
+    global task_counter
+    task_counter += 1
+
+    # Create task with defaults
+    task = {
+        "id": task_counter,
+        "title": task_data.get("title", "Untitled Task"),
+        "description": task_data.get("description", ""),
+        "completed": False,
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+    tasks.append(task)
+
+    return {
+        "message": "Task created successfully",
+        "task": task
+    }
+```
+
+Test the new endpoints:
+
+```bash
+# Create a task
+curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Learn Zenith", "description": "Complete the tutorial"}'
+
+# List tasks
+curl http://localhost:8000/tasks
+
+# Filter completed tasks
+curl http://localhost:8000/tasks?completed=false
+```
+
+## Common Issues and Solutions
+
+### Issue: Port 8000 is already in use
+**Solution**: Another process is using the port. Either:
+- Stop the other process: `lsof -i :8000` then `kill <PID>`
+- Use a different port: `uvicorn app.main:app --port 8001`
+
+### Issue: Module not found errors
+**Solution**: Make sure you're in the virtual environment:
+```bash
+# Check if activated (you should see (venv) in prompt)
+which python
+
+# If not, activate it
+source venv/bin/activate  # Linux/Mac
+# or
+venv\Scripts\activate  # Windows
+```
+
+### Issue: Changes not reflecting
+**Solution**: Make sure you're running with `--reload`:
+```bash
+uvicorn app.main:app --reload
+```
+
+## What We Learned
+
+In this first part, you've:
+- Set up a Python development environment
+- Created a well-structured project
+- Built your first Zenith API
+- Understood async functions
+- Added configuration management
+- Created basic CRUD endpoints
+- Tested your API
+- Explored auto-generated documentation
+
+## Next Steps
+
+In [Part 2: Data Models](/tutorial/02-data-models), we'll:
+- Set up a real database (PostgreSQL/SQLite)
+- Create data models for users, projects, and tasks
+- Learn about migrations
+- Add data validation with Pydantic
+- Implement proper CRUD operations
+
+<Card title="Continue to Part 2" icon="arrow-right">
+  Ready to add a database? [Continue to Data Models →](/tutorial/02-data-models)
+</Card>
+
+## Additional Resources
+
+- [Zenith API Reference](/api/application) - Detailed API documentation
+- [Python Async Tutorial](https://docs.python.org/3/library/asyncio.html) - Learn more about async
+- [REST API Best Practices](https://restfulapi.net/) - API design patterns
+
+---
+
+**Questions?** Check our [FAQ](/faq) or ask in [GitHub Discussions](https://github.com/nijaru/zenith/discussions).

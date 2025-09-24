@@ -119,7 +119,7 @@ The CLI automatically discovers your application:
 
 **Error messages:**
 ```bash
-❌ No Zenith app found
+No Zenith app found
 
 🔍 Searched for:
    • app.py, main.py, application.py (with 'app' variable)
