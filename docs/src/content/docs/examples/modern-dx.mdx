@@ -1,71 +1,322 @@
 ---
-title: Automatic Configuration Setup
-description: Build applications without configuration files
+title: Automatic Configuration
+description: Zero-configuration setup with intelligent defaults
 ---
 
 import { Aside, FileTree } from '@astrojs/starlight/components';
 
 ## Overview
 
-This example demonstrates Zenith's automatic configuration features that allow you to start building without setup files.
+Zenith automatically configures your application based on the environment, eliminating boilerplate setup code. This example demonstrates the framework's automatic configuration and enhanced database models.
 
-## Key Features
-
-### Automatic Configuration Application
+## Zero-Configuration Setup
 
 ```python
 from zenith import Zenith
 
-# Automatic application configuration - detects environment and configures:
-# - Database (SQLite for dev, requires DATABASE_URL for prod)
-# - CORS (permissive for dev, secure for prod)
-# - Security (dev key for dev, requires SECRET_KEY for prod)
-# - Middleware (debug toolbar in dev, security headers in prod)
+# Zenith automatically configures everything
 app = Zenith()
+
+# This single line provides:
+# - Environment detection (development/production)
+# - Database configuration (SQLite for dev, DATABASE_URL for prod)
+# - CORS settings (permissive for dev, secure for prod)
+# - Security headers (appropriate for environment)
+# - Error handling (detailed for dev, secure for prod)
+# - Request logging (debug for dev, structured for prod)
+# - Hot reload in development
+# - And more...
 ```
 
-### Database Models
+### What Gets Configured
+
+When you create a Zenith application, it automatically:
+
+**In Development:**
+- Uses SQLite database (no setup required)
+- Enables permissive CORS for frontend development
+- Provides detailed error messages
+- Adds debug toolbar
+- Enables hot reload
+- Uses development secret key
+
+**In Production:**
+- Requires DATABASE_URL environment variable
+- Configures secure CORS from ALLOWED_ORIGINS
+- Returns safe error messages
+- Adds security headers
+- Requires SECRET_KEY environment variable
+- Enables structured logging
+
+## Enhanced Database Models
+
+Zenith provides `ZenithModel` - an enhanced SQLModel base class with built-in query methods:
 
 ```python
 from zenith.db import ZenithModel
 from sqlmodel import Field
+from datetime import datetime
 
 class User(ZenithModel, table=True):
     id: int | None = Field(primary_key=True)
-    name: str
+    name: str = Field(max_length=100)
     email: str = Field(unique=True)
     active: bool = Field(default=True)
-
-# Query methods
-users = await User.all()
-user = await User.find(1)
-user = await User.find_or_404(1)  # Returns 404 if not found
-user = await User.create(name="Alice", email="alice@example.com")
-
-# Chainable queries
-active_users = await User.where(active=True).order_by('-created_at').limit(10)
+    created_at: datetime = Field(default_factory=datetime.now)
 ```
 
-### Dependency Injection
+### Query Methods
+
+ZenithModel provides intuitive query methods:
+
+```python
+# Get all users
+users = await User.all()
+
+# Find by ID
+user = await User.find(1)                  # Returns None if not found
+user = await User.find_or_404(1)          # Raises 404 if not found
+
+# Create new user
+user = await User.create(
+    name="Alice",
+    email="alice@example.com"
+)
+
+# Chainable queries
+active_users = await (
+    User.where(active=True)
+        .order_by('-created_at')    # '-' prefix for descending
+        .limit(10)
+        .all()
+)
+
+# With relationships
+posts = await (
+    Post.where(published=True)
+        .includes('author')         # Eager load relationships
+        .order_by('-created_at')
+        .limit(20)
+        .all()
+)
+```
+
+### Automatic Session Management
+
+ZenithModel automatically uses the request-scoped database session:
 
 ```python
 @app.get("/users")
 async def get_users():
-    """Get active users."""
+    # No need to inject or manage database sessions
     users = await User.where(active=True).all()
-    return {"users": [u.to_dict() for u in users]}
+    return {
+        "users": [u.to_dict() for u in users],
+        "count": len(users)
+    }
+
+@app.post("/users")
+async def create_user(name: str, email: str):
+    # Create, save, and return in one operation
+    user = await User.create(name=name, email=email)
+    return {"user": user.to_dict()}
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: int):
+    # Automatic 404 handling
+    user = await User.find_or_404(user_id)
+    return {"user": user.to_dict()}
+```
+
+### Built-in Serialization
+
+Every ZenithModel includes a `to_dict()` method for easy JSON serialization:
+
+```python
+@app.get("/api/users")
+async def api_users():
+    users = await User.all()
+    return {
+        "users": [user.to_dict() for user in users],
+        "total": len(users)
+    }
+```
+
+## Environment-Specific Configuration
+
+Zenith adapts to your environment automatically:
+
+```python
+from zenith import Zenith
+
+# Development (auto-detected)
+app = Zenith()  # Uses SQLite, debug mode, permissive CORS
+
+# Production (auto-detected via environment variables)
+app = Zenith()  # Uses DATABASE_URL, secure settings, production middleware
+```
+
+### Environment Variables
+
+Zenith respects these environment variables:
+
+```bash
+# Required in production
+DATABASE_URL=postgresql://user:pass@host/db
+SECRET_KEY=your-secure-secret-key
+ALLOWED_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
+
+# Optional
+DEBUG=false                    # Force production mode
+CORS_MAX_AGE=3600              # CORS cache duration
+LOG_LEVEL=INFO                 # Logging level
 ```
 
 ## Complete Example
 
-Run the example: `python examples/03-modern-developer-experience.py`
+```python
+# examples/03-modern-developer-experience.py
+from zenith import Zenith
+from zenith.db import ZenithModel
+from sqlmodel import Field
+from datetime import datetime
+from typing import Optional
 
-This example demonstrates:
-- Automatic configuration
-- Database model queries
-- Dependency injection
-- Error handling
+# Zero configuration needed
+app = Zenith()
+
+# Define your models
+class User(ZenithModel, table=True):
+    id: Optional[int] = Field(primary_key=True)
+    name: str
+    email: str = Field(unique=True)
+    active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.now)
+
+class Post(ZenithModel, table=True):
+    id: Optional[int] = Field(primary_key=True)
+    title: str
+    content: str
+    published: bool = Field(default=False)
+    user_id: int = Field(foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.now)
+
+@app.on_event("startup")
+async def startup():
+    # Create tables if they don't exist
+    await ZenithModel.create_all()
+
+@app.get("/")
+async def home():
+    """Show auto-configured features."""
+    return {
+        "message": "Zenith is running with automatic configuration",
+        "environment": "development" if app.debug else "production",
+        "features": {
+            "database": "Connected and ready",
+            "cors": "Configured for your environment",
+            "security": "Headers and middleware active",
+            "sessions": "Request-scoped and automatic",
+            "serialization": "JSON handling optimized"
+        }
+    }
+
+@app.get("/users")
+async def list_users(active: bool = True, limit: int = 10):
+    """List users with filtering."""
+    users = await (
+        User.where(active=active)
+            .order_by('-created_at')
+            .limit(limit)
+            .all()
+    )
+    return {
+        "users": [u.to_dict() for u in users],
+        "total": len(users),
+        "filters": {"active": active, "limit": limit}
+    }
+
+@app.post("/users")
+async def create_user(name: str, email: str):
+    """Create a new user."""
+    user = await User.create(name=name, email=email)
+    return {
+        "message": "User created successfully",
+        "user": user.to_dict()
+    }
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: int):
+    """Get user by ID."""
+    user = await User.find_or_404(user_id)
+    return {"user": user.to_dict()}
+
+@app.post("/users/{user_id}/posts")
+async def create_post(user_id: int, title: str, content: str):
+    """Create a post for a user."""
+    # Verify user exists
+    user = await User.find_or_404(user_id)
+
+    # Create post
+    post = await Post.create(
+        title=title,
+        content=content,
+        user_id=user.id
+    )
+
+    return {
+        "message": "Post created",
+        "post": post.to_dict()
+    }
+
+@app.get("/posts")
+async def list_posts():
+    """List published posts."""
+    posts = await (
+        Post.where(published=True)
+            .order_by('-created_at')
+            .limit(20)
+            .all()
+    )
+    return {
+        "posts": [p.to_dict() for p in posts],
+        "count": len(posts)
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    print("🚀 Zenith Modern DX Demo")
+    print("✨ Everything is auto-configured!")
+    print("📊 Visit http://localhost:8003/")
+    uvicorn.run(app, host="0.0.0.0", port=8003)
+```
+
+## Key Benefits
+
+### Development Speed
+- Start coding immediately without setup
+- Automatic database configuration
+- Built-in development tools
+
+### Code Clarity
+- Intuitive query methods
+- Automatic session management
+- Clean, readable API
+
+### Production Ready
+- Environment-aware configuration
+- Security headers included
+- Performance optimizations
+
+### Type Safety
+- Full type hints throughout
+- IDE autocomplete support
+- Runtime validation
 
 <Aside type="tip">
-  **Note**: The database session is managed automatically within request scope.
+  For complex queries that don't fit the chainable pattern, you can always access the underlying SQLAlchemy session with `await Model._get_session()`.
 </Aside>
+
+## Summary
+
+Zenith's automatic configuration and enhanced models let you focus on building your application instead of configuring it. The framework handles the complexity while providing escape hatches when you need them.

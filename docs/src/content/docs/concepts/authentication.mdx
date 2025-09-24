@@ -9,58 +9,124 @@ import { Aside } from '@astrojs/starlight/components';
 
 Zenith provides a comprehensive authentication system with JWT tokens, password hashing, and flexible authorization. It includes built-in support for user registration, login, and protected routes.
 
-## Quick Start
+## Quick Start (Complete Auth in 5 Minutes)
 
 ```python
-from zenith import Zenith, Depends
+from zenith import Zenith, Depends, HTTPException
 from zenith.auth import Auth, create_access_token, get_current_user
 from zenith.auth.password import hash_password, verify_password
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 app = Zenith()
 
-# User model
+# Input validation models
 class UserLogin(BaseModel):
-    email: str
-    password: str
+    """Login credentials - what users send to authenticate."""
+    email: EmailStr  # EmailStr validates email format automatically
+    password: str    # Plain text (will be hashed, never stored)
 
 class UserCreate(UserLogin):
-    name: str
+    """Registration data - extends login with additional fields."""
+    name: str  # Additional field for registration
 
-# Mock user store (use database in production)
-users_db = {}
+# In-memory user store for demo (use database in production!)
+users_db = {}  # {email: {email, name, password_hash}}
 
+# REGISTRATION ENDPOINT - Create new user accounts
 @app.post("/auth/register")
 async def register(user: UserCreate):
-    # Check if user exists
+    """
+    User registration flow:
+    1. Check if email is already taken
+    2. Hash the password (never store plain text!)
+    3. Save user to database
+    4. Return JWT token for immediate login
+    """
+
+    # Step 1: Check if user already exists (prevent duplicates)
     if user.email in users_db:
+        # Use proper HTTP status codes:
+        # 400 = Bad Request (client error)
+        # 409 = Conflict (would be more semantic)
         raise HTTPException(400, "Email already registered")
-    
-    # Create user
+
+    # Step 2: Create user record with hashed password
     users_db[user.email] = {
         "email": user.email,
         "name": user.name,
+        # hash_password uses bcrypt - industry standard, salted, slow by design
         "password_hash": hash_password(user.password)
     }
-    
-    # Generate token
-    token = create_access_token({"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    # Password is now gone from memory - we only keep the hash
 
+    # Step 3: Generate JWT token for immediate access
+    # "sub" (subject) is JWT standard claim for user identity
+    token = create_access_token({"sub": user.email})
+
+    # Step 4: Return token in standard OAuth2 format
+    return {
+        "access_token": token,
+        "token_type": "bearer"  # Tells client to use: Authorization: Bearer <token>
+    }
+
+# LOGIN ENDPOINT - Authenticate existing users
 @app.post("/auth/login")
 async def login(credentials: UserLogin):
-    # Verify user
-    user = users_db.get(credentials.email)
-    if not user or not verify_password(credentials.password, user["password_hash"]):
-        raise HTTPException(401, "Invalid credentials")
-    
-    # Generate token
-    token = create_access_token({"sub": credentials.email})
-    return {"access_token": token, "token_type": "bearer"}
+    """
+    Login flow:
+    1. Find user by email
+    2. Verify password against stored hash
+    3. Generate new JWT token
+    4. Return token for API access
+    """
 
+    # Step 1: Look up user (returns None if not found)
+    user = users_db.get(credentials.email)
+
+    # Step 2: Verify credentials
+    if not user or not verify_password(credentials.password, user["password_hash"]):
+        # Important: Same error for "user not found" and "wrong password"
+        # This prevents attackers from discovering valid emails
+        raise HTTPException(401, "Invalid credentials")  # 401 = Unauthorized
+
+    # Step 3: Generate JWT token (user is authenticated)
+    token = create_access_token({"sub": credentials.email})
+
+    # Step 4: Return token
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        # Optional: Include user info to save a round trip
+        "user": {"email": user["email"], "name": user["name"]}
+    }
+
+# PROTECTED ENDPOINT - Requires valid JWT token
 @app.get("/protected")
-async def protected_route(user = Depends(get_current_user)):
-    return {"message": f"Hello {user['email']}!"}
+async def protected_route(
+    user = Depends(get_current_user)  # Automatically validates JWT
+):
+    """
+    Protected route that requires authentication.
+
+    How it works:
+    1. Client sends: Authorization: Bearer <token>
+    2. get_current_user extracts and validates token
+    3. If valid: user info is injected
+    4. If invalid: 401 Unauthorized is returned
+
+    No manual token validation needed!
+    """
+
+    return {
+        "message": f"Hello {user['email']}!",
+        "user": user,
+        "note": "This endpoint requires valid JWT token"
+    }
+
+# Example usage:
+# 1. Register: POST /auth/register {"email": "user@example.com", "password": "SecurePass123!", "name": "John"}
+# 2. Get token from response
+# 3. Use token: GET /protected with header "Authorization: Bearer <token>"
 ```
 
 ## JWT Configuration
@@ -71,45 +137,73 @@ async def protected_route(user = Depends(get_current_user)):
 from zenith.auth import JWTConfig
 import os
 
+# Configure JWT token generation and validation
 jwt_config = JWTConfig(
+    # SECRET_KEY is critical - NEVER commit to git!
     secret_key=os.getenv("SECRET_KEY", "your-secret-key"),
-    algorithm="HS256",
-    access_token_expire_minutes=30,
-    refresh_token_expire_days=7
+    # In production: use long, random key (32+ bytes)
+    # Generate with: openssl rand -hex 32
+
+    # Algorithm for signing tokens
+    algorithm="HS256",  # HMAC with SHA-256 (symmetric)
+    # Other options: RS256 (RSA, asymmetric), ES256 (ECDSA)
+
+    # Token expiration times
+    access_token_expire_minutes=30,  # Short-lived for security
+    refresh_token_expire_days=7       # Long-lived for convenience
 )
 
+# Apply configuration to your app
 app = Zenith(auth_config=jwt_config)
+
+# Now all auth functions use these settings automatically
 ```
 
-### Advanced Configuration
+### Advanced Configuration (Production-Grade)
 
 ```python
 jwt_config = JWTConfig(
-    # Security
-    secret_key=os.getenv("SECRET_KEY"),
-    algorithm="RS256",  # RSA signature
+    # RSA ASYMMETRIC KEYS (more secure for distributed systems)
+    algorithm="RS256",  # RSA with SHA-256
+
+    # Public key for verification (can be shared)
     public_key=open("public.pem").read(),
+    # Private key for signing (keep secret!)
     private_key=open("private.pem").read(),
-    
-    # Token settings
-    access_token_expire_minutes=15,
-    refresh_token_expire_days=30,
-    
-    # Claims
-    issuer="https://api.example.com",
-    audience="https://app.example.com",
-    
-    # Options
-    verify_signature=True,
-    verify_exp=True,
-    verify_aud=True,
-    require_exp=True
+
+    # Generate RSA keys with:
+    # openssl genrsa -out private.pem 2048
+    # openssl rsa -in private.pem -pubout -out public.pem
+
+    # TOKEN LIFETIMES (balance security vs convenience)
+    access_token_expire_minutes=15,  # Very short for high security
+    refresh_token_expire_days=30,    # Long enough to avoid frequent logins
+
+    # JWT STANDARD CLAIMS (for multi-service architectures)
+    issuer="https://api.example.com",     # Who created the token
+    audience="https://app.example.com",   # Who can use the token
+
+    # VALIDATION OPTIONS (all should be True in production)
+    verify_signature=True,  # Check token hasn't been tampered with
+    verify_exp=True,        # Check token hasn't expired
+    verify_aud=True,        # Check token is for this service
+    require_exp=True,       # Reject tokens without expiration
+
+    # Additional security
+    leeway_seconds=0,       # No tolerance for expired tokens
+    verify_iat=True,        # Verify "issued at" time
+    verify_nbf=True         # Verify "not before" time
 )
+
+# Why use RSA over HMAC?
+# - Public key can verify tokens without ability to create them
+# - Perfect for microservices where multiple services verify tokens
+# - API gateway can verify without knowing signing secret
 ```
 
 ## Password Security
 
-### Hashing Passwords
+### Hashing Passwords (Never Store Plain Text!)
 
 ```python
 from zenith.auth.password import (
@@ -118,21 +212,58 @@ from zenith.auth.password import (
     PasswordConfig
 )
 
-# Configure bcrypt
+# Configure password requirements and hashing
 password_config = PasswordConfig(
-    bcrypt_rounds=12,  # Higher = more secure but slower
-    min_length=8,
-    require_uppercase=True,
-    require_lowercase=True,
-    require_digits=True,
-    require_special=True
+    # BCRYPT WORK FACTOR (cost parameter)
+    bcrypt_rounds=12,  # 2^12 iterations
+    # Higher = more secure but slower
+    # 10 = ~10ms (development)
+    # 12 = ~250ms (production)
+    # 14 = ~1s (high security)
+    # Adjust based on your server capacity
+
+    # PASSWORD COMPLEXITY REQUIREMENTS
+    min_length=8,           # Minimum characters
+    require_uppercase=True, # Must have A-Z
+    require_lowercase=True, # Must have a-z
+    require_digits=True,    # Must have 0-9
+    require_special=True,   # Must have !@#$%^&* etc.
+
+    # Additional options
+    max_length=128,         # Prevent DoS with huge passwords
+    banned_passwords=[      # Common passwords to reject
+        "password", "12345678", "qwerty"
+    ]
 )
 
-# Hash password
+# HASHING - One way transformation
 hashed = hash_password("SecurePass123!", config=password_config)
+# Result: $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY.hsHL8jjF3DRM
+#         ^^^^  ^^ ^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#         alg  cost      salt                    hash
 
-# Verify password
+# VERIFICATION - Compare plain text with hash
 is_valid = verify_password("SecurePass123!", hashed)
+# Returns: True if password matches, False otherwise
+
+# Important: verify_password is constant-time to prevent timing attacks
+
+# Example: Registration flow
+@app.post("/register")
+async def register(email: str, password: str):
+    # Validate password strength first
+    if len(password) < password_config.min_length:
+        raise HTTPException(400, "Password too short")
+
+    # Hash before storing
+    user = User(
+        email=email,
+        password_hash=hash_password(password, password_config)
+    )
+    await user.save()
+
+    # Original password is now gone - only hash remains!
+    return {"message": "User created"}
 ```
 
 ### Password Validation
@@ -152,33 +283,57 @@ async def register(user: UserCreate):
 
 ## Token Management
 
-### Creating Tokens
+### Creating Tokens (What Goes in a JWT?)
 
 ```python
 from zenith.auth import create_access_token, create_refresh_token
 from datetime import timedelta
 
-# Standard access token
+# STANDARD ACCESS TOKEN - Short-lived, contains user info
 access_token = create_access_token(
-    data={"sub": user.email, "role": user.role},
-    expires_delta=timedelta(minutes=15)
+    data={
+        "sub": user.email,  # 'subject' - WHO is this token for?
+        "role": user.role   # What can they do?
+    },
+    expires_delta=timedelta(minutes=15)  # Dies quickly for security
 )
+# Use for: API requests, checking permissions
+# Token size: ~200-500 bytes
 
-# Refresh token
+# REFRESH TOKEN - Long-lived, minimal info
 refresh_token = create_refresh_token(
-    data={"sub": user.email},
-    expires_delta=timedelta(days=30)
+    data={
+        "sub": user.email  # Only identity, no permissions
+    },
+    expires_delta=timedelta(days=30)  # Lives longer for convenience
 )
+# Use for: Getting new access tokens without re-login
+# Store: HttpOnly cookie or secure storage
 
-# Custom claims
+# CUSTOM CLAIMS - Add app-specific data
 token = create_access_token(
     data={
-        "sub": user.email,
-        "role": user.role,
-        "permissions": user.permissions,
-        "org_id": user.organization_id
+        # Standard claims
+        "sub": user.email,           # Subject (user identity)
+        "iat": datetime.utcnow(),    # Issued at (automatic)
+        "exp": ...,                  # Expiration (automatic)
+
+        # Custom claims for your app
+        "role": user.role,           # For role-based access
+        "permissions": [              # For fine-grained access
+            "posts:read",
+            "posts:write",
+            "users:read"
+        ],
+        "org_id": user.organization_id,  # Multi-tenant apps
+        "subscription": "premium"        # Feature flags
     }
 )
+
+# WARNING: Don't put sensitive data in JWT!
+# JWTs are encoded, NOT encrypted - anyone can read them
+# BAD: password, SSN, credit card
+# GOOD: user_id, email, role, permissions
 ```
 
 ### Decoding Tokens
@@ -234,24 +389,74 @@ async def get_profile(current_user = Depends(get_current_user)):
     return current_user
 ```
 
-### Role-Based Access
+### Role-Based Access Control (RBAC)
 
 ```python
 from zenith.auth import require_role
 
+# SINGLE ROLE REQUIREMENT
 @app.delete("/users/{user_id}")
-@require_role("admin")
+@require_role("admin")  # Decorator checks role BEFORE function runs
 async def delete_user(
     user_id: int,
-    current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user)  # Still need user info
 ):
-    # Only admins can delete users
+    """
+    Only admins can delete users.
+
+    Flow:
+    1. Client sends: DELETE /users/123 with JWT token
+    2. require_role decorator extracts and validates token
+    3. Checks if token contains role="admin"
+    4. If yes: proceeds to function
+    5. If no: returns 403 Forbidden
+    """
+
+    # At this point, we KNOW user is admin
+    await User.find(user_id).delete()
+
+    # Log admin action for audit
+    logger.info(f"Admin {current_user['email']} deleted user {user_id}")
+
     return {"deleted": user_id}
 
+# MULTIPLE ROLES (OR logic)
 @app.get("/admin/dashboard")
-@require_role(["admin", "moderator"])
-async def admin_dashboard(current_user = Depends(get_current_user)):
-    return {"role": current_user["role"]}
+@require_role(["admin", "moderator"])  # Admin OR moderator
+async def admin_dashboard(
+    current_user = Depends(get_current_user)
+):
+    """
+    Multiple roles = ANY of these roles work.
+    """
+
+    # Different UI based on role
+    if current_user["role"] == "admin":
+        return {
+            "role": "admin",
+            "features": ["users", "settings", "billing"],
+            "can_delete": True
+        }
+    else:  # moderator
+        return {
+            "role": "moderator",
+            "features": ["users", "content"],
+            "can_delete": False
+        }
+
+# HIERARCHICAL ROLES
+ROLE_HIERARCHY = {
+    "super_admin": ["admin", "moderator", "user"],
+    "admin": ["moderator", "user"],
+    "moderator": ["user"],
+    "user": []
+}
+
+def has_role(user_role: str, required_role: str) -> bool:
+    """Check if user role includes required role."""
+    if user_role == required_role:
+        return True
+    return required_role in ROLE_HIERARCHY.get(user_role, [])
 ```
 
 ### Permission-Based Access
@@ -277,37 +482,103 @@ async def edit_post(
     return {"updated": post_id}
 ```
 
-### Custom Authorization
+### Custom Authorization (Beyond Roles)
 
 ```python
 from zenith.auth import AuthorizationChecker
 
 class OwnershipChecker(AuthorizationChecker):
-    """Check if user owns the resource."""
-    
+    """Check if user owns the resource.
+
+    Use when roles aren't enough:
+    - Users can only edit THEIR OWN posts
+    - Users can only delete THEIR OWN comments
+    - Users can only view THEIR OWN orders
+    """
+
     async def check(
         self,
-        user: dict,
-        resource_id: int,
-        resource_type: str
+        user: dict,          # Current user from JWT
+        resource_id: int,    # ID of resource to check
+        resource_type: str   # Type for polymorphic checks
     ) -> bool:
-        # Check ownership in database
-        resource = await get_resource(resource_type, resource_id)
-        return resource and resource.owner_id == user["id"]
+        """Return True if user owns resource."""
 
-# Use in route
+        # Look up resource in database
+        if resource_type == "post":
+            resource = await Post.find(resource_id)
+        elif resource_type == "comment":
+            resource = await Comment.find(resource_id)
+        else:
+            return False  # Unknown resource type
+
+        # Check ownership
+        if not resource:
+            return False  # Resource doesn't exist
+
+        return resource.owner_id == user["id"]  # Is owner?
+
+# USE IN ROUTES - Combine with role checks
 @app.put("/posts/{post_id}")
 async def update_post(
     post_id: int,
-    post: PostUpdate,
+    post_update: PostUpdate,
     current_user = Depends(get_current_user),
-    checker: OwnershipChecker = Depends()
+    checker: OwnershipChecker = Depends()  # Inject checker
 ):
-    # Check ownership
-    if not await checker.check(current_user, post_id, "post"):
-        raise HTTPException(403, "Not authorized")
-    
-    return {"updated": post_id}
+    """
+    Users can only edit their own posts.
+
+    Authorization logic:
+    1. User must be authenticated (get_current_user)
+    2. User must own the post (OwnershipChecker)
+    3. OR user must be admin (bypass ownership)
+    """
+
+    # Admin bypass - admins can edit any post
+    if current_user.get("role") == "admin":
+        # Log admin override for audit
+        logger.info(f"Admin {current_user['email']} editing post {post_id}")
+
+    # Regular user - must own the post
+    elif not await checker.check(current_user, post_id, "post"):
+        raise HTTPException(
+            403,
+            "You can only edit your own posts"
+        )
+
+    # Proceed with update (authorized)
+    post = await Post.find_or_404(post_id)
+    await post.update(**post_update.model_dump())
+
+    return {"updated": post_id, "post": post.to_dict()}
+
+# COMPLEX AUTHORIZATION - Multiple checks
+@app.post("/teams/{team_id}/invite")
+async def invite_to_team(
+    team_id: int,
+    email: str,
+    current_user = Depends(get_current_user)
+):
+    """Complex auth: Must be team owner OR admin OR have invite permission."""
+
+    team = await Team.find_or_404(team_id)
+
+    # Check various authorization paths
+    is_owner = team.owner_id == current_user["id"]
+    is_admin = current_user.get("role") == "admin"
+    has_permission = "team:invite" in current_user.get("permissions", [])
+    is_member = current_user["id"] in team.member_ids
+
+    if not (is_owner or is_admin or (is_member and has_permission)):
+        raise HTTPException(
+            403,
+            "You need to be team owner or have invite permission"
+        )
+
+    # Proceed with invitation
+    await send_invitation(team_id, email)
+    return {"invited": email}
 ```
 
 ## OAuth2 Integration

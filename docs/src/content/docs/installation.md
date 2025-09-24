@@ -5,22 +5,69 @@ description: Get Zenith installed and set up your development environment
 
 ## Installation Overview
 
-Typical Python web frameworks require multiple separate installations:
-- Installing the core framework
-- Adding database drivers separately
-- Installing Redis clients
-- Adding authentication libraries
-- Finding compatible middleware packages
-- Configuring each component manually
-
-## Batteries Included Approach
-
-Zenith includes **everything** you need in one install:
+### The Problem (Traditional Python Web Development)
 ```bash
-pip install zenith-web  # That's it!
+# What you usually have to install manually
+pip install web-framework        # Core framework
+pip install uvicorn              # ASGI server
+pip install sqlalchemy           # Database ORM
+pip install psycopg2-binary      # PostgreSQL driver
+pip install redis                # Redis client
+pip install python-jose          # JWT handling
+pip install passlib              # Password hashing
+pip install python-multipart     # File uploads
+pip install bcrypt               # Password encryption
+pip install alembic              # Database migrations
+pip install pytest               # Testing
+pip install pytest-asyncio       # Async testing
+pip install aioredis             # Async Redis
+# ... and 20+ more packages
+
+# Then spend hours configuring each one:
+# - Database connection strings
+# - Authentication settings
+# - Middleware order
+# - Testing setup
+# - CORS configuration
+# - Security headers
+# And pray they all work together! 😫
 ```
 
-All database drivers, Redis support, authentication, and middleware are included and pre-configured.
+### The Solution (Zenith "Batteries Included" Approach)
+```bash
+# With Zenith - everything in one install
+pip install zenith-web  # That's literally it!
+
+# Zenith includes these dependencies:
+# ✓ SQLAlchemy 2.0+ with async support
+# ✓ SQLModel for type-safe models
+# ✓ PostgreSQL driver (asyncpg)
+# ✓ SQLite driver (aiosqlite)
+# ✓ Redis client for caching
+# ✓ JWT libraries (PyJWT)
+# ✓ Password hashing (bcrypt + passlib)
+# ✓ WebSocket support
+# ✓ Alembic for migrations
+# ✓ Performance monitoring (prometheus-client)
+# ✓ JSON serialization (orjson, msgspec)
+# ✓ File upload support (python-multipart)
+# ✓ Async server (uvicorn)
+
+# What Zenith provides on top:
+# ✓ Automatic configuration
+# ✓ Request-scoped database sessions
+# ✓ ActiveRecord-style query methods
+# ✓ Built-in authentication helpers
+# ✓ Admin dashboard foundation
+# ✓ Testing utilities
+# ✓ CLI tools
+```
+
+**Installation Benefits:**
+- **Batteries included**: Core dependencies pre-selected and tested together
+- **Version compatibility**: All packages guaranteed to work together
+- **Sensible defaults**: Production-ready configuration out of the box
+- **Time saved**: Start building immediately instead of configuring
 
 ## Requirements
 
@@ -36,18 +83,39 @@ Before installing Zenith, ensure you have:
 | Method | Best For | Why Choose This |
 |--------|----------|----------------|
 | **pip** | Quick start, tutorials | Universal, works everywhere |
-| **uv** | Modern development | 10x faster, better dependency resolution |
+| **uv** | Modern development | 10-100x faster installs, better dependency resolution |
 | **Poetry** | Team projects | Lock files, reproducible builds |
 | **Docker** | Microservices | Consistent environments |
 
 ## Installation Methods
 
-**pip:**
+### Method 1: pip (Most Common)
 ```bash
-# Install Zenith
+# Install Zenith with all dependencies
 pip install zenith-web
 
-# All dependencies are included by default
+# Verify installation
+zen --version
+# Should output: Zenith 0.3.1 (or latest version)
+
+# Create your first project
+zen new my-api
+# This creates:
+# - app.py (main application with examples)
+# - .env (environment variables with secure secret key)
+# - requirements.txt (pinned dependencies)
+# - .gitignore (sensible defaults)
+# - README.md (quick start guide)
+
+# Start development server
+cd my-api
+zen dev
+# Automatically:
+# - Detects your app file
+# - Enables hot reload
+# - Shows pretty error pages
+# - Opens browser (optional: --open flag)
+```
 # Redis, PostgreSQL, and other drivers are already included
 ```
 
@@ -320,32 +388,30 @@ If all checks pass, you're ready to build!
 
 ## Migration from Other Frameworks
 
-### From FastAPI
-```bash
-# FastAPI requires multiple installs
-pip install fastapi uvicorn[standard] sqlalchemy redis pyjwt
+### Migrating from Other Frameworks
 
-# Zenith includes everything
-pip install zenith-web  # Done!
+If you're coming from another Python web framework:
+
+```bash
+# Traditional approach - install core + many extensions
+pip install framework-core
+pip install framework-orm
+pip install framework-auth
+pip install framework-cors
+pip install framework-validation
+pip install redis
+pip install celery
+# ... many more packages
+
+# With Zenith - everything included
+pip install zenith-web  # All batteries included!
 ```
 
-### From Flask
-```bash
-# Flask requires many extensions
-pip install flask flask-sqlalchemy flask-cors flask-jwt-extended
-
-# Zenith is batteries-included
-pip install zenith-web  # Everything included!
-```
-
-### From Django
-```bash
-# Django + async support + API tools
-pip install django djangorestframework django-cors-headers channels
-
-# Zenith is async-first with API focus
-pip install zenith-web  # Simpler, faster, async
-```
+**What's different:**
+- **Single package**: No need to hunt for compatible extensions
+- **Pre-configured**: Sensible defaults that work immediately
+- **Async-first**: Built for modern async Python from the ground up
+- **Type-safe**: Full type hints and validation throughout
 
 ## Best Practices
 
@@ -356,7 +422,7 @@ pip install zenith-web  # Simpler, faster, async
 - Keep `requirements.txt` updated
 - Use `uv` for faster installs
 
-### ❌ DON'T
+### DON'T
 - Don't install in system Python
 - Don't mix pip and poetry in same project
 - Don't forget to activate virtual environment

@@ -1,132 +1,375 @@
 ---
-title: Basic Routing Example
-description: Learn Zenith's routing capabilities with path parameters, query parameters, and different HTTP methods
+title: Basic Routing
+description: Routing with path parameters, query parameters, and different HTTP methods
 ---
 
-# Basic Routing Example
+# Basic Routing
 
-This example demonstrates Zenith's comprehensive routing system including path parameters, query parameters, and HTTP method handling.
+This example demonstrates Zenith's routing system, including path parameters, query parameters, and different HTTP methods.
 
-## Code Example
+## Simple Routes
+
+Create basic endpoints with the route decorators:
 
 ```python
 from zenith import Zenith
-from pydantic import BaseModel
-from typing import Optional
 
 app = Zenith()
 
-# Simple GET route
 @app.get("/")
 async def root():
+    """Root endpoint."""
     return {"message": "Welcome to Zenith!"}
 
-# Route with path parameter
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "service": "api"
+    }
+```
+
+## Path Parameters
+
+Extract values from the URL path with type annotations:
+
+```python
 @app.get("/users/{user_id}")
 async def get_user(user_id: int):
-    return {"user_id": user_id, "name": f"User {user_id}"}
+    """Get a specific user by ID.
 
-# Route with multiple path parameters
+    The user_id is extracted from the URL and automatically
+    converted to an integer. Invalid values return 422.
+    """
+    return {
+        "user_id": user_id,
+        "name": f"User {user_id}",
+        "email": f"user{user_id}@example.com"
+    }
+
 @app.get("/users/{user_id}/posts/{post_id}")
 async def get_user_post(user_id: int, post_id: int):
+    """Get a specific post from a specific user.
+
+    Multiple path parameters are supported.
+    """
     return {
         "user_id": user_id,
         "post_id": post_id,
         "title": f"Post {post_id} by User {user_id}"
     }
+```
 
-# Route with query parameters
+## Query Parameters
+
+Handle URL query parameters with function parameters:
+
+```python
 @app.get("/search")
-async def search_items(q: str, limit: int = 10, offset: int = 0):
+async def search_items(
+    q: str,                    # Required query parameter
+    limit: int = 10,          # Optional with default
+    offset: int = 0           # Optional with default
+):
+    """Search with query parameters.
+
+    Example URLs:
+    - /search?q=python
+    - /search?q=python&limit=5
+    - /search?q=python&limit=5&offset=20
+    """
+    results = [f"Result {i} for '{q}'" for i in range(offset, offset + limit)]
+
     return {
         "query": q,
         "limit": limit,
         "offset": offset,
-        "results": [f"Result {i}" for i in range(offset, offset + limit)]
+        "results": results,
+        "total": 100
     }
+```
 
-# POST route with request body
-class CreateUser(BaseModel):
+## Request Body
+
+Handle JSON request bodies with Pydantic models:
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+
+class UserCreate(BaseModel):
+    """Model for user creation."""
     name: str
     email: str
     age: Optional[int] = None
 
 @app.post("/users")
-async def create_user(user: CreateUser):
+async def create_user(user: UserCreate):
+    """Create a new user.
+
+    Expects JSON body:
+    {
+        "name": "Alice",
+        "email": "alice@example.com",
+        "age": 30  // optional
+    }
+    """
     return {
-        "message": "User created",
+        "message": "User created successfully",
         "user": user.model_dump(),
-        "id": 123
+        "id": 123  # Would be from database
     }
+```
 
-# PUT route for updates
-@app.put("/users/{user_id}")
-async def update_user(user_id: int, user: CreateUser):
+## HTTP Methods
+
+Zenith supports all standard HTTP methods:
+
+```python
+@app.get("/items/{item_id}")
+async def get_item(item_id: int):
+    """Retrieve an item."""
+    return {"item_id": item_id, "name": f"Item {item_id}"}
+
+@app.post("/items")
+async def create_item(data: dict):
+    """Create a new item."""
+    return {"message": "Item created", "data": data}
+
+@app.put("/items/{item_id}")
+async def update_item(item_id: int, data: dict):
+    """Update an existing item."""
+    return {"message": f"Item {item_id} updated", "data": data}
+
+@app.patch("/items/{item_id}")
+async def patch_item(item_id: int, data: dict):
+    """Partially update an item."""
+    return {"message": f"Item {item_id} patched", "data": data}
+
+@app.delete("/items/{item_id}")
+async def delete_item(item_id: int):
+    """Delete an item."""
+    return {"message": f"Item {item_id} deleted"}
+```
+
+## Response Models
+
+Use response models for type-safe responses:
+
+```python
+class User(BaseModel):
+    """User response model."""
+    id: int
+    name: str
+    email: str
+    created_at: datetime
+
+@app.get("/users/{user_id}", response_model=User)
+async def get_user_detailed(user_id: int) -> User:
+    """Get user with validated response."""
+    # Return value is validated against User model
+    return User(
+        id=user_id,
+        name=f"User {user_id}",
+        email=f"user{user_id}@example.com",
+        created_at=datetime.now()
+    )
+```
+
+## Status Codes
+
+Control response status codes:
+
+```python
+from zenith import status
+
+@app.post("/items", status_code=status.HTTP_201_CREATED)
+async def create_item_with_status(item: dict):
+    """Create item returns 201 Created."""
+    return {"id": 123, "item": item}
+
+@app.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_item_no_content(item_id: int):
+    """Delete returns 204 No Content."""
+    # Perform deletion
+    return None  # No content
+```
+
+## Complete Example
+
+Here's a complete working example:
+
+```python
+# examples/01-basic-routing.py
+from zenith import Zenith
+from pydantic import BaseModel
+from typing import Optional
+from datetime import datetime
+
+app = Zenith()
+
+# Models
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    priority: int = 1
+
+class Task(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    priority: int
+    completed: bool
+    created_at: datetime
+
+# In-memory storage for demo
+tasks = {}
+task_counter = 0
+
+@app.get("/")
+async def root():
+    """API root."""
     return {
-        "message": f"User {user_id} updated",
-        "user": user.model_dump()
+        "name": "Task API",
+        "version": "1.0.0",
+        "endpoints": {
+            "tasks": "/tasks",
+            "task": "/tasks/{id}",
+            "search": "/search?q=query"
+        }
     }
 
-# DELETE route
-@app.delete("/users/{user_id}")
-async def delete_user(user_id: int):
-    return {"message": f"User {user_id} deleted"}
+@app.get("/tasks")
+async def list_tasks(
+    completed: Optional[bool] = None,
+    limit: int = 10
+):
+    """List tasks with optional filtering."""
+    result = []
+    for task in tasks.values():
+        if completed is None or task["completed"] == completed:
+            result.append(task)
+
+    return {
+        "tasks": result[:limit],
+        "total": len(result),
+        "limit": limit
+    }
+
+@app.get("/tasks/{task_id}")
+async def get_task(task_id: int):
+    """Get a specific task."""
+    if task_id not in tasks:
+        return {"error": "Task not found"}, 404
+
+    return tasks[task_id]
+
+@app.post("/tasks", response_model=Task)
+async def create_task(task: TaskCreate) -> Task:
+    """Create a new task."""
+    global task_counter
+    task_counter += 1
+
+    new_task = Task(
+        id=task_counter,
+        title=task.title,
+        description=task.description,
+        priority=task.priority,
+        completed=False,
+        created_at=datetime.now()
+    )
+
+    tasks[task_counter] = new_task.model_dump()
+    return new_task
+
+@app.put("/tasks/{task_id}")
+async def update_task(task_id: int, task: TaskCreate):
+    """Update a task."""
+    if task_id not in tasks:
+        return {"error": "Task not found"}, 404
+
+    tasks[task_id].update(task.model_dump())
+    return tasks[task_id]
+
+@app.patch("/tasks/{task_id}/complete")
+async def complete_task(task_id: int):
+    """Mark a task as completed."""
+    if task_id not in tasks:
+        return {"error": "Task not found"}, 404
+
+    tasks[task_id]["completed"] = True
+    return tasks[task_id]
+
+@app.delete("/tasks/{task_id}")
+async def delete_task(task_id: int):
+    """Delete a task."""
+    if task_id not in tasks:
+        return {"error": "Task not found"}, 404
+
+    deleted = tasks.pop(task_id)
+    return {"message": "Task deleted", "task": deleted}
+
+@app.get("/search")
+async def search_tasks(q: str):
+    """Search tasks by title."""
+    results = []
+    for task in tasks.values():
+        if q.lower() in task["title"].lower():
+            results.append(task)
+
+    return {
+        "query": q,
+        "results": results,
+        "count": len(results)
+    }
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    print("🚀 Task API Running")
+    print("📚 Docs at http://localhost:8000/docs")
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
 ```
-
-## Key Features Demonstrated
-
-### Path Parameters
-- **Type conversion**: `user_id: int` automatically converts and validates
-- **Multiple parameters**: `/users/{user_id}/posts/{post_id}`
-- **Automatic validation**: Invalid types return 422 Unprocessable Entity
-
-### Query Parameters  
-- **Optional parameters**: `limit: int = 10` with default values
-- **Type validation**: Automatic conversion and validation
-- **Multiple parameters**: `q`, `limit`, `offset` all handled automatically
-
-### HTTP Methods
-- **GET**: Retrieve data
-- **POST**: Create new resources with request body
-- **PUT**: Update existing resources
-- **DELETE**: Remove resources
-
-### Request/Response Handling
-- **Automatic JSON serialization**: Return dictionaries directly
-- **Pydantic models**: Type-safe request body parsing
-- **Error handling**: Built-in validation error responses
 
 ## Running the Example
 
-1. **Save the code** as `basic_routing.py`
-2. **Install dependencies**:
-   ```bash
-   pip install zenith-web uvicorn
-   ```
-3. **Run the server**:
-   ```bash
-   python basic_routing.py
-   ```
-4. **Test the routes**:
-   ```bash
-   curl http://localhost:8000/
-   curl http://localhost:8000/users/123
-   curl http://localhost:8000/search?q=python&limit=5
-   curl -X POST http://localhost:8000/users \
-     -H "Content-Type: application/json" \
-     -d '{"name": "Alice", "email": "alice@example.com"}'
-   ```
+```bash
+# Install Zenith
+pip install zenith-web
+
+# Run the example
+python examples/01-basic-routing.py
+
+# Test with curl
+curl http://localhost:8000/
+curl http://localhost:8000/tasks
+curl -X POST http://localhost:8000/tasks \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Learn Zenith", "priority": 5}'
+
+# Or visit the auto-generated docs
+open http://localhost:8000/docs
+```
+
+## Key Concepts
+
+### Type Validation
+- Path and query parameters are automatically validated
+- Invalid types return 422 Unprocessable Entity
+- Pydantic models provide request/response validation
+
+### Automatic Documentation
+- All endpoints appear in `/docs` (Swagger UI)
+- Alternative docs at `/redoc`
+- OpenAPI schema at `/openapi.json`
+
+### Async Support
+- All route handlers are async by default
+- Enables handling thousands of concurrent requests
+- Non-blocking I/O for database and external API calls
 
 ## Next Steps
 
-- Explore **[Context System](/examples/context-system/)** for business logic organization
-- Learn **[Pydantic Validation](/examples/pydantic-validation/)** for advanced data validation  
-- See **[Middleware](/concepts/middleware/)** for request/response processing
-
----
-
-**Source**: [`examples/01-basic-routing.py`](https://github.com/nijaru/zenith/blob/main/examples/01-basic-routing.py)
+- Explore [Authentication](/concepts/authentication) for protected routes
+- Learn about [Database Models](/concepts/models) for data persistence
+- See [Middleware](/concepts/middleware) for request processing

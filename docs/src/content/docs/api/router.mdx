@@ -9,50 +9,110 @@ import { Aside } from '@astrojs/starlight/components';
 
 Routers allow you to organize related endpoints together and apply common configuration like prefixes, tags, and middleware.
 
-### Basic Router
+### Basic Router (Organize Your Endpoints)
 
 ```python
 from zenith import Router
 
-# Create router
-router = Router()
+# WHY ROUTERS?
+# Problem: Putting all endpoints in main.py becomes messy after 10+ routes
+# Solution: Routers group related endpoints together (like users, posts, etc.)
 
+# Create a router - like a mini-app for related endpoints
+router = Router()  # No configuration needed to start
+
+# Now define routes on the router (not the main app)
 @router.get("/")
 async def list_items():
-    return {"items": []}
+    """GET /items/ - List all items.
+
+    Note: The path "/" is relative to where this router is mounted.
+    If mounted at /items, this becomes GET /items/
+    """
+    return {"items": []}  # Empty list for now
 
 @router.post("/")
 async def create_item(item: dict):
-    return {"created": item}
+    """POST /items/ - Create a new item.
+
+    The 'item' parameter is automatically parsed from JSON body.
+    """
+    # In real app: save to database
+    return {"created": item}  # Echo back what was created
 
 @router.get("/{item_id}")
 async def get_item(item_id: int):
+    """GET /items/{item_id} - Get specific item.
+
+    Path parameter {item_id} is extracted and converted to int.
+    Example: GET /items/123 → item_id = 123
+    """
     return {"item_id": item_id}
+
+# To use this router, include it in your main app:
+# app.include_router(router, prefix="/items")
+# Now all these routes are available under /items/
 ```
 
-### Router with Configuration
+### Router with Configuration (Production-Ready Setup)
 
 ```python
 from zenith import Router
+from pydantic import BaseModel
 
+# Define your models first
+class UserCreate(BaseModel):
+    name: str
+    email: str
+
+# Configure router with common settings for all its routes
 router = Router(
+    # PREFIX - Prepended to all routes in this router
     prefix="/api/v1/users",
-    tags=["Users"],
+    # So "/" becomes "/api/v1/users/"
+    # "/{id}" becomes "/api/v1/users/{id}"
+
+    # TAGS - Group endpoints in API documentation
+    tags=["Users"],  # All routes appear under "Users" in /docs
+
+    # COMMON RESPONSES - Apply to all routes in router
     responses={
+        # These errors might happen on any endpoint
         404: {"description": "User not found"},
         422: {"description": "Validation error"}
+        # Each route inherits these + can add its own
     }
 )
 
 @router.get("/")
 async def list_users():
-    """List all users."""
-    return {"users": []}
+    """List all users.
+
+    Full path: GET /api/v1/users/
+    Tagged as: "Users" in documentation
+    Responses: 200 (success), 404, 422 (from router config)
+    """
+    # Your business logic here
+    users = await fetch_users_from_database()
+    return {"users": users}
 
 @router.post("/")
 async def create_user(user: UserCreate):
-    """Create a new user."""
-    return {"user": user}
+    """Create a new user.
+
+    Full path: POST /api/v1/users/
+    Body: JSON matching UserCreate model
+    Automatic: Validation, serialization, documentation
+    """
+    # user is already validated by Pydantic!
+    new_user = await save_to_database(user)
+    return {"user": new_user}, 201  # 201 Created status
+
+# BENEFITS of router configuration:
+# 1. Don't repeat prefix on every route
+# 2. Automatic API documentation grouping
+# 3. Common error responses defined once
+# 4. Easy to move/rename groups of endpoints
 ```
 
 ## Router Parameters
@@ -102,28 +162,76 @@ async def login(credentials: LoginRequest):
     return {"token": "..."}    
 ```
 
-### `dependencies`
-
-Apply dependencies to all routes in the router:
+### `dependencies` (Apply Auth/Logic to All Routes)
 
 ```python
-from zenith import Router, Inject
+from zenith import Router, Inject, Depends
 from zenith.auth import get_current_user
 
-# All routes require authentication
+# PROBLEM: You have 20 endpoints that all need authentication
+# BAD: Adding auth dependency to every single route
+# GOOD: Apply auth once at router level!
+
+# Create router where ALL routes require authentication
 protected_router = Router(
     prefix="/protected",
-    dependencies=[Inject(get_current_user)]
+
+    # DEPENDENCIES run before every route in this router
+    dependencies=[
+        Inject(get_current_user)  # Validates JWT token
+    ]
+    # Can have multiple dependencies:
+    # dependencies=[
+    #     Inject(get_current_user),     # Auth check
+    #     Inject(check_subscription),    # Payment check
+    #     Inject(log_request)           # Audit logging
+    # ]
 )
 
 @protected_router.get("/profile")
-async def get_profile():
-    # User already authenticated via router dependency
-    return {"profile": "..."}
+async def get_profile(
+    # Note: No auth dependency here!
+    # Router already handled authentication
+    current_user = Depends(get_current_user)  # Get the authenticated user
+):
+    """Get user profile.
+
+    Authentication flow:
+    1. Request comes to /protected/profile
+    2. Router runs get_current_user dependency
+    3. If auth fails: Returns 401 Unauthorized
+    4. If auth succeeds: Runs this function
+    5. current_user is available here
+    """
+    return {
+        "profile": {
+            "id": current_user.id,
+            "email": current_user.email
+        }
+    }
 
 @protected_router.post("/settings")
-async def update_settings(settings: UserSettings):
+async def update_settings(
+    settings: UserSettings,
+    current_user = Depends(get_current_user)
+):
+    """Update user settings.
+
+    This is also protected by router-level auth.
+    No need to repeat auth logic!
+    """
+    # Update settings for authenticated user
+    await update_user_settings(current_user.id, settings)
     return {"updated": True}
+
+# UNPROTECTED router for comparison
+public_router = Router(prefix="/public")
+# No dependencies = no authentication required
+
+@public_router.get("/info")
+async def public_info():
+    """This endpoint is publicly accessible."""
+    return {"message": "This is public information"}
 ```
 
 ### `responses`
@@ -215,69 +323,205 @@ async def get_item(item_id: int = Path(..., description="Item ID")):
 
 ## Including Routers
 
-### Basic Inclusion
+### Basic Inclusion (Connecting Routers to Your App)
 
 ```python
 from zenith import Zenith, Router
 
-# Create app
+# Step 1: Create your main application
 app = Zenith()
 
-# Create routers
-users_router = Router(prefix="/users")
-items_router = Router(prefix="/items")
+# Step 2: Create routers for different features
+# Think of routers like folders organizing your code
 
-# Include in app
-app.include_router(users_router)
-app.include_router(items_router)
+# User-related endpoints
+users_router = Router(prefix="/users")
+# Routes: /users/, /users/{id}, /users/me, etc.
+
+# Item-related endpoints
+items_router = Router(prefix="/items")
+# Routes: /items/, /items/{id}, /items/search, etc.
+
+# Auth endpoints
+auth_router = Router(prefix="/auth")
+# Routes: /auth/login, /auth/register, /auth/logout
+
+# Step 3: Define routes on each router (usually in separate files)
+@users_router.get("/")
+async def list_users():
+    return {"users": []}
+
+@items_router.get("/")
+async def list_items():
+    return {"items": []}
+
+@auth_router.post("/login")
+async def login(credentials: LoginRequest):
+    return {"token": "..."}
+
+# Step 4: Connect routers to main app
+app.include_router(users_router)  # Adds all /users/* routes
+app.include_router(items_router)  # Adds all /items/* routes
+app.include_router(auth_router)   # Adds all /auth/* routes
+
+# That's it! Your app now has:
+# GET  /users/
+# GET  /items/
+# POST /auth/login
+
+# WHY THIS PATTERN?
+# 1. Keeps main.py small and clean
+# 2. Easy to find endpoints (users in users.py, etc.)
+# 3. Can disable features by commenting one line
+# 4. Teams can work on different routers without conflicts
 ```
 
-### Nested Router Structure
+### Nested Router Structure (API Versioning Pattern)
 
 ```python
-# API versioning with nested routers
-api_v1 = Router(prefix="/api/v1", tags=["API v1"])
-api_v2 = Router(prefix="/api/v2", tags=["API v2"])
+# PROBLEM: Your API evolves but you need to support old clients
+# SOLUTION: API versioning with nested routers
 
-# V1 routes
+# Level 1: Version routers
+api_v1 = Router(
+    prefix="/api/v1",
+    tags=["API v1"]  # Groups in documentation
+)
+
+api_v2 = Router(
+    prefix="/api/v2",
+    tags=["API v2"]  # Separate section in docs
+)
+
+# Level 2: Feature routers for each version
+
+# ===== VERSION 1 ROUTES =====
 users_v1 = Router(prefix="/users")
 posts_v1 = Router(prefix="/posts")
 
-api_v1.include_router(users_v1)
-api_v1.include_router(posts_v1)
+@users_v1.get("/")
+async def list_users_v1():
+    """V1: Returns simple user list."""
+    return {"users": ["Alice", "Bob"]}  # Just names
 
-# V2 routes  
+@posts_v1.get("/")
+async def list_posts_v1():
+    return {"posts": [...]}  # V1 format
+
+# Connect V1 features to V1 API
+api_v1.include_router(users_v1)  # Becomes /api/v1/users
+api_v1.include_router(posts_v1)  # Becomes /api/v1/posts
+
+# ===== VERSION 2 ROUTES =====
 users_v2 = Router(prefix="/users")
 posts_v2 = Router(prefix="/posts")
 
-api_v2.include_router(users_v2)
-api_v2.include_router(posts_v2)
+@users_v2.get("/")
+async def list_users_v2():
+    """V2: Returns detailed user objects."""
+    return {
+        "users": [
+            {"id": 1, "name": "Alice", "email": "alice@example.com"},
+            {"id": 2, "name": "Bob", "email": "bob@example.com"}
+        ],
+        "pagination": {"page": 1, "total": 2}  # V2 adds pagination
+    }
 
-# Include versions in main app
-app.include_router(api_v1)
-app.include_router(api_v2)
+@posts_v2.get("/")
+async def list_posts_v2():
+    return {"posts": [...], "meta": {...}}  # V2 format
 
-# Final routes:
-# /api/v1/users/, /api/v1/posts/
-# /api/v2/users/, /api/v2/posts/
+# Connect V2 features to V2 API
+api_v2.include_router(users_v2)  # Becomes /api/v2/users
+api_v2.include_router(posts_v2)  # Becomes /api/v2/posts
+
+# Level 3: Connect version routers to main app
+app.include_router(api_v1)  # All V1 routes
+app.include_router(api_v2)  # All V2 routes
+
+# FINAL ROUTE STRUCTURE:
+# /api/v1/users/  → Returns ["Alice", "Bob"]
+# /api/v2/users/  → Returns [{id, name, email}, ...] with pagination
+# /api/v1/posts/  → Old format
+# /api/v2/posts/  → New format with metadata
+
+# BENEFITS:
+# 1. Old clients keep working with v1
+# 2. New clients get enhanced v2 features
+# 3. Can deprecate v1 after migration period
+# 4. Clear separation in code and docs
 ```
 
-### Router with Override Parameters
+### Router with Override Parameters (Reuse with Modifications)
 
 ```python
-# Original router
-users_router = Router(prefix="/users", tags=["Users"])
+# SCENARIO: You have a router but need to mount it differently
+# Example: Same routes for internal and external APIs
 
-# Include with modifications
-app.include_router(
-    users_router,
-    prefix="/api/v1",  # Prepend to existing prefix
-    tags=["API", "Users"],  # Additional tags
-    dependencies=[Inject(api_key_auth)]  # Additional dependencies
+# Original router definition (e.g., in routes/users.py)
+users_router = Router(
+    prefix="/users",      # Base prefix
+    tags=["Users"]        # Base tags
 )
 
-# Final prefix: /api/v1/users
-# Final tags: ["API", "Users"]
+@users_router.get("/")
+async def list_users():
+    return {"users": [...]}
+
+@users_router.get("/{user_id}")
+async def get_user(user_id: int):
+    return {"user": {...}}
+
+# MOUNT 1: Public API with API key requirement
+app.include_router(
+    users_router,
+
+    # OVERRIDE PREFIX - Prepends to router's prefix
+    prefix="/api/v1",
+    # Router has: /users
+    # This adds: /api/v1
+    # Result: /api/v1/users
+
+    # ADD TAGS - Combines with router's tags
+    tags=["Public API"],
+    # Router has: ["Users"]
+    # This adds: ["Public API"]
+    # Result: ["Public API", "Users"]
+
+    # ADD DEPENDENCIES - Extra requirements
+    dependencies=[Inject(require_api_key)]
+    # Now all routes need valid API key
+)
+
+# MOUNT 2: Internal API with authentication
+app.include_router(
+    users_router,  # Same router!
+
+    prefix="/internal",  # Different prefix
+    # Result: /internal/users
+
+    tags=["Internal"],  # Different tags
+
+    dependencies=[Inject(require_employee_auth)]
+    # Different auth requirement
+)
+
+# NOW YOUR APP HAS:
+# Public API:
+#   GET /api/v1/users/       (requires API key)
+#   GET /api/v1/users/{id}   (requires API key)
+#
+# Internal API:
+#   GET /internal/users/     (requires employee auth)
+#   GET /internal/users/{id} (requires employee auth)
+#
+# Same code, different access patterns!
+
+# USE CASES:
+# 1. Public vs internal APIs
+# 2. Free vs premium endpoints
+# 3. Different auth for different clients
+# 4. A/B testing different API designs
 ```
 
 ## Router Middleware

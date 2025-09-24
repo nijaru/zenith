@@ -16,7 +16,150 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## Build Current APIs in Python
+## The Modern Python API Framework
+
+### Traditional Python Web Development: The Setup Burden
+```python
+# A typical modern Python web API setup
+from sqlalchemy import create_engine, select
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+import os
+
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
+engine = create_async_engine(DATABASE_URL)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+# Base model setup
+class Base(DeclarativeBase):
+    pass
+
+# Model definition with modern SQLAlchemy 2.0 syntax
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(unique=True, index=True)
+    name: Mapped[str]
+    hashed_password: Mapped[str]
+
+# Dependency for database sessions
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session() as session:
+        yield session
+
+# Application with lifespan management
+@asynccontextmanager
+async def lifespan(app):
+    # Create tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    await engine.dispose()
+
+# Application setup requires manual configuration
+app = create_app(lifespan=lifespan)  # Framework-specific initialization
+
+# CRUD operations require manual implementation
+@app.post("/users")
+async def create_user(
+    email: str,
+    name: str,
+    password: str,
+    session: AsyncSession  # Injected via framework-specific pattern
+):
+    # Check if user exists
+    stmt = select(User).where(User.email == email)
+    result = await session.execute(stmt)
+    if result.scalar_one_or_none():
+        raise ValueError("Email already registered")  # Framework handles error conversion
+
+    # Create user (password hashing not shown for brevity)
+    user = User(email=email, name=name, hashed_password=password)  # Should hash!
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    return {"id": user.id, "email": user.email, "name": user.name}
+
+# This is just basic setup - you still need:
+# - Authentication/JWT implementation (100+ lines)
+# - Password hashing setup
+# - Admin interface (doesn't exist)
+# - API documentation configuration
+# - Middleware for security, CORS, etc.
+# - Error handling
+# - Validation with Pydantic models
+# - Migration setup with Alembic
+```
+
+### The Zenith Approach: Convention over Configuration
+```python
+# Zenith - Comprehensive functionality with minimal code
+from zenith import Zenith
+from zenith.db import ZenithModel
+from sqlmodel import Field
+from typing import Optional
+
+# Application with batteries included
+app = Zenith()  # Auto-configures database, security, error handling
+
+# Optional: Add pre-built features
+app.add_auth()     # Adds JWT authentication endpoints
+app.add_admin()    # Adds admin dashboard
+app.add_api("My API", "1.0.0")  # Enhanced API docs
+
+# SQLModel-based models with ActiveRecord-style methods
+class User(ZenithModel, table=True):
+    id: Optional[int] = Field(primary_key=True)
+    email: str = Field(unique=True, index=True)
+    name: str
+    hashed_password: Optional[str] = None  # Handle in service layer
+
+# Database operations with automatic session management
+@app.post("/users")
+async def create_user(email: str, name: str, password: str):
+    # ZenithModel provides chainable queries and automatic sessions
+    existing = await User.where(email=email).first()
+    if existing:
+        raise ValueError("Email already registered")  # Zenith converts to HTTP 400
+
+    # Create with automatic session handling
+    from zenith.auth.password import hash_password
+    user = await User.create(
+        email=email,
+        name=name,
+        hashed_password=hash_password(password)
+    )
+    return {"user": user.to_dict(exclude={'hashed_password'})}
+
+# What Zenith provides out of the box:
+# - Automatic database configuration (dev/prod)
+# - Request-scoped session management
+# - ActiveRecord-style query methods (User.where(), .find(), etc.)
+# - Built-in serialization (to_dict())
+# - Optional authentication system
+# - Optional admin interface
+# - Auto-generated API documentation
+# - Production middleware stack (CORS, security headers, etc.)
+# - Comprehensive error handling
+```
+
+**Key Differences:**
+
+| Aspect | Traditional Approach | Zenith |
+|--------|---------------|--------|
+| **Initial Setup** | 50-70 lines minimum | 10-15 lines |
+| **Database Sessions** | Manual management | Automatic per-request |
+| **Query API** | SQLAlchemy syntax | Rails-like chainable |
+| **Authentication** | Build from scratch (~150 lines) | `app.add_auth()` |
+| **Admin Interface** | Third-party or build (~500+ lines) | `app.add_admin()` |
+| **Production Config** | Manual setup | Auto-detection |
+
+## Why Choose Zenith?
 
 <CardGrid>
 	<Card title="Automatic Configuration" icon="puzzle">
@@ -33,18 +176,28 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 	</Card>
 </CardGrid>
 
-## Quick Start
+## Get Started in 30 Seconds
 
 ```bash
-# Install Zenith
+# Install Zenith (everything included)
 pip install zenith-web
 
-# Create a new project
-zen new my-api
+# Create a production-ready project
+zen new my-api          # Generates secure defaults, example code
+cd my-api
 
-# Start development server
-zen dev
+# Start with hot reload
+zen dev                 # Auto-detects your app, enables debug mode
 ```
+
+**What you get instantly:**
+- JWT authentication system
+- Admin dashboard with metrics
+- Interactive API documentation
+- Database models with Rails-like queries
+- Security middleware (CORS, CSRF, rate limiting)
+- 9,600+ req/s performance
+- Zero configuration required
 
 ## Features
 

@@ -5,12 +5,13 @@ description: Build your first Zenith API in 5 minutes
 
 import { Aside } from '@astrojs/starlight/components';
 
-In this tutorial, you'll build a blog API with Zenith. You'll learn how to:
+In this tutorial, you'll build a complete blog API with Zenith in just 5 minutes. You'll see how Zenith eliminates the complexity of traditional Python web development.
 
-- Create a Zenith application
-- Define data models
-- Build API endpoints
-- Test your API
+**What you'll learn:**
+- How Zenith replaces hundreds of lines of boilerplate with simple commands
+- Why ZenithModel makes database operations intuitive
+- How one-liner features add authentication, admin panels, and docs
+- The dramatic difference between traditional vs modern Python web development
 
 <Aside type="tip">
   **Prerequisites**: Python 3.12 or higher. If you don't have it, [download Python here](https://python.org).
@@ -47,7 +48,199 @@ This creates:
 
 ## Your First Application
 
-Let's build a complete blog API. This example showcases Zenith's key features: database models, authentication, and API documentation - all with minimal code:
+### Building a Blog API: Traditional Approach
+```python
+# Modern Python with SQLModel (combining Pydantic + SQLAlchemy)
+from typing import Optional, List
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+from datetime import datetime
+from contextlib import asynccontextmanager
+import os
+
+# Database configuration
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./blog.db")
+engine = create_engine(DATABASE_URL)
+
+# Model definition using SQLModel (Pydantic + SQLAlchemy)
+class PostBase(SQLModel):
+    title: str = Field(index=True)
+    content: str
+    published: bool = Field(default=False)
+
+class Post(PostBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PostCreate(PostBase):
+    pass
+
+class PostRead(PostBase):
+    id: int
+    created_at: datetime
+
+# Application setup with lifespan
+@asynccontextmanager
+async def lifespan(app):
+    # Create tables on startup
+    SQLModel.metadata.create_all(engine)
+    yield
+
+# Application initialization (framework-specific)
+app = create_application(
+    title="Blog API",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Session dependency
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+# CRUD endpoints
+@app.post("/posts/", response_model=PostRead)
+def create_post(post: PostCreate, session: Session):  # Session injection pattern
+    db_post = Post.model_validate(post)
+    session.add(db_post)
+    session.commit()
+    session.refresh(db_post)
+    return db_post
+
+@app.get("/posts/", response_model=List[PostRead])
+def list_posts(
+    published: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 10,
+    session: Session  # Framework handles injection
+):
+    statement = select(Post)
+    if published is not None:
+        statement = statement.where(Post.published == published)
+    statement = statement.offset(skip).limit(limit)
+    posts = session.exec(statement).all()
+    return posts
+
+# Still missing:
+# - Authentication (JWT setup, login endpoints, user management)
+# - Admin interface (doesn't exist without third-party packages)
+# - Advanced query methods (complex filtering, sorting)
+# - Background tasks
+# - WebSocket support
+# - Production middleware (CORS, security headers, rate limiting)
+```
+
+### Building the Same API with Zenith
+```python
+# Zenith - Enhanced developer experience
+from zenith import Zenith
+from zenith.db import ZenithModel
+from sqlmodel import Field
+from datetime import datetime
+from typing import Optional
+
+# Application setup with automatic configuration
+app = Zenith()  # Auto-configures database, middleware, error handling
+
+# Optional: Add additional features with one-liners
+app.add_auth()              # JWT authentication with login endpoint
+app.add_admin("/admin")     # Admin dashboard for monitoring
+app.add_api("Blog API", "1.0.0")  # Enhanced API documentation
+
+# Model with ActiveRecord-style methods
+class Post(ZenithModel, table=True):
+    """Blog post model with built-in query methods."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(index=True)
+    content: str
+    published: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# CRUD endpoints with automatic session management
+@app.post("/posts")
+async def create_post(title: str, content: str, published: bool = False):
+    """Create a new blog post.
+
+    ZenithModel provides:
+    - Automatic session management (no Depends needed)
+    - Built-in validation
+    - Transaction handling
+    """
+    post = await Post.create(
+        title=title,
+        content=content,
+        published=published
+    )
+    return {"post": post.to_dict()}
+
+@app.get("/posts")
+async def list_posts(
+    published: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 10
+):
+    """List blog posts with filtering.
+
+    ZenithModel provides chainable query methods similar to Rails ActiveRecord.
+    """
+    query = Post.query()  # Start query builder
+
+    if published is not None:
+        query = query.where(published=published)
+
+    posts = await query.order_by('-created_at').offset(skip).limit(limit).all()
+
+    return {
+        "posts": [p.to_dict() for p in posts],
+        "total": await query.count(),
+        "skip": skip,
+        "limit": limit
+    }
+
+@app.get("/posts/{post_id}")
+async def get_post(post_id: int):
+    """Get a single post by ID.
+
+    find_or_404() automatically raises HTTPException if not found.
+    """
+    post = await Post.find_or_404(post_id)
+    return {"post": post.to_dict()}
+
+# That's it! You now have:
+# Complete CRUD API
+# Authentication (/auth/login)
+# Admin dashboard (/admin)
+# Interactive docs (/docs)
+# Type safety throughout
+# Automatic session management
+# Security middleware
+```
+
+**Comparison:**
+
+| Feature | Traditional Approach | Zenith |
+|---------|---------------------|--------|
+| **Lines of Code** | ~80-100 (basic CRUD only) | ~40-50 (with more features) |
+| **Database Sessions** | Manual `Depends(get_session)` | Automatic per-request |
+| **Query Methods** | SQLAlchemy syntax | Rails-like chainable |
+| **404 Handling** | Manual check and raise | `find_or_404()` method |
+| **Serialization** | Pydantic models | Built-in `to_dict()` |
+| **Authentication** | Build yourself (~150 lines) | `app.add_auth()` |
+| **Admin Interface** | Third-party or none | `app.add_admin()` |
+| **Setup Time** | 30-60 minutes | 5-10 minutes |
+
+**What Zenith Provides:**
+- Cleaner, more intuitive API (subjective but important for DX)
+- Automatic session management reduces boilerplate
+- Rails-like query methods familiar to many developers
+- Optional batteries-included features (auth, admin)
+- Faster initial development, especially for prototypes
+- Convention over configuration philosophy
+
+**Trade-offs to Consider:**
+- Traditional frameworks may have larger ecosystems
+- Raw SQLAlchemy offers more flexibility for complex queries
+- Zenith's conventions may not fit all use cases
+- Learning curve if unfamiliar with Rails-like patterns
 
 Create a file `app.py`:
 
