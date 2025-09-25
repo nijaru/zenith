@@ -58,9 +58,9 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 ## Quick Facts
 - **Product**: Modern Python API framework with exceptional developer experience and performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.1.0 - Initial release with zero-config setup and intuitive patterns
+- **Status**: v0.0.1 - Early release with zero-config setup and intuitive patterns
 - **Performance**: 9,600+ req/s with optimized middleware stack and database session reuse
-- **Test Coverage**: 100% integration tests (776 tests passing)
+- **Test Coverage**: 100% integration tests (857 tests passing)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
 - **DX**: 85% boilerplate reduction with intuitive patterns
@@ -188,7 +188,7 @@ examples/               # Working example applications
 ├── 02-auth-api.py           # API with authentication
 ├── 03-complete-api.py       # Full-featured application
 ├── 04-websocket-chat.py     # WebSocket example
-├── 16-modern-dx.py          # Modern DX showcase (v0.1.0)
+├── 16-modern-dx.py          # Modern DX showcase
 ├── 17-one-liner-features.py # One-liner convenience methods
 └── 18-seamless-integration.py # ZenithModel seamless integration
 
@@ -199,7 +199,7 @@ scripts/                # Development scripts
 
 ## Core Framework Components
 
-### 1. Zero-Config Setup (NEW in v0.1.0)
+### 1. Zero-Config Setup
 ```python
 from zenith import Zenith
 
@@ -222,7 +222,7 @@ app = (Zenith()
        .add_api("My API", "1.0.0", "API description"))
 ```
 
-### 2. Enhanced Database Models (NEW in v0.1.0)
+### 2. Enhanced Database Models
 ```python
 from zenith.db import ZenithModel
 from sqlmodel import Field
@@ -247,7 +247,7 @@ recent_posts = await Post.where(published=True).includes('author').all()
 # the request-scoped database session from Zenith app middleware!
 ```
 
-### 3. Enhanced Dependency Injection (NEW in v0.1.0)
+### 3. Enhanced Dependency Injection
 ```python
 from zenith.core import DB, Auth, Cache
 
