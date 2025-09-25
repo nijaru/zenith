@@ -209,7 +209,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
             self.add_middleware(
                 RateLimitMiddleware,
-                default_limits=[RateLimit(requests=100, window=60, per="ip")],
+                default_limits=[RateLimit(requests=100, window=60, per="ip")]
             )
 
         # 6. Minimal logging
