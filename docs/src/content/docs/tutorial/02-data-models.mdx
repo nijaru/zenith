@@ -294,10 +294,10 @@ async def get_session() -> AsyncSession:
             await session.close()
 
 # For Zenith's automatic session management
-from zenith import DB
+from zenith import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# This allows us to use db=DB in route handlers
-DB.configure(get_session)
+# Session is a pre-configured dependency for database access
 ```
 
 ## Creating Data Models
@@ -903,7 +903,7 @@ async def startup():
 
 # Test endpoint to create sample data
 @app.post("/seed")
-async def seed_database(db=DB):
+async def seed_database(session: AsyncSession = Session):
     """
     Seed database with sample data for testing.
 
@@ -965,15 +965,15 @@ async def seed_database(db=DB):
     }
 
 @app.get("/users")
-async def list_users(db=DB) -> List[User]:
+async def list_users(session: AsyncSession = Session) -> List[User]:
     """List all users."""
-    users = await db.exec(select(User))
+    users = await session.exec(select(User))
     return users.all()
 
 @app.get("/projects")
-async def list_projects(db=DB) -> List[Project]:
+async def list_projects(session: AsyncSession = Session) -> List[Project]:
     """List all projects with task counts."""
-    projects = await db.exec(
+    projects = await session.exec(
         select(Project).options(selectinload(Project.tasks))
     )
     return projects.all()
@@ -981,7 +981,7 @@ async def list_projects(db=DB) -> List[Project]:
 @app.get("/tasks")
 async def list_tasks(
     status: Optional[str] = None,
-    db=DB
+    session: AsyncSession = Session
 ) -> List[Task]:
     """List tasks with optional status filter."""
     query = select(Task)

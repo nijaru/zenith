@@ -80,7 +80,7 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 - **One-liner Setup**: `app.add_auth()`, `app.add_admin()`, `app.add_api()` for instant features
 - **Zero-Configuration**: `app = Zenith()` auto-detects environment and configures everything
 - **Seamless Database Integration**: ZenithModel automatically uses request-scoped sessions
-- **Enhanced DI Shortcuts**: `db=DB`, `Auth`, `Cache` instead of verbose `Depends()` patterns
+- **Enhanced DI Shortcuts**: `Session`, `Auth` instead of verbose `Depends()` patterns
 - **Context System**: Organizes business logic outside route handlers
 - **Performance**: Exceptional performance with intelligent session reuse
 - **Testing Framework**: Built-in TestClient with auth helpers and context testing
@@ -253,7 +253,7 @@ from zenith.core import DB, Auth, Cache
 
 # Clean dependency shortcuts instead of verbose Depends()
 @app.get("/users")
-async def get_users(db=DB):  # Instead of db: AsyncSession = Depends(get_session)
+async def get_users(session: AsyncSession = Session):  # Clean dependency injection
     users = await User.all()  # ZenithModel seamlessly uses the db session
     return {"users": [user.to_dict() for user in users]}
 

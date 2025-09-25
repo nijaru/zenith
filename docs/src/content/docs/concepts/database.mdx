@@ -53,7 +53,7 @@ class User(ZenithModel, table=True):  # table=True means this is a database tabl
 @app.post("/users")
 async def create_user(
     user: User,  # Pydantic validates input
-    db=DB        # This injects the database session automatically!
+    session: AsyncSession = Session        # This injects the database session automatically!
 ):
     """Create a new user.
 
@@ -431,7 +431,7 @@ from zenith import Depends
 from zenith.core import DB
 
 @app.get("/users")
-async def list_users(db=DB):
+async def list_users(session: AsyncSession = Session):
     # Use ZenithModel for intuitive queries
     users = await User.all()
     return users
@@ -460,7 +460,7 @@ async def transfer_funds(
     from_account: int,
     to_account: int,
     amount: float,
-    db=DB  # Injected database session
+    session: AsyncSession = Session  # Injected database session
 ):
     """
     Bank transfer - MUST be atomic!
@@ -649,7 +649,7 @@ class Page(BaseModel, Generic[T]):
 async def list_users(
     page: int = 1,
     per_page: int = 20,
-    db=DB
+    session: AsyncSession = Session
 ):
     # Count total
     count_statement = select(func.count(User.id))
