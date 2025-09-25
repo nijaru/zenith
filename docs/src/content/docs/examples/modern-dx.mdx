@@ -204,7 +204,7 @@ class Post(ZenithModel, table=True):
 @app.on_event("startup")
 async def startup():
     # Create tables if they don't exist
-    await ZenithModel.create_all()
+    await app.database.create_all()
 
 @app.get("/")
 async def home():
