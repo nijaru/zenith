@@ -17,9 +17,9 @@ This is the complete implementation of the TaskFlow API built throughout the Zen
 
 1. Install dependencies:
 ```bash
-uv add zenith-web sqlmodel alembic python-jose[cryptography] passlib[bcrypt]
+uv add zenithweb sqlmodel alembic python-jose[cryptography] passlib[bcrypt]
 # or
-pip install zenith-web sqlmodel alembic python-jose[cryptography] passlib[bcrypt]
+pip install zenithweb sqlmodel alembic python-jose[cryptography] passlib[bcrypt]
 ```
 
 2. Set environment variables:

@@ -544,7 +544,7 @@ app = Zenith(config=config)
 
 ### Import Errors
 - Ensure Python 3.11+ is used
-- Install with `pip install zenith-web`
+- Install with `pip install zenithweb`
 - Check virtual environment activation
 
 ### Performance Issues
