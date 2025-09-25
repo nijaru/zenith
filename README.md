@@ -8,7 +8,7 @@
 
 A modern Python web framework with **intuitive developer experience** and exceptional performance.
 
-> **🎯 Modern DX**: Zero-config setup, database models with chainable queries, one-liner features, and enhanced dependency injection - making Python web development incredibly productive.
+> **🎯 Modern DX**: Zero-config setup, database models with chainable queries, one-liner features, and clean architecture patterns - making Python web development incredibly productive.
 
 ## What is Zenith?
 
@@ -29,7 +29,7 @@ pip install zenithweb
 
 ```python
 from zenith import Zenith
-from zenith import Session  # Enhanced dependency injection
+from zenith import Session  # Database session dependency
 from zenith.db import ZenithModel  # Modern database models
 from sqlmodel import Field
 from typing import Optional
@@ -115,14 +115,16 @@ app.add_api()      # API documentation at /docs and /redoc
 - **Production-ready** - Each feature includes monitoring and security
 - **Configurable** - Sensible defaults with full customization options
 
-### 🎯 **Enhanced Dependency Injection**
+### 🎯 **Clean Dependency Injection**
 ```python
 @app.get("/users")
-async def get_users(db=DB, user=Auth, cache=Cache):
-    # Clean, readable dependency injection
+async def get_users(session: AsyncSession = Session):
+    # Simple database session injection
+    users = await User.all()  # ZenithModel uses the session automatically
+    return users
 ```
-- **Readable shortcuts** - `DB` instead of `Depends(get_database_session)`
-- **Compatible** - Works alongside existing `Depends()` patterns
+- **Simple patterns** - `Session` for database, `Auth` for current user
+- **Service injection** - `Inject(ServiceClass)` for business logic
 - **Type-safe** - Full IDE support and autocompletion
 
 ### 🏎️ **Exceptional Performance**
@@ -200,7 +202,7 @@ python scripts/run_performance_tests.py --quick
 **🚀 Complete Examples:**
 - [Hello World](examples/00-hello-world.py) - Simple setup (`app = Zenith()`)
 - [Basic API](examples/01-basic-routing.py) - Routing and validation
-- [Authentication](examples/02-auth-api.py) - JWT auth with enhanced DX
+- [Authentication](examples/02-auth-api.py) - JWT authentication
 - [WebSocket Chat](examples/07-websocket-chat.py) - Real-time communication
 - [Background Jobs](examples/05-background-tasks.py) - Task processing
 - [Security Middleware](examples/11-security-middleware.py) - Production security
@@ -288,7 +290,7 @@ pytest  # Run tests
 **Python Support**: 3.12+
 **Test Suite**: 100% passing (857 tests)
 **Performance**: Production-ready with 9,600+ req/s capability  
-**Architecture**: Clean separation with Service system and dependency injection  
+**Architecture**: Clean separation with Service system and simple dependency patterns  
 
 Zenith is production-ready with comprehensive middleware, performance optimizations, and clean architecture patterns for modern Python applications.
 
