@@ -60,16 +60,16 @@ Zenith v0.0.1+ provides chainable methods to add common features with one line:
 ```python
 # Each method returns the app, allowing chaining
 app = (Zenith()
-    .add_auth()           # Adds JWT auth + /auth/login, /auth/register endpoints
+    .add_auth()           # Adds JWT auth + /auth/login endpoint (demo mode in dev)
     .add_admin()          # Adds admin dashboard at /admin
     .add_api("My API", "1.0.0", "API description"))  # Adds /docs and /redoc
 
 # What each method adds:
 # .add_auth() provides:
-#   - POST /auth/register - User registration
-#   - POST /auth/login - User login with JWT token
-#   - POST /auth/refresh - Token refresh
+#   - POST /auth/login - JWT token endpoint (demo/demo in development)
+#   - Auth middleware for JWT validation
 #   - Auth dependency for protected routes
+#   - Note: Production auth implementation required
 
 # .add_admin() provides:
 #   - GET /admin - Admin dashboard
