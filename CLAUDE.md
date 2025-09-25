@@ -58,7 +58,7 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 ## Quick Facts
 - **Product**: Modern Python API framework with exceptional developer experience and performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.0.1 - Early release with zero-config setup and intuitive patterns
+- **Status**: v0.0.2 - Security-hardened release with zero-config setup and intuitive patterns
 - **Performance**: 9,600+ req/s with optimized middleware stack and database session reuse
 - **Test Coverage**: 100% integration tests (857 tests passing)
 - **CLI**: `zen` command for development tools
@@ -211,9 +211,12 @@ from zenith import Zenith
 app = Zenith()
 
 # One-liner convenience features
-app.add_auth()           # JWT authentication + /auth/login endpoint
+app.add_auth()           # JWT authentication + /auth/login endpoint (demo/demo in dev mode)
 app.add_admin()          # Admin dashboard at /admin with health checks
 app.add_api("My API")    # OpenAPI docs at /docs and /redoc
+
+# Note: add_auth() provides demo authentication in development mode only
+# In production, you must implement real user authentication
 
 # All features chain together
 app = (Zenith()
@@ -671,6 +674,14 @@ app = Zenith(config=config)
 4. **Performance**: Consider performance impact, use profiling decorators, follow optimization patterns in `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
 5. **Standards**: Follow existing patterns in codebase, maintain consistency
 6. **Documentation**: Update docs for any API changes or new features
+
+**CRITICAL - When Making Changes:**
+Always check and update:
+- [ ] Documentation affected by the change (docs/, examples/, README.md)
+- [ ] Examples that use the changed functionality
+- [ ] Tests that verify the functionality
+- [ ] CHANGELOG.md for notable changes
+- [ ] Version numbers if releasing
 
 **Framework Strengths to Leverage:**
 - Service system for clean architecture
