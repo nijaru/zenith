@@ -20,8 +20,11 @@ class TestCriticalBehavior:
     @pytest.mark.asyncio
     async def test_jwt_authentication_end_to_end(self):
         """Test complete JWT authentication flow works end-to-end."""
-        app = Zenith()
-        app.add_auth(secret_key="test-secret-key-32-characters-long")
+        from zenith.core import Config
+        config = Config(debug=True)
+        config.secret_key = "test-secret-key-32-characters-long"
+        app = Zenith(config=config)
+        app.add_auth()
 
         # Add a protected endpoint
         @app.get("/protected")
@@ -133,11 +136,11 @@ class TestCriticalBehavior:
     @pytest.mark.asyncio
     async def test_oauth2_compliance_fields(self):
         """Test OAuth2 response includes all required fields per RFC 6749."""
-        app = Zenith()
-        app.add_auth(
-            secret_key="test-secret-key-32-characters-long",
-            expire_minutes=45  # Custom expiration
-        )
+        from zenith.core import Config
+        config = Config(debug=True)
+        config.secret_key = "test-secret-key-32-characters-long"
+        app = Zenith(config=config)
+        app.add_auth(expire_minutes=45)  # Custom expiration
 
         async with TestClient(app) as client:
             response = await client.post("/auth/login", json={
@@ -163,8 +166,11 @@ class TestCriticalBehavior:
     @pytest.mark.asyncio
     async def test_all_fixes_together(self):
         """Integration test: All fixes working together in one app."""
-        app = Zenith()
-        app.add_auth(secret_key="test-secret-key-32-characters-long")
+        from zenith.core import Config
+        config = Config(debug=True)
+        config.secret_key = "test-secret-key-32-characters-long"
+        app = Zenith(config=config)
+        app.add_auth()
 
         # Add strict rate limiting
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]

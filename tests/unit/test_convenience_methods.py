@@ -266,7 +266,7 @@ class TestConvenienceMethodsErrorHandling:
         app = Zenith(config=config, middleware=[])
 
         # Mock import error for auth components
-        with patch('zenith.app.configure_jwt', side_effect=ImportError("Auth not available")):
+        with patch('zenith.auth.jwt.configure_jwt', side_effect=ImportError("Auth not available")):
             with pytest.raises(ImportError):
                 app.add_auth()
 

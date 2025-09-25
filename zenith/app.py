@@ -824,7 +824,8 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self.add_middleware(AuthenticationMiddleware)
 
         # Add login endpoint - DEMO ONLY - REPLACE WITH REAL AUTHENTICATION
-        if self.config.debug and self.environment == 'development':
+        # Allow demo auth in debug mode OR development environment (for testing)
+        if self.config.debug or self.environment == 'development':
             # Only in dev mode - add a warning endpoint
             @self.post("/auth/login")
             async def dev_login_demo(credentials: dict):
