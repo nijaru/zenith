@@ -277,7 +277,7 @@ async def init_db():
     In production, use Alembic migrations instead!
     """
     async with engine.begin() as conn:
-        # Create all tables
+        # Create all tables - Note: In Zenith, use app.database.create_all()
         await conn.run_sync(SQLModel.metadata.create_all)
         logger.info("Database tables created successfully")
 
