@@ -18,31 +18,33 @@ Example Usage:
 
     class UserService(Service):
         async def initialize(self):
-            # Setup resources, connections, etc.
-            self.cache = await self.container.get("cache")
+            # Optional: setup any resources you need
+            self.cache = {}
             await super().initialize()
 
         async def create_user(self, email: str, name: str):
-            # Business logic for user creation
+            # Your business logic here
             user = User(email=email, name=name)
-            await user.save()
-
-            # Emit domain event
-            await self.emit("user.created", user)
+            # Save to database, validate, etc.
             return user
 
         async def find_user(self, user_id: int):
-            # Implement caching, validation, etc.
+            # Your business logic with validation, caching, etc.
+            if user_id in self.cache:
+                return self.cache[user_id]
+
             user = await User.find(user_id)
             if not user:
-                raise NotFoundError(f"User {user_id} not found")
+                raise ValueError(f"User {user_id} not found")
+
+            self.cache[user_id] = user
             return user
 
     # Using in routes with dependency injection
     @app.post("/users")
     async def create_user(
         data: UserCreate,
-        users: UserService = Inject()
+        users: UserService = Inject(UserService)
     ):
         return await users.create_user(data.email, data.name)
 
@@ -132,7 +134,7 @@ class EventBus:
                 await asyncio.gather(*tasks, return_exceptions=True)
 
 
-class Service(ABC):
+class ContainerService(ABC):
     """
     Base class for business services.
 
@@ -203,23 +205,24 @@ class Service(ABC):
         return f"{self.__class__.__name__}()"
 
 
-class SimplifiedService:
+class Service:
     """
-    Simplified base class for services that don't need manual container setup.
+    Base class for organizing business logic in services.
 
-    This class allows services to be defined without requiring a container
-    in the constructor, making it easier to use in production applications.
-    The container will be injected automatically when the service is registered.
+    Services provide a clean way to organize business logic separate from
+    web concerns, with optional container integration and event handling.
 
     Example:
-        class UserService(SimplifiedService):
+        class UserService(Service):
             async def initialize(self):
-                # Access dependencies through self.container
-                self.db = await self.container.get(Database)
+                # Optional: set up any resources you need
+                self.cache = {}
                 await super().initialize()
 
-            async def create_user(self, email: str):
-                return await self.db.create(User(email=email))
+            async def create_user(self, email: str, name: str):
+                user = User(email=email, name=name)
+                # Your business logic here
+                return user
     """
 
     __slots__ = ("_initialized", "container", "events")
@@ -272,14 +275,14 @@ class ServiceRegistry:
 
     def __init__(self, container: DIContainer):
         self.container = container
-        self._services: dict[str, Service] = {}
+        self._services: dict[str, Service | ContainerService] = {}
         self._service_classes: dict[str, type] = {}
 
     def register(self, name: str, service_class: type) -> None:
         """Register a service class."""
         self._service_classes[name] = service_class
 
-    async def get(self, name: str) -> Service:
+    async def get(self, name: str) -> Service | ContainerService:
         """Get or create a service instance."""
         if name not in self._services:
             if name not in self._service_classes:
@@ -287,12 +290,12 @@ class ServiceRegistry:
 
             service_class = self._service_classes[name]
 
-            # Check if it's a SimplifiedService that doesn't need container in constructor
-            if issubclass(service_class, SimplifiedService):
+            # Check if it's a Service that doesn't need container in constructor
+            if issubclass(service_class, Service):
                 service = service_class()
                 service._inject_container(self.container)
             else:
-                # Traditional Service that requires container
+                # ContainerService that requires container
                 service = service_class(self.container)
 
             await service.initialize()
@@ -300,7 +303,7 @@ class ServiceRegistry:
 
         return self._services[name]
 
-    async def get_by_type(self, service_class: type) -> Service:
+    async def get_by_type(self, service_class: type) -> Service | ContainerService:
         """Get or create a service instance by class type."""
         # Find the service name by class type
         service_name = None

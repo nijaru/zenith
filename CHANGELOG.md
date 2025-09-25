@@ -7,7 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.1] - 2025-09-19
+## [0.1.0] - 2025-09-24
+
+### 🎉 Initial Release of `zenithweb`
+
+Complete rebrand from `zenith-web` to `zenithweb` - a fresh start with a cleaner, more modern package name.
+
+### Added
+- **Zero-Configuration Setup**: `app = Zenith()` with intelligent defaults
+- **ZenithModel**: Enhanced SQLModel with intuitive query methods
+- **One-Liner Features**: `app.add_auth()`, `app.add_admin()`, `app.add_api()`
+- **Type-Safe Dependency Injection**: Clean shortcuts like `db=DB`, `user=Auth`
+- **Production Middleware**: CORS, CSRF, compression, rate limiting, security headers
+- **JWT Authentication**: Complete auth system with one line
+- **Admin Dashboard**: System monitoring and health checks
+- **Interactive Documentation**: Auto-generated Swagger UI and ReDoc
+- **WebSocket Support**: Real-time communication with connection management
+- **Background Tasks**: Async task processing with TaskGroups
+- **Testing Framework**: Comprehensive TestClient with auth helpers
+- **CLI Tools**: `zen` command for development and project management
+
+### Performance
+- **9,600+ req/s**: High-performance async request handling
+- **Minimal Overhead**: <5% per middleware component
+- **Memory Efficient**: Bounded caches and automatic cleanup
+- **Full Async Support**: Python 3.12+ with TaskGroups optimization
+
+### Changed
+- **Package Name**: From `zenith-web` to `zenithweb` for cleaner installation
+- **Version Reset**: Starting fresh at v0.1.0 for the new package
+- **Documentation**: Complete rewrite focusing on features without defensive comparisons
+
+## [0.3.1] - 2025-09-19 (as `zenith-web`, deprecated)
 
 ### Added
 - **Automated Version Management**: `scripts/version_manager.py` and `scripts/bump_version.sh` for consistent version updates

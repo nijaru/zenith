@@ -14,7 +14,7 @@ class ServicesMixin:
     """Mixin for service registration and mounting methods."""
 
     def register_context(self, name: str, context_class: type[Service]) -> None:
-        """Register a business context."""
+        """Register a business service."""
         self.app.register_context(name, context_class)
 
     def register_service(self, service_type: type, implementation: Any = None) -> None:

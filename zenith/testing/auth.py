@@ -178,7 +178,7 @@ def mock_auth(
         # Test context with mock authentication
         auth_mock = mock_auth(email="admin@example.com", role="admin")
 
-        async with TestContext(Users, dependencies={"auth": auth_mock}) as users:
+        async with TestService(Users, dependencies={"auth": auth_mock}) as users:
             # Context methods can access current user through mock
             result = await users.get_current_user_profile()
             assert result["email"] == "admin@example.com"

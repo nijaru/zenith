@@ -30,7 +30,8 @@ class WebSocket:
                     data = await websocket.receive_json()
                     await websocket.send_json({"echo": data})
             except WebSocketDisconnect:
-                print("Client disconnected")
+                # Client disconnected - handle cleanup if needed
+                pass
     """
 
     __slots__ = ("_websocket", "client_id", "metadata", "user_id")

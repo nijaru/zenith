@@ -173,13 +173,13 @@ class TaskService(Service):
 
 # Users API
 @app.get("/api/users", response_model=list[User], tags=["Users"])
-async def get_users(users: UserService = Inject()):
+async def get_users(users: UserService = Inject(UserService)):
     """Get all users."""
     return await users.get_all_users()
 
 
 @app.get("/api/users/{user_id}", response_model=User, tags=["Users"])
-async def get_user(user_id: int, users: UserService = Inject()):
+async def get_user(user_id: int, users: UserService = Inject(UserService)):
     """Get user by ID."""
     user = await users.get_user(user_id)
     if not user:
@@ -190,26 +190,26 @@ async def get_user(user_id: int, users: UserService = Inject()):
 
 
 @app.post("/api/users", response_model=User, tags=["Users"])
-async def create_user(user_data: UserCreate, users: UserService = Inject()):
+async def create_user(user_data: UserCreate, users: UserService = Inject(UserService)):
     """Create new user."""
     return await users.create_user(user_data)
 
 
 # Tasks API
 @app.get("/api/users/{user_id}/tasks", response_model=list[Task], tags=["Tasks"])
-async def get_user_tasks(user_id: int, tasks: TaskService = Inject()):
+async def get_user_tasks(user_id: int, tasks: TaskService = Inject(TaskService)):
     """Get tasks for a user."""
     return await tasks.get_user_tasks(user_id)
 
 
 @app.post("/api/tasks", response_model=Task, tags=["Tasks"])
-async def create_task(task_data: TaskCreate, tasks: TaskService = Inject()):
+async def create_task(task_data: TaskCreate, tasks: TaskService = Inject(TaskService)):
     """Create new task."""
     return await tasks.create_task(task_data)
 
 
 @app.patch("/api/tasks/{task_id}", response_model=Task, tags=["Tasks"])
-async def update_task(task_id: int, completed: bool, tasks: TaskService = Inject()):
+async def update_task(task_id: int, completed: bool, tasks: TaskService = Inject(TaskService)):
     """Update task completion status."""
     task = await tasks.update_task(task_id, completed)
     if not task:

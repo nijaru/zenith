@@ -9,7 +9,7 @@
 ```bash
 # Build and upload to PyPI
 uv build
-twine upload dist/zenith_web-{version}*
+twine upload dist/zenithweb-{version}*
 ```
 
 ### GitHub Release (Secondary - for developers/changelog)
@@ -30,7 +30,7 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 - ⚖️ **Regular patches**: PyPI required, GitHub optional (developer judgment)
 
 **Purpose split:**
-- **PyPI**: User installation (`pip install zenith-web`)
+- **PyPI**: User installation (`pip install zenithweb`)
 - **GitHub**: Developer communication, changelog, contributor recognition
 
 ## Release Gotchas
@@ -58,9 +58,9 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 ## Quick Facts
 - **Product**: Modern Python API framework with exceptional developer experience and performance
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
-- **Status**: v0.3.1 - Modern developer experience with zero-config setup and intuitive patterns
+- **Status**: v0.1.0 - Initial release with zero-config setup and intuitive patterns
 - **Performance**: 9,600+ req/s with optimized middleware stack and database session reuse
-- **Test Coverage**: 100% integration tests (770+ tests passing, +260 new tests for v0.3.1 features)
+- **Test Coverage**: 100% integration tests (770+ tests passing)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
 - **DX**: 85% boilerplate reduction with intuitive patterns
@@ -188,7 +188,7 @@ examples/               # Working example applications
 ├── 02-auth-api.py           # API with authentication
 ├── 03-complete-api.py       # Full-featured application
 ├── 04-websocket-chat.py     # WebSocket example
-├── 16-modern-dx.py          # Modern DX showcase (v0.3.1)
+├── 16-modern-dx.py          # Modern DX showcase (v0.1.0)
 ├── 17-one-liner-features.py # One-liner convenience methods
 └── 18-seamless-integration.py # ZenithModel seamless integration
 
@@ -199,7 +199,7 @@ scripts/                # Development scripts
 
 ## Core Framework Components
 
-### 1. Zero-Config Setup (NEW in v0.3.1)
+### 1. Zero-Config Setup (NEW in v0.1.0)
 ```python
 from zenith import Zenith
 
@@ -222,7 +222,7 @@ app = (Zenith()
        .add_api("My API", "1.0.0", "API description"))
 ```
 
-### 2. Enhanced Database Models (NEW in v0.3.1)
+### 2. Enhanced Database Models (NEW in v0.1.0)
 ```python
 from zenith.db import ZenithModel
 from sqlmodel import Field
@@ -247,7 +247,7 @@ recent_posts = await Post.where(published=True).includes('author').all()
 # the request-scoped database session from Zenith app middleware!
 ```
 
-### 3. Enhanced Dependency Injection (NEW in v0.3.1)
+### 3. Enhanced Dependency Injection (NEW in v0.1.0)
 ```python
 from zenith.core import DB, Auth, Cache
 
@@ -436,7 +436,7 @@ with profiler.time_function("database_query"):
 
 ### Testing Framework
 ```python
-from zenith.testing import TestClient, TestContext
+from zenith.testing import TestClient, TestService
 
 # Endpoint testing
 async with TestClient(app) as client:
@@ -445,8 +445,8 @@ async with TestClient(app) as client:
     user = response.json()
     assert user["name"] == "Alice"
 
-# Context testing (business logic)
-async with TestContext(UserService) as users:
+# Service testing (business logic)
+async with TestService(UserService) as users:
     user = await users.create_user(UserCreate(name="Bob", email="bob@example.com", age=30))
     assert user.name == "Bob"
 
@@ -640,7 +640,7 @@ app = Zenith(config=config)
 
 ### Import Errors
 - Ensure Python 3.11+ is used
-- Install with `pip install zenith-web`
+- Install with `pip install zenithweb`
 - Check virtual environment activation
 
 ### Performance Issues
@@ -667,7 +667,7 @@ app = Zenith(config=config)
 
 1. **Architecture**: Use Service classes for business logic, keep routes thin
 2. **Type Safety**: Always use type hints, Pydantic models for validation
-3. **Testing**: Include both endpoint tests (TestClient) and business logic tests (TestContext)
+3. **Testing**: Include both endpoint tests (TestClient) and business logic tests (TestService)
 4. **Performance**: Consider performance impact, use profiling decorators, follow optimization patterns in `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
 5. **Standards**: Follow existing patterns in codebase, maintain consistency
 6. **Documentation**: Update docs for any API changes or new features
