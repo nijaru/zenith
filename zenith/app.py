@@ -812,8 +812,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 "or set SECRET_KEY environment variable."
             )
 
-        # Configure JWT manager
-        jwt_manager = JWTManager(
+        # Configure global JWT manager for middleware
+        from zenith.auth.jwt import configure_jwt
+        jwt_manager = configure_jwt(
             secret_key=auth_secret,
             algorithm=algorithm,
             access_token_expire_minutes=expire_minutes
