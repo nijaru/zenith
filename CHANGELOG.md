@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2] - 2025-09-25
+
+### Security
+- **CRITICAL**: Fixed rate limiting bypass vulnerability - removed localhost exemptions
+- **CRITICAL**: Fixed authentication vulnerability accepting any credentials
+- **CRITICAL**: Fixed JWT middleware not being properly configured globally
+- **OAuth2 Compliance**: Ensured `expires_in` field is included in token response
+
+### Fixed
+- Rate limiting now enforces limits for all IP addresses including localhost
+- Authentication now properly validates credentials (demo/demo in dev mode only)
+- JWT tokens are properly validated across all protected endpoints
+- OAuth2 token response includes all required RFC 6749 fields
+
+### Changed
+- Authentication in debug/development mode now only accepts demo/demo credentials
+- Rate limiting has no default exemptions for maximum security
+- Made auth condition more flexible (debug OR development environment)
+
 ## [0.1.0] - 2025-09-24
 
 ### 🎉 Initial Release of `zenithweb`

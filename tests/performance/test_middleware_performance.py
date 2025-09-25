@@ -280,13 +280,17 @@ class TestMiddlewarePerformance:
             base_app, iterations=100
         )  # Fewer iterations
 
+        from zenith.middleware.rate_limit import RateLimit
+
         rate_limit_app = Zenith(
             debug=False,
             middleware=[
                 Middleware(
                     RateLimitMiddleware,
-                    default_limits=["1000/minute", "100/second"],
-                    storage="memory",
+                    default_limits=[
+                        RateLimit(requests=10000, window=60, per="ip"),  # Higher for testing
+                        RateLimit(requests=1000, window=1, per="ip")    # Higher for testing
+                    ]
                 )
             ],
         )
