@@ -1,5 +1,5 @@
 """
-One-liner Features Example - Showcasing v0.3.1 Convenience Methods
+One-liner Features Example - Showcasing v0.0.1 Convenience Methods
 
 This example demonstrates the new one-liner convenience methods:
 - app.add_auth() - JWT authentication in one line
