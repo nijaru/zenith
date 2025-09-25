@@ -141,7 +141,7 @@ class ProductService(Service):
     - Get automatic dependency injection
     - Have access to self.db (database session)
     - Can emit and listen to events
-    - Are request-scoped (new instance per request)
+    - Are singletons (one instance shared across requests)
     """
 
     async def list_products(

@@ -517,7 +517,7 @@ class TestCLIProjectGeneration:
 
             # Check requirements.txt
             reqs_content = Path("testapp/requirements.txt").read_text()
-            assert "zenith-web" in reqs_content
+            assert "zenithweb" in reqs_content
 
             # Check README.md
             readme_content = Path("testapp/README.md").read_text()
