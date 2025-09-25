@@ -176,7 +176,7 @@ from datetime import datetime
 app = Zenith(
     title="TaskFlow API",
     description="Task management system API",
-    version="0.1.0"
+    version="0.0.1"
 )
 
 # Our first endpoint - API root information
@@ -190,7 +190,7 @@ async def root():
     """
     return {
         "name": "TaskFlow API",
-        "version": "0.1.0",
+        "version": "0.0.1",
         "status": "online",
         "timestamp": datetime.utcnow().isoformat(),
         "endpoints": {
@@ -243,7 +243,7 @@ Let's break down what's happening in our code:
 app = Zenith(
     title="TaskFlow API",
     description="Task management system API",
-    version="0.1.0"
+    version="0.0.1"
 )
 ```
 
@@ -321,7 +321,7 @@ curl http://localhost:8000/
 # You should see:
 {
   "name": "TaskFlow API",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "status": "online",
   "timestamp": "2024-09-20T10:30:00",
   "endpoints": {
@@ -376,7 +376,7 @@ class Settings:
 
     # Application
     APP_NAME: str = os.getenv("APP_NAME", "TaskFlow API")
-    APP_VERSION: str = os.getenv("APP_VERSION", "0.1.0")
+    APP_VERSION: str = os.getenv("APP_VERSION", "0.0.1")
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
 
     # Server
@@ -420,7 +420,7 @@ Now create a `.env` file for local development:
 ```bash
 # .env
 APP_NAME=TaskFlow API
-APP_VERSION=0.1.0
+APP_VERSION=0.0.1
 DEBUG=true
 
 # Database

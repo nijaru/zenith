@@ -13,7 +13,7 @@ Traditional frameworks require extensive setup code for basic features. Zenith p
 
 ## Creating an Application
 
-### Zero-Configuration Setup (v0.1.0+)
+### Zero-Configuration Setup (v0.0.1+)
 
 The simplest way to create a Zenith application - automatic configuration based on your environment:
 
@@ -55,7 +55,7 @@ app = Zenith(
 
 ### Chain Features with Convenience Methods
 
-Zenith v0.1.0+ provides chainable methods to add common features with one line:
+Zenith v0.0.1+ provides chainable methods to add common features with one line:
 
 ```python
 # Each method returns the app, allowing chaining
@@ -130,7 +130,7 @@ class ItemCreate(BaseModel):
 async def create_item(
     item: ItemCreate,           # Request body is parsed and validated
     user=Auth,                  # Current authenticated user (if using auth)
-    db=DB                       # Database session (if configured)
+    session: AsyncSession = Session  # Database session (if configured)
 ):
     """
     POST endpoints typically:
@@ -393,21 +393,20 @@ Dependency injection provides clean, testable code by automatically supplying re
 ### Basic Injection
 
 ```python
-from zenith.core import DB, Auth, Cache
+from zenith import Session, Auth
+from sqlalchemy.ext.asyncio import AsyncSession
 
 @app.get("/profile")
 async def get_profile(
-    user=Auth,      # Current authenticated user (replaces Depends(get_current_user))
-    db=DB,          # Database session (replaces Depends(get_db))
-    cache=Cache     # Cache client (replaces Depends(get_cache))
+    user=Auth,      # Current authenticated user
+    session: AsyncSession = Session  # Database session
 ):
     """
     Zenith's shortcuts make code cleaner:
     - Auth: Current user or 401 if not authenticated
-    - DB: Request-scoped database session
-    - Cache: Redis or memory cache client
+    - Session: Request-scoped database session
     """
-    profile = await db.get(User, user.id)
+    profile = await session.get(User, user.id)
     return profile
 ```
 
@@ -471,7 +470,7 @@ from zenith import Depends
 # Dependency function
 async def get_current_company(
     user=Auth,  # Dependencies can use other dependencies
-    db=DB
+    session: AsyncSession = Session
 ) -> Company:
     """Get the current user's company."""
     return await Company.find(user.company_id)
