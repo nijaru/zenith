@@ -806,7 +806,7 @@ engine = create_engine(settings.DATABASE_URL)
 @app.on_event("startup")
 async def startup():
     """Create database tables."""
-    SQLModel.metadata.create_all(engine)
+    await app.database.create_all()
 
 # Middleware
 app.add_middleware(SecurityHeadersMiddleware, {
