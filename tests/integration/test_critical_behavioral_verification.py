@@ -32,10 +32,10 @@ class TestCriticalBehavior:
             return {"message": "success", "user_id": user["id"]}
 
         async with TestClient(app) as client:
-            # Step 1: Login to get token
+            # Step 1: Login to get token (using demo credentials in dev mode)
             login_response = await client.post("/auth/login", json={
-                "username": "testuser",
-                "password": "testpass"
+                "username": "demo",
+                "password": "demo"
             })
             assert login_response.status_code == 200
 
@@ -56,8 +56,8 @@ class TestCriticalBehavior:
             from zenith.auth.jwt import extract_user_from_token
             user_info = extract_user_from_token(token)
             assert user_info is not None
-            assert user_info["id"] == 1
-            assert user_info["email"] == "testuser@example.com"
+            assert user_info["id"] == 999  # Demo user ID
+            assert user_info["email"] == "demo@example.com"
 
     @pytest.mark.asyncio
     async def test_rate_limiting_enforces_limits(self):
@@ -141,8 +141,8 @@ class TestCriticalBehavior:
 
         async with TestClient(app) as client:
             response = await client.post("/auth/login", json={
-                "username": "testuser",
-                "password": "testpass"
+                "username": "demo",
+                "password": "demo"
             })
 
             assert response.status_code == 200
@@ -180,8 +180,8 @@ class TestCriticalBehavior:
         async with TestClient(app) as client:
             # 1. Test OAuth2 login works with proper fields
             login_response = await client.post("/auth/login", json={
-                "username": "testuser",
-                "password": "testpass"
+                "username": "demo",
+                "password": "demo"
             })
             assert login_response.status_code == 200
 

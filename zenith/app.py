@@ -823,36 +823,54 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # Add auth middleware
         self.add_middleware(AuthenticationMiddleware)
 
-        # Add login endpoint
-        @self.post("/auth/login")
-        async def login(credentials: dict):
-            """Login endpoint - customize this for your user model."""
-            # This is a basic example - users should customize for their needs
-            username = credentials.get("username")
-            password = credentials.get("password")
+        # Add login endpoint - DEMO ONLY - REPLACE WITH REAL AUTHENTICATION
+        if self.config.debug and self.environment == 'development':
+            # Only in dev mode - add a warning endpoint
+            @self.post("/auth/login")
+            async def dev_login_demo(credentials: dict):
+                """
+                DEVELOPMENT DEMO LOGIN - NOT FOR PRODUCTION!
+                This endpoint is for development testing only.
+                In production, implement real user authentication.
+                """
+                username = credentials.get("username")
+                password = credentials.get("password")
 
-            # Mock authentication - replace with real user validation
-            if username and password:
-                # Create token with mock user data
-                token = jwt_manager.create_access_token(
-                    user_id=1,
-                    email=f"{username}@example.com",
-                    role="user"  # Default role, can be customized
+                # In development only, warn about insecure demo login
+                self.logger.warning(
+                    "⚠️  Using DEMO authentication - NOT SECURE! "
+                    "Replace with real authentication before production!"
                 )
-                # Return OAuth2-compliant response format
-                return {
-                    "access_token": token,
-                    "token_type": "bearer",
-                    "expires_in": expire_minutes * 60  # Convert minutes to seconds
-                }
-            else:
-                try:
-                    from fastapi import HTTPException
-                    raise HTTPException(status_code=401, detail="Invalid credentials")
-                except ImportError:
-                    # FastAPI not available, use Starlette HTTPException instead
+
+                if username == "demo" and password == "demo":
+                    # Only allow specific demo credentials
+                    token = jwt_manager.create_access_token(
+                        user_id=999,
+                        email="demo@example.com",
+                        role="demo"
+                    )
+                    return {
+                        "access_token": token,
+                        "token_type": "bearer",
+                        "expires_in": expire_minutes * 60,
+                        "warning": "DEMO MODE - Not for production use!"
+                    }
+                else:
                     from starlette.exceptions import HTTPException
-                    raise HTTPException(status_code=401, detail="Invalid credentials")
+                    raise HTTPException(
+                        status_code=401,
+                        detail="Invalid credentials (hint: use demo/demo in dev mode)"
+                    )
+        else:
+            # Production mode - require real implementation
+            @self.post("/auth/login")
+            async def login_not_implemented(credentials: dict):
+                """Authentication endpoint - must be implemented."""
+                from starlette.exceptions import HTTPException
+                raise HTTPException(
+                    status_code=501,
+                    detail="Authentication not implemented. Please implement a real login handler."
+                )
 
         self.logger.info("✅ Authentication added - /auth/login endpoint available")
         return self
