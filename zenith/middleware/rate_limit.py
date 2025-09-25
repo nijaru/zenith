@@ -215,7 +215,7 @@ class RateLimitConfig:
         ]
         self.storage = storage or MemoryRateLimitStorage()
         self.exempt_paths = exempt_paths if exempt_paths is not None else []
-        self.exempt_ips = exempt_ips if exempt_ips is not None else ["127.0.0.1", "::1"]
+        self.exempt_ips = exempt_ips if exempt_ips is not None else []
         self.error_message = error_message
         self.include_headers = include_headers
 
@@ -265,7 +265,7 @@ class RateLimitMiddleware:
             self.storage = storage or MemoryRateLimitStorage()
             self.exempt_paths = set(exempt_paths) if exempt_paths is not None else set()
             self.exempt_ips = (
-                set(exempt_ips) if exempt_ips is not None else {"127.0.0.1", "::1"}
+                set(exempt_ips) if exempt_ips is not None else set()
             )
             self.error_message = error_message
             self.include_headers = include_headers
