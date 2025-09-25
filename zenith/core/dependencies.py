@@ -381,9 +381,9 @@ class ServiceContext:
         self.instances = {}
 
     async def __aenter__(self):
-        # Initialize services
+        # Initialize services with simple instantiation
+        # Services are expected to have zero-argument constructors
         for service_type in self.services:
-            # TODO: Proper service resolution
             self.instances[service_type] = service_type()
         return self
 
