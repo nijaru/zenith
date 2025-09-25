@@ -79,8 +79,8 @@ from zenith.tasks.background import (
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
 from zenith.core.service import (
-    Service,  # Service base class for business logic (requires container)
-    SimplifiedService,  # Simplified service class (no container required)
+    Service,  # Service base class for business logic (clean, standalone)
+    ContainerService,  # Advanced service with full container features
 )
 
 # ============================================================================
@@ -113,6 +113,7 @@ from zenith.db import (
     Relationship,
     SQLModel,
     SQLModelRepository,
+    ZenithModel,  # Rails-like ActiveRecord model with async methods
     create_repository,
 )
 from zenith.db.migrations import MigrationManager
@@ -221,6 +222,7 @@ __all__ = [
     "Relationship",
     "SQLModel",
     "SQLModelRepository",
+    "ZenithModel",       # Rails-like ActiveRecord model with async methods
     # Dependency Injection (Rails-like shortcuts)
     "Session",           # Database session shortcut (the one true way)
     "Auth",              # Authentication dependency
@@ -272,7 +274,7 @@ __all__ = [
     "SecurityHeadersMiddleware",
     # Business Logic
     "Service",
-    "SimplifiedService",
+    "ContainerService",
     # Routing
     "Router",
     # Sessions

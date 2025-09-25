@@ -1462,7 +1462,7 @@ wheels = [
 ]
 
 [[package]]
-name = "zenith-web"
+name = "zenithweb"
 source = { editable = "." }
 dependencies = [
     { name = "aiosqlite" },

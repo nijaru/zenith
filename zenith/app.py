@@ -3,8 +3,8 @@ Main Zenith class - the entry point for creating Zenith applications.
 
 Combines the power of:
 - FastAPI-style routing and dependency injection
-- Phoenix contexts and real-time features
-- Rails-style conventions and developer experience
+- Service-based architecture for business logic
+- Modern Python patterns and developer experience
 """
 
 import logging
@@ -27,10 +27,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
     The high-level API for creating Zenith applications with:
     - FastAPI-style decorators and dependency injection
-    - Phoenix contexts for business logic
-    - Built-in real-time features via LiveView
-    - Rails-style conventions and tooling
-    - Automatic database performance optimizations
+    - Service-based architecture for business logic
+    - Production-ready middleware and tooling
+    - Automatic database optimizations and session management
 
     Args:
         testing: Enable testing mode to disable rate limiting and strict CORS.
@@ -43,7 +42,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         app = Zenith(testing=True)
 
         @app.get("/items/{id}")
-        async def get_item(id: int, items: ItemsContext = Inject()) -> dict:
+        async def get_item(id: int, items: ItemService = Inject(ItemService)) -> dict:
             return await items.get_item(id)
     """
 
@@ -682,7 +681,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             from zenith.http3 import create_http3_server
         except ImportError:
             raise RuntimeError(
-                "HTTP/3 support requires 'aioquic'. Install with: pip install zenith-web[http3]"
+                "HTTP/3 support requires 'aioquic'. Install with: pip install zenithweb[http3]"
             )
 
         # Use standard HTTPS port for HTTP/3

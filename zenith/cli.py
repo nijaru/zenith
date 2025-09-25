@@ -14,7 +14,7 @@ from zenith.__version__ import __version__
 
 
 @click.group()
-@click.version_option(version=__version__, package_name="zenith-web", prog_name="Zenith")
+@click.version_option(version=__version__, package_name="zenithweb", prog_name="Zenith")
 def main():
     """Zenith - Modern Python web framework."""
     pass
@@ -169,7 +169,7 @@ DEBUG=true
 '''
 
     # Create requirements.txt with current zenith version
-    requirements_content = f'''zenith-web>={__version__}
+    requirements_content = f'''zenithweb>={__version__}
 uvicorn[standard]
 python-dotenv
 '''

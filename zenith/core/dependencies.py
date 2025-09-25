@@ -264,42 +264,70 @@ def File(
     return Depends(file_validator)
 
 
+# Global service registry for singleton instances
+_service_instances: dict[type, Any] = {}
+_service_lock = None  # Will be initialized on first use
+
+def _get_service_lock():
+    """Get or create the async lock for thread-safe singleton creation."""
+    global _service_lock
+    if _service_lock is None:
+        import asyncio
+        _service_lock = asyncio.Lock()
+    return _service_lock
+
 def Inject(service_type: type[T] | None = None) -> Any:
     """
-    Enhanced dependency injection for services.
+    Dependency injection for singleton services.
 
-    Works similar to FastAPI's Depends but with automatic service resolution.
+    Services are created once and reused across all requests (singleton pattern).
+    This is ideal for services that manage connections, caches, or expensive resources.
 
     Usage:
         @app.get("/posts")
         async def get_posts(
-            posts_service: PostService = Inject(),
-            user: User = Auth,
-            session: AsyncSession = Session
+            posts_service: PostService = Inject(PostService),
+            user: User = Auth
         ):
             return await posts_service.get_recent_posts()
 
-    For explicit service types:
-        @app.get("/posts")
-        async def get_posts(posts: PostService = Inject(PostService)):
-            return await posts.get_recent_posts()
+    Note: Services should be stateless or thread-safe as they're shared across requests.
     """
     if service_type is None:
-        # Auto-resolve from type annotation
-        def auto_resolve_service():
-            # This will be resolved by FastAPI based on the parameter type annotation
-            # The actual service resolution will be handled by the DI container
-            pass
-
+        # For auto-resolution, FastAPI needs to inspect type hints
+        # This requires the service to be registered or type hint to work
+        async def auto_resolve_service():
+            # FastAPI will provide the actual type through inspection
+            # This is a placeholder that shouldn't be called directly
+            raise NotImplementedError(
+                "Auto-resolution requires type hints. Use Inject(ServiceClass) explicitly."
+            )
         return Depends(auto_resolve_service)
-    else:
-        # Explicit service type
-        def resolve_service() -> service_type:
-            # TODO: Integrate with DI container to resolve services
-            # For now, return a basic implementation
-            return service_type()
 
-        return Depends(resolve_service)
+    # Explicit service type - create singleton resolver
+    async def resolve_service() -> service_type:
+        """Get or create singleton instance of the service."""
+        # Check if instance already exists
+        if service_type in _service_instances:
+            return _service_instances[service_type]
+
+        # Create new instance with thread-safe lock
+        async with _get_service_lock():
+            # Double-check pattern - another request might have created it
+            if service_type in _service_instances:
+                return _service_instances[service_type]
+
+            # Create and store singleton instance
+            instance = service_type()
+
+            # Initialize if it has an async initialize method
+            if hasattr(instance, 'initialize') and callable(instance.initialize):
+                await instance.initialize()
+
+            _service_instances[service_type] = instance
+            return instance
+
+    return Depends(resolve_service)
 
 
 # Service decorator removed - use Service base class from zenith.core.service instead

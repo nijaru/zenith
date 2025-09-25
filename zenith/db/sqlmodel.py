@@ -20,7 +20,7 @@ class SQLModelRepository[T: SQLModel]:
     Generic repository for SQLModel entities.
 
     Provides common CRUD operations with async/await support
-    and integrates cleanly with Zenith's Context pattern.
+    and integrates cleanly with Zenith's Service pattern.
     """
 
     def __init__(self, session: AsyncSession, model: type[T]):
@@ -140,17 +140,19 @@ def create_repository[T: SQLModel](
     """
     Factory function to create repository instances.
 
-    Usage in Context classes:
+    Usage in Service classes:
 
     ```python
-    from zenith import Context
+    from zenith import Service
     from zenith.db.sqlmodel import create_repository
 
-    class UserService(Context):
-        def __init__(self, container):
-            super().__init__(container)
-            self.db = container.get(AsyncSession)
-            self.users = create_repository(self.db, User)
+    class UserService(Service):
+        async def initialize(self):
+            await super().initialize()
+            # Access database through dependency injection
+            if self.container:
+                self.db = self.container.get(AsyncSession)
+                self.users = create_repository(self.db, User)
 
         async def create_user(self, user_data: UserCreate) -> User:
             user = User(**user_data.model_dump())

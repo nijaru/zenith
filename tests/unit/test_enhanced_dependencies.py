@@ -100,7 +100,7 @@ class TestInjectFunction:
         # Should return a Depends object
         assert hasattr(inject_result, 'dependency')
 
-    def test_inject_service_resolution(self):
+    async def test_inject_service_resolution(self):
         """Test that Inject can resolve services."""
         class TestService:
             def __init__(self):
@@ -111,8 +111,8 @@ class TestInjectFunction:
         # Get the resolver function
         resolver = inject_result.dependency
 
-        # Should be able to create instance
-        instance = resolver()
+        # Should be able to create instance (resolver is now async)
+        instance = await resolver()
         assert isinstance(instance, TestService)
         assert instance.value == "injected"
 

@@ -1,12 +1,12 @@
 # Zenith Framework
 
-[![PyPI version](https://badge.fury.io/py/zenith-web.svg)](https://badge.fury.io/py/zenith-web)
+[![PyPI version](https://badge.fury.io/py/zenithweb.svg)](https://badge.fury.io/py/zenithweb)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/nijaru/zenith/workflows/Test%20Suite/badge.svg)](https://github.com/nijaru/zenith/actions)
 [![Documentation](https://img.shields.io/badge/docs-passing-brightgreen.svg)](https://nijaru.github.io/zenith/)
 
-A modern Python web framework with **intuitive developer experience** that delivers **85% less boilerplate** while maintaining exceptional performance.
+A modern Python web framework with **intuitive developer experience** and exceptional performance.
 
 > **🎯 Modern DX**: Zero-config setup, database models with chainable queries, one-liner features, and enhanced dependency injection - making Python web development incredibly productive.
 
@@ -24,7 +24,7 @@ Zenith brings together **exceptional productivity**, **outstanding performance**
 ## 🚀 Zero-Config Quick Start
 
 ```bash
-pip install zenith-web
+pip install zenithweb
 ```
 
 ```python
@@ -225,13 +225,13 @@ zen serve --workers 4
 
 ```bash
 # Basic installation
-pip install zenith-web
+pip install zenithweb
 
 # With production dependencies
-pip install "zenith-web[production]"
+pip install "zenithweb[production]"
 
 # With development tools
-pip install "zenith-web[dev]"
+pip install "zenithweb[dev]"
 ```
 
 ## Production Deployment
@@ -242,7 +242,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 COPY . .
-RUN pip install "zenith-web[production]"
+RUN pip install "zenithweb[production]"
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
@@ -284,7 +284,7 @@ pytest  # Run tests
 
 ## Status
 
-**Latest Version**: v0.3.1
+**Latest Version**: v0.1.0
 **Python Support**: 3.12+
 **Test Suite**: 100% passing (776 tests)
 **Performance**: Production-ready with 9,600+ req/s capability  

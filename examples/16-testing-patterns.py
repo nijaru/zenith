@@ -37,7 +37,7 @@ from datetime import datetime, timedelta
 import pytest
 from pydantic import BaseModel, field_validator
 
-from zenith import Auth, Inject, Service, Zenith
+from zenith import Auth, Inject, Zenith
 
 # Auth is already imported from zenith main module
 from zenith.testing import (
@@ -175,7 +175,7 @@ async def root():
 
 @app.get("/users/{user_id}")
 async def get_user(
-    user_id: int, current_user: Auth = Auth, users: UserService = Inject()
+    user_id: int, current_user: Auth = Auth, users: UserService = Inject(UserService)
 ) -> User:
     """Protected endpoint - requires authentication."""
     user = await users.get_user(user_id)
@@ -189,7 +189,7 @@ async def get_user(
 async def create_user(
     user_data: UserCreate,
     current_user: Auth = Auth,
-    users: UserService = Inject(),
+    users: UserService = Inject(UserService),
 ) -> User:
     """Create user endpoint - requires authentication."""
     return await users.create_user(user_data)
@@ -197,7 +197,7 @@ async def create_user(
 
 @app.get("/admin/users")
 async def list_users(
-    current_user: Auth = Auth, users: UserService = Inject()
+    current_user: Auth = Auth, users: UserService = Inject(UserService)
 ) -> list[User]:
     """Admin-only endpoint."""
     return await users.list_users()

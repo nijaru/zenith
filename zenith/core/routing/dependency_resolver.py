@@ -6,11 +6,16 @@ with clean separation from routing logic.
 """
 
 from typing import Any
+import asyncio
 
 from starlette.requests import Request
 
 from ..scoped import RequestScoped
 from .dependencies import AuthDependency, FileDependency, InjectDependency
+
+# Global singleton registry for services
+_service_instances: dict[type, Any] = {}
+_service_lock = asyncio.Lock()
 
 
 class DependencyResolver:
@@ -48,15 +53,39 @@ class DependencyResolver:
     async def _resolve_context(
         self, dependency: InjectDependency, param_type: type, app
     ) -> Any:
-        """Resolve a Context dependency."""
-        if not app:
-            raise RuntimeError("Router not attached to application")
-
+        """Resolve a Context dependency as a singleton."""
         # Use the specified context class, or infer from parameter type
         service_class = dependency.service_class or param_type
 
-        # Get context instance from the application
-        return await app.contexts.get_by_type(service_class)
+        # Check if service is already created (singleton pattern)
+        if service_class in _service_instances:
+            return _service_instances[service_class]
+
+        # Create new instance with thread-safe lock
+        async with _service_lock:
+            # Double-check pattern - another request might have created it
+            if service_class in _service_instances:
+                return _service_instances[service_class]
+
+            # Try to get from registered contexts first (for backward compatibility)
+            if app and hasattr(app, 'contexts'):
+                try:
+                    instance = await app.contexts.get_by_type(service_class)
+                    _service_instances[service_class] = instance
+                    return instance
+                except (KeyError, AttributeError):
+                    pass  # Not registered, create directly
+
+            # Create singleton instance
+            instance = service_class()
+
+            # Initialize if it has an async initialize method
+            if hasattr(instance, 'initialize') and callable(instance.initialize):
+                await instance.initialize()
+
+            # Store singleton
+            _service_instances[service_class] = instance
+            return instance
 
     async def _resolve_auth(self, dependency: AuthDependency, request: Request) -> Any:
         """Resolve an Auth dependency (current user)."""

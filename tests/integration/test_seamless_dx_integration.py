@@ -519,11 +519,11 @@ class TestBackwardsCompatibility:
 
     def test_existing_service_patterns_preserved(self):
         """Test existing Service base class patterns work with new features."""
-        from zenith.core.service import Service, EventBus
+        from zenith.core.service import ContainerService, EventBus
         from zenith.core.container import DIContainer
 
-        # Service base class pattern should still work
-        class TraditionalService(Service):
+        # ContainerService pattern should still work
+        class TraditionalService(ContainerService):
             def get_data(self):
                 return "traditional"
 

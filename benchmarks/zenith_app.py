@@ -127,7 +127,7 @@ async def hello_world():
 
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, users: UsersService = Inject()) -> UserModel:
+async def get_user(user_id: int, users: UsersService = Inject(UsersService)) -> UserModel:
     user = await users.get_user(user_id)
     if not user:
         return JSONResponse({"error": "User not found"}, status_code=404)
@@ -136,14 +136,14 @@ async def get_user(user_id: int, users: UsersService = Inject()) -> UserModel:
 
 @app.get("/users")
 async def list_users(
-    limit: int = 100, users: UsersService = Inject()
+    limit: int = 100, users: UsersService = Inject(UsersService)
 ) -> list[UserModel]:
     return await users.list_users(limit)
 
 
 @app.post("/users")
 async def create_user(
-    data: CreateUserModel, users: UsersService = Inject()
+    data: CreateUserModel, users: UsersService = Inject(UsersService)
 ) -> UserModel:
     return await users.create_user(data)
 

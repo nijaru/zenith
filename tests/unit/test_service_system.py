@@ -11,7 +11,7 @@ import pytest
 from zenith import Zenith
 from zenith.core.container import DIContainer
 from zenith.core.routing.dependencies import Inject
-from zenith.core.service import Service, EventBus
+from zenith.core.service import ContainerService, EventBus
 
 
 class UserService:
@@ -37,7 +37,7 @@ class UserService:
         return self.users[:limit]
 
 
-class UserContext(Service):
+class UserContext(ContainerService):
     """Example context for testing."""
 
     def __init__(self, container: DIContainer, user_service: UserService = None):
@@ -61,7 +61,7 @@ class UserContext(Service):
         return "@" in email and "." in email
 
 
-class NotificationService(Service):
+class NotificationService(ContainerService):
     """Another context for testing inter-context dependencies."""
 
     def __init__(self, container: DIContainer, user_context: UserContext = None):
@@ -86,7 +86,7 @@ class TestContextBasics:
         container.register("events", EventBus())
         ctx = UserContext(container)
 
-        assert isinstance(ctx, Service)
+        assert isinstance(ctx, ContainerService)
         assert hasattr(ctx, "user_service")
         assert hasattr(ctx, "get_user")
         assert hasattr(ctx, "container")
@@ -366,7 +366,7 @@ class TestContextErrorHandling:
     async def test_context_method_errors(self):
         """Test error handling in context methods."""
 
-        class ErrorService(Service):
+        class ErrorService(ContainerService):
             def __init__(self, container: DIContainer):
                 super().__init__(container)
 
