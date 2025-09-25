@@ -60,7 +60,7 @@ Full changelog at https://github.com/nijaru/zenith/compare/v{prev-version}...v{v
 - **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
 - **Status**: v0.1.0 - Initial release with zero-config setup and intuitive patterns
 - **Performance**: 9,600+ req/s with optimized middleware stack and database session reuse
-- **Test Coverage**: 100% integration tests (781+ tests passing with comprehensive security, stress & load testing)
+- **Test Coverage**: 100% integration tests (776 tests passing)
 - **CLI**: `zen` command for development tools
 - **Memory**: Zero memory leaks with bounded caches and automatic cleanup
 - **DX**: 85% boilerplate reduction with intuitive patterns
