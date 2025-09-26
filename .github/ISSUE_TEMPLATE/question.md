@@ -29,7 +29,7 @@ Have you checked the following resources?
 
 **Environment**
 - Python version: [e.g. 3.11.5]
-- Zenith version: [e.g. 0.0.1]
+- Zenith version: [e.g. 0.0.2]
 - Relevant dependencies: [if applicable]
 
 **Additional context**

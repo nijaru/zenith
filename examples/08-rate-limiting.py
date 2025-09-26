@@ -72,7 +72,7 @@ app.add_middleware(
         RateLimit(requests=100, window=3600, per="ip"),  # 100 requests per hour per IP
     ],
     exempt_paths=["/", "/health", "/docs"],  # Exempt these paths
-    exempt_ips=["127.0.0.1"],  # Exempt localhost
+    # No IP exemptions for security - applies to all clients including localhost
     error_message="Too many requests. Please slow down!",
     include_headers=True,
 )
