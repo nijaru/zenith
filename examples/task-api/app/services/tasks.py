@@ -9,14 +9,11 @@ from app.services import BaseService
 from app.models import Task, TaskCreate, TaskUpdate, Project
 from app.exceptions import NotFoundError, PermissionError, ValidationError
 
+
 class TaskService(BaseService):
     """Manages task operations with transaction support."""
 
-    async def create_task(
-        self,
-        task_data: TaskCreate,
-        user_id: int
-    ) -> Task:
+    async def create_task(self, task_data: TaskCreate, user_id: int) -> Task:
         """Create a task within a project."""
         # Verify project exists and user owns it
         project = await self.session.get(Project, task_data.project_id)
@@ -27,10 +24,7 @@ class TaskService(BaseService):
             raise PermissionError("You can only add tasks to your own projects")
 
         # Create the task
-        task = Task(
-            **task_data.model_dump(),
-            created_by=user_id
-        )
+        task = Task(**task_data.model_dump(), created_by=user_id)
 
         # Set default due date if not provided
         if not task.due_date:
@@ -62,7 +56,7 @@ class TaskService(BaseService):
         assignee_id: Optional[int] = None,
         status: Optional[str] = None,
         skip: int = 0,
-        limit: int = 100
+        limit: int = 100,
     ) -> tuple[List[Task], int]:
         """List tasks with multiple filters."""
         # Start with base query
@@ -84,10 +78,7 @@ class TaskService(BaseService):
                 conditions.append(Task.is_completed == False)
             elif status == "overdue":
                 conditions.append(
-                    and_(
-                        Task.is_completed == False,
-                        Task.due_date < datetime.utcnow()
-                    )
+                    and_(Task.is_completed == False, Task.due_date < datetime.utcnow())
                 )
 
         # Apply all conditions
@@ -100,10 +91,11 @@ class TaskService(BaseService):
         total = count_result.one()
 
         # Order by priority and due date
-        query = (query
-                .order_by(Task.priority.desc(), Task.due_date)
-                .offset(skip)
-                .limit(limit))
+        query = (
+            query.order_by(Task.priority.desc(), Task.due_date)
+            .offset(skip)
+            .limit(limit)
+        )
 
         result = await self.session.exec(query)
         tasks = result.all()
@@ -115,10 +107,7 @@ class TaskService(BaseService):
         return tasks, total
 
     async def update_task(
-        self,
-        task_id: int,
-        task_update: TaskUpdate,
-        user_id: int
+        self, task_id: int, task_update: TaskUpdate, user_id: int
     ) -> Task:
         """Update task with permission checks."""
         task = await self.session.get(Task, task_id)
@@ -163,11 +152,7 @@ class TaskService(BaseService):
 
         return task
 
-    async def delete_task(
-        self,
-        task_id: int,
-        user_id: int
-    ) -> bool:
+    async def delete_task(self, task_id: int, user_id: int) -> bool:
         """Delete a task (hard delete)."""
         task = await self.get_task(task_id)
 
@@ -182,10 +167,7 @@ class TaskService(BaseService):
         return True
 
     async def bulk_update_tasks(
-        self,
-        task_ids: List[int],
-        update_data: dict,
-        user_id: int
+        self, task_ids: List[int], update_data: dict, user_id: int
     ) -> int:
         """Update multiple tasks at once."""
         updated_count = 0

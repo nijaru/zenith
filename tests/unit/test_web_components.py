@@ -40,7 +40,7 @@ class TestFileUploads:
     async def test_file_upload_basic(self):
         """Test basic file upload functionality."""
         # Set test environment to avoid production config validation
-        os.environ['ZENITH_ENV'] = 'test'
+        os.environ["ZENITH_ENV"] = "test"
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 upload_dir = Path(temp_dir) / "uploads"
@@ -59,8 +59,12 @@ class TestFileUploads:
 
                 @app.post("/api/upload")
                 async def upload_file(
-                    file=File(max_size=1024, allowed_extensions=[".txt", ".json"], field_name="file"),
-                    current_user=Auth
+                    file=File(
+                        max_size=1024,
+                        allowed_extensions=[".txt", ".json"],
+                        field_name="file",
+                    ),
+                    current_user=Auth,
                 ):
                     # Ensure we're working with the right object
                     if not hasattr(file, "size_bytes"):
@@ -92,17 +96,19 @@ class TestFileUploads:
                     assert data["original"] == "test.txt"
                     assert data["size"] == len("Hello World!")
                     assert data["type"] == "text/plain"
-                    assert data["filename"] == "test.txt"  # File dependency returns original filename
+                    assert (
+                        data["filename"] == "test.txt"
+                    )  # File dependency returns original filename
         finally:
             # Clean up environment variable
-            if 'ZENITH_ENV' in os.environ:
-                del os.environ['ZENITH_ENV']
+            if "ZENITH_ENV" in os.environ:
+                del os.environ["ZENITH_ENV"]
 
     @pytest.mark.asyncio
     async def test_file_upload_validation(self):
         """Test file upload validation."""
         # Set test environment to avoid production config validation
-        os.environ['ZENITH_ENV'] = 'test'
+        os.environ["ZENITH_ENV"] = "test"
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 upload_dir = Path(temp_dir) / "uploads"
@@ -121,8 +127,10 @@ class TestFileUploads:
 
                 @app.post("/api/upload")
                 async def upload_file(
-                    file=File(max_size=10, allowed_extensions=[".txt"], field_name="file"),  # Match config limits
-                    current_user=Auth
+                    file=File(
+                        max_size=10, allowed_extensions=[".txt"], field_name="file"
+                    ),  # Match config limits
+                    current_user=Auth,
                 ):
                     return {"success": True}
 
@@ -152,8 +160,8 @@ class TestFileUploads:
                     # )  # Validation errors return 422 Unprocessable Entity
         finally:
             # Clean up environment variable
-            if 'ZENITH_ENV' in os.environ:
-                del os.environ['ZENITH_ENV']
+            if "ZENITH_ENV" in os.environ:
+                del os.environ["ZENITH_ENV"]
 
     def test_file_uploader_direct(self):
         """Test FileUploader class directly."""
@@ -285,7 +293,7 @@ class TestHealthChecks:
     async def test_health_endpoints_integration(self):
         """Test health endpoints integration."""
         # Set test environment to avoid production config validation
-        os.environ['ZENITH_ENV'] = 'test'
+        os.environ["ZENITH_ENV"] = "test"
         try:
             app = Zenith(testing=True, debug=True)
 
@@ -319,8 +327,8 @@ class TestHealthChecks:
                 assert data["status"] == "alive"
         finally:
             # Clean up environment variable
-            if 'ZENITH_ENV' in os.environ:
-                del os.environ['ZENITH_ENV']
+            if "ZENITH_ENV" in os.environ:
+                del os.environ["ZENITH_ENV"]
 
 
 class TestResponseUtilities:

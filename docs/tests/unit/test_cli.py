@@ -83,7 +83,10 @@ async def health():
             # Routes command may fail if it can't import the app, but shouldn't crash
             assert result.exit_code in [0, 1]
             # The command should handle import errors gracefully
-            if "Error importing" in result.output or "No app module found" in result.output:
+            if (
+                "Error importing" in result.output
+                or "No app module found" in result.output
+            ):
                 # This is expected in test environment
                 pass
             elif result.exit_code == 0:
@@ -139,7 +142,9 @@ async def health():
             assert "--reload" not in call_args  # No reload in production
 
     @patch("subprocess.run")
-    def test_serve_command_with_workers(self, mock_run, runner, temp_dir, test_app_file):
+    def test_serve_command_with_workers(
+        self, mock_run, runner, temp_dir, test_app_file
+    ):
         """Test zen serve command with custom workers."""
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
@@ -212,7 +217,9 @@ async def health():
             assert mock_run_shell.call_args[1]["use_ipython"] is False
 
     @patch("zenith.dev.shell.run_shell")
-    def test_shell_command_with_app(self, mock_run_shell, runner, temp_dir, test_app_file):
+    def test_shell_command_with_app(
+        self, mock_run_shell, runner, temp_dir, test_app_file
+    ):
         """Test zen shell command with app path."""
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
@@ -276,11 +283,16 @@ async def health():
             result = runner.invoke(main, ["routes"])
 
             # Should handle gracefully
-            assert "No app module found" in result.output or "No Zenith app file found" in result.output
+            assert (
+                "No app module found" in result.output
+                or "No Zenith app file found" in result.output
+            )
 
     @patch("webbrowser.open")
     @patch("subprocess.run")
-    def test_dev_open_browser(self, mock_run, mock_browser, runner, temp_dir, test_app_file):
+    def test_dev_open_browser(
+        self, mock_run, mock_browser, runner, temp_dir, test_app_file
+    ):
         """Test zen dev --open opens browser."""
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
@@ -299,11 +311,13 @@ class TestCLIIntegration:
     def test_cli_import(self):
         """Test that CLI can be imported."""
         from zenith.cli import main
+
         assert main is not None
 
     def test_cli_entrypoint(self):
         """Test that CLI entrypoint exists."""
         from zenith.cli import main
+
         assert callable(main)
 
     @pytest.mark.skipif(sys.platform == "win32", reason="Unix-specific test")

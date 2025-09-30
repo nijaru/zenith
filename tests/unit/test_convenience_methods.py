@@ -23,9 +23,11 @@ class TestConvenienceMethods:
         config = Config(
             secret_key="test-secret-key-for-testing-32-chars",
             database_url="sqlite+aiosqlite:///:memory:",
-            debug=True
+            debug=True,
         )
-        return Zenith(config=config, middleware=[])  # Empty middleware to avoid complexity
+        return Zenith(
+            config=config, middleware=[]
+        )  # Empty middleware to avoid complexity
 
     def test_add_auth_with_secret_key(self, app):
         """Test app.add_auth() with provided secret key."""
@@ -74,7 +76,7 @@ class TestConvenienceMethods:
         result = app.add_auth(
             secret_key="test-secret-key-32-characters-long",
             algorithm="HS512",
-            expire_minutes=60
+            expire_minutes=60,
         )
 
         assert result is app
@@ -123,7 +125,7 @@ class TestConvenienceMethods:
             version="2.0.0",
             description="Custom API description",
             docs_url="/custom-docs",
-            redoc_url="/custom-redoc"
+            redoc_url="/custom-redoc",
         )
 
         assert result is app
@@ -133,10 +135,11 @@ class TestConvenienceMethods:
 
     def test_method_chaining(self, app):
         """Test that convenience methods can be chained together."""
-        result = (app
-                 .add_auth(secret_key="test-secret-key-32-characters-long")
-                 .add_admin("/dashboard")
-                 .add_api("Chained API", "1.0.0"))
+        result = (
+            app.add_auth(secret_key="test-secret-key-32-characters-long")
+            .add_admin("/dashboard")
+            .add_api("Chained API", "1.0.0")
+        )
 
         # Should return same app instance for all chained calls
         assert result is app
@@ -159,7 +162,7 @@ class TestConvenienceMethodsIntegration:
         config = Config(
             secret_key="test-secret-key-for-testing-32-chars",
             database_url="sqlite+aiosqlite:///:memory:",
-            debug=True
+            debug=True,
         )
         return Zenith(config=config, middleware=[])
 
@@ -168,7 +171,9 @@ class TestConvenienceMethodsIntegration:
         app.add_admin()
 
         # Mock the database health check
-        with patch.object(app.app.database, 'health_check', return_value=True) as mock_health:
+        with patch.object(
+            app.app.database, "health_check", return_value=True
+        ) as mock_health:
             # Get the admin health route function
             admin_health_route = None
             for route in app._app_router.routes:
@@ -181,9 +186,9 @@ class TestConvenienceMethodsIntegration:
             # Call the endpoint
             result = await admin_health_route()
 
-            assert result['status'] == 'healthy'
-            assert result['database'] == 'connected'
-            assert result['version'] == '0.3.0'
+            assert result["status"] == "healthy"
+            assert result["database"] == "connected"
+            assert result["version"] == "0.3.0"
             mock_health.assert_called_once()
 
     async def test_admin_health_endpoint_unhealthy(self, app):
@@ -191,7 +196,7 @@ class TestConvenienceMethodsIntegration:
         app.add_admin()
 
         # Mock the database health check to return False
-        with patch.object(app.app.database, 'health_check', return_value=False):
+        with patch.object(app.app.database, "health_check", return_value=False):
             admin_health_route = None
             for route in app._app_router.routes:
                 if route.path == "/admin/health":
@@ -200,8 +205,8 @@ class TestConvenienceMethodsIntegration:
 
             result = await admin_health_route()
 
-            assert result['status'] == 'unhealthy'
-            assert result['database'] == 'disconnected'
+            assert result["status"] == "unhealthy"
+            assert result["database"] == "disconnected"
 
     async def test_admin_stats_endpoint_functionality(self, app):
         """Test that admin stats endpoint returns correct statistics."""
@@ -219,12 +224,12 @@ class TestConvenienceMethodsIntegration:
         # Call the endpoint
         result = await admin_stats_route()
 
-        assert 'routes_count' in result
-        assert 'middleware_count' in result
-        assert 'debug_mode' in result
-        assert result['debug_mode'] is True  # From config
-        assert isinstance(result['routes_count'], int)
-        assert isinstance(result['middleware_count'], int)
+        assert "routes_count" in result
+        assert "middleware_count" in result
+        assert "debug_mode" in result
+        assert result["debug_mode"] is True  # From config
+        assert isinstance(result["routes_count"], int)
+        assert isinstance(result["middleware_count"], int)
 
     async def test_api_info_endpoint_functionality(self, app):
         """Test that API info endpoint returns correct information."""
@@ -232,7 +237,7 @@ class TestConvenienceMethodsIntegration:
             title="Test API",
             version="1.2.3",
             description="Test API description",
-            docs_url="/test-docs"
+            docs_url="/test-docs",
         )
 
         # Get the API info route function
@@ -247,10 +252,10 @@ class TestConvenienceMethodsIntegration:
         # Call the endpoint
         result = await api_info_route()
 
-        assert result['title'] == "Test API"
-        assert result['version'] == "1.2.3"
-        assert result['description'] == "Test API description"
-        assert result['docs_url'] == "/test-docs"
+        assert result["title"] == "Test API"
+        assert result["version"] == "1.2.3"
+        assert result["description"] == "Test API description"
+        assert result["docs_url"] == "/test-docs"
 
 
 class TestConvenienceMethodsErrorHandling:
@@ -261,27 +266,35 @@ class TestConvenienceMethodsErrorHandling:
         config = Config(
             secret_key="test-secret-key-for-testing-32-chars",
             database_url="sqlite+aiosqlite:///:memory:",
-            debug=True
+            debug=True,
         )
         app = Zenith(config=config, middleware=[])
 
         # Mock import error for auth components
-        with patch('zenith.auth.jwt.configure_jwt', side_effect=ImportError("Auth not available")):
+        with patch(
+            "zenith.auth.jwt.configure_jwt",
+            side_effect=ImportError("Auth not available"),
+        ):
             with pytest.raises(ImportError):
                 app.add_auth()
 
     async def test_admin_health_handles_database_errors(self):
         """Test admin health endpoint handles database errors gracefully."""
-        app = Zenith(config=Config(
-            secret_key="test-secret-key-for-testing-32-chars",
-            database_url="sqlite+aiosqlite:///:memory:",
-            debug=True
-        ), middleware=[])
+        app = Zenith(
+            config=Config(
+                secret_key="test-secret-key-for-testing-32-chars",
+                database_url="sqlite+aiosqlite:///:memory:",
+                debug=True,
+            ),
+            middleware=[],
+        )
 
         app.add_admin()
 
         # Mock database health check to raise exception
-        with patch.object(app.app.database, 'health_check', side_effect=Exception("Database error")):
+        with patch.object(
+            app.app.database, "health_check", side_effect=Exception("Database error")
+        ):
             admin_health_route = None
             for route in app._app_router.routes:
                 if route.path == "/admin/health":
@@ -290,6 +303,6 @@ class TestConvenienceMethodsErrorHandling:
 
             result = await admin_health_route()
 
-            assert result['status'] == 'unhealthy'
-            assert 'error' in result
-            assert 'Database error' in result['error']
+            assert result["status"] == "unhealthy"
+            assert "error" in result
+            assert "Database error" in result["error"]

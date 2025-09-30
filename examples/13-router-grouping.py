@@ -224,7 +224,9 @@ async def list_products_v2(
 
 @products_v2.get("/{product_id}", response_model=Product)
 async def get_product_v2(
-    product_id: int, include_related: bool = False, products: ProductService = Inject(ProductService)
+    product_id: int,
+    include_related: bool = False,
+    products: ProductService = Inject(ProductService),
 ) -> dict:
     """Get product with optional related data (v2)."""
     product = await products.get_product(product_id)

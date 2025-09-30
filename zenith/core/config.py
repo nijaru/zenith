@@ -87,26 +87,26 @@ class Config:
     def _get_environment() -> str:
         """Get the current environment from ZENITH_ENV."""
         env_aliases = {
-            'dev': 'development',
-            'prod': 'production',
-            'test': 'test',
-            'testing': 'test',
-            'stage': 'staging',
+            "dev": "development",
+            "prod": "production",
+            "test": "test",
+            "testing": "test",
+            "stage": "staging",
         }
 
         env = os.getenv("ZENITH_ENV", "").lower()
         if env in env_aliases:
             return env_aliases[env]
-        elif env in ('development', 'production', 'test', 'staging'):
+        elif env in ("development", "production", "test", "staging"):
             return env
 
         # Check explicit DEBUG env var as secondary option
         if os.getenv("DEBUG"):
             debug_val = os.getenv("DEBUG", "").lower()
             if debug_val == "true":
-                return 'development'
+                return "development"
             elif debug_val == "false":
-                return 'production'
+                return "production"
 
         # Check legacy environment variables for compatibility
         legacy_vars = [
@@ -117,16 +117,16 @@ class Config:
         ]
 
         for var in legacy_vars:
-            if var in ('development', 'dev', 'develop'):
-                return 'development'
-            elif var in ('production', 'prod'):
-                return 'production'
-            elif var in ('test', 'testing'):
-                return 'test'
-            elif var in ('staging', 'stage'):
-                return 'staging'
+            if var in ("development", "dev", "develop"):
+                return "development"
+            elif var in ("production", "prod"):
+                return "production"
+            elif var in ("test", "testing"):
+                return "test"
+            elif var in ("staging", "stage"):
+                return "staging"
 
-        return 'development'  # Default to development for local development
+        return "development"  # Default to development for local development
 
     @staticmethod
     def _get_debug_default() -> bool:
@@ -139,12 +139,12 @@ class Config:
             return debug_env.lower() == "true"
 
         # Otherwise use environment-based defaults
-        return env in ('development', 'test')
+        return env in ("development", "test")
 
     def validate(self) -> None:
         """Validate configuration settings."""
         # Check if we're in production-like environment
-        is_production = self._environment in ('production', 'staging')
+        is_production = self._environment in ("production", "staging")
 
         # Auto-generate secret key for development if not set
         if not self.secret_key or self.secret_key == "dev-secret-change-in-prod":

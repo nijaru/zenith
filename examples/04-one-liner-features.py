@@ -1,5 +1,5 @@
 """
-One-liner Features Example - Showcasing v0.0.1 Convenience Methods
+One-liner Features Example - Showcasing v0.0.2 Convenience Methods
 
 This example demonstrates the new one-liner convenience methods:
 - app.add_auth() - JWT authentication in one line
@@ -20,8 +20,8 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only-32-chars-long
 
 # 🚀 Create app and add features in just 4 lines!
 app = Zenith()
-app.add_auth()          # Adds JWT auth + /auth/login endpoint
-app.add_admin()         # Adds admin dashboard at /admin
+app.add_auth()  # Adds JWT auth + /auth/login endpoint
+app.add_admin()  # Adds admin dashboard at /admin
 app.add_api("Demo API", "1.0.0", "Showcase of one-liner features")
 
 
@@ -34,7 +34,7 @@ async def home():
         "features_added": [
             "🔐 Authentication - POST /auth/login",
             "⚡ Admin Dashboard - GET /admin",
-            "📚 API Documentation - GET /docs"
+            "📚 API Documentation - GET /docs",
         ],
         "try_these": [
             "POST /auth/login - Login with any username/password",
@@ -43,8 +43,8 @@ async def home():
             "GET /admin/stats - App statistics",
             "GET /api/info - API information",
             "GET /docs - Interactive API docs",
-            "GET /redoc - Alternative API docs"
-        ]
+            "GET /redoc - Alternative API docs",
+        ],
     }
 
 
@@ -73,4 +73,5 @@ if __name__ == "__main__":
     print("   GET /redoc       - Alternative API documentation")
 
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8017)

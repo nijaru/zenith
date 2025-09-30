@@ -21,7 +21,9 @@ from zenith.exceptions import ZenithException
 logger = logging.getLogger("zenith.exceptions")
 
 
-def _enhance_async_error_message(exc: Exception, tb: traceback.TracebackException) -> str | None:
+def _enhance_async_error_message(
+    exc: Exception, tb: traceback.TracebackException
+) -> str | None:
     """
     Enhance error messages for common async patterns that cause confusion.
 
@@ -32,10 +34,11 @@ def _enhance_async_error_message(exc: Exception, tb: traceback.TracebackExceptio
     exc_type = type(exc).__name__
 
     # Pattern 1: Variable naming conflicts in async context managers
-    if (exc_type == "UnboundLocalError" and
-        "cannot access local variable" in exc_str and
-        "where it is not associated" in exc_str):
-
+    if (
+        exc_type == "UnboundLocalError"
+        and "cannot access local variable" in exc_str
+        and "where it is not associated" in exc_str
+    ):
         # Extract variable name from error
         var_match = re.search(r"cannot access local variable '(\w+)'", exc_str)
         if var_match:
@@ -45,13 +48,16 @@ def _enhance_async_error_message(exc: Exception, tb: traceback.TracebackExceptio
             for frame in tb.stack:
                 if frame.filename and frame.lineno:
                     try:
-                        with open(frame.filename, 'r') as f:
+                        with open(frame.filename, "r") as f:
                             lines = f.readlines()
                             if frame.lineno <= len(lines):
                                 line = lines[frame.lineno - 1].strip()
 
                                 # Check for common problematic patterns
-                                if f"async with {var_name}.session() as {var_name}:" in line:
+                                if (
+                                    f"async with {var_name}.session() as {var_name}:"
+                                    in line
+                                ):
                                     return (
                                         f"AsyncContextError: Variable name conflict in database session context.\n"
                                         f"Found: {line}\n"
@@ -334,7 +340,9 @@ class ExceptionHandlerMiddleware:
             # Add enhanced message for better debugging (WealthScope request)
             if enhanced_message:
                 error_response["enhanced_error"] = enhanced_message
-                error_response["message"] = "Enhanced error information available in development mode"
+                error_response["message"] = (
+                    "Enhanced error information available in development mode"
+                )
                 # Also log the enhanced message for visibility
                 logger.warning(f"Enhanced error context: {enhanced_message}")
 

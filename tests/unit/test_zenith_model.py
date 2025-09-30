@@ -25,6 +25,7 @@ from zenith.core.container import set_current_db_session
 # Test models for testing (renamed to avoid pytest collection issues)
 class UserModel(ZenithModel, table=True):
     """Test user model."""
+
     __tablename__ = "test_users"
 
     id: Optional[int] = Field(primary_key=True)
@@ -37,6 +38,7 @@ class UserModel(ZenithModel, table=True):
 
 class PostModel(ZenithModel, table=True):
     """Test post model."""
+
     __tablename__ = "test_posts"
 
     id: Optional[int] = Field(primary_key=True)
@@ -70,7 +72,7 @@ class TestZenithModel:
 
     async def test_get_session_fallback_to_container(self):
         """Test _get_session falls back to container when no context session."""
-        with patch('zenith.core.container.get_db_session') as mock_get_db:
+        with patch("zenith.core.container.get_db_session") as mock_get_db:
             mock_session = AsyncMock()
             mock_get_db.return_value = mock_session
 
@@ -81,7 +83,7 @@ class TestZenithModel:
 
     async def test_get_session_raises_error_when_no_session(self):
         """Test _get_session raises error when no session available."""
-        with patch('zenith.core.container.get_db_session') as mock_get_db:
+        with patch("zenith.core.container.get_db_session") as mock_get_db:
             mock_get_db.return_value = None
 
             with pytest.raises(RuntimeError) as exc_info:
@@ -303,28 +305,32 @@ class TestZenithModelCRUD:
 
     def test_to_dict_method(self):
         """Test user.to_dict() converts to dictionary."""
-        user = UserModel(id=1, name="Alice", email="alice@example.com", active=True, age=25)
+        user = UserModel(
+            id=1, name="Alice", email="alice@example.com", active=True, age=25
+        )
 
         data = user.to_dict()
 
         assert isinstance(data, dict)
-        assert data['id'] == 1
-        assert data['name'] == "Alice"
-        assert data['email'] == "alice@example.com"
-        assert data['active'] is True
-        assert data['age'] == 25
+        assert data["id"] == 1
+        assert data["name"] == "Alice"
+        assert data["email"] == "alice@example.com"
+        assert data["active"] is True
+        assert data["age"] == 25
 
     def test_to_dict_method_with_exclude(self):
         """Test user.to_dict(exclude=set) excludes specified fields."""
-        user = UserModel(id=1, name="Alice", email="alice@example.com", active=True, age=25)
+        user = UserModel(
+            id=1, name="Alice", email="alice@example.com", active=True, age=25
+        )
 
-        data = user.to_dict(exclude={'email', 'age'})
+        data = user.to_dict(exclude={"email", "age"})
 
-        assert 'email' not in data
-        assert 'age' not in data
-        assert data['id'] == 1
-        assert data['name'] == "Alice"
-        assert data['active'] is True
+        assert "email" not in data
+        assert "age" not in data
+        assert data["id"] == 1
+        assert data["name"] == "Alice"
+        assert data["active"] is True
 
 
 class TestQueryBuilder:
@@ -357,7 +363,7 @@ class TestQueryBuilder:
         """Test QueryBuilder.order_by() with ascending order."""
         builder = QueryBuilder(UserModel, mock_session)
 
-        result = builder.order_by('name')
+        result = builder.order_by("name")
 
         assert result is builder  # Returns self for chaining
 
@@ -365,7 +371,7 @@ class TestQueryBuilder:
         """Test QueryBuilder.order_by() with descending order."""
         builder = QueryBuilder(UserModel, mock_session)
 
-        result = builder.order_by('-created_at')
+        result = builder.order_by("-created_at")
 
         assert result is builder  # Returns self for chaining
 
@@ -390,12 +396,12 @@ class TestQueryBuilder:
         builder = QueryBuilder(UserModel, mock_session)
 
         # Test with a field that doesn't exist - should not be added to includes
-        result = builder.includes('nonexistent_field')
+        result = builder.includes("nonexistent_field")
         assert result is builder  # Returns self for chaining
-        assert 'nonexistent_field' not in builder._includes
+        assert "nonexistent_field" not in builder._includes
 
         # Test with a field that does exist on the model
-        result = builder.includes('name')  # 'name' is a real field on UserModel
+        result = builder.includes("name")  # 'name' is a real field on UserModel
         assert result is builder  # Returns self for chaining
         # Note: 'name' is a simple field, not a relationship, so it won't be added to _includes
         # This tests the hasattr check works correctly
@@ -404,16 +410,17 @@ class TestQueryBuilder:
         """Test that QueryBuilder methods can be chained."""
         builder = QueryBuilder(UserModel, mock_session)
 
-        result = (builder
-                 .where(active=True)
-                 .order_by('-created_at')
-                 .limit(10)
-                 .offset(20)
-                 .includes('nonexistent_relationship'))
+        result = (
+            builder.where(active=True)
+            .order_by("-created_at")
+            .limit(10)
+            .offset(20)
+            .includes("nonexistent_relationship")
+        )
 
         assert result is builder
         # Since 'nonexistent_relationship' doesn't exist, it won't be in _includes
-        assert 'nonexistent_relationship' not in builder._includes
+        assert "nonexistent_relationship" not in builder._includes
 
     async def test_all_method_execution(self, mock_session):
         """Test QueryBuilder.all() executes query and returns results."""
@@ -425,7 +432,7 @@ class TestQueryBuilder:
         mock_scalars = Mock()
         mock_users = [
             UserModel(id=1, name="Alice", email="alice@example.com"),
-            UserModel(id=2, name="Bob", email="bob@example.com")
+            UserModel(id=2, name="Bob", email="bob@example.com"),
         ]
         mock_scalars.all.return_value = mock_users
         mock_result.scalars.return_value = mock_scalars
@@ -478,7 +485,7 @@ class TestZenithModelWhereMethod:
 
     async def test_where_returns_query_builder(self):
         """Test that User.where() returns QueryBuilder instance."""
-        with patch('zenith.core.container.get_current_db_session') as mock_get_session:
+        with patch("zenith.core.container.get_current_db_session") as mock_get_session:
             mock_session = AsyncMock()
             mock_get_session.return_value = mock_session
 
@@ -489,7 +496,7 @@ class TestZenithModelWhereMethod:
 
     async def test_where_method_chaining_integration(self):
         """Test complete where method chaining integration."""
-        with patch('zenith.core.container.get_current_db_session') as mock_get_session:
+        with patch("zenith.core.container.get_current_db_session") as mock_get_session:
             mock_session = AsyncMock()
             mock_get_session.return_value = mock_session
 
@@ -503,10 +510,7 @@ class TestZenithModelWhereMethod:
 
             # Test chaining: where -> order_by -> limit -> all
             builder = await UserModel.where(active=True)
-            users = await (builder
-                          .order_by('-created_at')
-                          .limit(10)
-                          .all())
+            users = await builder.order_by("-created_at").limit(10).all()
 
             assert len(users) == 1
             assert users[0].name == "Alice"
@@ -524,10 +528,10 @@ class TestZenithModelErrorHandling:
 
     async def test_session_error_handling(self):
         """Test proper error handling when session operations fail."""
-        with patch('zenith.core.container.get_current_db_session') as mock_get_session:
+        with patch("zenith.core.container.get_current_db_session") as mock_get_session:
             mock_get_session.return_value = None
 
-            with patch('zenith.core.container.get_db_session') as mock_get_db:
+            with patch("zenith.core.container.get_db_session") as mock_get_db:
                 mock_get_db.return_value = None
 
                 with pytest.raises(RuntimeError) as exc_info:
@@ -584,8 +588,10 @@ class TestZenithModelIntegration:
         mock_result = Mock()
         mock_scalars = Mock()
         mock_users = [
-            UserModel(id=1, name="Alice", email="alice@example.com", active=True, age=25),
-            UserModel(id=2, name="Bob", email="bob@example.com", active=True, age=30)
+            UserModel(
+                id=1, name="Alice", email="alice@example.com", active=True, age=25
+            ),
+            UserModel(id=2, name="Bob", email="bob@example.com", active=True, age=30),
         ]
         mock_scalars.all.return_value = mock_users
         mock_result.scalars.return_value = mock_scalars
@@ -593,11 +599,12 @@ class TestZenithModelIntegration:
 
         # Execute complex query chain
         builder = await UserModel.where(active=True, age__gte=18)  # Adults only
-        users = await (builder
-                      .order_by('-created_at')          # Newest first
-                      .limit(10)                        # Max 10 results
-                      .includes('posts')                # Eager load posts
-                      .all())
+        users = await (
+            builder.order_by("-created_at")  # Newest first
+            .limit(10)  # Max 10 results
+            .includes("posts")  # Eager load posts
+            .all()
+        )
 
         assert len(users) == 2
         assert all(user.active for user in users)

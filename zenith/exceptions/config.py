@@ -44,7 +44,9 @@ class MiddlewareConfigError(ZenithConfigError):
         return cls(message, suggestions)
 
     @classmethod
-    def missing_required(cls, middleware_name: str, param_name: str, description: str | None = None):
+    def missing_required(
+        cls, middleware_name: str, param_name: str, description: str | None = None
+    ):
         """Create error for missing required parameter."""
         message = f"{middleware_name} requires '{param_name}' parameter."
 

@@ -26,24 +26,24 @@ class VersionManager:
             ],
             # Documentation files
             "**/*.md": [
-                (r'v0\.\d+\.\d+', r'v{version}'),
-                (r'version 0\.\d+\.\d+', r'version {version}'),
-                (r'Version 0\.\d+\.\d+', r'Version {version}'),
+                (r"v0\.\d+\.\d+", r"v{version}"),
+                (r"version 0\.\d+\.\d+", r"version {version}"),
+                (r"Version 0\.\d+\.\d+", r"Version {version}"),
             ],
             "**/*.mdx": [
-                (r'v0\.\d+\.\d+', r'v{version}'),
-                (r'version 0\.\d+\.\d+', r'version {version}'),
+                (r"v0\.\d+\.\d+", r"v{version}"),
+                (r"version 0\.\d+\.\d+", r"version {version}"),
             ],
             # Python files with version references
             "**/*.py": [
-                (r'# v0\.\d+\.\d+ features', r'# v{version} features'),
-                (r'# Version 0\.\d+\.\d+', r'# Version {version}'),
-                (r'v0\.\d+\.\d+ - Modern', r'v{version} - Modern'),
+                (r"# v0\.\d+\.\d+ features", r"# v{version} features"),
+                (r"# Version 0\.\d+\.\d+", r"# Version {version}"),
+                (r"v0\.\d+\.\d+ - Modern", r"v{version} - Modern"),
             ],
             # Development context files
             "CLAUDE.md": [
-                (r'v0\.\d+\.\d+', r'v{version}'),
-                (r'Version 0\.\d+\.\d+', r'Version {version}'),
+                (r"v0\.\d+\.\d+", r"v{version}"),
+                (r"Version 0\.\d+\.\d+", r"Version {version}"),
             ],
             "CHANGELOG.md": [
                 # Don't auto-update CHANGELOG - it should be manually updated
@@ -91,22 +91,26 @@ class VersionManager:
 
         # Search patterns
         patterns = [
-            rf'v{re.escape(old_version)}',
-            rf'version {re.escape(old_version)}',
-            rf'Version {re.escape(old_version)}',
+            rf"v{re.escape(old_version)}",
+            rf"version {re.escape(old_version)}",
+            rf"Version {re.escape(old_version)}",
             rf'__version__ = "{re.escape(old_version)}"',
         ]
 
         # File extensions to search
-        extensions = {'.py', '.md', '.mdx', '.toml', '.json'}
+        extensions = {".py", ".md", ".mdx", ".toml", ".json"}
 
         for file_path in self.root_dir.rglob("*"):
-            if (file_path.is_file() and
-                file_path.suffix in extensions and
-                not any(skip in str(file_path) for skip in ['.git', '__pycache__', '.venv', 'node_modules'])):
-
+            if (
+                file_path.is_file()
+                and file_path.suffix in extensions
+                and not any(
+                    skip in str(file_path)
+                    for skip in [".git", "__pycache__", ".venv", "node_modules"]
+                )
+            ):
                 try:
-                    content = file_path.read_text(encoding='utf-8')
+                    content = file_path.read_text(encoding="utf-8")
                     for pattern in patterns:
                         matches = list(re.finditer(pattern, content))
                         if matches:
@@ -117,21 +121,25 @@ class VersionManager:
 
         return files_with_version
 
-    def update_version_in_file(self, file_path: Path, old_version: str, new_version: str) -> int:
+    def update_version_in_file(
+        self, file_path: Path, old_version: str, new_version: str
+    ) -> int:
         """Update version references in a specific file."""
         try:
-            content = file_path.read_text(encoding='utf-8')
+            content = file_path.read_text(encoding="utf-8")
             original_content = content
 
             # Apply patterns based on file path matching
             updates = 0
             for pattern, replacement_rules in self.version_patterns.items():
-                if file_path.match(pattern) or str(file_path).endswith(pattern.replace("**/", "")):
+                if file_path.match(pattern) or str(file_path).endswith(
+                    pattern.replace("**/", "")
+                ):
                     for old_pattern, new_pattern in replacement_rules:
                         new_content, count = re.subn(
                             old_pattern,
                             new_pattern.format(version=new_version),
-                            content
+                            content,
                         )
                         if count > 0:
                             content = new_content
@@ -140,10 +148,13 @@ class VersionManager:
             # Fallback: simple version string replacement
             if updates == 0:
                 replacements = [
-                    (f'v{old_version}', f'v{new_version}'),
-                    (f'version {old_version}', f'version {new_version}'),
-                    (f'Version {old_version}', f'Version {new_version}'),
-                    (f'__version__ = "{old_version}"', f'__version__ = "{new_version}"'),
+                    (f"v{old_version}", f"v{new_version}"),
+                    (f"version {old_version}", f"version {new_version}"),
+                    (f"Version {old_version}", f"Version {new_version}"),
+                    (
+                        f'__version__ = "{old_version}"',
+                        f'__version__ = "{new_version}"',
+                    ),
                 ]
 
                 for old, new in replacements:
@@ -154,7 +165,7 @@ class VersionManager:
 
             # Write back if changed
             if content != original_content:
-                file_path.write_text(content, encoding='utf-8')
+                file_path.write_text(content, encoding="utf-8")
                 return updates
 
         except (UnicodeDecodeError, PermissionError) as e:
@@ -162,7 +173,9 @@ class VersionManager:
 
         return 0
 
-    def update_all_versions(self, new_version: str, dry_run: bool = False) -> Dict[str, int]:
+    def update_all_versions(
+        self, new_version: str, dry_run: bool = False
+    ) -> Dict[str, int]:
         """Update version across all relevant files."""
         old_version = self.get_current_version()
 
@@ -206,15 +219,31 @@ def main():
     # Update version command
     update_parser = subparsers.add_parser("update", help="Update version")
     update_parser.add_argument("version", help="New version (e.g., 0.3.1)")
-    update_parser.add_argument("--dry-run", action="store_true", help="Show what would be updated without making changes")
+    update_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be updated without making changes",
+    )
 
     # Increment version command
     increment_parser = subparsers.add_parser("increment", help="Increment version")
-    increment_parser.add_argument("part", choices=["major", "minor", "patch"], default="patch", nargs="?", help="Version part to increment")
-    increment_parser.add_argument("--dry-run", action="store_true", help="Show what would be updated without making changes")
+    increment_parser.add_argument(
+        "part",
+        choices=["major", "minor", "patch"],
+        default="patch",
+        nargs="?",
+        help="Version part to increment",
+    )
+    increment_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be updated without making changes",
+    )
 
     # Find command
-    find_parser = subparsers.add_parser("find", help="Find files with version references")
+    find_parser = subparsers.add_parser(
+        "find", help="Find files with version references"
+    )
 
     args = parser.parse_args()
 

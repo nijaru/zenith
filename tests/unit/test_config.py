@@ -20,7 +20,9 @@ class TestConfig:
 
         assert config.host == "127.0.0.1"
         assert config.port == 8000
-        assert config.debug  # Default to True in development environment (detected via NODE_ENV)
+        assert (
+            config.debug
+        )  # Default to True in development environment (detected via NODE_ENV)
         assert config.log_level == "INFO"
         assert config.worker_count == 1
         assert config.max_connections == 1000
@@ -56,8 +58,7 @@ SECRET_KEY=test-secret
 
         # Store original env vars to restore later
         original_env = {
-            key: os.environ.get(key)
-            for key in ["DEBUG", "HOST", "PORT", "SECRET_KEY"]
+            key: os.environ.get(key) for key in ["DEBUG", "HOST", "PORT", "SECRET_KEY"]
         }
 
         with NamedTemporaryFile(mode="w", suffix=".env", delete=False) as f:

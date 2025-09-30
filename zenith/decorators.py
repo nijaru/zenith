@@ -49,6 +49,7 @@ def cache(ttl: int = 60, key_prefix: str = None):
         async def expensive_operation():
             return compute_something()
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -68,7 +69,9 @@ def cache(ttl: int = 60, key_prefix: str = None):
                 cache_key_parts = [
                     request.method,
                     str(request.url.path),
-                    str(sorted(request.query_params.items())) if hasattr(request, "query_params") else ""
+                    str(sorted(request.query_params.items()))
+                    if hasattr(request, "query_params")
+                    else "",
                 ]
                 # Add any path parameters
                 if "path_params" in kwargs:
@@ -77,13 +80,16 @@ def cache(ttl: int = 60, key_prefix: str = None):
                 # For regular functions: cache based on function name and args
                 # Exclude request-like objects from cache key
                 clean_args = [str(arg) for arg in args if not hasattr(arg, "url")]
-                clean_kwargs = {k: v for k, v in kwargs.items()
-                              if k not in ["request", "db", "session", "background_tasks"]}
+                clean_kwargs = {
+                    k: v
+                    for k, v in kwargs.items()
+                    if k not in ["request", "db", "session", "background_tasks"]
+                }
                 cache_key_parts = [
                     func.__module__,
                     func.__name__,
                     str(clean_args),
-                    str(sorted(clean_kwargs.items()))
+                    str(sorted(clean_kwargs.items())),
                 ]
 
             # Add optional prefix
@@ -103,7 +109,10 @@ def cache(ttl: int = 60, key_prefix: str = None):
                         _cache_store.move_to_end(cache_hash)
                         # Log cache hit for debugging
                         import logging
-                        logging.getLogger("zenith.cache").debug(f"Cache hit for {cache_key[:50]}...")
+
+                        logging.getLogger("zenith.cache").debug(
+                            f"Cache hit for {cache_key[:50]}..."
+                        )
                         return cached_value
                     else:
                         # Remove expired entry
@@ -122,7 +131,9 @@ def cache(ttl: int = 60, key_prefix: str = None):
                     _cache_store.popitem(last=False)
 
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -143,6 +154,7 @@ def rate_limit(limit: str):
         async def generate():
             return {"result": "..."}
     """
+
     def decorator(func: Callable) -> Callable:
         # Parse rate limit
         count, period = limit.split("/")
@@ -159,8 +171,12 @@ def rate_limit(limit: str):
         async def wrapper(*args, **kwargs):
             # Check if testing mode is enabled
             import os
+
             zenith_env = os.getenv("ZENITH_ENV", "").lower()
-            if zenith_env in ("test", "testing") or os.getenv("ZENITH_TESTING", "false").lower() == "true":
+            if (
+                zenith_env in ("test", "testing")
+                or os.getenv("ZENITH_TESTING", "false").lower() == "true"
+            ):
                 # Skip rate limiting in testing mode
                 return await func(*args, **kwargs)
 
@@ -168,14 +184,15 @@ def rate_limit(limit: str):
             # In production, this would use IP address or authenticated user ID
             try:
                 from zenith.core.scoped import get_current_request
+
                 request = get_current_request()
             except ImportError:
                 # If scoped module doesn't exist, try getting from kwargs
-                request = kwargs.get('request')
+                request = kwargs.get("request")
 
-            if request and hasattr(request, 'client'):
+            if request and hasattr(request, "client"):
                 client_id = f"{func.__name__}:{request.client.host}"
-            elif request and hasattr(request, 'user'):
+            elif request and hasattr(request, "user"):
                 client_id = f"{func.__name__}:{request.user.id}"
             else:
                 # Fallback for testing/development
@@ -188,18 +205,21 @@ def rate_limit(limit: str):
                 if client_id in _rate_limit_store:
                     # Clean up old requests
                     requests = [
-                        req_time for req_time in _rate_limit_store[client_id]
+                        req_time
+                        for req_time in _rate_limit_store[client_id]
                         if current_time - req_time < period_seconds
                     ]
 
                     if len(requests) >= count:
                         # Calculate retry-after time
                         oldest_request = min(requests)
-                        retry_after = int(period_seconds - (current_time - oldest_request))
+                        retry_after = int(
+                            period_seconds - (current_time - oldest_request)
+                        )
                         # Use proper exception with detail field
                         raise RateLimitException(
                             detail=f"Rate limit exceeded: {limit}. Try again in {retry_after} seconds.",
-                            headers={"Retry-After": str(retry_after)}
+                            headers={"Retry-After": str(retry_after)},
                         )
 
                     requests.append(current_time)
@@ -215,7 +235,9 @@ def rate_limit(limit: str):
                             del _rate_limit_store[key]
 
             return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -233,6 +255,7 @@ def validate(request_model: type = None, response_model: type = None):
         async def create_user(data: dict):
             return {"id": 1, **data}
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -252,7 +275,9 @@ def validate(request_model: type = None, response_model: type = None):
                 pass
 
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -284,8 +309,10 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             pagination = Paginate()(page=page, limit=limit)
             return await User.paginate(pagination.page, pagination.limit)
     """
+
     def decorator(func: Callable) -> Callable:
         import inspect
+
         sig = inspect.signature(func)
         func_params = sig.parameters
 
@@ -297,8 +324,8 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
 
             # Extract pagination parameters from kwargs (these come from query params)
             # When the function has page/limit parameters, Zenith's router properly extracts them
-            page = kwargs.get('page', 1)
-            limit = kwargs.get('limit', default_limit)
+            page = kwargs.get("page", 1)
+            limit = kwargs.get("limit", default_limit)
 
             # Enforce limits
             limit = min(limit, max_limit)
@@ -312,13 +339,13 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             call_kwargs = dict(kwargs)
 
             # Remove pagination params from query string that we'll handle specially
-            call_kwargs.pop('page', None)
-            call_kwargs.pop('limit', None)
+            call_kwargs.pop("page", None)
+            call_kwargs.pop("limit", None)
 
             # Check if function expects a Paginate object first
             has_paginate_param = False
             for param_name, param in func_params.items():
-                if param.annotation and 'Paginate' in str(param.annotation):
+                if param.annotation and "Paginate" in str(param.annotation):
                     # This is fundamentally incompatible - raise an error
                     raise TypeError(
                         f"@paginate decorator cannot be used with Paginate dependency injection. "
@@ -331,22 +358,24 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
             # Only add individual parameters if no Paginate object is used
             if not has_paginate_param:
                 # Check if function has **kwargs parameter
-                has_var_keyword = any(p.kind == p.VAR_KEYWORD for p in func_params.values())
+                has_var_keyword = any(
+                    p.kind == p.VAR_KEYWORD for p in func_params.values()
+                )
 
                 # Only add parameters the function actually accepts or has **kwargs
-                if '_page' in func_params or has_var_keyword:
+                if "_page" in func_params or has_var_keyword:
                     call_kwargs["_page"] = page
-                if '_limit' in func_params or has_var_keyword:
+                if "_limit" in func_params or has_var_keyword:
                     call_kwargs["_limit"] = limit
-                if '_offset' in func_params or has_var_keyword:
+                if "_offset" in func_params or has_var_keyword:
                     call_kwargs["_offset"] = offset
 
                 # Check if function expects page/limit parameters
-                if 'page' in func_params:
-                    call_kwargs['page'] = page
+                if "page" in func_params:
+                    call_kwargs["page"] = page
 
-                if 'limit' in func_params:
-                    call_kwargs['limit'] = limit
+                if "limit" in func_params:
+                    call_kwargs["limit"] = limit
 
             # Call the original function
             result = await func(*args, **call_kwargs)
@@ -357,9 +386,11 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
                     "items": result,
                     "page": page,
                     "limit": limit,
-                    "total": len(result),  # In real implementation, would get actual total
+                    "total": len(
+                        result
+                    ),  # In real implementation, would get actual total
                     "has_next": len(result) == limit,  # Simple heuristic
-                    "has_prev": page > 1
+                    "has_prev": page > 1,
                 }
             elif isinstance(result, dict) and "items" in result:
                 # Already paginated response, enhance it
@@ -370,7 +401,9 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
                 return result
 
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -387,6 +420,7 @@ def returns(model: type):
         async def get_user(id: int):
             return await User.get(id)  # Auto-404 if None
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -395,6 +429,7 @@ def returns(model: type):
             # Auto-404 if None
             if result is None:
                 from zenith.exceptions import NotFoundException
+
                 raise NotFoundException(f"{model.__name__} not found")
 
             # Auto-serialize if model instance
@@ -404,7 +439,9 @@ def returns(model: type):
                 return result.dict()
 
             return result
+
         return wrapper
+
     return decorator
 
 
@@ -422,6 +459,7 @@ def auth_required(role: str = None, scopes: list[str] = None):
         async def create_admin_user(user=CurrentUser):
             return {"admin": user}
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -432,11 +470,13 @@ def auth_required(role: str = None, scopes: list[str] = None):
             user = kwargs.get("user") or kwargs.get("current_user")
             if not user:
                 from zenith.exceptions import UnauthorizedException
+
                 raise UnauthorizedException("Authentication required")
 
             # Check role if specified
             if role and getattr(user, "role", None) != role:
                 from zenith.exceptions import ForbiddenException
+
                 raise ForbiddenException(f"Role {role} required")
 
             # Check scopes if specified
@@ -444,10 +484,13 @@ def auth_required(role: str = None, scopes: list[str] = None):
                 user_scopes = getattr(user, "scopes", [])
                 if not all(scope in user_scopes for scope in scopes):
                     from zenith.exceptions import ForbiddenException
+
                     raise ForbiddenException(f"Scopes {scopes} required")
 
             return await func(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -466,6 +509,7 @@ def transaction(rollback_on: tuple[type[Exception]] = (Exception,)):
             await credit_account(data.to_account, data.amount)
             return {"success": True}
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -475,10 +519,12 @@ def transaction(rollback_on: tuple[type[Exception]] = (Exception,)):
                 result = await func(*args, **kwargs)
                 # Commit transaction
                 return result
-            except rollback_on as e:
+            except rollback_on:
                 # Rollback transaction
                 raise
+
         return wrapper
+
     return decorator
 
 

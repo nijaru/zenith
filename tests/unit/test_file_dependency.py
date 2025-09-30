@@ -9,9 +9,16 @@ import pytest
 from unittest.mock import patch
 
 from zenith.core.dependencies import (
-    File, _parse_size,
-    IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, VIDEO_TYPES, ARCHIVE_TYPES,
-    KB, MB, GB
+    File,
+    _parse_size,
+    IMAGE_TYPES,
+    DOCUMENT_TYPES,
+    AUDIO_TYPES,
+    VIDEO_TYPES,
+    ARCHIVE_TYPES,
+    KB,
+    MB,
+    GB,
 )
 
 
@@ -132,38 +139,38 @@ class TestFileDependency:
     def test_file_dependency_returns_depends(self):
         """Test File() returns a Depends object."""
         result = File()
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
         assert callable(result.dependency)
 
     def test_file_dependency_with_string_size(self):
         """Test File() accepts string sizes."""
         result = File(max_size="10MB")
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
         # The dependency should be callable and created without error
         assert callable(result.dependency)
 
     def test_file_dependency_with_integer_size(self):
         """Test File() accepts integer sizes."""
         result = File(max_size=1048576)  # 1MB in bytes
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
 
     def test_file_dependency_with_size_constants(self):
         """Test File() works with size constants."""
-        result = File(max_size=10*MB)
-        assert hasattr(result, 'dependency')
+        result = File(max_size=10 * MB)
+        assert hasattr(result, "dependency")
 
     def test_file_dependency_with_type_constants(self):
         """Test File() works with file type constants."""
         result = File(allowed_types=IMAGE_TYPES)
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
 
         result = File(allowed_types=DOCUMENT_TYPES + AUDIO_TYPES)
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
 
     def test_file_dependency_with_extensions(self):
         """Test File() works with allowed extensions."""
         result = File(allowed_extensions=[".jpg", ".png"])
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
 
     def test_file_dependency_all_parameters(self):
         """Test File() works with all parameters."""
@@ -171,9 +178,9 @@ class TestFileDependency:
             max_size="10MB",
             allowed_types=IMAGE_TYPES,
             allowed_extensions=[".jpg", ".png", ".gif"],
-            field_name="avatar"
+            field_name="avatar",
         )
-        assert hasattr(result, 'dependency')
+        assert hasattr(result, "dependency")
 
     def test_file_dependency_invalid_size_raises_error(self):
         """Test File() with invalid size raises error during creation."""
@@ -189,19 +196,19 @@ class TestFileDependencyIntegration:
         """Test common File dependency usage patterns."""
         # Avatar upload pattern
         avatar = File(max_size="5MB", allowed_types=IMAGE_TYPES)
-        assert hasattr(avatar, 'dependency')
+        assert hasattr(avatar, "dependency")
 
         # Document upload pattern
         docs = File(max_size="50MB", allowed_types=DOCUMENT_TYPES)
-        assert hasattr(docs, 'dependency')
+        assert hasattr(docs, "dependency")
 
         # Media upload pattern
         media = File(
             max_size="100MB",
             allowed_types=IMAGE_TYPES + VIDEO_TYPES,
-            allowed_extensions=[".jpg", ".mp4", ".webm"]
+            allowed_extensions=[".jpg", ".mp4", ".webm"],
         )
-        assert hasattr(media, 'dependency')
+        assert hasattr(media, "dependency")
 
     def test_file_dependency_flexible_sizing(self):
         """Test File dependency supports flexible sizing options."""
@@ -211,8 +218,8 @@ class TestFileDependencyIntegration:
         File(max_size="2GB")
 
         # Constant multiplication
-        File(max_size=10*MB)
-        File(max_size=500*KB)
+        File(max_size=10 * MB)
+        File(max_size=500 * KB)
 
         # Raw bytes
         File(max_size=1048576)
@@ -230,24 +237,23 @@ class TestFileAPIDocumentation:
         file_dep = File(
             max_size="10MB",
             allowed_types=IMAGE_TYPES,
-            allowed_extensions=[".jpg", ".png"]
+            allowed_extensions=[".jpg", ".png"],
         )
-        assert hasattr(file_dep, 'dependency')
+        assert hasattr(file_dep, "dependency")
 
     def test_alternative_syntax_example(self):
         """Test alternative syntax example from docstring works."""
         # This should match the alternative pattern in the docstring
-        avatar = File(max_size=5*MB, allowed_types=["image/jpeg"])
-        assert hasattr(avatar, 'dependency')
+        avatar = File(max_size=5 * MB, allowed_types=["image/jpeg"])
+        assert hasattr(avatar, "dependency")
 
     def test_type_constant_combinations(self):
         """Test combining different type constants works."""
         # Combined types
         multimedia = File(
-            max_size="100MB",
-            allowed_types=IMAGE_TYPES + VIDEO_TYPES + AUDIO_TYPES
+            max_size="100MB", allowed_types=IMAGE_TYPES + VIDEO_TYPES + AUDIO_TYPES
         )
-        assert hasattr(multimedia, 'dependency')
+        assert hasattr(multimedia, "dependency")
 
     def test_real_world_scenarios(self):
         """Test realistic file upload scenarios."""
@@ -262,5 +268,5 @@ class TestFileAPIDocumentation:
 
         # All should create valid dependencies
         for dep in [profile_pic, resume, gallery]:
-            assert hasattr(dep, 'dependency')
+            assert hasattr(dep, "dependency")
             assert callable(dep.dependency)

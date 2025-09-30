@@ -17,17 +17,6 @@ from zenith.__version__ import __version__
 
 __author__ = "Nick"
 
-# Python version compatibility check
-import sys
-if sys.version_info >= (3, 13):
-    import warnings
-    warnings.warn(
-        "Zenith currently supports Python 3.12. Python 3.13 support will be added "
-        "when the dependency ecosystem stabilizes. Please use Python 3.12 for now.",
-        UserWarning,
-        stacklevel=2
-    )
-
 # ============================================================================
 # MAIN FRAMEWORK
 # ============================================================================
@@ -44,8 +33,14 @@ from zenith.core.dependencies import (
     File,  # File upload dependency with validation
     Request,  # Request object shortcut
     # File upload constants for better DX
-    IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, VIDEO_TYPES, ARCHIVE_TYPES,
-    MB, GB, KB,  # Size constants
+    IMAGE_TYPES,
+    DOCUMENT_TYPES,
+    AUDIO_TYPES,
+    VIDEO_TYPES,
+    ARCHIVE_TYPES,
+    MB,
+    GB,
+    KB,  # Size constants
 )
 
 # File upload types
@@ -218,30 +213,36 @@ __all__ = [
     "Base",
     "Database",
     "Field",
-    "Model",             # Recommended base class for database models
+    "Model",  # Recommended base class for database models
     "Relationship",
     "SQLModel",
     "SQLModelRepository",
-    "ZenithModel",       # Rails-like ActiveRecord model with async methods
+    "ZenithModel",  # Rails-like ActiveRecord model with async methods
     # Dependency Injection (Rails-like shortcuts)
-    "Session",           # Database session shortcut (the one true way)
-    "Auth",              # Authentication dependency
-    "CurrentUser",       # Current authenticated user
-    "File",              # File upload dependency with validation
-    "Request",           # Request object shortcut
-    "Inject",            # Service injection
+    "Session",  # Database session shortcut (the one true way)
+    "Auth",  # Authentication dependency
+    "CurrentUser",  # Current authenticated user
+    "File",  # File upload dependency with validation
+    "Request",  # Request object shortcut
+    "Inject",  # Service injection
     # File upload helpers
-    "IMAGE_TYPES", "DOCUMENT_TYPES", "AUDIO_TYPES", "VIDEO_TYPES", "ARCHIVE_TYPES",
-    "MB", "GB", "KB",
+    "IMAGE_TYPES",
+    "DOCUMENT_TYPES",
+    "AUDIO_TYPES",
+    "VIDEO_TYPES",
+    "ARCHIVE_TYPES",
+    "MB",
+    "GB",
+    "KB",
     # Request-scoped dependencies
     "Depends",
     "RequestScoped",
     # Background Processing (Simplified API)
-    "BackgroundTasks",   # Simple tasks that run after response
-    "JobQueue",          # Comprehensive job processing with retry
-    "Job",               # Job data model
-    "JobStatus",         # Job status enum
-    "background_task",   # Decorator for background task functions
+    "BackgroundTasks",  # Simple tasks that run after response
+    "JobQueue",  # Comprehensive job processing with retry
+    "Job",  # Job data model
+    "JobStatus",  # Job status enum
+    "background_task",  # Decorator for background task functions
     # HTTP Exceptions
     "AuthenticationException",
     "AuthorizationException",
@@ -280,7 +281,7 @@ __all__ = [
     # Sessions
     "SessionManager",
     "SessionMiddleware",
-# Note: Legacy job systems removed for API clarity
+    # Note: Legacy job systems removed for API clarity
     # Database Migrations
     "MigrationManager",
     "create_repository",

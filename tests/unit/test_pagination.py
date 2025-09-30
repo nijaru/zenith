@@ -301,16 +301,13 @@ class TestPaginationIntegration:
 
         def get_page(cursor: CursorPagination):
             after_id = int(cursor.after) if cursor.after else 0
-            before_id = int(cursor.before) if cursor.before else float('inf')
+            before_id = int(cursor.before) if cursor.before else float("inf")
 
             # Filter based on cursors
-            filtered = [
-                item for item in items
-                if after_id < item["id"] < before_id
-            ]
+            filtered = [item for item in items if after_id < item["id"] < before_id]
 
             # Apply limit
-            return filtered[:cursor.limit]
+            return filtered[: cursor.limit]
 
         # Get first page
         cursor = CursorPagination()(limit=10)

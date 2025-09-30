@@ -31,15 +31,7 @@ class TestDeprecatedCLICommands:
 
     def test_removed_commands_return_error(self, runner):
         """Test that removed commands return appropriate errors."""
-        removed_commands = [
-            "version",
-            "info",
-            "routes",
-            "test",
-            "shell",
-            "d",
-            "s"
-        ]
+        removed_commands = ["version", "info", "routes", "test", "shell", "d", "s"]
 
         for cmd in removed_commands:
             result = runner.invoke(main, [cmd])
@@ -72,7 +64,7 @@ class TestLegacyCLIStructure:
             "test": "Removed - use pytest directly",
             "shell": "Removed - use standard Python REPL",
             "d": "Removed shortcut - use 'zen dev'",
-            "s": "Removed shortcut - use 'zen serve'"
+            "s": "Removed shortcut - use 'zen serve'",
         }
 
         # This serves as documentation of the migration
@@ -85,11 +77,10 @@ class TestLegacyCLIStructure:
         remaining_commands = {
             "new": "Create new Zenith application",
             "dev": "Start development server with hot reload",
-            "serve": "Start production server"
+            "serve": "Start production server",
         }
 
         assert len(remaining_commands) == 3
         assert "new" in remaining_commands
         assert "dev" in remaining_commands
         assert "serve" in remaining_commands
-

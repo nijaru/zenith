@@ -13,7 +13,15 @@ from pathlib import Path
 from pydantic import BaseModel
 from starlette.datastructures import UploadFile
 
-from zenith import File, UploadedFile, IMAGE_TYPES, DOCUMENT_TYPES, AUDIO_TYPES, MB, Zenith
+from zenith import (
+    File,
+    UploadedFile,
+    IMAGE_TYPES,
+    DOCUMENT_TYPES,
+    AUDIO_TYPES,
+    MB,
+    Zenith,
+)
 from zenith.exceptions import HTTPException
 
 # Create app
@@ -42,15 +50,15 @@ class FileInfo(BaseModel):
 
 def get_file_type(file: UploadedFile | UploadFile) -> str:
     """Determine the general file type from content type or extension."""
-    if hasattr(file, 'is_image') and file.is_image():
+    if hasattr(file, "is_image") and file.is_image():
         return "image"
-    elif hasattr(file, 'is_audio') and file.is_audio():
+    elif hasattr(file, "is_audio") and file.is_audio():
         return "audio"
-    elif hasattr(file, 'is_video') and file.is_video():
+    elif hasattr(file, "is_video") and file.is_video():
         return "video"
-    elif hasattr(file, 'is_pdf') and file.is_pdf():
+    elif hasattr(file, "is_pdf") and file.is_pdf():
         return "document"
-    elif hasattr(file, 'content_type') and file.content_type:
+    elif hasattr(file, "content_type") and file.content_type:
         if file.content_type.startswith("image/"):
             return "image"
         elif file.content_type.startswith("audio/"):
@@ -63,11 +71,13 @@ def get_file_type(file: UploadedFile | UploadFile) -> str:
 
 
 @app.post("/upload/modern", response_model=FileInfo)
-async def upload_modern(file: UploadedFile = File(
-    max_size="10MB",
-    allowed_types=IMAGE_TYPES + AUDIO_TYPES + ["application/pdf"],
-    allowed_extensions=[".jpg", ".png", ".mp3", ".wav", ".pdf"]
-)) -> FileInfo:
+async def upload_modern(
+    file: UploadedFile = File(
+        max_size="10MB",
+        allowed_types=IMAGE_TYPES + AUDIO_TYPES + ["application/pdf"],
+        allowed_extensions=[".jpg", ".png", ".mp3", ".wav", ".pdf"],
+    ),
+) -> FileInfo:
     """
     Modern file upload using enhanced UploadedFile API.
 
@@ -94,10 +104,9 @@ async def upload_modern(file: UploadedFile = File(
 
 
 @app.post("/upload/image")
-async def upload_image(file: UploadFile = File(
-    max_size="5MB",
-    allowed_types=IMAGE_TYPES
-)) -> FileInfo:
+async def upload_image(
+    file: UploadFile = File(max_size="5MB", allowed_types=IMAGE_TYPES),
+) -> FileInfo:
     """Upload a single image file with automatic validation."""
 
     contents = await file.read()
@@ -118,10 +127,9 @@ async def upload_image(file: UploadFile = File(
 
 
 @app.post("/upload/document")
-async def upload_document(file: UploadFile = File(
-    max_size="20MB",
-    allowed_types=DOCUMENT_TYPES
-)) -> FileInfo:
+async def upload_document(
+    file: UploadFile = File(max_size="20MB", allowed_types=DOCUMENT_TYPES),
+) -> FileInfo:
     """Upload a document file with automatic validation."""
 
     # Read and save
@@ -139,10 +147,11 @@ async def upload_document(file: UploadFile = File(
 
 
 @app.post("/upload/multiple")
-async def upload_multiple(files: list[UploadFile] = File(
-    max_size="10MB",
-    allowed_types=IMAGE_TYPES + DOCUMENT_TYPES
-)) -> list[FileInfo]:
+async def upload_multiple(
+    files: list[UploadFile] = File(
+        max_size="10MB", allowed_types=IMAGE_TYPES + DOCUMENT_TYPES
+    ),
+) -> list[FileInfo]:
     """Upload multiple files at once."""
     results = []
 
@@ -169,7 +178,7 @@ async def upload_multiple(files: list[UploadFile] = File(
 async def upload_profile(
     username: str,
     bio: str | None = None,
-    avatar: UploadFile = File(max_size="2MB", allowed_types=IMAGE_TYPES)
+    avatar: UploadFile = File(max_size="2MB", allowed_types=IMAGE_TYPES),
 ) -> dict:
     """Upload profile with avatar image (mixed form data)."""
 
@@ -235,10 +244,10 @@ if __name__ == "__main__":
     print("  GET /files - List uploaded files")
     print("  DELETE /files/{filename} - Delete file")
     print("\nTest with curl:")
-    print('  # Modern enhanced API:')
+    print("  # Modern enhanced API:")
     print('  curl -X POST -F "file=@song.mp3" http://localhost:8006/upload/modern')
     print('  curl -X POST -F "file=@document.pdf" http://localhost:8006/upload/modern')
     print()
-    print('  # Traditional API:')
+    print("  # Traditional API:")
     print('  curl -X POST -F "file=@image.jpg" http://localhost:8006/upload/image')
     uvicorn.run(app, host="127.0.0.1", port=8006, reload=True)

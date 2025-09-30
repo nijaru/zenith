@@ -115,7 +115,13 @@ def s(host: str, port: int, workers: int, reload: bool):
     _run_server(host, port, reload=reload, workers=workers)
 
 
-def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, open_browser: bool = False):
+def _run_server(
+    host: str,
+    port: int,
+    reload: bool = False,
+    workers: int = 1,
+    open_browser: bool = False,
+):
     """Internal function to run uvicorn server."""
     from pathlib import Path
 
@@ -169,6 +175,7 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
 
     if open_browser:
         import webbrowser
+
         webbrowser.open(f"http://{host}:{port}")
 
     try:
@@ -245,6 +252,7 @@ def test(verbose: bool, failfast: bool):
 def version():
     """Show Zenith version."""
     from zenith import __version__
+
     click.echo(f"Zenith {__version__}")
 
 

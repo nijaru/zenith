@@ -13,7 +13,11 @@ from starlette.requests import Request
 from starlette.testclient import TestClient
 
 from zenith import Zenith, Session, RequestScoped, Depends
-from zenith.core.scoped import get_current_request, set_current_request, clear_current_request
+from zenith.core.scoped import (
+    get_current_request,
+    set_current_request,
+    clear_current_request,
+)
 
 
 class TestRequestScoped:
@@ -21,6 +25,7 @@ class TestRequestScoped:
 
     def test_request_scoped_creation(self):
         """Test RequestScoped can be created with dependency."""
+
         async def my_dependency():
             return "test_value"
 
@@ -35,6 +40,7 @@ class TestRequestScoped:
     @pytest.mark.asyncio
     async def test_request_scoped_get_or_create_sync(self):
         """Test RequestScoped with sync dependency."""
+
         def sync_dependency():
             return "sync_value"
 
@@ -47,6 +53,7 @@ class TestRequestScoped:
             return False
 
         import builtins
+
         original_hasattr = builtins.hasattr
         builtins.hasattr = mock_hasattr
 
@@ -59,6 +66,7 @@ class TestRequestScoped:
     @pytest.mark.asyncio
     async def test_request_scoped_get_or_create_async(self):
         """Test RequestScoped with async dependency."""
+
         async def async_dependency():
             return "async_value"
 
@@ -71,6 +79,7 @@ class TestRequestScoped:
             return False
 
         import builtins
+
         original_hasattr = builtins.hasattr
         builtins.hasattr = mock_hasattr
 
@@ -83,6 +92,7 @@ class TestRequestScoped:
     @pytest.mark.asyncio
     async def test_request_scoped_get_or_create_async_generator(self):
         """Test RequestScoped with async generator dependency."""
+
         async def async_gen_dependency():
             yield "generator_value"
 
@@ -98,6 +108,7 @@ class TestRequestScoped:
             return False
 
         import builtins
+
         original_hasattr = builtins.hasattr
         builtins.hasattr = mock_hasattr
 
@@ -124,6 +135,7 @@ class TestRequestScoped:
 
         # Mock the caching behavior
         cache = {}
+
         def mock_hasattr(obj, name):
             return name in cache
 
@@ -134,6 +146,7 @@ class TestRequestScoped:
             cache[name] = value
 
         import builtins
+
         original_hasattr = builtins.hasattr
         original_getattr = builtins.getattr
         original_setattr = builtins.setattr
@@ -163,7 +176,9 @@ class TestRequestScoped:
         scoped = RequestScoped()
         request = MagicMock()
 
-        with pytest.raises(ValueError, match="RequestScoped requires a dependency function"):
+        with pytest.raises(
+            ValueError, match="RequestScoped requires a dependency function"
+        ):
             await scoped.get_or_create(request)
 
 
@@ -173,7 +188,8 @@ class TestSession:
     def test_database_session_creation(self):
         """Test Session is a pre-configured dependency."""
         # Session is now a pre-configured Depends object
-        assert hasattr(Session, 'dependency')
+        assert hasattr(Session, "dependency")
+
         # For custom sessions, use Depends directly
         async def get_db():
             yield "db_session"
@@ -191,6 +207,7 @@ class TestDependsAlias:
 
     def test_depends_usage(self):
         """Test using Depends like FastAPI."""
+
         async def get_db():
             return "db_session"
 
@@ -241,7 +258,7 @@ class TestIntegrationWithZenith:
 
         # Note: Full integration testing would require more setup
         # This tests the basic structure
-        assert hasattr(app, 'get')
+        assert hasattr(app, "get")
 
     @pytest.mark.asyncio
     async def test_database_session_integration(self):
@@ -257,7 +274,7 @@ class TestIntegrationWithZenith:
             return {"users": [], "db": db}
 
         # Basic structure test
-        assert hasattr(app, 'get')
+        assert hasattr(app, "get")
 
     def test_fastapi_compatibility(self):
         """Test FastAPI-compatible syntax works."""
@@ -271,7 +288,7 @@ class TestIntegrationWithZenith:
         async def fastapi_route(db=Depends(get_db)):
             return {"db": db}
 
-        assert hasattr(app, 'get')
+        assert hasattr(app, "get")
 
 
 class TestAsyncGeneratorCleanup:
@@ -294,6 +311,7 @@ class TestAsyncGeneratorCleanup:
             return name == "_async_generators"
 
         import builtins
+
         original_hasattr = builtins.hasattr
         builtins.hasattr = mock_hasattr
 
@@ -309,6 +327,7 @@ class TestAsyncGeneratorCleanup:
     @pytest.mark.asyncio
     async def test_cleanup_cache_key(self):
         """Test that cache key is removed during cleanup."""
+
         async def test_dep():
             return "test"
 
@@ -327,6 +346,7 @@ class TestAsyncGeneratorCleanup:
                 del cache[name]
 
         import builtins
+
         original_hasattr = builtins.hasattr
         original_delattr = builtins.delattr
 

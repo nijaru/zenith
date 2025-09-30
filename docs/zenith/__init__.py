@@ -156,7 +156,6 @@ __all__ = [
     "Application",
     "Config",
     "Zenith",
-
     # Routing & Dependencies
     "Auth",
     "AuthDependency",
@@ -169,10 +168,8 @@ __all__ = [
     "RequestScoped",
     "Router",
     "request_scoped",
-
     # Business Logic
     "Service",
-
     # Database & Models
     "AsyncSession",
     "Base",
@@ -184,7 +181,6 @@ __all__ = [
     "SQLModelRepository",
     "ZenithSQLModel",
     "create_repository",
-
     # HTTP Exceptions
     "AuthenticationException",
     "AuthorizationException",
@@ -197,7 +193,6 @@ __all__ = [
     "RateLimitException",
     "UnauthorizedException",
     "ValidationException",
-
     # Exception Helpers
     "bad_request",
     "conflict",
@@ -206,7 +201,6 @@ __all__ = [
     "not_found",
     "unauthorized",
     "validation_error",
-
     # Background Processing
     "BackgroundTasks",
     "JobManager",
@@ -214,7 +208,6 @@ __all__ = [
     "TaskQueue",
     "Worker",
     "background_task",
-
     # Middleware
     "CompressionMiddleware",
     "CORSMiddleware",
@@ -222,17 +215,14 @@ __all__ = [
     "RequestIDMiddleware",
     "RequestLoggingMiddleware",
     "SecurityHeadersMiddleware",
-
     # Sessions
     "SessionManager",
     "SessionMiddleware",
-
     # Web Responses & Utilities
     "OptimizedJSONResponse",
     "error_response",
     "json_response",
     "success_response",
-
     # Server-Sent Events
     "SSEConnection",
     "SSEConnectionState",
@@ -240,12 +230,10 @@ __all__ = [
     "ServerSentEvents",
     "create_sse_response",
     "sse",
-
     # Static File Serving
     "serve_css_js",
     "serve_images",
     "serve_spa_files",
-
     # WebSockets
     "WebSocket",
     "WebSocketDisconnect",

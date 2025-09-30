@@ -54,7 +54,9 @@ class User(BaseModel):
 # The engine binding to event loop happens here, but sessions are created per-request
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 engine = create_async_engine(DATABASE_URL, echo=False)
-async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session_maker = async_sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
 
 
 # Session factory for request-scoped injection
@@ -155,7 +157,9 @@ async def test_concurrent_requests():
     async with AsyncClient(base_url="http://localhost:8016") as client:
         # Create users concurrently
         tasks = [
-            client.post("/users", json={"name": f"User{i}", "email": f"user{i}@example.com"})
+            client.post(
+                "/users", json={"name": f"User{i}", "email": f"user{i}@example.com"}
+            )
             for i in range(5)
         ]
         results = await asyncio.gather(*tasks)
@@ -189,4 +193,5 @@ if __name__ == "__main__":
     print("   GET  /users/alt/list  - Alternative syntax example")
 
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8016)

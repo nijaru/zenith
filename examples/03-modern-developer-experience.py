@@ -1,7 +1,7 @@
 """
-Modern Developer Experience Example - Showcasing v0.0.1 Improvements
+Modern Developer Experience Example - Showcasing v0.0.2 Improvements
 
-This example demonstrates the new patterns in Zenith v0.0.1:
+This example demonstrates the new patterns in Zenith v0.0.2:
 - Enhanced Model with intuitive query methods
 - Enhanced dependency injection shortcuts
 - Zero-configuration auto-setup
@@ -16,12 +16,14 @@ from typing import Optional
 
 from sqlmodel import Field
 
-# Zenith v0.0.1 imports - much cleaner!
+# Zenith v0.0.2 imports - much cleaner!
 from zenith import Zenith
 from zenith import Session
 from zenith import Auth
 from zenith.core import is_development
-from zenith.db import ZenithModel as Model  # Enhanced model with where/find/create methods
+from zenith.db import (
+    ZenithModel as Model,
+)  # Enhanced model with where/find/create methods
 
 # Set up database in examples directory
 example_dir = os.path.dirname(os.path.abspath(__file__))
@@ -61,17 +63,18 @@ class Post(Model, table=True):
 
 # 🎯 Routes with Enhanced DX
 
+
 @app.get("/")
 async def home():
     """Homepage showing framework info."""
     return {
         "message": "Modern DX Example",
-        "framework": "Zenith v0.0.1",
+        "framework": "Zenith v0.0.2",
         "features": [
             "Zero-config setup",
             "Modern models",
             "Enhanced dependency injection",
-            "85% less boilerplate"
+            "85% less boilerplate",
         ],
         "environment": "development" if is_development() else "production",
         "endpoints": [
@@ -80,7 +83,7 @@ async def home():
             "GET /users/{id} - Get user (with 404 handling)",
             "GET /posts - List published posts",
             "POST /posts - Create post (requires user)",
-        ]
+        ],
     }
 
 
@@ -96,7 +99,7 @@ async def list_users():
     """
     # Clean query syntax: User.where(active=True).order_by('-created_at').limit(10)
     query = await User.where(active=True)
-    users = await query.order_by('-created_at').limit(10).all()
+    users = await query.order_by("-created_at").limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 
@@ -138,14 +141,11 @@ async def list_posts(published: bool = True):
     if published:
         # Clean chaining: Post.where(published=True).order_by('-created_at')
         query = await Post.where(published=True)
-        posts = await query.order_by('-created_at').all()
+        posts = await query.order_by("-created_at").all()
     else:
         posts = await Post.all()
 
-    return {
-        "posts": [post.to_dict() for post in posts],
-        "count": len(posts)
-    }
+    return {"posts": [post.to_dict() for post in posts], "count": len(posts)}
 
 
 @app.post("/posts")
@@ -159,10 +159,7 @@ async def create_post(post_data: dict):
     # Find or create a user for the post
     user = await User.first()
     if not user:
-        user = await User.create(
-            name="Demo User",
-            email="demo@example.com"
-        )
+        user = await User.create(name="Demo User", email="demo@example.com")
 
     # Add user_id to post data
     post_data["user_id"] = user.id
@@ -188,14 +185,8 @@ async def get_stats():
     published_posts = await published_query.count()
 
     return {
-        "users": {
-            "total": total_users,
-            "active": active_users
-        },
-        "posts": {
-            "total": total_posts,
-            "published": published_posts
-        }
+        "users": {"total": total_users, "active": active_users},
+        "posts": {"total": total_posts, "published": published_posts},
     }
 
 
@@ -223,10 +214,10 @@ if __name__ == "__main__":
     print("🔗 Try these endpoints:")
     print("   GET /           - Framework info and available endpoints")
     print("   GET /users      - List active users (Clean queries)")
-    print("   POST /users     - Create user (JSON: {\"name\": \"...\", \"email\": \"...\"})")
+    print('   POST /users     - Create user (JSON: {"name": "...", "email": "..."})')
     print("   GET /users/1    - Get specific user (with 404 handling)")
     print("   GET /posts      - List published posts")
-    print("   POST /posts     - Create post (JSON: {\"title\": \"...\", \"content\": \"...\"})")
+    print('   POST /posts     - Create post (JSON: {"title": "...", "content": "..."})')
     print("   GET /stats      - Database statistics")
     print("📖 Interactive docs: http://localhost:8016/docs")
     print()
@@ -238,4 +229,5 @@ if __name__ == "__main__":
     print("   ✨ 85% less boilerplate than verbose alternatives")
 
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8016)

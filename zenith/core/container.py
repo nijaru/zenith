@@ -16,7 +16,10 @@ T = TypeVar("T")
 # Context variable to store the current database session
 try:
     from sqlalchemy.ext.asyncio import AsyncSession
-    _current_db_session: ContextVar[AsyncSession | None] = ContextVar('current_db_session', default=None)
+
+    _current_db_session: ContextVar[AsyncSession | None] = ContextVar(
+        "current_db_session", default=None
+    )
     _HAS_SQLALCHEMY = True
 except ImportError:
     _current_db_session = None
@@ -226,7 +229,9 @@ async def get_db_session():
         RuntimeError: If no session is available and no database is configured
     """
     if not _HAS_SQLALCHEMY:
-        raise RuntimeError("SQLAlchemy not installed. Install with: uv add sqlalchemy[asyncio]")
+        raise RuntimeError(
+            "SQLAlchemy not installed. Install with: uv add sqlalchemy[asyncio]"
+        )
 
     # First try to get from context (web request context)
     session = get_current_db_session()
@@ -270,8 +275,9 @@ def _get_default_database():
     try:
         # This is a common pattern where the app has a database attribute
         import sys
+
         for module in sys.modules.values():
-            if hasattr(module, 'app') and hasattr(module.app, 'database'):
+            if hasattr(module, "app") and hasattr(module.app, "database"):
                 _default_database = module.app.database
                 return _default_database
     except Exception:

@@ -209,7 +209,9 @@ async def create_task(task_data: TaskCreate, tasks: TaskService = Inject(TaskSer
 
 
 @app.patch("/api/tasks/{task_id}", response_model=Task, tags=["Tasks"])
-async def update_task(task_id: int, completed: bool, tasks: TaskService = Inject(TaskService)):
+async def update_task(
+    task_id: int, completed: bool, tasks: TaskService = Inject(TaskService)
+):
     """Update task completion status."""
     task = await tasks.update_task(task_id, completed)
     if not task:

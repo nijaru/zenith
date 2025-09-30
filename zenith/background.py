@@ -18,10 +18,12 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 class JobStatus(str, Enum):
     """Job execution status."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -32,6 +34,7 @@ class JobStatus(str, Enum):
 
 class Job(BaseModel):
     """Background job representation."""
+
     id: UUID = Field(default_factory=uuid4)
     name: str
     status: JobStatus = JobStatus.PENDING
@@ -112,7 +115,9 @@ class BackgroundTaskManager:
     async def start(self):
         """Start the task manager with automatic cleanup."""
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-        logger.info(f"Background task manager started (max_concurrent={self.max_concurrent_tasks})")
+        logger.info(
+            f"Background task manager started (max_concurrent={self.max_concurrent_tasks})"
+        )
 
     async def stop(self):
         """Stop the task manager and cleanup all tasks."""
@@ -146,7 +151,7 @@ class BackgroundTaskManager:
         *args,
         name: Optional[str] = None,
         timeout: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ) -> UUID:
         """
         Add a background task with automatic lifecycle management.
@@ -162,7 +167,9 @@ class BackgroundTaskManager:
             Task UUID for tracking
         """
         if len(self._tasks) >= self.max_concurrent_tasks:
-            raise RuntimeError(f"Maximum concurrent tasks ({self.max_concurrent_tasks}) reached")
+            raise RuntimeError(
+                f"Maximum concurrent tasks ({self.max_concurrent_tasks}) reached"
+            )
 
         task_id = uuid4()
         task_name = name or f"{func.__name__}_{task_id.hex[:8]}"
@@ -174,7 +181,9 @@ class BackgroundTaskManager:
                 logger.info(f"Starting background task: {task_name}")
 
                 if timeout:
-                    result = await asyncio.wait_for(func(*args, **kwargs), timeout=timeout)
+                    result = await asyncio.wait_for(
+                        func(*args, **kwargs), timeout=timeout
+                    )
                 else:
                     result = await func(*args, **kwargs)
 
@@ -187,15 +196,17 @@ class BackgroundTaskManager:
                 raise
             except Exception as e:
                 duration = time.time() - start_time
-                logger.error(f"Background task failed: {task_name} ({duration:.2f}s) - {str(e)}")
+                logger.error(
+                    f"Background task failed: {task_name} ({duration:.2f}s) - {str(e)}"
+                )
                 raise
 
         task = asyncio.create_task(wrapped_task())
         self._tasks[task_id] = task
         self._task_metadata[task_id] = {
-            'name': task_name,
-            'created_at': time.time(),
-            'timeout': timeout
+            "name": task_name,
+            "created_at": time.time(),
+            "timeout": timeout,
         }
 
         logger.info(f"Added background task: {task_name} ({task_id})")
@@ -204,32 +215,32 @@ class BackgroundTaskManager:
     async def get_task_status(self, task_id: UUID) -> Dict[str, Any]:
         """Get status information for a task."""
         if task_id not in self._tasks:
-            return {'status': 'not_found'}
+            return {"status": "not_found"}
 
         task = self._tasks[task_id]
         metadata = self._task_metadata.get(task_id, {})
 
         status = {
-            'id': str(task_id),
-            'name': metadata.get('name', 'unnamed'),
-            'created_at': metadata.get('created_at'),
-            'timeout': metadata.get('timeout')
+            "id": str(task_id),
+            "name": metadata.get("name", "unnamed"),
+            "created_at": metadata.get("created_at"),
+            "timeout": metadata.get("timeout"),
         }
 
         if task.done():
             if task.cancelled():
-                status['status'] = 'cancelled'
+                status["status"] = "cancelled"
             elif task.exception():
-                status['status'] = 'failed'
-                status['error'] = str(task.exception())
+                status["status"] = "failed"
+                status["error"] = str(task.exception())
             else:
-                status['status'] = 'completed'
+                status["status"] = "completed"
                 try:
-                    status['result'] = task.result()
+                    status["result"] = task.result()
                 except Exception as e:
-                    status['error'] = str(e)
+                    status["error"] = str(e)
         else:
-            status['status'] = 'running'
+            status["status"] = "running"
 
         return status
 
@@ -294,7 +305,7 @@ class JobQueue:
         self,
         backend: Optional[JobBackend] = None,
         max_workers: int = 4,
-        default_max_retries: int = 3
+        default_max_retries: int = 3,
     ):
         self.backend = backend or MemoryJobBackend()
         self.max_workers = max_workers
@@ -314,7 +325,7 @@ class JobQueue:
         job_name: str,
         data: Any = None,
         max_retries: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> UUID:
         """
         Enqueue a new job for processing.
@@ -334,11 +345,11 @@ class JobQueue:
         job = Job(
             name=job_name,
             max_retries=max_retries or self.default_max_retries,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         # Store job payload in metadata (simple approach for now)
-        job.metadata['data'] = data
+        job.metadata["data"] = data
 
         await self.backend.store_job(job)
         await self._queue.put(job.id)
@@ -418,7 +429,7 @@ class JobQueue:
 
         try:
             # Execute job handler with data from metadata
-            data = job.metadata.get('data')
+            data = job.metadata.get("data")
             result = await handler(data, job)
 
             # Mark job as completed
@@ -442,8 +453,10 @@ class JobQueue:
                 await self.backend.update_job(job)
 
                 # Exponential backoff: 2^retry_count seconds
-                delay = 2 ** job.retry_count
-                logger.info(f"Worker {worker_id}: Retrying job {job.name} in {delay}s (attempt {job.retry_count + 1})")
+                delay = 2**job.retry_count
+                logger.info(
+                    f"Worker {worker_id}: Retrying job {job.name} in {delay}s (attempt {job.retry_count + 1})"
+                )
 
                 # Re-queue job after delay
                 asyncio.create_task(self._requeue_job_after_delay(job.id, delay))
@@ -454,7 +467,9 @@ class JobQueue:
                 job.error = f"Max retries exceeded: {error_msg}"
                 await self.backend.update_job(job)
 
-                logger.error(f"Worker {worker_id}: Job {job.name} failed permanently ({job.id})")
+                logger.error(
+                    f"Worker {worker_id}: Job {job.name} failed permanently ({job.id})"
+                )
 
     async def _requeue_job_after_delay(self, job_id: UUID, delay: float):
         """Re-queue a job after retry delay."""
@@ -466,7 +481,7 @@ class JobQueue:
 def background_task(
     task_manager: Optional[BackgroundTaskManager] = None,
     name: Optional[str] = None,
-    timeout: Optional[float] = None
+    timeout: Optional[float] = None,
 ):
     """
     Decorator to mark functions as background tasks.
@@ -477,6 +492,7 @@ def background_task(
             # Long-running transcription work
             pass
     """
+
     def decorator(func: Callable):
         func._is_background_task = True
         func._task_name = name or func.__name__
@@ -499,11 +515,11 @@ def background_task(
 
 # Export main classes and functions
 __all__ = [
-    'Job',
-    'JobStatus',
-    'JobBackend',
-    'MemoryJobBackend',
-    'BackgroundTaskManager',
-    'JobQueue',
-    'background_task',
+    "Job",
+    "JobStatus",
+    "JobBackend",
+    "MemoryJobBackend",
+    "BackgroundTaskManager",
+    "JobQueue",
+    "background_task",
 ]
