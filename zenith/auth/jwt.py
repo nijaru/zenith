@@ -39,10 +39,36 @@ class JWTManager:
                 "Use a secure random string in production."
             )
 
+        if not self._has_sufficient_entropy(secret_key):
+            raise ValueError(
+                "JWT secret key has insufficient entropy. "
+                "Avoid repeating characters or simple patterns. "
+                "Generate a secure key with: python -c 'import secrets; print(secrets.token_urlsafe(32))'"
+            )
+
         self.secret_key = secret_key
         self.algorithm = algorithm
         self.access_token_expire_minutes = access_token_expire_minutes
         self.refresh_token_expire_days = refresh_token_expire_days
+
+    def _has_sufficient_entropy(self, key: str) -> bool:
+        """Check if key has sufficient entropy (not just repeated characters)."""
+        if len(key) < 32:
+            return False
+
+        unique_chars = len(set(key))
+        if unique_chars < 16:
+            return False
+
+        char_freqs = {}
+        for char in key:
+            char_freqs[char] = char_freqs.get(char, 0) + 1
+
+        max_freq = max(char_freqs.values())
+        if max_freq > len(key) * 0.25:
+            return False
+
+        return True
 
     def create_access_token(
         self,

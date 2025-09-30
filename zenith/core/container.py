@@ -154,6 +154,9 @@ class DIContainer:
 
     async def shutdown(self) -> None:
         """Execute shutdown hooks and cleanup with parallel async execution."""
+        import logging
+        logger = logging.getLogger("zenith.container")
+
         # Shutdown hooks should run in reverse order, but can parallelize async ones
         if self._shutdown_hooks:
             reversed_hooks = list(reversed(self._shutdown_hooks))
@@ -164,31 +167,45 @@ class DIContainer:
 
             # Run sync hooks first (they're usually faster)
             for hook in sync_hooks:
-                hook()
+                try:
+                    hook()
+                except Exception as e:
+                    logger.warning(f"Error in sync shutdown hook {hook.__name__}: {e}")
 
             # Run async hooks in parallel
             if async_hooks:
-                async with asyncio.TaskGroup() as tg:
-                    for hook in async_hooks:
-                        tg.create_task(hook())
+                try:
+                    async with asyncio.TaskGroup() as tg:
+                        for hook in async_hooks:
+                            tg.create_task(hook())
+                except ExceptionGroup as eg:
+                    for exc in eg.exceptions:
+                        logger.warning(f"Error in async shutdown hook: {exc}")
 
         # Cleanup async services in parallel
         service_cleanup_tasks = []
         for service in self._services.values():
-            if hasattr(service, "__aexit__"):
-                service_cleanup_tasks.append(service.__aexit__(None, None, None))
-            elif hasattr(service, "close") and asyncio.iscoroutinefunction(
-                service.close
-            ):
-                service_cleanup_tasks.append(service.close())
-            elif hasattr(service, "close"):
-                service.close()  # Sync close
+            try:
+                if hasattr(service, "__aexit__"):
+                    service_cleanup_tasks.append(service.__aexit__(None, None, None))
+                elif hasattr(service, "close") and asyncio.iscoroutinefunction(
+                    service.close
+                ):
+                    service_cleanup_tasks.append(service.close())
+                elif hasattr(service, "close"):
+                    service.close()
+            except Exception as e:
+                logger.warning(f"Error closing service {service.__class__.__name__}: {e}")
 
         # Cleanup async services in parallel
         if service_cleanup_tasks:
-            async with asyncio.TaskGroup() as tg:
-                for cleanup_task in service_cleanup_tasks:
-                    tg.create_task(cleanup_task)
+            try:
+                async with asyncio.TaskGroup() as tg:
+                    for cleanup_task in service_cleanup_tasks:
+                        tg.create_task(cleanup_task)
+            except ExceptionGroup as eg:
+                for exc in eg.exceptions:
+                    logger.warning(f"Error in service cleanup: {exc}")
 
     @asynccontextmanager
     async def lifespan(self):
@@ -214,7 +231,7 @@ def get_current_db_session():
     return None
 
 
-async def get_db_session():
+async def get_db_session() -> "AsyncSession":
     """
     Get the current database session for use with ZenithModel.
 
@@ -233,20 +250,11 @@ async def get_db_session():
             "SQLAlchemy not installed. Install with: uv add sqlalchemy[asyncio]"
         )
 
-    # First try to get from context (web request context)
     session = get_current_db_session()
     if session is not None:
         return session
 
-    # Fall back to creating a new session from the default database
-    # This requires the Database instance to be registered in the container
-    # or available through some other mechanism
     try:
-        # Import here to avoid circular imports
-
-        # Try to get database from container or global state
-        # This is a fallback for cases where models are used outside web requests
-        # In practice, applications should ensure sessions are properly set
         db = _get_default_database()
         async with db.session() as new_session:
             return new_session
@@ -263,30 +271,18 @@ def _get_default_database():
     Get the default database instance.
 
     This is a helper function to get the database when no session
-    is available in the context. Applications can override this
-    behavior by setting up proper session management.
+    is available in the context. Applications must explicitly set
+    the default database using set_default_database().
     """
     global _default_database
 
     if _default_database is not None:
         return _default_database
 
-    # Try to import and get from the app's database attribute
-    try:
-        # This is a common pattern where the app has a database attribute
-        import sys
-
-        for module in sys.modules.values():
-            if hasattr(module, "app") and hasattr(module.app, "database"):
-                _default_database = module.app.database
-                return _default_database
-    except Exception:
-        pass
-
     raise RuntimeError(
         "No database session available. "
         "Ensure you're using ZenithModel within a web request context, "
-        "or manually set the database session with set_current_db_session()."
+        "or set the default database with set_default_database(app.database)."
     )
 
 

@@ -390,6 +390,8 @@ class Settings:
     )
 
     # Security (we'll use this in Part 4)
+    # Production SECRET_KEY must have sufficient entropy (≥16 unique chars)
+    # Generate with: zen keygen
     SECRET_KEY: str = os.getenv(
         "SECRET_KEY",
         "development-secret-change-in-production"
@@ -427,6 +429,8 @@ DEBUG=true
 DATABASE_URL=sqlite:///./taskflow.db
 
 # Security - CHANGE IN PRODUCTION!
+# Generate secure key with: zen keygen
+# Requirements: ≥32 chars, ≥16 unique chars, no char >25% frequency
 SECRET_KEY=dev-secret-key-change-this-in-production
 
 # Email (optional for now)

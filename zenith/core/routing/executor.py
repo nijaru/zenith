@@ -6,8 +6,7 @@ parameter injection, and error handling.
 """
 
 import inspect
-import sys
-from typing import Any, Final, get_type_hints
+from typing import Any, get_type_hints
 
 from pydantic import BaseModel, ValidationError
 from starlette.requests import Request
@@ -20,21 +19,7 @@ from .dependency_resolver import DependencyResolver
 from .response_processor import ResponseProcessor
 from .specs import RouteSpec
 
-# Intern common HTTP methods for faster string comparisons
-_POST_METHODS: Final = frozenset(
-    [sys.intern("POST"), sys.intern("PUT"), sys.intern("PATCH")]
-)
-
-_HTTP_METHODS: Final = {
-    sys.intern("GET"),
-    sys.intern("POST"),
-    sys.intern("PUT"),
-    sys.intern("PATCH"),
-    sys.intern("DELETE"),
-    sys.intern("HEAD"),
-    sys.intern("OPTIONS"),
-    sys.intern("TRACE"),
-}
+_POST_METHODS = frozenset(["POST", "PUT", "PATCH"])
 
 
 class RouteExecutor:
@@ -61,10 +46,6 @@ class RouteExecutor:
             # Set up request context for dependency injection
             await self._setup_request_context(request)
 
-            # Set up database session context for Rails-like DX
-            # This ensures ZenithModel can be used without explicit db=DB parameters
-            await self._setup_database_context(app)
-
             # Prepare handler arguments and track background tasks
             kwargs, background_tasks = await self._resolve_handler_args_with_bg(
                 request, route_spec.handler, app
@@ -88,36 +69,7 @@ class RouteExecutor:
             raise
         finally:
             # Clean up contexts
-            await self._cleanup_database_context()
             await self._cleanup_request_context()
-
-    async def _setup_database_context(self, app) -> None:
-        """Set up database session context for Rails-like DX."""
-        try:
-            # Import here to avoid circular imports
-            from ..container import set_current_db_session
-
-            # Get database session from the app's database
-            if hasattr(app, "app") and hasattr(app.app, "database"):
-                # Get a new session from the app's database (enter the context manager)
-                session_cm = app.app.database.session()
-                session = await session_cm.__aenter__()
-                set_current_db_session(session)
-                # Store the context manager so we can clean it up later
-                self._session_context_manager = session_cm
-            elif hasattr(app, "database"):
-                # Alternative path for direct database access
-                session_cm = app.database.session()
-                session = await session_cm.__aenter__()
-                set_current_db_session(session)
-                # Store the context manager so we can clean it up later
-                self._session_context_manager = session_cm
-            else:
-                self._session_context_manager = None
-        except Exception:
-            # If database setup fails, don't block the request
-            # This allows routes without database access to work
-            self._session_context_manager = None
 
     async def _setup_request_context(self, request: Request) -> None:
         """Set up request context for dependency injection."""
@@ -135,27 +87,10 @@ class RouteExecutor:
             from ..scoped import clear_current_request
 
             clear_current_request()
-        except Exception:
-            # Don't block if cleanup fails
-            pass
-
-    async def _cleanup_database_context(self) -> None:
-        """Clean up database session context."""
-        try:
-            from ..container import set_current_db_session
-
-            set_current_db_session(None)
-
-            # Clean up the session context manager
-            if (
-                hasattr(self, "_session_context_manager")
-                and self._session_context_manager
-            ):
-                await self._session_context_manager.__aexit__(None, None, None)
-                self._session_context_manager = None
-        except Exception:
-            # Ignore cleanup errors
-            pass
+        except Exception as e:
+            import logging
+            logger = logging.getLogger("zenith.routing")
+            logger.warning(f"Failed to cleanup request context: {e}")
 
     async def _resolve_handler_args_with_bg(
         self, request: Request, handler, app
@@ -276,75 +211,17 @@ class RouteExecutor:
                 and issubclass(param_type, BaseModel)
                 and request.method in _POST_METHODS
             ):
-                # Get raw body to handle special characters properly
-                body_bytes = await request.body()
-                try:
-                    # Use orjson if available for better performance
-                    try:
-                        import orjson
-
-                        body = orjson.loads(body_bytes)  # orjson handles bytes directly
-                    except ImportError:
-                        # Fallback to standard json with proper encoding
-                        import json
-
-                        try:
-                            body_str = body_bytes.decode("utf-8", errors="strict")
-                            body = json.loads(body_str)  # Use strict mode (default)
-                        except UnicodeDecodeError as e:
-                            raise ValidationException(
-                                f"Invalid UTF-8 encoding in request body: {e!s}"
-                            )
-                except Exception as e:
-                    # Provide helpful error message
-                    if (
-                        hasattr(e, "__class__")
-                        and e.__class__.__name__ == "JSONDecodeError"
-                    ):
-                        raise ValidationException(
-                            f"Invalid JSON in request body: {e!s}"
-                        )
-                    raise ValidationException(f"Failed to parse request body: {e!s}")
+                body = await self._parse_json_body(request)
                 kwargs[param_name] = param_type.model_validate(body)
                 continue
 
             # Rails-like dict parameter for request body (simplified DX)
             if param_type is dict and request.method in _POST_METHODS:
-                # Get raw body and parse as JSON for dict parameters
-                body_bytes = await request.body()
-                try:
-                    # Use orjson if available for better performance
-                    try:
-                        import orjson
-
-                        body = orjson.loads(body_bytes)
-                    except ImportError:
-                        # Fallback to standard json
-                        import json
-
-                        try:
-                            body_str = body_bytes.decode("utf-8", errors="strict")
-                            body = json.loads(body_str)
-                        except UnicodeDecodeError as e:
-                            raise ValidationException(
-                                f"Invalid UTF-8 encoding in request body: {e!s}"
-                            )
-                except Exception as e:
-                    if (
-                        hasattr(e, "__class__")
-                        and e.__class__.__name__ == "JSONDecodeError"
-                    ):
-                        raise ValidationException(
-                            f"Invalid JSON in request body: {e!s}"
-                        )
-                    raise ValidationException(f"Failed to parse request body: {e!s}")
-
-                # Ensure body is a dict for Rails-like simplicity
+                body = await self._parse_json_body(request)
                 if not isinstance(body, dict):
                     raise ValidationException(
                         "Request body must be a JSON object for dict parameters"
                     )
-
                 kwargs[param_name] = body
                 continue
 
@@ -367,3 +244,24 @@ class RouteExecutor:
         elif param_type is bool:
             return value.lower() in ("true", "1", "yes")
         return value
+
+    async def _parse_json_body(self, request: Request) -> dict:
+        """Parse JSON body from request with proper error handling."""
+        body_bytes = await request.body()
+        try:
+            try:
+                import orjson
+                return orjson.loads(body_bytes)
+            except ImportError:
+                import json
+                try:
+                    body_str = body_bytes.decode("utf-8", errors="strict")
+                    return json.loads(body_str)
+                except UnicodeDecodeError as e:
+                    raise ValidationException(
+                        f"Invalid UTF-8 encoding in request body: {e!s}"
+                    )
+        except Exception as e:
+            if hasattr(e, "__class__") and e.__class__.__name__ == "JSONDecodeError":
+                raise ValidationException(f"Invalid JSON in request body: {e!s}")
+            raise ValidationException(f"Failed to parse request body: {e!s}")

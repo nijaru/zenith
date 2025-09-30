@@ -30,8 +30,6 @@ class SecurityConfig:
         frame_options: str = "DENY",  # DENY, SAMEORIGIN, or ALLOW-FROM
         # Content Type Options
         content_type_nosniff: bool = True,
-        # XSS Protection
-        xss_protection: str = "1; mode=block",
         # Referrer Policy
         referrer_policy: str = "strict-origin-when-cross-origin",
         # Permissions Policy (formerly Feature Policy)
@@ -49,7 +47,6 @@ class SecurityConfig:
         self.hsts_preload = hsts_preload
         self.frame_options = frame_options
         self.content_type_nosniff = content_type_nosniff
-        self.xss_protection = xss_protection
         self.referrer_policy = referrer_policy
         self.permissions_policy = permissions_policy
 
@@ -162,12 +159,6 @@ class SecurityHeadersMiddleware:
         if self.config.content_type_nosniff:
             _add_or_replace_header(b"x-content-type-options", b"nosniff")
 
-        # X-XSS-Protection
-        if self.config.xss_protection:
-            _add_or_replace_header(
-                b"x-xss-protection", self.config.xss_protection.encode("latin-1")
-            )
-
         # Referrer-Policy
         if self.config.referrer_policy:
             _add_or_replace_header(
@@ -206,10 +197,6 @@ class SecurityHeadersMiddleware:
         # X-Content-Type-Options
         if self.config.content_type_nosniff:
             response.headers["x-content-type-options"] = "nosniff"
-
-        # X-XSS-Protection
-        if self.config.xss_protection:
-            response.headers["x-xss-protection"] = self.config.xss_protection
 
         # Referrer-Policy
         if self.config.referrer_policy:
@@ -320,6 +307,8 @@ def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
         return False
 
     try:
+        import ipaddress
+
         parsed = urlparse(url)
 
         # Check scheme
@@ -331,51 +320,41 @@ def validate_url(url: str, allowed_schemes: list[str] | None = None) -> bool:
         if not parsed.netloc:
             return False
 
-        # Check for localhost/private IP ranges (basic check)
         hostname = parsed.hostname
-        netloc = parsed.netloc
+        if not hostname:
+            return False
 
-        # Check hostname if available
-        if hostname:
-            if hostname in ["localhost", "127.0.0.1", "::1"]:
+        # Check for localhost by name
+        if hostname.lower() in ["localhost", "localhost.localdomain"]:
+            return False
+
+        # Try to parse as IP address
+        try:
+            ip = ipaddress.ip_address(hostname)
+
+            # Block loopback addresses
+            if ip.is_loopback:
                 return False
 
-            # Check for private IP ranges (basic)
-            if (
-                hostname.startswith("192.168.")
-                or hostname.startswith("10.")
-                or hostname.startswith("172.")
-            ):
+            # Block private addresses
+            if ip.is_private:
                 return False
 
-        # For IPv6 addresses, hostname might be None, so check netloc too
-        if netloc:
-            # Handle IPv6 addresses properly
-            if netloc.startswith("[") and "]:" in netloc:
-                # IPv6 with port: [::1]:8080 -> ::1
-                netloc_host = netloc.split("]:")[0][1:]
-            elif netloc.startswith("[") and netloc.endswith("]"):
-                # IPv6 without port: [::1] -> ::1
-                netloc_host = netloc[1:-1]
-            elif ":" in netloc and not any(
-                netloc.startswith(prefix) for prefix in ["192.168.", "10.", "172."]
-            ):
-                # Likely IPv6 address without brackets (e.g., ::1)
-                netloc_host = netloc
-            else:
-                # IPv4 address with port: 127.0.0.1:8080 -> 127.0.0.1
-                netloc_host = netloc.split(":")[0]
-
-            if netloc_host in ["localhost", "127.0.0.1", "::1"]:
+            # Block link-local addresses
+            if ip.is_link_local:
                 return False
 
-            # Check for private IP ranges in netloc too
-            if (
-                netloc_host.startswith("192.168.")
-                or netloc_host.startswith("10.")
-                or netloc_host.startswith("172.")
-            ):
+            # Block reserved addresses
+            if ip.is_reserved:
                 return False
+
+            # Block multicast addresses
+            if ip.is_multicast:
+                return False
+
+        except ValueError:
+            # Not an IP address, it's a hostname - that's fine
+            pass
 
         return True
 
@@ -397,13 +376,12 @@ def constant_time_compare(val1: str, val2: str) -> bool:
 def get_strict_security_config() -> SecurityConfig:
     """Get a strict security configuration for production."""
     return SecurityConfig(
-        csp_policy="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:",
+        csp_policy="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests",
         hsts_max_age=63072000,  # 2 years
         hsts_include_subdomains=True,
         hsts_preload=True,
         frame_options="DENY",
         content_type_nosniff=True,
-        xss_protection="1; mode=block",
         referrer_policy="strict-origin-when-cross-origin",
         permissions_policy="geolocation=(), microphone=(), camera=()",
         force_https=True,
@@ -418,7 +396,6 @@ def get_development_security_config() -> SecurityConfig:
         hsts_max_age=0,  # Disable HSTS for development
         frame_options="SAMEORIGIN",
         content_type_nosniff=True,
-        xss_protection="1; mode=block",
         referrer_policy="no-referrer-when-downgrade",
         force_https=False,
     )

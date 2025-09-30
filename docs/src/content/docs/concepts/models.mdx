@@ -123,6 +123,8 @@ recent_users = await (
         .limit(5)                       # Limit: only 5 results
         .all()                          # Execute: get all matching records
 )
+# Note: order_by() validates column names to prevent SQL injection
+# Using invalid column names will raise ValueError with available columns
 
 # ✏️ UPDATE - Modify existing records
 await user.update(

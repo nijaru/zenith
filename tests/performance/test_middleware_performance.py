@@ -199,7 +199,7 @@ class TestMiddlewarePerformance:
             hsts_max_age=31536000,
             content_type_nosniff=True,
             frame_options="DENY",
-            xss_protection="1; mode=block",
+            # X-XSS-Protection removed (deprecated)
         )
         security_app = Zenith(
             debug=False,
