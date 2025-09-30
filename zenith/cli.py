@@ -27,7 +27,9 @@ def main():
 
 @main.command()
 @click.option("--output", "-o", help="Output file (e.g., .env)")
-@click.option("--length", default=64, type=int, help="Key length in bytes (default: 64)")
+@click.option(
+    "--length", default=64, type=int, help="Key length in bytes (default: 64)"
+)
 @click.option("--force", is_flag=True, help="Overwrite existing key in file")
 def keygen(output: str | None, length: int, force: bool):
     """Generate cryptographically secure SECRET_KEY.
@@ -93,13 +95,9 @@ def keygen(output: str | None, length: int, force: bool):
         click.echo(secret_key)
 
 
-
-
 # ============================================================================
 # DEVELOPMENT TOOLS - Reliable, high-value commands
 # ============================================================================
-
-
 
 
 @main.command()
@@ -157,7 +155,7 @@ if __name__ == "__main__":
 '''
 
     # Create .env file
-    env_content = f'''# Environment variables for {name}
+    env_content = f"""# Environment variables for {name}
 SECRET_KEY={secret_key}
 DEBUG=true
 
@@ -166,16 +164,16 @@ DEBUG=true
 
 # Redis (uncomment if using caching/sessions)
 # REDIS_URL=redis://localhost:6379
-'''
+"""
 
     # Create requirements.txt with current zenith version
-    requirements_content = f'''zenithweb>={__version__}
+    requirements_content = f"""zenithweb>={__version__}
 uvicorn[standard]
 python-dotenv
-'''
+"""
 
     # Create .gitignore
-    gitignore_content = '''# Python
+    gitignore_content = """# Python
 __pycache__/
 *.py[cod]
 *.so
@@ -205,10 +203,10 @@ Thumbs.db
 # Logs
 *.log
 logs/
-'''
+"""
 
     # Create README.md
-    readme_content = f'''# {name}
+    readme_content = f"""# {name}
 
 A modern API built with [Zenith](https://zenith-python.org).
 
@@ -249,7 +247,7 @@ A modern API built with [Zenith](https://zenith-python.org).
 
 - [Zenith Documentation](https://zenith-python.org)
 - [API Examples](https://zenith-python.org/examples)
-'''
+"""
 
     # Write all files
     files_to_create = [
@@ -277,14 +275,18 @@ A modern API built with [Zenith](https://zenith-python.org).
 @click.option("--port", "-p", default=8000, type=int, help="Port to bind to")
 @click.option("--app", default=None, help="Import path to app (e.g., src.api.app:app)")
 @click.option("--open", is_flag=True, help="Open browser after start")
-@click.option("--testing", is_flag=True, help="Enable testing mode (disables rate limiting)")
+@click.option(
+    "--testing", is_flag=True, help="Enable testing mode (disables rate limiting)"
+)
 def dev(host: str, port: int, app: str | None, open: bool, testing: bool):
     """Start development server with hot reload."""
     import os
 
     if testing:
         os.environ["ZENITH_ENV"] = "test"
-        click.echo("🧪 Testing mode enabled - rate limiting and other test-interfering middleware disabled")
+        click.echo(
+            "🧪 Testing mode enabled - rate limiting and other test-interfering middleware disabled"
+        )
     else:
         # Set development environment by default for zen dev
         os.environ.setdefault("ZENITH_ENV", "development")
@@ -307,7 +309,14 @@ def serve(host: str, port: int, workers: int, reload: bool):
     _run_server(host, port, reload=reload, workers=workers)
 
 
-def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, open_browser: bool = False, app_path: str | None = None):
+def _run_server(
+    host: str,
+    port: int,
+    reload: bool = False,
+    workers: int = 1,
+    open_browser: bool = False,
+    app_path: str | None = None,
+):
     """Internal function to run uvicorn server."""
     import importlib.util
     import os
@@ -318,8 +327,8 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
 
     # Strategy 0: Use explicit app path if provided
     if app_path:
-        if ':' in app_path:
-            app_module, app_var = app_path.split(':', 1)
+        if ":" in app_path:
+            app_module, app_var = app_path.split(":", 1)
         else:
             app_module = app_path
             app_var = "app"
@@ -346,15 +355,19 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
                         # Check if the expected variable exists and is a Zenith app
                         if hasattr(module, var_name):
                             attr = getattr(module, var_name)
-                            if hasattr(attr, '__class__') and 'Zenith' in str(type(attr)):
+                            if hasattr(attr, "__class__") and "Zenith" in str(
+                                type(attr)
+                            ):
                                 app_module = module_name
                                 app_var = var_name
                                 break
                             # Also try to find any Zenith app in the module
                             for attr_name in dir(module):
-                                if not attr_name.startswith('_'):
+                                if not attr_name.startswith("_"):
                                     attr = getattr(module, attr_name)
-                                    if hasattr(attr, '__class__') and 'Zenith' in str(type(attr)):
+                                    if hasattr(attr, "__class__") and "Zenith" in str(
+                                        type(attr)
+                                    ):
                                         app_module = module_name
                                         app_var = attr_name
                                         break
@@ -372,7 +385,7 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
             "src/api/app.py",
             "src/main.py",
             "app/main.py",
-            "api/app.py"
+            "api/app.py",
         ]
 
         for path_str in common_paths:
@@ -380,22 +393,30 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
             if path.exists():
                 try:
                     # Convert path to module notation: src/api/app.py -> src.api.app
-                    module_path = str(path.with_suffix('')).replace('/', '.')
-                    spec = importlib.util.spec_from_file_location(module_path.split('.')[-1], path)
+                    module_path = str(path.with_suffix("")).replace("/", ".")
+                    spec = importlib.util.spec_from_file_location(
+                        module_path.split(".")[-1], path
+                    )
                     if spec and spec.loader:
                         module = importlib.util.module_from_spec(spec)
                         # Add the parent directory to sys.path temporarily
-                        parent_dir = str(path.parent.parent.absolute()) if len(path.parts) > 1 else str(Path.cwd())
+                        parent_dir = (
+                            str(path.parent.parent.absolute())
+                            if len(path.parts) > 1
+                            else str(Path.cwd())
+                        )
                         if parent_dir not in sys.path:
                             sys.path.insert(0, parent_dir)
 
                         spec.loader.exec_module(module)
 
-                        if hasattr(module, 'app'):
-                            attr = getattr(module, 'app')
-                            if hasattr(attr, '__class__') and 'Zenith' in str(type(attr)):
+                        if hasattr(module, "app"):
+                            attr = getattr(module, "app")
+                            if hasattr(attr, "__class__") and "Zenith" in str(
+                                type(attr)
+                            ):
                                 app_module = module_path
-                                app_var = 'app'
+                                app_var = "app"
                                 break
                 except Exception:
                     continue
@@ -432,7 +453,9 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
             if subdir_path.exists() and subdir_path.is_dir():
                 py_files_in_subdir = list(subdir_path.glob("*.py"))
                 if py_files_in_subdir:
-                    subdirs_with_py.append(f"{subdir}/ ({len(py_files_in_subdir)} .py files)")
+                    subdirs_with_py.append(
+                        f"{subdir}/ ({len(py_files_in_subdir)} .py files)"
+                    )
 
         if subdirs_with_py:
             click.echo("   Subdirectories with Python files:")
@@ -475,6 +498,7 @@ def _run_server(host: str, port: int, reload: bool = False, workers: int = 1, op
 
     if open_browser:
         import webbrowser
+
         webbrowser.open(f"http://{host}:{port}")
 
     try:

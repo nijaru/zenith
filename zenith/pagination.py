@@ -34,21 +34,11 @@ class PaginatedResponse(BaseModel, Generic[T]):
 
     @classmethod
     def create(
-        cls,
-        items: list[T],
-        page: int,
-        limit: int,
-        total: int
+        cls, items: list[T], page: int, limit: int, total: int
     ) -> "PaginatedResponse[T]":
         """Create a paginated response."""
         pages = (total + limit - 1) // limit  # Ceiling division
-        return cls(
-            items=items,
-            page=page,
-            limit=limit,
-            total=total,
-            pages=pages
-        )
+        return cls(items=items, page=page, limit=limit, total=total, pages=pages)
 
 
 class Paginate:
@@ -139,10 +129,7 @@ class CursorPagination:
         self._limit = default_limit
 
     def __call__(
-        self,
-        after: str = None,
-        before: str = None,
-        limit: int = None
+        self, after: str = None, before: str = None, limit: int = None
     ) -> "CursorPagination":
         """Called by the framework to inject query parameters."""
         self._after = after

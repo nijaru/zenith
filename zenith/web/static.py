@@ -211,7 +211,7 @@ def serve_spa_files(
     directory: str = "dist",
     index: str = "index.html",
     exclude: list[str] | None = None,
-    **config_kwargs
+    **config_kwargs,
 ) -> SPAStaticFiles:
     """
     Serve Single Page Application files with fallback support.

@@ -132,7 +132,9 @@ class RateLimitException(HTTPException):
 class DatabaseException(ZenithException):
     """Database operation error."""
 
-    def __init__(self, message: str = "Database operation failed", cause: Exception | None = None):
+    def __init__(
+        self, message: str = "Database operation failed", cause: Exception | None = None
+    ):
         super().__init__(message)
         self.cause = cause
 
@@ -140,7 +142,12 @@ class DatabaseException(ZenithException):
 class ServiceUnavailableException(HTTPException):
     """503 Service Unavailable"""
 
-    def __init__(self, detail: str = "Service temporarily unavailable", retry_after: int | None = None, **kwargs):
+    def __init__(
+        self,
+        detail: str = "Service temporarily unavailable",
+        retry_after: int | None = None,
+        **kwargs,
+    ):
         headers = kwargs.get("headers", {})
         if retry_after:
             headers["Retry-After"] = str(retry_after)

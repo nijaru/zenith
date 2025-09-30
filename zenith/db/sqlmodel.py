@@ -167,11 +167,11 @@ from sqlmodel import Field, Relationship, Session, SQLModel, select  # noqa: E40
 
 __all__ = [
     "Field",
+    "Model",
     "Relationship",
     "SQLModel",
     "SQLModelRepository",
     "Session",
-    "ZenithSQLModel",
     "create_repository",
     "select",
 ]

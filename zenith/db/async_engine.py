@@ -18,7 +18,9 @@ from sqlalchemy.ext.asyncio import (
 )
 
 # Context variable to store engine per event loop
-_engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
+_engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = (
+    WeakKeyDictionary()
+)
 _engine_config: ContextVar[dict[str, Any]] = ContextVar("engine_config", default={})
 
 
@@ -40,8 +42,12 @@ class AsyncEngineManager:
         """
         self.database_url = database_url
         self.engine_kwargs = engine_kwargs
-        self._engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
-        self._session_makers: WeakKeyDictionary[asyncio.AbstractEventLoop, async_sessionmaker] = WeakKeyDictionary()
+        self._engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = (
+            WeakKeyDictionary()
+        )
+        self._session_makers: WeakKeyDictionary[
+            asyncio.AbstractEventLoop, async_sessionmaker
+        ] = WeakKeyDictionary()
 
     def get_engine(self) -> AsyncEngine:
         """
@@ -54,10 +60,7 @@ class AsyncEngineManager:
 
         if loop not in self._engines:
             # Create new engine for this event loop
-            engine = create_async_engine(
-                self.database_url,
-                **self.engine_kwargs
-            )
+            engine = create_async_engine(self.database_url, **self.engine_kwargs)
             self._engines[loop] = engine
 
         return self._engines[loop]
@@ -74,9 +77,7 @@ class AsyncEngineManager:
         if loop not in self._session_makers:
             engine = self.get_engine()
             session_maker = async_sessionmaker(
-                engine,
-                class_=AsyncSession,
-                expire_on_commit=False
+                engine, class_=AsyncSession, expire_on_commit=False
             )
             self._session_makers[loop] = session_maker
 

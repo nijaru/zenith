@@ -20,13 +20,16 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Security scheme
 security = HTTPBearer()
 
+
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
     return pwd_context.hash(password)
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def create_access_token(data: dict) -> str:
     """
@@ -43,11 +46,10 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": expire})
 
     encoded_jwt = jwt.encode(
-        to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt
+
 
 def decode_access_token(token: str) -> dict:
     """
@@ -64,17 +66,16 @@ def decode_access_token(token: str) -> dict:
     """
     try:
         payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
     except JWTError:
         raise AuthenticationError("Invalid or expired token")
 
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    session = Depends(get_session)
+    session=Depends(get_session),
 ) -> User:
     """
     Get the current authenticated user from JWT token.
@@ -110,9 +111,10 @@ async def get_current_user(
 
     return user
 
+
 async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    session = Depends(get_session)
+    session=Depends(get_session),
 ) -> Optional[User]:
     """
     Get current user if authenticated, None otherwise.

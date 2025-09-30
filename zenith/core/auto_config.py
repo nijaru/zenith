@@ -68,7 +68,9 @@ class Environment(str, Enum):
         # Check staging patterns first since staging domains often have .com/.org/etc
         if any(stage in server_name for stage in ["stage", "staging", "test"]):
             return cls.STAGING
-        elif any(prod in server_name for prod in ["api.", "prod", ".com", ".org", ".net"]):
+        elif any(
+            prod in server_name for prod in ["api.", "prod", ".com", ".org", ".net"]
+        ):
             return cls.PRODUCTION
 
         # File-based detection
@@ -150,28 +152,28 @@ class SecurityConfig(BaseModel):
                 secret_key=secret_key,
                 require_https=True,
                 cors_origins=["https://yourdomain.com"],  # Restrictive by default
-                cors_allow_credentials=True
+                cors_allow_credentials=True,
             )
         elif env == Environment.STAGING:
             return cls(
                 secret_key=secret_key,
                 require_https=True,
                 cors_origins=["https://staging.yourdomain.com"],
-                cors_allow_credentials=True
+                cors_allow_credentials=True,
             )
         elif env == Environment.TESTING:
             return cls(
                 secret_key=secret_key,
                 require_https=False,
                 cors_origins=["*"],  # Permissive for testing
-                cors_allow_credentials=False
+                cors_allow_credentials=False,
             )
         else:  # Development
             return cls(
                 secret_key=secret_key,
                 require_https=False,
                 cors_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-                cors_allow_credentials=True
+                cors_allow_credentials=True,
             )
 
 
@@ -195,7 +197,7 @@ class MiddlewareConfig(BaseModel):
                 enable_compression=True,
                 enable_rate_limiting=True,
                 enable_request_logging=True,
-                enable_debug_toolbar=False
+                enable_debug_toolbar=False,
             )
         elif env == Environment.TESTING:
             return cls(
@@ -204,7 +206,7 @@ class MiddlewareConfig(BaseModel):
                 enable_compression=False,
                 enable_rate_limiting=False,
                 enable_request_logging=False,
-                enable_debug_toolbar=False
+                enable_debug_toolbar=False,
             )
         else:  # Development
             return cls(
@@ -213,7 +215,7 @@ class MiddlewareConfig(BaseModel):
                 enable_compression=False,
                 enable_rate_limiting=False,
                 enable_request_logging=True,
-                enable_debug_toolbar=True
+                enable_debug_toolbar=True,
             )
 
 
@@ -237,7 +239,7 @@ class AutoConfig(BaseModel):
             debug=env in [Environment.DEVELOPMENT, Environment.TESTING],
             database=DatabaseConfig.from_environment(env),
             security=SecurityConfig.from_environment(env),
-            middleware=MiddlewareConfig.from_environment(env)
+            middleware=MiddlewareConfig.from_environment(env),
         )
 
 

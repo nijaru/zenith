@@ -8,8 +8,9 @@ from app.exceptions import (
     NotFoundError,
     ConflictError,
     ValidationError,
-    PermissionError
+    PermissionError,
 )
+
 
 class BaseService:
     """Base service with common patterns."""

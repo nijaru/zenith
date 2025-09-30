@@ -22,7 +22,7 @@ from zenith.core.auto_config import (
     is_development,
     is_production,
     is_testing,
-    is_staging
+    is_staging,
 )
 
 
@@ -60,8 +60,12 @@ class TestEnvironmentDetection:
         # This is harder to test directly since __debug__ is a built-in
         # but we can test the logic path exists
         env = Environment.detect()
-        assert env in [Environment.DEVELOPMENT, Environment.PRODUCTION,
-                      Environment.TESTING, Environment.STAGING]
+        assert env in [
+            Environment.DEVELOPMENT,
+            Environment.PRODUCTION,
+            Environment.TESTING,
+            Environment.STAGING,
+        ]
 
     def test_server_name_detection(self):
         """Test server name-based detection."""
@@ -75,20 +79,22 @@ class TestEnvironmentDetection:
 
     def test_file_based_detection(self):
         """Test file-based environment detection."""
-        with patch('os.path.exists') as mock_exists:
+        with patch("os.path.exists") as mock_exists:
             # Test Docker environment
             def exists_side_effect(path):
                 return path == "/.dockerenv"
+
             mock_exists.side_effect = exists_side_effect
 
             with patch.dict(os.environ, {}, clear=True):
                 env = Environment.detect()
                 assert env == Environment.PRODUCTION
 
-        with patch('os.path.exists') as mock_exists:
+        with patch("os.path.exists") as mock_exists:
             # Test testing environment
             def exists_side_effect(path):
                 return path in ["pytest.ini", "conftest.py"]
+
             mock_exists.side_effect = exists_side_effect
 
             with patch.dict(os.environ, {}, clear=True):
@@ -98,7 +104,7 @@ class TestEnvironmentDetection:
     def test_default_to_development(self):
         """Test defaults to development when no indicators."""
         with patch.dict(os.environ, {}, clear=True):
-            with patch('os.path.exists', return_value=False):
+            with patch("os.path.exists", return_value=False):
                 env = Environment.detect()
                 assert env == Environment.DEVELOPMENT
 
@@ -126,7 +132,9 @@ class TestDatabaseConfig:
 
     def test_production_config_with_url(self):
         """Test production config with DATABASE_URL set."""
-        with patch.dict(os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@host/db"}):
+        with patch.dict(
+            os.environ, {"DATABASE_URL": "postgresql+asyncpg://user:pass@host/db"}
+        ):
             config = DatabaseConfig.from_environment(Environment.PRODUCTION)
 
             assert config.url == "postgresql+asyncpg://user:pass@host/db"
@@ -242,7 +250,10 @@ class TestAutoConfig:
     def test_create_auto_config_development(self):
         """Test creating auto config for development."""
         with patch.dict(os.environ, {}, clear=True):
-            with patch('zenith.core.auto_config.Environment.detect', return_value=Environment.DEVELOPMENT):
+            with patch(
+                "zenith.core.auto_config.Environment.detect",
+                return_value=Environment.DEVELOPMENT,
+            ):
                 config = AutoConfig.create()
 
                 assert config.environment == Environment.DEVELOPMENT
@@ -253,8 +264,13 @@ class TestAutoConfig:
 
     def test_create_auto_config_production(self):
         """Test creating auto config for production."""
-        with patch.dict(os.environ, {"SECRET_KEY": "prod-key", "DATABASE_URL": "postgresql://prod"}):
-            with patch('zenith.core.auto_config.Environment.detect', return_value=Environment.PRODUCTION):
+        with patch.dict(
+            os.environ, {"SECRET_KEY": "prod-key", "DATABASE_URL": "postgresql://prod"}
+        ):
+            with patch(
+                "zenith.core.auto_config.Environment.detect",
+                return_value=Environment.PRODUCTION,
+            ):
                 config = AutoConfig.create()
 
                 assert config.environment == Environment.PRODUCTION
@@ -277,7 +293,10 @@ class TestConvenienceFunctions:
 
     def test_detect_environment_function(self):
         """Test detect_environment convenience function."""
-        with patch('zenith.core.auto_config.Environment.detect', return_value=Environment.STAGING):
+        with patch(
+            "zenith.core.auto_config.Environment.detect",
+            return_value=Environment.STAGING,
+        ):
             env = detect_environment()
             assert env == Environment.STAGING
 
@@ -289,13 +308,19 @@ class TestConvenienceFunctions:
 
     def test_environment_check_functions(self):
         """Test environment checking convenience functions."""
-        with patch('zenith.core.auto_config.detect_environment', return_value=Environment.DEVELOPMENT):
+        with patch(
+            "zenith.core.auto_config.detect_environment",
+            return_value=Environment.DEVELOPMENT,
+        ):
             assert is_development() is True
             assert is_production() is False
             assert is_testing() is False
             assert is_staging() is False
 
-        with patch('zenith.core.auto_config.detect_environment', return_value=Environment.PRODUCTION):
+        with patch(
+            "zenith.core.auto_config.detect_environment",
+            return_value=Environment.PRODUCTION,
+        ):
             assert is_development() is False
             assert is_production() is True
             assert is_testing() is False
@@ -309,8 +334,12 @@ class TestAutoConfigIntegration:
         """Test real environment detection without mocking."""
         # This should not raise any exceptions
         env = detect_environment()
-        assert env in [Environment.DEVELOPMENT, Environment.PRODUCTION,
-                      Environment.TESTING, Environment.STAGING]
+        assert env in [
+            Environment.DEVELOPMENT,
+            Environment.PRODUCTION,
+            Environment.TESTING,
+            Environment.STAGING,
+        ]
 
     def test_complete_config_creation(self):
         """Test complete configuration creation."""
@@ -326,11 +355,14 @@ class TestAutoConfigIntegration:
 
     def test_config_respects_environment_variables(self):
         """Test config respects actual environment variables."""
-        with patch.dict(os.environ, {
-            "ZENITH_ENV": "testing",
-            "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
-            "SECRET_KEY": "test-key"
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "ZENITH_ENV": "testing",
+                "DATABASE_URL": "sqlite+aiosqlite:///:memory:",
+                "SECRET_KEY": "test-key",
+            },
+        ):
             config = create_auto_config()
 
             assert config.environment == Environment.TESTING

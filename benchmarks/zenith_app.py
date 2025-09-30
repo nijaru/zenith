@@ -127,7 +127,9 @@ async def hello_world():
 
 
 @app.get("/users/{user_id}")
-async def get_user(user_id: int, users: UsersService = Inject(UsersService)) -> UserModel:
+async def get_user(
+    user_id: int, users: UsersService = Inject(UsersService)
+) -> UserModel:
     user = await users.get_user(user_id)
     if not user:
         return JSONResponse({"error": "User not found"}, status_code=404)

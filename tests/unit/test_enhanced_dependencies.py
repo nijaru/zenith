@@ -11,12 +11,19 @@ import pytest
 from unittest.mock import Mock, AsyncMock, patch
 
 from zenith.core.dependencies import (
-    Session, Auth, Request,
+    Session,
+    Auth,
+    Request,
     Inject,
-    get_database_session, get_auth_user, get_current_request_dependency,
-    DatabaseContext, ServiceContext,
-    resolve_db, resolve_auth,
-    AuthenticatedUser, HttpRequest
+    get_database_session,
+    get_auth_user,
+    get_current_request_dependency,
+    DatabaseContext,
+    ServiceContext,
+    resolve_db,
+    resolve_auth,
+    AuthenticatedUser,
+    HttpRequest,
 )
 from zenith.core.container import set_current_db_session
 
@@ -27,18 +34,17 @@ class TestDependencyShortcuts:
     def test_session_shortcut_is_fastapi_depends(self):
         """Test Session shortcut is properly configured Depends."""
         # Session should be a Depends object wrapping get_database_session
-        assert hasattr(Session, 'dependency')
+        assert hasattr(Session, "dependency")
         assert Session.dependency == get_database_session
 
     def test_auth_shortcut_is_fastapi_depends(self):
         """Test Auth shortcut is properly configured Depends."""
-        assert hasattr(Auth, 'dependency')
+        assert hasattr(Auth, "dependency")
         assert Auth.dependency == get_auth_user
-
 
     def test_request_shortcut_is_fastapi_depends(self):
         """Test Request shortcut is properly configured Depends."""
-        assert hasattr(Request, 'dependency')
+        assert hasattr(Request, "dependency")
         assert Request.dependency == get_current_request_dependency
 
 
@@ -49,7 +55,7 @@ class TestDependencyFunctions:
     async def mock_db_session(self):
         """Mock database session."""
         session = AsyncMock()
-        with patch('zenith.core.dependencies.get_db_session', return_value=session):
+        with patch("zenith.core.dependencies.get_db_session", return_value=session):
             yield session
 
     async def test_get_database_session(self, mock_db_session):
@@ -71,7 +77,6 @@ class TestDependencyFunctions:
         # Without request context, auth user is None
         assert user is None
 
-
     async def test_get_current_request_without_context(self):
         """Test current request dependency function returns None without context."""
         request = await get_current_request_dependency()
@@ -87,10 +92,11 @@ class TestInjectFunction:
         inject_result = Inject()
 
         # Should return a Depends object
-        assert hasattr(inject_result, 'dependency')
+        assert hasattr(inject_result, "dependency")
 
     def test_inject_with_service_type(self):
         """Test Inject(ServiceType) with explicit service type."""
+
         class TestService:
             def __init__(self):
                 self.name = "test"
@@ -98,10 +104,11 @@ class TestInjectFunction:
         inject_result = Inject(TestService)
 
         # Should return a Depends object
-        assert hasattr(inject_result, 'dependency')
+        assert hasattr(inject_result, "dependency")
 
     async def test_inject_service_resolution(self):
         """Test that Inject can resolve services."""
+
         class TestService:
             def __init__(self):
                 self.value = "injected"
@@ -134,7 +141,9 @@ class TestManualResolution:
         """Test manual database session resolution."""
         mock_session = AsyncMock()
 
-        with patch('zenith.core.dependencies.get_db_session', return_value=mock_session):
+        with patch(
+            "zenith.core.dependencies.get_db_session", return_value=mock_session
+        ):
             session = await resolve_db()
             assert session == mock_session
 
@@ -146,7 +155,6 @@ class TestManualResolution:
         assert user is None
 
 
-
 class TestDatabaseContext:
     """Test DatabaseContext context manager."""
 
@@ -154,7 +162,7 @@ class TestDatabaseContext:
         """Test DatabaseContext provides session management."""
         mock_session = AsyncMock()
 
-        with patch('zenith.core.dependencies.resolve_db', return_value=mock_session):
+        with patch("zenith.core.dependencies.resolve_db", return_value=mock_session):
             async with DatabaseContext() as session:
                 assert session == mock_session
 
@@ -162,8 +170,8 @@ class TestDatabaseContext:
         """Test DatabaseContext sets current session in context."""
         mock_session = AsyncMock()
 
-        with patch('zenith.core.dependencies.resolve_db', return_value=mock_session):
-            with patch('zenith.core.dependencies.set_current_db_session') as mock_set:
+        with patch("zenith.core.dependencies.resolve_db", return_value=mock_session):
+            with patch("zenith.core.dependencies.set_current_db_session") as mock_set:
                 async with DatabaseContext():
                     # Should set current session
                     mock_set.assert_called_with(mock_session)
@@ -172,8 +180,8 @@ class TestDatabaseContext:
         """Test DatabaseContext cleans up properly."""
         mock_session = AsyncMock()
 
-        with patch('zenith.core.dependencies.resolve_db', return_value=mock_session):
-            with patch('zenith.core.dependencies.set_current_db_session') as mock_set:
+        with patch("zenith.core.dependencies.resolve_db", return_value=mock_session):
+            with patch("zenith.core.dependencies.set_current_db_session") as mock_set:
                 try:
                     async with DatabaseContext():
                         pass
@@ -189,6 +197,7 @@ class TestServiceContext:
 
     async def test_service_context_manager(self):
         """Test ServiceContext manages service instances."""
+
         class TestService:
             def __init__(self):
                 self.name = "test"
@@ -200,6 +209,7 @@ class TestServiceContext:
 
     async def test_service_context_multiple_services(self):
         """Test ServiceContext with multiple services."""
+
         class ServiceA:
             def __init__(self):
                 self.type = "A"
@@ -217,6 +227,7 @@ class TestServiceContext:
 
     async def test_service_context_get_nonexistent_service(self):
         """Test ServiceContext returns None for nonexistent services."""
+
         class TestService:
             pass
 
@@ -237,15 +248,12 @@ class TestDependencyIntegration:
         from typing import get_type_hints
 
         # This should work in route definitions
-        async def example_route(
-            session: AsyncSession = Session,
-            user = Auth
-        ):
+        async def example_route(session: AsyncSession = Session, user=Auth):
             return {"session": session, "user": user}
 
         # Function should be properly annotated
         hints = get_type_hints(example_route)
-        assert 'session' in hints
+        assert "session" in hints
         # Note: AsyncSession hint should be preserved
 
     # Service decorator test removed - decorator functionality was removed from the framework
@@ -264,11 +272,11 @@ class TestDependencyCompatibility:
 
             # Old style should still work
             old_style = Depends(get_database_session)
-            assert hasattr(old_style, 'dependency')
+            assert hasattr(old_style, "dependency")
 
             # New style should work
             new_style = Session
-            assert hasattr(new_style, 'dependency')
+            assert hasattr(new_style, "dependency")
 
             # Should be equivalent
             assert old_style.dependency == new_style.dependency
@@ -288,4 +296,4 @@ class TestDependencyCompatibility:
         result = MockDepends(test_func)
         # The result should be compatible with FastAPI's Depends
         # In FastAPI, Depends returns a special object, not the function itself
-        assert callable(result) or hasattr(result, '__class__')
+        assert callable(result) or hasattr(result, "__class__")

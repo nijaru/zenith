@@ -121,7 +121,7 @@ class TestServerSentEvents:
             max_concurrent_connections=500,
             default_buffer_size=16384,
             heartbeat_interval=60,
-            enable_adaptive_throttling=False
+            enable_adaptive_throttling=False,
         )
         assert sse_custom.max_concurrent_connections == 500
         assert sse_custom.default_buffer_size == 16384
@@ -147,18 +147,10 @@ class TestServerSentEvents:
         """Test SSE message formatting with basic event."""
         sse_instance = ServerSentEvents()
 
-        event = {
-            "type": "update",
-            "data": {"message": "Hello World"}
-        }
+        event = {"type": "update", "data": {"message": "Hello World"}}
 
         formatted = sse_instance._format_sse_message(event)
-        expected_lines = [
-            "event: update",
-            'data: {"message": "Hello World"}',
-            "",
-            ""
-        ]
+        expected_lines = ["event: update", 'data: {"message": "Hello World"}', "", ""]
         expected = "\n".join(expected_lines)
 
         assert formatted == expected
@@ -171,7 +163,7 @@ class TestServerSentEvents:
             "id": "123",
             "type": "error",
             "retry": "5000",
-            "data": {"error": "Network timeout"}
+            "data": {"error": "Network timeout"},
         }
 
         formatted = sse_instance._format_sse_message(event)
@@ -186,10 +178,7 @@ class TestServerSentEvents:
         """Test SSE message formatting with multiline data."""
         sse_instance = ServerSentEvents()
 
-        event = {
-            "type": "multiline",
-            "data": "Line 1\nLine 2\nLine 3"
-        }
+        event = {"type": "multiline", "data": "Line 1\nLine 2\nLine 3"}
 
         formatted = sse_instance._format_sse_message(event)
         lines = formatted.split("\n")
@@ -226,6 +215,7 @@ class TestServerSentEvents:
 
         # Wait a bit and update again
         import time
+
         time.sleep(0.01)  # Small delay
 
         # Second update - should reduce buffer
@@ -449,10 +439,7 @@ class TestSSEIntegration:
 
         async def event_generator():
             for i in range(3):
-                yield {
-                    "type": "count",
-                    "data": {"value": i}
-                }
+                yield {"type": "count", "data": {"value": i}}
                 await asyncio.sleep(0.01)  # Small delay
 
         response = sse_instance.stream_response(event_generator())
@@ -494,10 +481,7 @@ class TestSSEIntegration:
 
         async def fast_generator():
             for i in range(10):
-                yield {
-                    "type": "fast",
-                    "data": {"value": i}
-                }
+                yield {"type": "fast", "data": {"value": i}}
                 # No delay - generate events fast
 
         response = sse_instance.stream_response(fast_generator())
@@ -566,10 +550,7 @@ class TestSSEIntegration:
 
         async def multi_generator(conn_id: str):
             for i in range(2):
-                yield {
-                    "type": "multi",
-                    "data": {"connection": conn_id, "count": i}
-                }
+                yield {"type": "multi", "data": {"connection": conn_id, "count": i}}
                 await asyncio.sleep(0.01)
 
         # Create multiple responses
@@ -579,7 +560,7 @@ class TestSSEIntegration:
         # Process both concurrently
         tasks = [
             asyncio.create_task(self._collect_events(response1)),
-            asyncio.create_task(self._collect_events(response2))
+            asyncio.create_task(self._collect_events(response2)),
         ]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -602,10 +583,12 @@ class TestSSEConvenienceFunctions:
     def test_global_sse_instance(self):
         """Test global SSE instance availability."""
         from zenith.web.sse import sse
+
         assert isinstance(sse, ServerSentEvents)
 
     def test_create_sse_response_function(self):
         """Test create_sse_response convenience function."""
+
         async def test_events():
             yield {"type": "test", "data": "convenience"}
 
@@ -617,12 +600,10 @@ class TestSSEConvenienceFunctions:
     @pytest.mark.asyncio
     async def test_create_sse_response_functionality(self):
         """Test create_sse_response actually works."""
+
         async def working_events():
             for i in range(2):
-                yield {
-                    "type": "convenience",
-                    "data": {"number": i}
-                }
+                yield {"type": "convenience", "data": {"number": i}}
                 await asyncio.sleep(0.01)
 
         response = create_sse_response(working_events())
@@ -698,8 +679,8 @@ class TestSSEEdgeCases:
         # Weak reference should eventually clean up
         # Note: This is implementation-dependent and may not always work in tests
         # But we can at least verify the structure exists
-        assert hasattr(sse_instance, '_connections')
-        assert hasattr(sse_instance._connections, '__weakref__')
+        assert hasattr(sse_instance, "_connections")
+        assert hasattr(sse_instance._connections, "__weakref__")
 
     def test_sse_statistics_consistency(self):
         """Test SSE statistics consistency and edge cases."""

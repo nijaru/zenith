@@ -16,7 +16,9 @@ from starlette.requests import Request
 T = TypeVar("T")
 
 # Context variable to track current request
-_current_request: ContextVar[Request | None] = ContextVar("current_request", default=None)
+_current_request: ContextVar[Request | None] = ContextVar(
+    "current_request", default=None
+)
 
 
 class RequestScoped:
@@ -40,7 +42,10 @@ class RequestScoped:
 
     __slots__ = ("_cache_key", "dependency")
 
-    def __init__(self, dependency: Callable[..., AsyncGenerator] | Callable[..., Any] | None = None):
+    def __init__(
+        self,
+        dependency: Callable[..., AsyncGenerator] | Callable[..., Any] | None = None,
+    ):
         """
         Initialize a request-scoped dependency.
 
@@ -121,7 +126,9 @@ def clear_current_request() -> None:
 
 
 # Convenience function for creating request-scoped dependencies
-def request_scoped(dependency: Callable[..., AsyncGenerator] | Callable[..., Any]) -> RequestScoped:
+def request_scoped(
+    dependency: Callable[..., AsyncGenerator] | Callable[..., Any],
+) -> RequestScoped:
     """
     Decorator to mark a dependency factory as request-scoped.
 

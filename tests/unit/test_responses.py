@@ -67,20 +67,16 @@ class TestOptimizedJSONResponse:
         now = datetime.now(UTC)
         today = date.today()
 
-        response = OptimizedJSONResponse({
-            "timestamp": now,
-            "date": today
-        })
+        response = OptimizedJSONResponse({"timestamp": now, "date": today})
 
         # Response should serialize successfully
         assert response.status_code == 200
 
     def test_json_serialization_decimal(self):
         """Test JSON serialization of Decimal objects."""
-        response = OptimizedJSONResponse({
-            "price": Decimal("19.99"),
-            "quantity": Decimal("100")
-        })
+        response = OptimizedJSONResponse(
+            {"price": Decimal("19.99"), "quantity": Decimal("100")}
+        )
 
         assert response.status_code == 200
 
@@ -88,18 +84,15 @@ class TestOptimizedJSONResponse:
         """Test JSON serialization of UUID objects."""
         test_uuid = UUID("12345678-1234-5678-1234-567812345678")
 
-        response = OptimizedJSONResponse({
-            "id": test_uuid
-        })
+        response = OptimizedJSONResponse({"id": test_uuid})
 
         assert response.status_code == 200
 
     def test_json_serialization_path(self):
         """Test JSON serialization of Path objects."""
-        response = OptimizedJSONResponse({
-            "file_path": Path("/tmp/test.txt"),
-            "directory": Path("/home/user")
-        })
+        response = OptimizedJSONResponse(
+            {"file_path": Path("/tmp/test.txt"), "directory": Path("/home/user")}
+        )
 
         assert response.status_code == 200
 
@@ -115,23 +108,26 @@ class TestOptimizedJSONResponse:
 
     def test_json_serialization_nested_objects(self):
         """Test JSON serialization of nested complex objects."""
-        response = OptimizedJSONResponse({
-            "user": {
-                "id": UUID("12345678-1234-5678-1234-567812345678"),
-                "created": datetime.now(UTC),
-                "balance": Decimal("100.50"),
-                "profile_path": Path("/profiles/user1")
-            },
-            "items": [
-                {"price": Decimal("19.99"), "date": date.today()},
-                {"price": Decimal("29.99"), "date": date.today()}
-            ]
-        })
+        response = OptimizedJSONResponse(
+            {
+                "user": {
+                    "id": UUID("12345678-1234-5678-1234-567812345678"),
+                    "created": datetime.now(UTC),
+                    "balance": Decimal("100.50"),
+                    "profile_path": Path("/profiles/user1"),
+                },
+                "items": [
+                    {"price": Decimal("19.99"), "date": date.today()},
+                    {"price": Decimal("29.99"), "date": date.today()},
+                ],
+            }
+        )
 
         assert response.status_code == 200
 
     def test_json_serialization_unsupported_type(self):
         """Test JSON serialization handles unsupported types gracefully."""
+
         # Create an object that's not serializable
         class CustomObject:
             pass
@@ -162,20 +158,14 @@ class TestResponseHelpers:
     def test_error_response_with_code(self):
         """Test error response with error code."""
         response = error_response(
-            "Invalid input",
-            status_code=400,
-            error_code="VALIDATION_ERROR"
+            "Invalid input", status_code=400, error_code="VALIDATION_ERROR"
         )
         assert response.status_code == 400
 
     def test_error_response_with_details(self):
         """Test error response with additional details."""
         details = {"field": "email", "reason": "invalid format"}
-        response = error_response(
-            "Validation failed",
-            status_code=422,
-            details=details
-        )
+        response = error_response("Validation failed", status_code=422, details=details)
         assert response.status_code == 422
 
     def test_no_content_response(self):
@@ -190,10 +180,7 @@ class TestResponseHelpers:
 
     def test_created_response_with_location(self):
         """Test 201 Created response with location header."""
-        response = created_response(
-            data={"id": 456},
-            location="/api/users/456"
-        )
+        response = created_response(data={"id": 456}, location="/api/users/456")
         assert response.status_code == 201
 
     def test_accepted_response(self):
@@ -240,11 +227,10 @@ class TestFileResponses:
     def test_file_download_custom_filename(self):
         """Test file download with custom filename."""
         with patch("pathlib.Path.exists", return_value=True):
-            response = file_download_response(
-                "/tmp/uuid123.pdf",
-                filename="report.pdf"
+            response = file_download_response("/tmp/uuid123.pdf", filename="report.pdf")
+            assert 'filename="report.pdf"' in response.headers.get(
+                "content-disposition", ""
             )
-            assert 'filename="report.pdf"' in response.headers.get("content-disposition", "")
 
     def test_file_download_not_found(self):
         """Test file download with non-existent file."""
@@ -270,6 +256,7 @@ class TestStreamingResponse:
 
     def test_streaming_response(self):
         """Test basic streaming response."""
+
         def generator():
             yield b"chunk1"
             yield b"chunk2"
@@ -280,12 +267,12 @@ class TestStreamingResponse:
 
     def test_streaming_response_custom_media_type(self):
         """Test streaming with custom media type."""
+
         def generator():
             yield b"data"
 
         response = streaming_response(
-            generator(),
-            media_type="application/octet-stream"
+            generator(), media_type="application/octet-stream"
         )
         assert response.media_type == "application/octet-stream"
 
@@ -311,12 +298,7 @@ class TestPaginationResponse:
     def test_paginated_response_first_page(self):
         """Test paginated response for first page."""
         data = [{"id": 1}, {"id": 2}, {"id": 3}]
-        response = paginated_response(
-            data=data,
-            page=1,
-            page_size=10,
-            total_count=25
-        )
+        response = paginated_response(data=data, page=1, page_size=10, total_count=25)
         assert response.status_code == 200
 
     def test_paginated_response_middle_page(self):
@@ -328,19 +310,14 @@ class TestPaginationResponse:
             page_size=10,
             total_count=30,
             next_page="/api/items?page=3",
-            prev_page="/api/items?page=1"
+            prev_page="/api/items?page=1",
         )
         assert response.status_code == 200
 
     def test_paginated_response_last_page(self):
         """Test paginated response for last page."""
         data = [{"id": 21}, {"id": 22}]
-        response = paginated_response(
-            data=data,
-            page=3,
-            page_size=10,
-            total_count=22
-        )
+        response = paginated_response(data=data, page=3, page_size=10, total_count=22)
         assert response.status_code == 200
 
 
@@ -350,11 +327,7 @@ class TestCookieUtilities:
     def test_set_cookie_response(self):
         """Test setting a cookie on response."""
         response = Response()
-        set_cookie_response(
-            response,
-            key="session_id",
-            value="abc123"
-        )
+        set_cookie_response(response, key="session_id", value="abc123")
         # Cookie should be set with secure defaults
 
     def test_set_cookie_custom_options(self):
@@ -368,7 +341,7 @@ class TestCookieUtilities:
             path="/app",
             secure=False,  # For testing only
             httponly=False,
-            samesite="strict"
+            samesite="strict",
         )
 
     def test_delete_cookie_response(self):
@@ -379,11 +352,7 @@ class TestCookieUtilities:
     def test_delete_cookie_with_path(self):
         """Test deleting cookie with specific path."""
         response = Response()
-        delete_cookie_response(
-            response,
-            key="app_cookie",
-            path="/app"
-        )
+        delete_cookie_response(response, key="app_cookie", path="/app")
 
 
 class TestContentNegotiation:
@@ -392,54 +361,36 @@ class TestContentNegotiation:
     def test_negotiate_json_response(self):
         """Test negotiation returns JSON for JSON accept header."""
         data = {"message": "test"}
-        response = negotiate_response(
-            data,
-            accept_header="application/json"
-        )
+        response = negotiate_response(data, accept_header="application/json")
         assert response.media_type == "application/json"
 
     def test_negotiate_html_response(self):
         """Test negotiation returns HTML for HTML accept header."""
         data = {"message": "test"}
-        response = negotiate_response(
-            data,
-            accept_header="text/html"
-        )
+        response = negotiate_response(data, accept_header="text/html")
         assert response.media_type == "text/html"
 
     def test_negotiate_text_response(self):
         """Test negotiation returns text for text accept header."""
         data = {"message": "test"}
-        response = negotiate_response(
-            data,
-            accept_header="text/plain"
-        )
+        response = negotiate_response(data, accept_header="text/plain")
         assert response.media_type == "text/plain"
 
     def test_negotiate_default_to_json(self):
         """Test negotiation defaults to JSON for unknown accept header."""
         data = {"message": "test"}
-        response = negotiate_response(
-            data,
-            accept_header="application/xml"
-        )
+        response = negotiate_response(data, accept_header="application/xml")
         assert response.media_type == "application/json"
 
     def test_negotiate_with_string_data(self):
         """Test negotiation with string data."""
-        response = negotiate_response(
-            "Hello World",
-            accept_header="text/plain"
-        )
+        response = negotiate_response("Hello World", accept_header="text/plain")
         assert response.media_type == "text/plain"
 
     def test_negotiate_with_list_data(self):
         """Test negotiation with list data."""
         data = [1, 2, 3, 4, 5]
-        response = negotiate_response(
-            data,
-            accept_header="application/json"
-        )
+        response = negotiate_response(data, accept_header="application/json")
         assert response.media_type == "application/json"
 
 
@@ -464,10 +415,7 @@ class TestEdgeCases:
 
     def test_unicode_json_response(self):
         """Test JSON response with Unicode characters."""
-        response = json_response({
-            "message": "Hello 世界 🌍",
-            "emoji": "😀🎉🚀"
-        })
+        response = json_response({"message": "Hello 世界 🌍", "emoji": "😀🎉🚀"})
         assert response.status_code == 200
 
     def test_nested_error_details(self):
@@ -475,13 +423,9 @@ class TestEdgeCases:
         details = {
             "validation_errors": [
                 {"field": "email", "message": "Invalid format"},
-                {"field": "age", "message": "Must be positive"}
+                {"field": "age", "message": "Must be positive"},
             ],
-            "request_id": "abc-123"
+            "request_id": "abc-123",
         }
-        response = error_response(
-            "Validation failed",
-            status_code=422,
-            details=details
-        )
+        response = error_response("Validation failed", status_code=422, details=details)
         assert response.status_code == 422

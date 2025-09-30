@@ -29,6 +29,7 @@ from datetime import datetime
 # Test models for integration testing
 class IntegrationUser(ZenithModel, table=True):
     """Test user model for integration."""
+
     __tablename__ = "integration_users"
 
     id: Optional[int] = Field(primary_key=True)
@@ -40,6 +41,7 @@ class IntegrationUser(ZenithModel, table=True):
 
 class IntegrationPost(ZenithModel, table=True):
     """Test post model for integration."""
+
     __tablename__ = "integration_posts"
 
     id: Optional[int] = Field(primary_key=True)
@@ -78,10 +80,14 @@ class TestZeroConfigIntegration:
             db_path = tmp.name
 
         try:
-            with patch.dict(os.environ, {
-                "DATABASE_URL": f"sqlite+aiosqlite:///{db_path}",
-                "SECRET_KEY": "test-secret-key-32-characters-long"
-            }, clear=False):
+            with patch.dict(
+                os.environ,
+                {
+                    "DATABASE_URL": f"sqlite+aiosqlite:///{db_path}",
+                    "SECRET_KEY": "test-secret-key-32-characters-long",
+                },
+                clear=False,
+            ):
                 app = Zenith()
 
                 # Should use provided database URL
@@ -98,11 +104,17 @@ class TestZeroConfigIntegration:
 
     def test_zero_config_one_liner_chaining(self):
         """Test zero-config with one-liner feature chaining."""
-        with patch.dict(os.environ, {"SECRET_KEY": "test-secret-key-32-characters-long"}, clear=False):
-            app = (Zenith()
-                  .add_auth()
-                  .add_admin("/dashboard")
-                  .add_api("Chained API", "1.0.0"))
+        with patch.dict(
+            os.environ,
+            {"SECRET_KEY": "test-secret-key-32-characters-long"},
+            clear=False,
+        ):
+            app = (
+                Zenith()
+                .add_auth()
+                .add_admin("/dashboard")
+                .add_api("Chained API", "1.0.0")
+            )
 
             # Should have auth routes
             auth_routes = [r.path for r in app._app_router.routes]
@@ -133,13 +145,15 @@ class TestSeamlessZenithModelIntegration:
 
         # Create fresh test model tables for each test
         from sqlalchemy import text
+
         async with app.app.database.session() as session:
             # Drop existing tables to ensure clean state
             await session.execute(text("DROP TABLE IF EXISTS integration_posts"))
             await session.execute(text("DROP TABLE IF EXISTS integration_users"))
 
             # Create integration_users table
-            await session.execute(text("""
+            await session.execute(
+                text("""
                 CREATE TABLE integration_users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name VARCHAR(100) NOT NULL,
@@ -147,10 +161,12 @@ class TestSeamlessZenithModelIntegration:
                     active BOOLEAN DEFAULT TRUE,
                     created_at DATETIME NOT NULL
                 )
-            """))
+            """)
+            )
 
             # Create integration_posts table
-            await session.execute(text("""
+            await session.execute(
+                text("""
                 CREATE TABLE integration_posts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title VARCHAR(200) NOT NULL,
@@ -160,7 +176,8 @@ class TestSeamlessZenithModelIntegration:
                     created_at DATETIME NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES integration_users(id)
                 )
-            """))
+            """)
+            )
 
             await session.commit()
 
@@ -168,7 +185,7 @@ class TestSeamlessZenithModelIntegration:
 
         # Clean up database file
         try:
-            if hasattr(app.app, 'database') and app.app.database:
+            if hasattr(app.app, "database") and app.app.database:
                 await app.app.database.close()
             os.unlink(db_path)
         except Exception:
@@ -200,11 +217,11 @@ class TestSeamlessZenithModelIntegration:
         async with TestClient(app) as client:
             # Test creation with unique email
             import time
+
             unique_email = f"test-{int(time.time() * 1000)}@example.com"
-            response = await client.post("/users", json={
-                "name": "Test User",
-                "email": unique_email
-            })
+            response = await client.post(
+                "/users", json={"name": "Test User", "email": unique_email}
+            )
             assert response.status_code == 200
             user_data = response.json()
             assert user_data["user"]["name"] == "Test User"
@@ -236,7 +253,7 @@ class TestSeamlessZenithModelIntegration:
         async def get_active_users():
             # Rails-like chainable queries (current working pattern)
             query = await IntegrationUser.where(active=True)
-            users = await query.order_by('-created_at').limit(10).all()
+            users = await query.order_by("-created_at").limit(10).all()
             return {"users": [user.to_dict() for user in users]}
 
         @app.get("/stats")
@@ -245,19 +262,35 @@ class TestSeamlessZenithModelIntegration:
             total_users = await IntegrationUser.count()
             active_query = await IntegrationUser.where(active=True)
             active_users = await active_query.count()
-            return {
-                "total_users": total_users,
-                "active_users": active_users
-            }
+            return {"total_users": total_users, "active_users": active_users}
 
         async with TestClient(app) as client:
             # Create test data with unique emails
             import time
+
             timestamp = int(time.time() * 1000)
-            response1 = await client.post("/users", json={"name": "Active User", "email": f"active-{timestamp}@example.com", "active": True})
-            assert response1.status_code == 200, f"Failed to create active user: {response1.text}"
-            response2 = await client.post("/users", json={"name": "Inactive User", "email": f"inactive-{timestamp}@example.com", "active": False})
-            assert response2.status_code == 200, f"Failed to create inactive user: {response2.text}"
+            response1 = await client.post(
+                "/users",
+                json={
+                    "name": "Active User",
+                    "email": f"active-{timestamp}@example.com",
+                    "active": True,
+                },
+            )
+            assert response1.status_code == 200, (
+                f"Failed to create active user: {response1.text}"
+            )
+            response2 = await client.post(
+                "/users",
+                json={
+                    "name": "Inactive User",
+                    "email": f"inactive-{timestamp}@example.com",
+                    "active": False,
+                },
+            )
+            assert response2.status_code == 200, (
+                f"Failed to create inactive user: {response2.text}"
+            )
 
             # Test Rails-like queries
             response = await client.get("/users/active")
@@ -331,24 +364,26 @@ class TestCompleteRailsLikeDXWorkflow:
             db_path = tmp.name
 
         try:
-            with patch.dict(os.environ, {
-                "DATABASE_URL": f"sqlite+aiosqlite:///{db_path}",
-                "SECRET_KEY": "test-secret-key-32-characters-long"
-            }, clear=False):
-
+            with patch.dict(
+                os.environ,
+                {
+                    "DATABASE_URL": f"sqlite+aiosqlite:///{db_path}",
+                    "SECRET_KEY": "test-secret-key-32-characters-long",
+                },
+                clear=False,
+            ):
                 # 1. Zero-config setup with one-liner features
-                app = (Zenith()
-                      .add_auth()
-                      .add_admin()
-                      .add_api("Rails-like API", "1.0.0"))
+                app = Zenith().add_auth().add_admin().add_api("Rails-like API", "1.0.0")
 
                 # Create tables for test models
                 await app.app.database.create_all()
 
                 # Manually create integration tables since they're not part of the main models
                 from sqlalchemy import text
+
                 async with app.app.database.session() as session:
-                    await session.execute(text("""
+                    await session.execute(
+                        text("""
                         CREATE TABLE IF NOT EXISTS integration_users (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             name VARCHAR(100) NOT NULL,
@@ -356,8 +391,10 @@ class TestCompleteRailsLikeDXWorkflow:
                             active BOOLEAN DEFAULT TRUE,
                             created_at DATETIME NOT NULL
                         )
-                    """))
-                    await session.execute(text("""
+                    """)
+                    )
+                    await session.execute(
+                        text("""
                         CREATE TABLE IF NOT EXISTS integration_posts (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             title VARCHAR(200) NOT NULL,
@@ -367,7 +404,8 @@ class TestCompleteRailsLikeDXWorkflow:
                             created_at DATETIME NOT NULL,
                             FOREIGN KEY (user_id) REFERENCES integration_users(id)
                         )
-                    """))
+                    """)
+                    )
                     await session.commit()
 
                 # 2. Rails-like model operations in routes
@@ -384,7 +422,7 @@ class TestCompleteRailsLikeDXWorkflow:
                 @app.get("/users/active")
                 async def get_active_users():
                     query = await IntegrationUser.where(active=True)
-                    users = await query.order_by('-created_at').limit(5).all()
+                    users = await query.order_by("-created_at").limit(5).all()
                     return {"users": [user.to_dict() for user in users]}
 
                 @app.get("/users/{user_id}")
@@ -405,18 +443,21 @@ class TestCompleteRailsLikeDXWorkflow:
 
                     # Test Rails-like CRUD operations
                     # Create users
-                    response = await client.post("/users", json={
-                        "name": "Alice Johnson",
-                        "email": "alice@example.com"
-                    })
+                    response = await client.post(
+                        "/users",
+                        json={"name": "Alice Johnson", "email": "alice@example.com"},
+                    )
                     assert response.status_code == 200
                     alice = response.json()["user"]
 
-                    response = await client.post("/users", json={
-                        "name": "Bob Smith",
-                        "email": "bob@example.com",
-                        "active": False
-                    })
+                    response = await client.post(
+                        "/users",
+                        json={
+                            "name": "Bob Smith",
+                            "email": "bob@example.com",
+                            "active": False,
+                        },
+                    )
                     assert response.status_code == 200
 
                     # Test Rails-like queries
@@ -469,22 +510,21 @@ class TestPerformanceWithRailsLikeFeatures:
                     start = time.time()
                     user = await IntegrationUser.create(**user_data)
                     end = time.time()
-                    return {
-                        "user": user.to_dict(),
-                        "duration_ms": (end - start) * 1000
-                    }
+                    return {"user": user.to_dict(), "duration_ms": (end - start) * 1000}
 
                 # Test ZenithModel performance
-                response = await client.post("/users/zenith-model", json={
-                    "name": "Performance Test",
-                    "email": "perf@example.com"
-                })
+                response = await client.post(
+                    "/users/zenith-model",
+                    json={"name": "Performance Test", "email": "perf@example.com"},
+                )
 
                 assert response.status_code == 200
                 duration = response.json()["duration_ms"]
 
                 # Should complete in reasonable time (< 100ms for simple operation)
-                assert duration < 100, f"ZenithModel operation took {duration}ms, too slow"
+                assert duration < 100, (
+                    f"ZenithModel operation took {duration}ms, too slow"
+                )
 
         finally:
             try:
@@ -534,5 +574,5 @@ class TestBackwardsCompatibility:
         assert service.get_data() == "traditional"
 
         # Check that service has expected attributes
-        assert hasattr(service, 'container')
-        assert hasattr(service, 'events')
+        assert hasattr(service, "container")
+        assert hasattr(service, "events")

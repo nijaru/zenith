@@ -9,19 +9,15 @@ from app.services import BaseService
 from app.models import Project, ProjectCreate, ProjectUpdate, User
 from app.exceptions import NotFoundError, PermissionError
 
+
 class ProjectService(BaseService):
     """Manages project operations."""
 
     async def create_project(
-        self,
-        project_data: ProjectCreate,
-        owner_id: int
+        self, project_data: ProjectCreate, owner_id: int
     ) -> Project:
         """Create a new project."""
-        project = Project(
-            **project_data.model_dump(),
-            owner_id=owner_id
-        )
+        project = Project(**project_data.model_dump(), owner_id=owner_id)
 
         self.session.add(project)
         await self.commit()
@@ -47,7 +43,7 @@ class ProjectService(BaseService):
         user_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
-        include_archived: bool = False
+        include_archived: bool = False,
     ) -> tuple[List[Project], int]:
         """List projects with filters."""
         query = select(Project)
@@ -66,10 +62,7 @@ class ProjectService(BaseService):
         total = count_result.one()
 
         # Apply pagination and ordering
-        query = (query
-                .order_by(Project.created_at.desc())
-                .offset(skip)
-                .limit(limit))
+        query = query.order_by(Project.created_at.desc()).offset(skip).limit(limit)
 
         result = await self.session.exec(query)
         projects = result.all()
@@ -81,10 +74,7 @@ class ProjectService(BaseService):
         return projects, total
 
     async def update_project(
-        self,
-        project_id: int,
-        project_update: ProjectUpdate,
-        user_id: int
+        self, project_id: int, project_update: ProjectUpdate, user_id: int
     ) -> Project:
         """Update project if user is owner."""
         project = await self.get_project(project_id)
@@ -105,11 +95,7 @@ class ProjectService(BaseService):
 
         return project
 
-    async def archive_project(
-        self,
-        project_id: int,
-        user_id: int
-    ) -> Project:
+    async def archive_project(self, project_id: int, user_id: int) -> Project:
         """Archive (soft delete) a project."""
         project = await self.get_project(project_id)
 
@@ -134,7 +120,6 @@ class ProjectService(BaseService):
             "completed_tasks": completed_tasks,
             "pending_tasks": total_tasks - completed_tasks,
             "completion_rate": (
-                completed_tasks / total_tasks * 100
-                if total_tasks > 0 else 0
-            )
+                completed_tasks / total_tasks * 100 if total_tasks > 0 else 0
+            ),
         }

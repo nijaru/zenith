@@ -37,11 +37,12 @@ class TestSSEHTTPIntegration:
 
         async def basic_stream(request):
             """Basic SSE stream endpoint."""
+
             async def events():
                 for i in range(5):
                     yield {
                         "type": "count",
-                        "data": {"value": i, "timestamp": time.time()}
+                        "data": {"value": i, "timestamp": time.time()},
                     }
                     # Sleep 0.11 seconds to respect 10 events/second rate limit
                     await asyncio.sleep(0.11)
@@ -50,31 +51,28 @@ class TestSSEHTTPIntegration:
 
         async def long_stream(request):
             """Long-running SSE stream."""
+
             async def events():
                 # Reduced from 100 to 40 events to work with 10 events/second rate limit
                 for i in range(40):
-                    yield {
-                        "type": "long",
-                        "data": {"iteration": i}
-                    }
+                    yield {"type": "long", "data": {"iteration": i}}
                     await asyncio.sleep(0.001)  # Very fast
 
             return create_sse_response(events())
 
         async def heartbeat_stream(request):
             """SSE stream with heartbeats."""
+
             async def events():
                 for i in range(3):
-                    yield {
-                        "type": "data",
-                        "data": {"value": i}
-                    }
+                    yield {"type": "data", "data": {"value": i}}
                     await asyncio.sleep(0.05)  # Slower to trigger heartbeats
 
             return create_sse_response(events())
 
         async def error_stream(request):
             """SSE stream that encounters errors."""
+
             async def events():
                 yield {"type": "start", "data": "ok"}
                 await asyncio.sleep(0.11)
@@ -92,7 +90,7 @@ class TestSSEHTTPIntegration:
                 for i in range(3):
                     yield {
                         "type": "channel_message",
-                        "data": {"channel": channel, "message": f"Message {i}"}
+                        "data": {"channel": channel, "message": f"Message {i}"},
                     }
                     await asyncio.sleep(0.11)
 
@@ -100,36 +98,35 @@ class TestSSEHTTPIntegration:
 
         async def backpressure_stream(request):
             """SSE stream designed to trigger backpressure."""
+
             async def events():
                 # Generate events very quickly to test backpressure
                 for i in range(50):
-                    large_data = {"iteration": i, "payload": "x" * 1000}  # 1KB per event
-                    yield {
-                        "type": "backpressure_test",
-                        "data": large_data
-                    }
+                    large_data = {
+                        "iteration": i,
+                        "payload": "x" * 1000,
+                    }  # 1KB per event
+                    yield {"type": "backpressure_test", "data": large_data}
                     # No delay - generate as fast as possible
 
             return create_sse_response(events())
 
         async def custom_headers_stream(request):
             """SSE stream with custom headers."""
+
             async def events():
                 yield {"type": "custom", "data": "with headers"}
 
             custom_headers = {
                 "X-Custom-Header": "test-value",
-                "X-Stream-ID": "custom-123"
+                "X-Stream-ID": "custom-123",
             }
             return sse.stream_response(events(), custom_headers)
 
         async def stats_endpoint(request):
             """Get SSE statistics."""
             stats = sse.get_statistics()
-            return Response(
-                json.dumps(stats),
-                media_type="application/json"
-            )
+            return Response(json.dumps(stats), media_type="application/json")
 
         routes = [
             Route("/sse/basic", basic_stream),
@@ -286,7 +283,7 @@ class TestSSEHTTPIntegration:
             tasks = [
                 asyncio.create_task(client.get("/sse/basic")),
                 asyncio.create_task(client.get("/sse/basic")),
-                asyncio.create_task(client.get("/sse/basic"))
+                asyncio.create_task(client.get("/sse/basic")),
             ]
 
             responses = await asyncio.gather(*tasks)
@@ -297,9 +294,7 @@ class TestSSEHTTPIntegration:
                 assert response.headers["content-type"] == "text/event-stream"
 
             # Read all streams
-            contents = await asyncio.gather(*[
-                resp.aread() for resp in responses
-            ])
+            contents = await asyncio.gather(*[resp.aread() for resp in responses])
 
             # All should have content
             for content in contents:
@@ -336,12 +331,10 @@ class TestSSEManagerIntegration:
 
         async def managed_stream(request):
             """Stream using SSEEventManager."""
+
             async def events():
                 for i in range(3):
-                    yield {
-                        "type": "managed",
-                        "data": {"value": i}
-                    }
+                    yield {"type": "managed", "data": {"value": i}}
                     await asyncio.sleep(0.11)
 
             return await manager.create_event_stream(events())
@@ -352,16 +345,13 @@ class TestSSEManagerIntegration:
             channel_count = manager.get_connection_count("test")
             return Response(
                 json.dumps({"total": total, "channel": channel_count}),
-                media_type="application/json"
+                media_type="application/json",
             )
 
         async def performance_stats(request):
             """Get performance statistics."""
             stats = manager.get_performance_stats()
-            return Response(
-                json.dumps(stats),
-                media_type="application/json"
-            )
+            return Response(json.dumps(stats), media_type="application/json")
 
         routes = [
             Route("/managed/stream", managed_stream),
@@ -429,6 +419,7 @@ class TestSSESecurityIntegration:
 
         async def public_stream(request):
             """Public SSE stream."""
+
             async def events():
                 yield {"type": "public", "data": "anyone can see this"}
 
@@ -444,8 +435,8 @@ class TestSSESecurityIntegration:
                     "type": "user_data",
                     "data": {
                         "user_id": user_id,
-                        "sensitive_info": "This should be validated"
-                    }
+                        "sensitive_info": "This should be validated",
+                    },
                 }
 
             return create_sse_response(events())
@@ -457,10 +448,7 @@ class TestSSESecurityIntegration:
             async def events():
                 # Potentially large payload
                 large_data = "x" * min(size, 100000)  # Cap at 100KB
-                yield {
-                    "type": "large_payload",
-                    "data": {"payload": large_data}
-                }
+                yield {"type": "large_payload", "data": {"payload": large_data}}
 
             return create_sse_response(events())
 

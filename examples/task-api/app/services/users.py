@@ -8,7 +8,13 @@ from sqlmodel import select, func, or_
 from app.services import BaseService
 from app.models import User, UserCreate, UserUpdate
 from app.auth import hash_password, verify_password, create_access_token
-from app.exceptions import NotFoundError, ConflictError, ValidationError, PermissionError
+from app.exceptions import (
+    NotFoundError,
+    ConflictError,
+    ValidationError,
+    PermissionError,
+)
+
 
 class UserService(BaseService):
     """Handles user operations and authentication."""
@@ -30,7 +36,7 @@ class UserService(BaseService):
         user = User(
             name=user_data.name,
             email=user_data.email,
-            password_hash=hash_password(user_data.password)
+            password_hash=hash_password(user_data.password),
         )
 
         self.session.add(user)
@@ -53,10 +59,7 @@ class UserService(BaseService):
         return result.first()
 
     async def list_users(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        search: Optional[str] = None
+        self, skip: int = 0, limit: int = 100, search: Optional[str] = None
     ) -> tuple[List[User], int]:
         """List users with pagination and search."""
         # Build base query
@@ -65,10 +68,7 @@ class UserService(BaseService):
         # Add search filter if provided
         if search:
             query = query.where(
-                or_(
-                    User.name.contains(search),
-                    User.email.contains(search)
-                )
+                or_(User.name.contains(search), User.email.contains(search))
             )
 
         # Get total count
@@ -86,10 +86,7 @@ class UserService(BaseService):
         return users, total
 
     async def update_user(
-        self,
-        user_id: int,
-        user_update: UserUpdate,
-        current_user_id: int
+        self, user_id: int, user_update: UserUpdate, current_user_id: int
     ) -> User:
         """Update user with permission check."""
         # Check permissions
@@ -144,12 +141,6 @@ class UserService(BaseService):
             return None
 
         # Generate JWT token
-        access_token = create_access_token(
-            data={"sub": user.email, "user_id": user.id}
-        )
+        access_token = create_access_token(data={"sub": user.email, "user_id": user.id})
 
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user": user
-        }
+        return {"access_token": access_token, "token_type": "bearer", "user": user}

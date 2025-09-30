@@ -24,16 +24,28 @@ except ImportError:
             self.filename = filename
             self.content_type = content_type
 
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .container import get_db_session, set_current_db_session
 from .scoped import get_current_request
 
 __all__ = [
-    "Session", "Auth", "CurrentUser", "File", "Inject", "Request",
+    "Session",
+    "Auth",
+    "CurrentUser",
+    "File",
+    "Inject",
+    "Request",
     # File upload constants for better DX
-    "IMAGE_TYPES", "DOCUMENT_TYPES", "AUDIO_TYPES", "VIDEO_TYPES", "ARCHIVE_TYPES",
-    "MB", "GB", "KB"
+    "IMAGE_TYPES",
+    "DOCUMENT_TYPES",
+    "AUDIO_TYPES",
+    "VIDEO_TYPES",
+    "ARCHIVE_TYPES",
+    "MB",
+    "GB",
+    "KB",
 ]
 
 T = TypeVar("T")
@@ -43,30 +55,54 @@ MB = 1024 * 1024
 GB = 1024 * 1024 * 1024
 
 IMAGE_TYPES = [
-    "image/jpeg", "image/jpg", "image/png", "image/gif",
-    "image/webp", "image/bmp", "image/tiff", "image/svg+xml"
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/tiff",
+    "image/svg+xml",
 ]
 
 DOCUMENT_TYPES = [
-    "application/pdf", "text/plain", "text/markdown",
-    "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    "application/pdf",
+    "text/plain",
+    "text/markdown",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ]
 
 AUDIO_TYPES = [
-    "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg",
-    "audio/aac", "audio/flac", "audio/m4a"
+    "audio/mpeg",
+    "audio/mp3",
+    "audio/wav",
+    "audio/ogg",
+    "audio/aac",
+    "audio/flac",
+    "audio/m4a",
 ]
 
 VIDEO_TYPES = [
-    "video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo",
-    "video/webm", "video/ogg", "video/x-flv"
+    "video/mp4",
+    "video/mpeg",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/webm",
+    "video/ogg",
+    "video/x-flv",
 ]
 
 ARCHIVE_TYPES = [
-    "application/zip", "application/x-rar-compressed", "application/x-tar",
-    "application/gzip", "application/x-7z-compressed"
+    "application/zip",
+    "application/x-rar-compressed",
+    "application/x-tar",
+    "application/gzip",
+    "application/x-7z-compressed",
 ]
 
 
@@ -103,7 +139,6 @@ async def get_auth_user() -> Any:
     return None
 
 
-
 async def get_current_request_dependency() -> Any:
     """
     Get current HTTP request object from context.
@@ -121,27 +156,31 @@ def _parse_size(size: str | int | None) -> int | None:
         return size
 
     if not isinstance(size, str):
-        raise ValueError(f"Size must be string like '10MB' or integer, got {type(size)}")
+        raise ValueError(
+            f"Size must be string like '10MB' or integer, got {type(size)}"
+        )
 
     size = size.upper().strip()
 
-    if size.endswith('KB'):
+    if size.endswith("KB"):
         return int(float(size[:-2]) * KB)
-    elif size.endswith('MB'):
+    elif size.endswith("MB"):
         return int(float(size[:-2]) * MB)
-    elif size.endswith('GB'):
+    elif size.endswith("GB"):
         return int(float(size[:-2]) * GB)
     elif size.isdigit():
         return int(size)  # Assume bytes if just a number
     else:
-        raise ValueError(f"Invalid size format: {size}. Use '10MB', '512KB', '1GB', or bytes as integer")
+        raise ValueError(
+            f"Invalid size format: {size}. Use '10MB', '512KB', '1GB', or bytes as integer"
+        )
 
 
 def get_validated_file(
     max_size: int | None = None,
     allowed_types: list[str] | None = None,
     allowed_extensions: list[str] | None = None,
-    field_name: str = "file"
+    field_name: str = "file",
 ) -> Any:
     """
     Get validated file upload dependency.
@@ -200,6 +239,7 @@ def get_validated_file(
         # Validate file extension
         if allowed_extensions and file.filename:
             import os
+
             ext = os.path.splitext(file.filename)[1].lower()
             if ext not in [e.lower() for e in allowed_extensions]:
                 raise ValidationException(
@@ -215,7 +255,7 @@ def get_validated_file(
 # These can be used directly in route parameters
 
 # Database session dependency - the one true way
-Session = Depends(get_database_session)      # Clear, concise, conventional
+Session = Depends(get_database_session)  # Clear, concise, conventional
 
 # Authentication shortcuts
 Auth = Depends(get_auth_user)
@@ -229,7 +269,7 @@ def File(
     max_size: str | int | None = None,
     allowed_types: list[str] | None = None,
     allowed_extensions: list[str] | None = None,
-    field_name: str = "file"
+    field_name: str = "file",
 ) -> Any:
     """
     File upload dependency with validation.
@@ -259,7 +299,9 @@ def File(
     parsed_size = _parse_size(max_size)  # This will raise ValueError if invalid
 
     # Create the dependency function that will be resolved by the DI system
-    file_validator = get_validated_file(parsed_size, allowed_types, allowed_extensions, field_name)
+    file_validator = get_validated_file(
+        parsed_size, allowed_types, allowed_extensions, field_name
+    )
 
     return Depends(file_validator)
 
@@ -268,13 +310,16 @@ def File(
 _service_instances: dict[type, Any] = {}
 _service_lock = None  # Will be initialized on first use
 
+
 def _get_service_lock():
     """Get or create the async lock for thread-safe singleton creation."""
     global _service_lock
     if _service_lock is None:
         import asyncio
+
         _service_lock = asyncio.Lock()
     return _service_lock
+
 
 def Inject(service_type: type[T] | None = None) -> Any:
     """
@@ -302,6 +347,7 @@ def Inject(service_type: type[T] | None = None) -> Any:
             raise NotImplementedError(
                 "Auto-resolution requires type hints. Use Inject(ServiceClass) explicitly."
             )
+
         return Depends(auto_resolve_service)
 
     # Explicit service type - create singleton resolver
@@ -321,7 +367,7 @@ def Inject(service_type: type[T] | None = None) -> Any:
             instance = service_type()
 
             # Initialize if it has an async initialize method
-            if hasattr(instance, 'initialize') and callable(instance.initialize):
+            if hasattr(instance, "initialize") and callable(instance.initialize):
                 await instance.initialize()
 
             _service_instances[service_type] = instance
@@ -351,8 +397,6 @@ async def resolve_db() -> AsyncSession:
 async def resolve_auth() -> Any:
     """Manually resolve authenticated user outside of FastAPI context."""
     return await get_auth_user()
-
-
 
 
 # Context managers for manual session management

@@ -17,7 +17,10 @@ from typing import Optional
 
 from zenith import Zenith, Router
 from zenith import Session
-from zenith.db import ZenithModel as Model, Field  # Enhanced model with where/find/create methods
+from zenith.db import (
+    ZenithModel as Model,
+    Field,
+)  # Enhanced model with where/find/create methods
 
 # 🎯 Zero-config setup - just works!
 app = Zenith()
@@ -25,6 +28,7 @@ app = Zenith()
 # ============================================================================
 # MODERN MODELS - Intuitive Database Operations
 # ============================================================================
+
 
 class Product(Model, table=True):
     """Modern Product model with database operations."""
@@ -35,6 +39,7 @@ class Product(Model, table=True):
     category: str = Field(min_length=1, max_length=100, description="Product category")
     stock: int = Field(ge=0, description="Stock quantity")
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+
 
 class Order(Model, table=True):
     """Modern Order model with database operations."""
@@ -120,16 +125,17 @@ async def root():
 # API ROUTES WITH MODERN DATABASE OPERATIONS
 # ============================================================================
 
+
 @products_router.get("/", response_model=list[Product])
 async def list_products(category: str | None = None) -> list[Product]:
     """List products with Modern query patterns."""
     if category:
         # Clean: Product.where(category=category)
         query = await Product.where(category=category)
-        products = await query.order_by('-created_at').all()
+        products = await query.order_by("-created_at").all()
     else:
         # Clean: Product.all() - get all products
-        products = await Product.order_by('-created_at').all()
+        products = await Product.order_by("-created_at").all()
     return products
 
 
@@ -153,7 +159,7 @@ async def get_product(product_id: int) -> Product:
 async def list_orders() -> list[Order]:
     """List all orders with Modern patterns."""
     # Clean: Order.all() with automatic ordering
-    orders = await Order.order_by('-created_at').all()
+    orders = await Order.order_by("-created_at").all()
     return orders
 
 
@@ -174,11 +180,7 @@ async def create_order(order_data: dict) -> Order:
     total = product.price * quantity
 
     # Clean: Order.create()
-    order = await Order.create(
-        product_id=product_id,
-        quantity=quantity,
-        total=total
-    )
+    order = await Order.create(product_id=product_id, quantity=quantity, total=total)
 
     # Update product stock
     await product.update(stock=product.stock - quantity)

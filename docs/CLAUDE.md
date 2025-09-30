@@ -28,7 +28,7 @@ twine upload dist/zenith_web-{version}*
 
 ## Quick Facts
 - **Product**: Modern Python API framework with clean architecture and exceptional performance
-- **Language**: Python 3.12+ (leveraging TaskGroups, generics, pattern matching)
+- **Language**: Python 3.12-3.13 (leveraging TaskGroups, PEP 695 generics, pattern matching)
 - **Status**: v0.0.1 - Fresh release with zero-configuration setup and modern developer experience
 - **Performance**: 9,500+ req/s with optimized middleware stack
 - **Test Coverage**: 100% integration tests (446 tests passing)
@@ -543,7 +543,7 @@ app = Zenith(config=config)
 ## Troubleshooting & Common Issues
 
 ### Import Errors
-- Ensure Python 3.11+ is used
+- Ensure Python 3.12-3.13 is used
 - Install with `pip install zenithweb`
 - Check virtual environment activation
 

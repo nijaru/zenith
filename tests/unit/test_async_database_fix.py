@@ -126,17 +126,21 @@ async def test_transaction_rollback():
 
     # Create a simple table for testing
     async with db.engine.begin() as conn:
-        await conn.execute(text("""
+        await conn.execute(
+            text("""
             CREATE TABLE test_table (
                 id INTEGER PRIMARY KEY,
                 value TEXT NOT NULL
             )
-        """))
+        """)
+        )
 
     # Test transaction rollback
     with pytest.raises(Exception):
         async with db.transaction() as session:
-            await session.execute(text("INSERT INTO test_table (value) VALUES ('test')"))
+            await session.execute(
+                text("INSERT INTO test_table (value) VALUES ('test')")
+            )
             # Force an error to trigger rollback
             raise Exception("Test error")
 
@@ -161,8 +165,6 @@ async def test_health_check():
     assert is_healthy is True
 
     await db.close()
-
-
 
 
 @pytest.mark.asyncio

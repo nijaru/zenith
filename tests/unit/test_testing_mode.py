@@ -36,7 +36,6 @@ def temp_env(**env_vars):
                 os.environ[key] = old_value
 
 
-
 class TestTestingModeConfiguration:
     """Test testing mode configuration and activation."""
 
@@ -84,7 +83,9 @@ class TestTestingModeConfiguration:
             os.environ["ZENITH_ENV"] = value
             try:
                 app = Zenith()
-                assert app.testing is True, f"ZENITH_ENV={value} should enable testing mode"
+                assert app.testing is True, (
+                    f"ZENITH_ENV={value} should enable testing mode"
+                )
             finally:
                 del os.environ["ZENITH_ENV"]
 
@@ -124,7 +125,7 @@ class TestTestingModeMiddleware:
 
     def test_testing_mode_preserves_essential_middleware(self):
         """Test that testing mode preserves essential middleware."""
-        with temp_env(ZENITH_ENV='development'):
+        with temp_env(ZENITH_ENV="development"):
             app = Zenith(testing=True)
             middleware_classes = [m.cls.__name__ for m in app.middleware]
 
@@ -132,11 +133,13 @@ class TestTestingModeMiddleware:
             essential_middleware = [
                 "SecurityHeadersMiddleware",
                 "RequestLoggingMiddleware",
-                "RequestIDMiddleware"
+                "RequestIDMiddleware",
             ]
 
             for middleware_name in essential_middleware:
-                assert middleware_name in middleware_classes, f"{middleware_name} should be present in testing mode"
+                assert middleware_name in middleware_classes, (
+                    f"{middleware_name} should be present in testing mode"
+                )
 
     def test_testing_mode_middleware_count_difference(self):
         """Test that testing mode has fewer middleware than normal mode."""
@@ -172,7 +175,7 @@ class TestTestingModeIntegration:
         # Handle both wrapped middleware (with .cls) and unwrapped middleware classes
         middleware_classes = []
         for m in app.middleware:
-            if hasattr(m, 'cls'):
+            if hasattr(m, "cls"):
                 middleware_classes.append(m.cls.__name__)
             else:
                 middleware_classes.append(m.__name__)
@@ -224,7 +227,7 @@ class TestTestingModeUtilities:
         app = Zenith(testing=True)
 
         # Should be able to inspect testing mode
-        assert hasattr(app, 'testing')
+        assert hasattr(app, "testing")
         assert app.testing is True
 
     def test_testing_mode_with_request_context(self):
@@ -255,7 +258,9 @@ class TestTestingModeErrorHandling:
             os.environ["ZENITH_ENV"] = value
             try:
                 app = Zenith()
-                assert app.testing is False, f"ZENITH_ENV={value} should default to development"
+                assert app.testing is False, (
+                    f"ZENITH_ENV={value} should default to development"
+                )
             finally:
                 del os.environ["ZENITH_ENV"]
 
@@ -396,7 +401,7 @@ class TestTestingModeRealWorldScenarios:
 
         # All requests should succeed (no 429 Too Many Requests)
         for response in responses:
-            assert response.status_code == 200, f"Request failed with {response.status_code}"
+            assert response.status_code == 200, (
+                f"Request failed with {response.status_code}"
+            )
             assert response.json()["message"] == "test"
-
-

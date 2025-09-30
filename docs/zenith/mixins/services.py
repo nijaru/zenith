@@ -88,7 +88,7 @@ class ServicesMixin:
         path: str = "/",
         index: str = "index.html",
         exclude: list[str] | None = None,
-        **config
+        **config,
     ) -> None:
         """
         Serve a Single Page Application with intelligent defaults.
@@ -136,10 +136,7 @@ class ServicesMixin:
             directory = framework_or_directory
 
         spa_app = serve_spa_files(
-            directory=directory,
-            index=index,
-            exclude=exclude,
-            **config
+            directory=directory, index=index, exclude=exclude, **config
         )
         self.mount(path, spa_app)
 

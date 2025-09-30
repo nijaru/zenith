@@ -62,13 +62,13 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             async with self.database.request_scoped_session(scope) as session:
                 # Also set in container context for ZenithModel seamless access
                 from zenith.core.container import set_current_db_session
+
                 set_current_db_session(session)
                 try:
                     await self.app(scope, receive, send)
                 finally:
                     # Clean up context
                     set_current_db_session(None)
-
 
     def __init__(
         self,
@@ -111,21 +111,23 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         import os
 
         # Configure based on environment (unless explicitly overridden)
-        if self.environment == 'production':
+        if self.environment == "production":
             self.testing = testing if testing is not None else False
             if debug is None:
                 self.config.debug = False
             # Skip production validation in testing mode (for test suites)
             if not self.testing:
                 self._validate_production_config()
-        elif self.environment == 'staging':
+        elif self.environment == "staging":
             self.testing = testing if testing is not None else False
             if debug is None:
                 self.config.debug = False
             if not self.testing:
                 self._validate_production_config()
-        elif self.environment == 'test':
-            self.testing = testing if testing is not None else True  # Default to True in test env
+        elif self.environment == "test":
+            self.testing = (
+                testing if testing is not None else True
+            )  # Default to True in test env
             if debug is None:
                 self.config.debug = True
         else:  # development
@@ -138,7 +140,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 self.config.debug = True
 
         if self.testing:
-            self.logger.info(f"🧪 Testing mode enabled ({self.environment} environment)")
+            self.logger.info(
+                f"🧪 Testing mode enabled ({self.environment} environment)"
+            )
         else:
             self.logger.info(f"🚀 Running in {self.environment} environment")
 
@@ -209,7 +213,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
             self.add_middleware(
                 RateLimitMiddleware,
-                default_limits=[RateLimit(requests=100, window=60, per="ip")]
+                default_limits=[RateLimit(requests=100, window=60, per="ip")],
             )
 
         # 6. Minimal logging
@@ -245,7 +249,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                         f"Auto-mounted static files: {url_path} -> {static_path}"
                     )
 
-
     def _looks_like_production(self) -> bool:
         """Detect if we're running in a production-like environment."""
         import os
@@ -253,25 +256,23 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         indicators = [
             # Cloud platforms
-            os.getenv('KUBERNETES_SERVICE_HOST'),     # Kubernetes
-            os.getenv('DYNO'),                        # Heroku
-            os.getenv('AWS_EXECUTION_ENV'),           # AWS Lambda
-            os.getenv('GOOGLE_CLOUD_PROJECT'),        # Google Cloud
-            os.getenv('WEBSITE_INSTANCE_ID'),         # Azure
-            os.getenv('FLY_APP_NAME'),                # Fly.io
-            os.getenv('RENDER'),                       # Render
-            os.getenv('RAILWAY_ENVIRONMENT'),         # Railway
-            os.getenv('DETA_RUNTIME'),                # Deta
-
+            os.getenv("KUBERNETES_SERVICE_HOST"),  # Kubernetes
+            os.getenv("DYNO"),  # Heroku
+            os.getenv("AWS_EXECUTION_ENV"),  # AWS Lambda
+            os.getenv("GOOGLE_CLOUD_PROJECT"),  # Google Cloud
+            os.getenv("WEBSITE_INSTANCE_ID"),  # Azure
+            os.getenv("FLY_APP_NAME"),  # Fly.io
+            os.getenv("RENDER"),  # Render
+            os.getenv("RAILWAY_ENVIRONMENT"),  # Railway
+            os.getenv("DETA_RUNTIME"),  # Deta
             # Container environments
-            os.path.exists('/.dockerenv'),            # Docker
-            os.path.exists('/var/run/secrets/kubernetes.io'),  # K8s
-
+            os.path.exists("/.dockerenv"),  # Docker
+            os.path.exists("/var/run/secrets/kubernetes.io"),  # K8s
             # CI/CD environments (should not default to dev in CI)
-            os.getenv('CI'),                          # Generic CI
-            os.getenv('GITHUB_ACTIONS'),              # GitHub Actions
-            os.getenv('GITLAB_CI'),                   # GitLab CI
-            os.getenv('CIRCLECI'),                    # CircleCI
+            os.getenv("CI"),  # Generic CI
+            os.getenv("GITHUB_ACTIONS"),  # GitHub Actions
+            os.getenv("GITLAB_CI"),  # GitLab CI
+            os.getenv("CIRCLECI"),  # CircleCI
         ]
 
         # Check if any production indicator is present
@@ -288,10 +289,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         from zenith.exceptions import ConfigError
 
         # Require a proper secret key
-        secret_key = os.getenv('SECRET_KEY') or self.config.secret_key
+        secret_key = os.getenv("SECRET_KEY") or self.config.secret_key
 
         # Check if using default secret key
-        if secret_key in ('dev-secret-change-in-prod', '', None):
+        if secret_key in ("dev-secret-change-in-prod", "", None):
             raise ConfigError(
                 f"SECRET_KEY must be set for {self.environment} environment.\n"
                 "Generate a secure key with:\n"
@@ -347,9 +348,15 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         async def openapi_spec():
             """OpenAPI specification endpoint."""
             # Get title/version/description from config if set by add_docs()
-            api_title = getattr(self.config, 'api_title', f"{self.__class__.__name__} API")
-            api_version = getattr(self.config, 'api_version', "1.0.0")
-            api_description = getattr(self.config, 'api_description', "API documentation generated by Zenith Framework")
+            api_title = getattr(
+                self.config, "api_title", f"{self.__class__.__name__} API"
+            )
+            api_version = getattr(self.config, "api_version", "1.0.0")
+            api_description = getattr(
+                self.config,
+                "api_description",
+                "API documentation generated by Zenith Framework",
+            )
 
             # Pass the routers list, not routes
             spec = generate_openapi_spec(
@@ -564,6 +571,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             if "X-RateLimit-Reset" not in headers:
                 # Calculate reset time
                 import time
+
                 retry_after = int(headers.get("Retry-After", 60))
                 headers["X-RateLimit-Reset"] = str(int(time.time()) + retry_after)
 
@@ -572,9 +580,11 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 content={
                     "error": "rate_limit_exceeded",
                     "message": str(exc),
-                    "detail": exc.detail if hasattr(exc, "detail") else "Too many requests"
+                    "detail": exc.detail
+                    if hasattr(exc, "detail")
+                    else "Too many requests",
                 },
-                headers=headers
+                headers=headers,
             )
 
         exception_handlers = {
@@ -761,7 +771,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self.app.contexts.register(service_name, service_class)
         self.logger.info(f"✅ Service registered: {service_name}")
 
-    def register(self, dependency_type: type, implementation: Any = None, singleton: bool = True) -> None:
+    def register(
+        self, dependency_type: type, implementation: Any = None, singleton: bool = True
+    ) -> None:
         """
         Register a dependency with the DI container.
 
@@ -774,7 +786,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             app.register(Database, MyDatabase())
             app.register(CacheInterface, RedisCache(), singleton=True)
         """
-        self.app.container.register(dependency_type, implementation or dependency_type, singleton)
+        self.app.container.register(
+            dependency_type, implementation or dependency_type, singleton
+        )
         self.logger.info(f"✅ Dependency registered: {dependency_type.__name__}")
 
     @property
@@ -792,7 +806,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self,
         secret_key: str | None = None,
         algorithm: str = "HS256",
-        expire_minutes: int = 30
+        expire_minutes: int = 30,
     ) -> "Zenith":
         """
         Add JWT authentication in one line.
@@ -814,10 +828,11 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # Configure global JWT manager for middleware
         from zenith.auth.jwt import configure_jwt
+
         jwt_manager = configure_jwt(
             secret_key=auth_secret,
             algorithm=algorithm,
-            access_token_expire_minutes=expire_minutes
+            access_token_expire_minutes=expire_minutes,
         )
 
         # Add auth middleware
@@ -825,7 +840,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # Add login endpoint - DEMO ONLY - REPLACE WITH REAL AUTHENTICATION
         # Allow demo auth in debug mode OR development environment (for testing)
-        if self.config.debug or self.environment == 'development':
+        if self.config.debug or self.environment == "development":
             # Only in dev mode - add a warning endpoint
             @self.post("/auth/login")
             async def dev_login_demo(credentials: dict):
@@ -846,21 +861,20 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 if username == "demo" and password == "demo":
                     # Only allow specific demo credentials
                     token = jwt_manager.create_access_token(
-                        user_id=999,
-                        email="demo@example.com",
-                        role="demo"
+                        user_id=999, email="demo@example.com", role="demo"
                     )
                     return {
                         "access_token": token,
                         "token_type": "bearer",
                         "expires_in": expire_minutes * 60,
-                        "warning": "DEMO MODE - Not for production use!"
+                        "warning": "DEMO MODE - Not for production use!",
                     }
                 else:
                     from starlette.exceptions import HTTPException
+
                     raise HTTPException(
                         status_code=401,
-                        detail="Invalid credentials (hint: use demo/demo in dev mode)"
+                        detail="Invalid credentials (hint: use demo/demo in dev mode)",
                     )
         else:
             # Production mode - require real implementation
@@ -868,9 +882,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             async def login_not_implemented(credentials: dict):
                 """Authentication endpoint - must be implemented."""
                 from starlette.exceptions import HTTPException
+
                 raise HTTPException(
                     status_code=501,
-                    detail="Authentication not implemented. Please implement a real login handler."
+                    detail="Authentication not implemented. Please implement a real login handler.",
                 )
 
         self.logger.info("✅ Authentication added - /auth/login endpoint available")
@@ -884,6 +899,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             app.add_admin()  # Mounts at /admin
             app.add_admin("/dashboard")  # Custom route
         """
+
         # Basic admin interface - can be enhanced with proper admin framework
         @self.get(f"{route}")
         async def admin_dashboard():
@@ -893,8 +909,8 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 "routes": [
                     f"GET {route} - Dashboard",
                     f"GET {route}/health - System health",
-                    f"GET {route}/stats - Application statistics"
-                ]
+                    f"GET {route}/stats - Application statistics",
+                ],
             }
 
         @self.get(f"{route}/health")
@@ -905,14 +921,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 return {
                     "status": "healthy" if db_healthy else "unhealthy",
                     "database": "connected" if db_healthy else "disconnected",
-                    "version": "0.3.0"
+                    "version": "0.3.0",
                 }
             except Exception as e:
-                return {
-                    "status": "unhealthy",
-                    "error": str(e),
-                    "version": "0.3.0"
-                }
+                return {"status": "unhealthy", "error": str(e), "version": "0.3.0"}
 
         @self.get(f"{route}/stats")
         async def admin_stats():
@@ -920,7 +932,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             return {
                 "routes_count": len(self._app_router.routes),
                 "middleware_count": len(self.middleware),
-                "debug_mode": self.config.debug
+                "debug_mode": self.config.debug,
             }
 
         self.logger.info(f"✅ Admin interface added at {route}")
@@ -933,7 +945,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         description: str | None = None,
         docs_url: str = "/docs",
         redoc_url: str = "/redoc",
-        openapi_url: str = "/openapi.json"
+        openapi_url: str = "/openapi.json",
     ) -> "Zenith":
         """
         Add OpenAPI documentation endpoints.
@@ -956,12 +968,12 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # Add the OpenAPI endpoints
         self._add_openapi_endpoints(
-            docs_url=docs_url,
-            redoc_url=redoc_url,
-            openapi_url=openapi_url
+            docs_url=docs_url, redoc_url=redoc_url, openapi_url=openapi_url
         )
 
-        self.logger.info(f"📖 OpenAPI documentation enabled at {docs_url} and {redoc_url}")
+        self.logger.info(
+            f"📖 OpenAPI documentation enabled at {docs_url} and {redoc_url}"
+        )
         return self
 
     def add_api(
@@ -970,7 +982,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         version: str = "1.0.0",
         description: str | None = None,
         docs_url: str = "/docs",
-        redoc_url: str = "/redoc"
+        redoc_url: str = "/redoc",
     ) -> "Zenith":
         """
         Add API documentation in one line.
@@ -989,7 +1001,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             version=version,
             description=api_description,
             docs_url=docs_url,
-            redoc_url=redoc_url
+            redoc_url=redoc_url,
         )
 
         # Add API info endpoint
@@ -1001,10 +1013,12 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 "version": version,
                 "description": api_description,
                 "docs_url": docs_url,
-                "redoc_url": redoc_url
+                "redoc_url": redoc_url,
             }
 
-        self.logger.info(f"✅ API documentation added - {docs_url} and {redoc_url} available")
+        self.logger.info(
+            f"✅ API documentation added - {docs_url} and {redoc_url} available"
+        )
         return self
 
     def __repr__(self) -> str:

@@ -68,7 +68,7 @@ class DependencyResolver:
                 return _service_instances[service_class]
 
             # Try to get from registered contexts first (for backward compatibility)
-            if app and hasattr(app, 'contexts'):
+            if app and hasattr(app, "contexts"):
                 try:
                     instance = await app.contexts.get_by_type(service_class)
                     _service_instances[service_class] = instance
@@ -80,7 +80,7 @@ class DependencyResolver:
             instance = service_class()
 
             # Initialize if it has an async initialize method
-            if hasattr(instance, 'initialize') and callable(instance.initialize):
+            if hasattr(instance, "initialize") and callable(instance.initialize):
                 await instance.initialize()
 
             # Store singleton

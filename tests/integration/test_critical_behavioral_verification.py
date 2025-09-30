@@ -21,6 +21,7 @@ class TestCriticalBehavior:
     async def test_jwt_authentication_end_to_end(self):
         """Test complete JWT authentication flow works end-to-end."""
         from zenith.core import Config
+
         config = Config(debug=True)
         config.secret_key = "test-secret-key-32-characters-long"
         app = Zenith(config=config)
@@ -31,15 +32,15 @@ class TestCriticalBehavior:
         async def protected_endpoint():
             # This should automatically get the authenticated user
             from zenith.auth.dependencies import require_auth
+
             user = require_auth(app.request)  # This would be injected in real scenario
             return {"message": "success", "user_id": user["id"]}
 
         async with TestClient(app) as client:
             # Step 1: Login to get token (using demo credentials in dev mode)
-            login_response = await client.post("/auth/login", json={
-                "username": "demo",
-                "password": "demo"
-            })
+            login_response = await client.post(
+                "/auth/login", json={"username": "demo", "password": "demo"}
+            )
             assert login_response.status_code == 200
 
             token_data = login_response.json()
@@ -57,6 +58,7 @@ class TestCriticalBehavior:
 
             # Verify token is valid by decoding it
             from zenith.auth.jwt import extract_user_from_token
+
             user_info = extract_user_from_token(token)
             assert user_info is not None
             assert user_info["id"] == 999  # Demo user ID
@@ -73,7 +75,7 @@ class TestCriticalBehavior:
         # Add very restrictive rate limiting: 2 requests per 60 seconds
         app.add_middleware(
             RateLimitMiddleware,
-            default_limits=[RateLimit(requests=2, window=60, per="ip")]
+            default_limits=[RateLimit(requests=2, window=60, per="ip")],
         )
 
         @app.get("/test")
@@ -113,7 +115,7 @@ class TestCriticalBehavior:
         app.add_middleware(
             RateLimitMiddleware,
             default_limits=[RateLimit(requests=1, window=10, per="ip")],
-            exempt_ips=[]  # Explicitly no exemptions
+            exempt_ips=[],  # Explicitly no exemptions
         )
 
         @app.get("/test")
@@ -137,16 +139,16 @@ class TestCriticalBehavior:
     async def test_oauth2_compliance_fields(self):
         """Test OAuth2 response includes all required fields per RFC 6749."""
         from zenith.core import Config
+
         config = Config(debug=True)
         config.secret_key = "test-secret-key-32-characters-long"
         app = Zenith(config=config)
         app.add_auth(expire_minutes=45)  # Custom expiration
 
         async with TestClient(app) as client:
-            response = await client.post("/auth/login", json={
-                "username": "demo",
-                "password": "demo"
-            })
+            response = await client.post(
+                "/auth/login", json={"username": "demo", "password": "demo"}
+            )
 
             assert response.status_code == 200
 
@@ -167,6 +169,7 @@ class TestCriticalBehavior:
     async def test_all_fixes_together(self):
         """Integration test: All fixes working together in one app."""
         from zenith.core import Config
+
         config = Config(debug=True)
         config.secret_key = "test-secret-key-32-characters-long"
         app = Zenith(config=config)
@@ -176,7 +179,7 @@ class TestCriticalBehavior:
         app.middleware = [m for m in app.middleware if m.cls != RateLimitMiddleware]
         app.add_middleware(
             RateLimitMiddleware,
-            default_limits=[RateLimit(requests=3, window=60, per="ip")]
+            default_limits=[RateLimit(requests=3, window=60, per="ip")],
         )
 
         @app.get("/protected")
@@ -185,33 +188,34 @@ class TestCriticalBehavior:
 
         async with TestClient(app) as client:
             # 1. Test OAuth2 login works with proper fields
-            login_response = await client.post("/auth/login", json={
-                "username": "demo",
-                "password": "demo"
-            })
+            login_response = await client.post(
+                "/auth/login", json={"username": "demo", "password": "demo"}
+            )
             assert login_response.status_code == 200
 
             token_data = login_response.json()
-            assert all(field in token_data for field in ["access_token", "token_type", "expires_in"])
+            assert all(
+                field in token_data
+                for field in ["access_token", "token_type", "expires_in"]
+            )
 
             # 2. Test JWT token is valid
             from zenith.auth.jwt import extract_user_from_token
+
             user_info = extract_user_from_token(token_data["access_token"])
             assert user_info is not None
 
             # 3. Test rate limiting works (after 3 login attempts, should be blocked)
             for i in range(3):  # We already made 1 login request above
-                response = await client.post("/auth/login", json={
-                    "username": f"user{i}",
-                    "password": "pass"
-                })
+                response = await client.post(
+                    "/auth/login", json={"username": f"user{i}", "password": "pass"}
+                )
                 # These should work or fail based on credentials, but count toward rate limit
 
             # 4th request should be rate limited
-            rate_limited_response = await client.post("/auth/login", json={
-                "username": "another_user",
-                "password": "pass"
-            })
+            rate_limited_response = await client.post(
+                "/auth/login", json={"username": "another_user", "password": "pass"}
+            )
             assert rate_limited_response.status_code == 429
 
             error_data = rate_limited_response.json()
@@ -230,7 +234,10 @@ class TestCriticalBehavior:
             call_count += 1
             # Simulate expensive operation
             await asyncio.sleep(0.001)  # 1ms delay
-            return {"result": f"expensive_computation_{call_count}", "call_count": call_count}
+            return {
+                "result": f"expensive_computation_{call_count}",
+                "call_count": call_count,
+            }
 
         async with TestClient(app) as client:
             # First call should hit the function

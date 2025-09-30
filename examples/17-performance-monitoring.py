@@ -43,7 +43,12 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from zenith import Zenith
-from zenith.monitoring.performance import PerformanceProfiler, cache_stats, cached, clear_cache
+from zenith.monitoring.performance import (
+    PerformanceProfiler,
+    cache_stats,
+    cached,
+    clear_cache,
+)
 from zenith.monitoring.health import HealthCheck, HealthManager, HealthStatus
 from zenith.monitoring.metrics import MetricsCollector, record_request_metrics
 

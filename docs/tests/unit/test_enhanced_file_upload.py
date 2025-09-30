@@ -18,10 +18,12 @@ from zenith.web.files import UploadedFile
 class TestUploadedFile:
     """Test enhanced UploadedFile functionality."""
 
-    def create_test_uploaded_file(self,
-                                  filename: str = "test.pdf",
-                                  content_type: str = "application/pdf",
-                                  size: int = 1024) -> UploadedFile:
+    def create_test_uploaded_file(
+        self,
+        filename: str = "test.pdf",
+        content_type: str = "application/pdf",
+        size: int = 1024,
+    ) -> UploadedFile:
         """Create a test UploadedFile instance."""
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(b"test content")
@@ -32,7 +34,7 @@ class TestUploadedFile:
             original_filename=filename,
             content_type=content_type,
             size_bytes=size,
-            file_path=temp_path
+            file_path=temp_path,
         )
 
     def test_uploaded_file_creation(self):
@@ -159,6 +161,7 @@ class TestUploadedFile:
         """Clean up temporary files after each test."""
         # Clean up any temporary files created during tests
         import glob
+
         temp_files = glob.glob("/tmp/tmp*")
         for temp_file in temp_files:
             try:
@@ -191,7 +194,7 @@ class TestFileTypeDetection:
                 original_filename="test.file",
                 content_type=content_type,
                 size_bytes=100,
-                file_path=Path("/tmp/test")
+                file_path=Path("/tmp/test"),
             )
             assert file.is_image() == expected, f"Failed for {content_type}"
 
@@ -215,7 +218,7 @@ class TestFileTypeDetection:
                 original_filename="test.file",
                 content_type=content_type,
                 size_bytes=100,
-                file_path=Path("/tmp/test")
+                file_path=Path("/tmp/test"),
             )
             assert file.is_audio() == expected, f"Failed for {content_type}"
 
@@ -238,7 +241,7 @@ class TestFileTypeDetection:
                 original_filename=filename,
                 content_type="application/octet-stream",
                 size_bytes=100,
-                file_path=Path("/tmp/test")
+                file_path=Path("/tmp/test"),
             )
             assert file.get_extension() == expected_ext, f"Failed for {filename}"
 
@@ -255,7 +258,7 @@ class TestEnhancedFileUploadUX:
             original_filename="my_song.wav",
             content_type="audio/wav",
             size_bytes=5 * 1024 * 1024,  # 5MB
-            file_path=Path("/tmp/uploaded_file")
+            file_path=Path("/tmp/uploaded_file"),
         )
 
         # ✅ Now works with enhanced API
@@ -282,7 +285,7 @@ class TestEnhancedFileUploadUX:
             original_filename="My Song.mp3",  # Original had spaces
             content_type="audio/mpeg",
             size_bytes=8 * 1024 * 1024,
-            file_path=Path(f"/uploads/{uuid_filename}")
+            file_path=Path(f"/uploads/{uuid_filename}"),
         )
 
         assert file.get_extension() == ".mp3"
@@ -298,7 +301,7 @@ class TestEnhancedFileUploadUX:
             original_filename="document.pdf",
             content_type="application/octet-stream",  # Generic type
             size_bytes=1024,
-            file_path=Path("/tmp/document.pdf")
+            file_path=Path("/tmp/document.pdf"),
         )
 
         # Extension-based detection would help here

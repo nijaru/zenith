@@ -55,7 +55,9 @@ class SSEConnection:
     client_buffer_estimate: int = 0  # Estimated client buffer usage
 
     # Built-in flow control optimizations
-    send_rate_limit: float = 10.0  # Events per second limit (increased for normal usage)
+    send_rate_limit: float = (
+        10.0  # Events per second limit (increased for normal usage)
+    )
     max_buffer_size: int = 65536  # 64KB buffer limit
     adaptive_throttling: bool = True
 

@@ -46,7 +46,7 @@ class TestStaticFileConfig:
             max_age=86400,
             etag=False,
             allow_hidden=True,
-            allowed_extensions=[".css", ".js"]
+            allowed_extensions=[".css", ".js"],
         )
         assert config.directory == "assets"
         assert config.max_age == 86400
@@ -58,7 +58,9 @@ class TestStaticFileConfig:
 class TestZenithStaticFiles:
     """Test ZenithStaticFiles enhanced static file handler."""
 
-    def create_test_file(self, directory: Path, filename: str, content: str = "test") -> Path:
+    def create_test_file(
+        self, directory: Path, filename: str, content: str = "test"
+    ) -> Path:
         """Helper to create a test file."""
         file_path = directory / filename
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -78,11 +80,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             assert response.status_code == 200
             assert "cache-control" in response.headers
@@ -102,11 +100,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             assert response.status_code == 404
 
@@ -122,11 +116,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             assert response.status_code == 200
 
@@ -138,8 +128,7 @@ class TestZenithStaticFiles:
             php_file = self.create_test_file(Path(tmpdir), "script.php")
 
             config = StaticFileConfig(
-                directory=tmpdir,
-                allowed_extensions=[".css", ".js", ".png"]
+                directory=tmpdir, allowed_extensions=[".css", ".js", ".png"]
             )
             static_files = ZenithStaticFiles(config)
 
@@ -147,17 +136,13 @@ class TestZenithStaticFiles:
 
             # CSS file should be allowed
             css_response = static_files.file_response(
-                str(css_file),
-                os.stat(css_file),
-                scope
+                str(css_file), os.stat(css_file), scope
             )
             assert css_response.status_code == 200
 
             # PHP file should be blocked
             php_response = static_files.file_response(
-                str(php_file),
-                os.stat(php_file),
-                scope
+                str(php_file), os.stat(php_file), scope
             )
             assert php_response.status_code == 404
 
@@ -173,11 +158,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             assert response.headers.get("cache-control") == "public, max-age=7200"
 
@@ -192,11 +173,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             # No cache-control header when max_age is 0
             assert "cache-control" not in response.headers
@@ -212,11 +189,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             assert "etag" in response.headers
             # ETag should be quoted
@@ -234,11 +207,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             # When etag=False in config, we don't add our own etag
             # but Starlette's FileResponse may add its own
@@ -256,11 +225,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             assert "last-modified" in response.headers
             # Should be in HTTP date format
@@ -277,11 +242,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             # When last_modified=False in config, we don't add our own header
             # but Starlette's FileResponse may add its own
@@ -308,10 +269,7 @@ class TestSPAStaticFiles:
     def test_spa_exclude_patterns(self):
         """Test SPA exclusion patterns."""
         config = StaticFileConfig(directory=".", html=True)
-        spa_files = SPAStaticFiles(
-            config,
-            exclude=["/api/*", "/admin/*", "/health"]
-        )
+        spa_files = SPAStaticFiles(config, exclude=["/api/*", "/admin/*", "/health"])
 
         # These should not fallback
         assert not spa_files._should_fallback("/api/users")
@@ -349,7 +307,7 @@ class TestSPAStaticFiles:
                 # First call returns 404, second returns index
                 mock_get.side_effect = [
                     Response(status_code=404),
-                    Response(content=b"<html>SPA App</html>", status_code=200)
+                    Response(content=b"<html>SPA App</html>", status_code=200),
                 ]
 
                 response = await spa_files.get_response("/app/route", scope)
@@ -379,10 +337,7 @@ class TestStaticRouteCreation:
         """Test creating a static route."""
         with tempfile.TemporaryDirectory() as tmpdir:
             route = create_static_route(
-                path="/static",
-                directory=tmpdir,
-                name="static",
-                max_age=7200
+                path="/static", directory=tmpdir, name="static", max_age=7200
             )
 
             assert route.path == "/static"
@@ -416,10 +371,7 @@ class TestStaticRouteCreation:
         """Test SPA file serving helper."""
         with tempfile.TemporaryDirectory() as tmpdir:
             spa_app = serve_spa_files(
-                directory=tmpdir,
-                index="app.html",
-                exclude=["/api/*"],
-                max_age=300
+                directory=tmpdir, index="app.html", exclude=["/api/*"], max_age=300
             )
 
             assert isinstance(spa_app, SPAStaticFiles)
@@ -459,11 +411,7 @@ class TestSecurityFeatures:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(test_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(test_file), stat_result, scope)
 
             # Check for security headers
             assert response.headers.get("x-content-type-options") == "nosniff"
@@ -472,7 +420,7 @@ class TestSecurityFeatures:
         """Test extension validation with different formats."""
         config = StaticFileConfig(
             directory=".",
-            allowed_extensions=["css", "js", ".png", ".JPG"]  # Mixed formats
+            allowed_extensions=["css", "js", ".png", ".JPG"],  # Mixed formats
         )
         static_files = ZenithStaticFiles(config)
 
@@ -487,17 +435,13 @@ class TestSecurityFeatures:
 
             # CSS should work (no dot in config)
             response = static_files.file_response(
-                str(css_file),
-                os.stat(css_file),
-                scope
+                str(css_file), os.stat(css_file), scope
             )
             assert response.status_code == 200
 
             # JPG should work (uppercase in config)
             response = static_files.file_response(
-                str(jpg_file),
-                os.stat(jpg_file),
-                scope
+                str(jpg_file), os.stat(jpg_file), scope
             )
             assert response.status_code == 200
 
@@ -519,7 +463,7 @@ class TestEdgeCases:
         # Should not fail on creation, only on actual serving
         config = StaticFileConfig(
             directory="/nonexistent/path",
-            check_dir=False  # Disable directory check
+            check_dir=False,  # Disable directory check
         )
         static_files = ZenithStaticFiles(config)
         assert static_files.config.directory == "/nonexistent/path"
@@ -537,11 +481,7 @@ class TestEdgeCases:
             stat_result = os.stat(large_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(large_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(large_file), stat_result, scope)
 
             assert response.status_code == 200
 
@@ -558,11 +498,7 @@ class TestEdgeCases:
             stat_result = os.stat(special_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(
-                str(special_file),
-                stat_result,
-                scope
-            )
+            response = static_files.file_response(str(special_file), stat_result, scope)
 
             assert response.status_code == 200
 
@@ -572,7 +508,10 @@ class TestEdgeCases:
             files = {
                 "test.html": "text/html",
                 "style.css": "text/css",
-                "script.js": ["application/javascript", "text/javascript"],  # Both are valid
+                "script.js": [
+                    "application/javascript",
+                    "text/javascript",
+                ],  # Both are valid
                 "data.json": "application/json",
                 "image.png": "image/png",
                 "document.pdf": "application/pdf",
@@ -587,9 +526,7 @@ class TestEdgeCases:
                 file_path.write_text("test content")
 
                 response = static_files.file_response(
-                    str(file_path),
-                    os.stat(file_path),
-                    scope
+                    str(file_path), os.stat(file_path), scope
                 )
 
                 # mimetypes module should detect the correct type

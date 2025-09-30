@@ -6,6 +6,7 @@ import os
 from typing import Optional
 from functools import lru_cache
 
+
 class Settings:
     """Application settings."""
 
@@ -19,16 +20,10 @@ class Settings:
     PORT: int = int(os.getenv("PORT", "8000"))
 
     # Database
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "sqlite+aiosqlite:///./taskflow.db"
-    )
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./taskflow.db")
 
     # Security
-    SECRET_KEY: str = os.getenv(
-        "SECRET_KEY",
-        "development-secret-change-in-production"
-    )
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "development-secret-change-in-production")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(
         os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
@@ -48,9 +43,11 @@ class Settings:
     def is_development(self) -> bool:
         return self.DEBUG
 
+
 @lru_cache()
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
+
 
 settings = get_settings()

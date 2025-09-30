@@ -1,7 +1,7 @@
 # Zenith Framework
 
 [![PyPI version](https://badge.fury.io/py/zenithweb.svg)](https://badge.fury.io/py/zenithweb)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12-3.13](https://img.shields.io/badge/python-3.12--3.13-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/nijaru/zenith/workflows/Test%20Suite/badge.svg)](https://github.com/nijaru/zenith/actions)
 [![Documentation](https://img.shields.io/badge/docs-passing-brightgreen.svg)](https://nijaru.github.io/zenith/)
@@ -286,9 +286,9 @@ pytest  # Run tests
 
 ## Status
 
-**Latest Version**: v0.0.1
-**Python Support**: 3.12+
-**Test Suite**: 100% passing (857 tests)
+**Latest Version**: v0.0.2
+**Python Support**: 3.12-3.13
+**Test Suite**: 100% passing (862 tests)
 **Performance**: Production-ready with 9,600+ req/s capability  
 **Architecture**: Clean separation with Service system and simple dependency patterns  
 

@@ -134,7 +134,9 @@ async def health():
             assert "app:app" in call_args
 
     @patch("subprocess.run")
-    def test_dev_command_with_testing_flag(self, mock_run, runner, temp_dir, test_app_file):
+    def test_dev_command_with_testing_flag(
+        self, mock_run, runner, temp_dir, test_app_file
+    ):
         """Test zen dev --testing sets testing mode environment variable."""
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
@@ -145,7 +147,10 @@ async def health():
 
             assert result.exit_code == 0
             assert "🧪 Testing mode enabled" in result.output
-            assert "rate limiting and other test-interfering middleware disabled" in result.output
+            assert (
+                "rate limiting and other test-interfering middleware disabled"
+                in result.output
+            )
 
             # Check that ZENITH_ENV environment variable was set
             assert os.environ.get("ZENITH_ENV") == "test"
@@ -162,12 +167,18 @@ async def health():
 
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, [
-                "dev",
-                "--host", "0.0.0.0",
-                "--port", "3000",
-                "--app", "myapp:application"
-            ])
+            result = runner.invoke(
+                main,
+                [
+                    "dev",
+                    "--host",
+                    "0.0.0.0",
+                    "--port",
+                    "3000",
+                    "--app",
+                    "myapp:application",
+                ],
+            )
 
             assert result.exit_code == 0
             call_args = mock_run.call_args[0][0]
@@ -177,7 +188,9 @@ async def health():
 
     @patch("webbrowser.open")
     @patch("subprocess.run")
-    def test_dev_command_open_browser(self, mock_run, mock_browser, runner, temp_dir, test_app_file):
+    def test_dev_command_open_browser(
+        self, mock_run, mock_browser, runner, temp_dir, test_app_file
+    ):
         """Test zen dev --open opens browser."""
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
@@ -209,19 +222,18 @@ async def health():
             assert "--reload" not in call_args  # No reload in production
 
     @patch("subprocess.run")
-    def test_serve_command_with_options(self, mock_run, runner, temp_dir, test_app_file):
+    def test_serve_command_with_options(
+        self, mock_run, runner, temp_dir, test_app_file
+    ):
         """Test zen serve command with custom options."""
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
 
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, [
-                "serve",
-                "--host", "127.0.0.1",
-                "--port", "80",
-                "--workers", "8"
-            ])
+            result = runner.invoke(
+                main, ["serve", "--host", "127.0.0.1", "--port", "80", "--workers", "8"]
+            )
 
             assert result.exit_code == 0
             call_args = mock_run.call_args[0][0]
@@ -236,7 +248,10 @@ async def health():
         # Check that output looks like a secure key (base64url format)
         output = result.output.strip()
         assert len(output) >= 32  # Should be a reasonably long key
-        assert all(c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_" for c in output)
+        assert all(
+            c in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+            for c in output
+        )
 
     def test_keygen_command_to_file(self, runner, temp_dir):
         """Test zen keygen --output writes to file."""
@@ -378,7 +393,9 @@ class TestCLIAppDiscovery:
     def test_app_discovery_explicit_app_path(self, runner):
         """Test explicit app path overrides discovery."""
         with runner.isolated_filesystem():
-            Path("myfile.py").write_text("from zenith import Zenith\napplication = Zenith()")
+            Path("myfile.py").write_text(
+                "from zenith import Zenith\napplication = Zenith()"
+            )
 
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
@@ -540,9 +557,9 @@ class TestCLIProjectGeneration:
 
             # Extract SECRET_KEY value
             secret_key = None
-            for line in env_content.split('\n'):
-                if line.startswith('SECRET_KEY='):
-                    secret_key = line.split('=', 1)[1]
+            for line in env_content.split("\n"):
+                if line.startswith("SECRET_KEY="):
+                    secret_key = line.split("=", 1)[1]
                     break
 
             assert secret_key is not None

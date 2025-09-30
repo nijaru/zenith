@@ -6,11 +6,13 @@ import pytest
 from httpx import AsyncClient
 from app.main import app
 
+
 @pytest.fixture
 async def client():
     """Create test client."""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+
 
 @pytest.fixture
 async def test_user(client):
@@ -18,7 +20,7 @@ async def test_user(client):
     user_data = {
         "name": "Test User",
         "email": "test@example.com",
-        "password": "testpass123"
+        "password": "testpass123",
     }
 
     # Register user
@@ -26,10 +28,7 @@ async def test_user(client):
     assert response.status_code == 201
 
     # Login to get token
-    login_data = {
-        "email": user_data["email"],
-        "password": user_data["password"]
-    }
+    login_data = {"email": user_data["email"], "password": user_data["password"]}
     response = await client.post("/auth/login", json=login_data)
     assert response.status_code == 200
 
@@ -39,8 +38,9 @@ async def test_user(client):
     return {
         "user": user,
         "token": token,
-        "headers": {"Authorization": f"Bearer {token}"}
+        "headers": {"Authorization": f"Bearer {token}"},
     }
+
 
 class TestUserRegistration:
     """Test user registration and authentication."""
@@ -52,8 +52,8 @@ class TestUserRegistration:
             json={
                 "name": "Alice Smith",
                 "email": "alice@example.com",
-                "password": "secure123"
-            }
+                "password": "secure123",
+            },
         )
 
         assert response.status_code == 201
@@ -67,7 +67,7 @@ class TestUserRegistration:
         user_data = {
             "name": "Bob Jones",
             "email": "bob@example.com",
-            "password": "password123"
+            "password": "password123",
         }
 
         # First registration
@@ -86,11 +86,12 @@ class TestUserRegistration:
             json={
                 "name": "Charlie Brown",
                 "email": "charlie@example.com",
-                "password": "123"  # Too short
-            }
+                "password": "123",  # Too short
+            },
         )
 
         assert response.status_code == 422
+
 
 class TestAuthentication:
     """Test login and JWT authentication."""
@@ -103,17 +104,14 @@ class TestAuthentication:
             json={
                 "name": "Login Test",
                 "email": "login@example.com",
-                "password": "testpass123"
-            }
+                "password": "testpass123",
+            },
         )
 
         # Login
         response = await client.post(
             "/auth/login",
-            json={
-                "email": "login@example.com",
-                "password": "testpass123"
-            }
+            json={"email": "login@example.com", "password": "testpass123"},
         )
 
         assert response.status_code == 200
@@ -130,21 +128,18 @@ class TestAuthentication:
             json={
                 "name": "Test User",
                 "email": "test2@example.com",
-                "password": "correctpass"
-            }
+                "password": "correctpass",
+            },
         )
 
         # Try login with wrong password
         response = await client.post(
-            "/auth/login",
-            json={
-                "email": "test2@example.com",
-                "password": "wrongpass"
-            }
+            "/auth/login", json={"email": "test2@example.com", "password": "wrongpass"}
         )
 
         assert response.status_code == 401
         assert "Invalid" in response.json()["error"]
+
 
 class TestUserCRUD:
     """Test user CRUD operations."""
@@ -158,8 +153,8 @@ class TestUserCRUD:
                 json={
                     "name": f"User {i}",
                     "email": f"user{i}@example.com",
-                    "password": "password123"
-                }
+                    "password": "password123",
+                },
             )
 
         # List users
@@ -184,9 +179,7 @@ class TestUserCRUD:
         headers = test_user["headers"]
 
         response = await client.patch(
-            f"/users/{user_id}",
-            json={"name": "Updated Name"},
-            headers=headers
+            f"/users/{user_id}", json={"name": "Updated Name"}, headers=headers
         )
 
         assert response.status_code == 200
@@ -200,17 +193,15 @@ class TestUserCRUD:
             json={
                 "name": "Other User",
                 "email": "other@example.com",
-                "password": "password123"
-            }
+                "password": "password123",
+            },
         )
         other_user_id = response.json()["id"]
 
         # Try to update other user with first user's token
         headers = test_user["headers"]
         response = await client.patch(
-            f"/users/{other_user_id}",
-            json={"name": "Hacked"},
-            headers=headers
+            f"/users/{other_user_id}", json={"name": "Hacked"}, headers=headers
         )
 
         assert response.status_code == 403
@@ -224,8 +215,8 @@ class TestUserCRUD:
             json={
                 "name": "Alice Wonderland",
                 "email": "alice.w@example.com",
-                "password": "password123"
-            }
+                "password": "password123",
+            },
         )
 
         await client.post(
@@ -233,8 +224,8 @@ class TestUserCRUD:
             json={
                 "name": "Bob Builder",
                 "email": "bob.b@example.com",
-                "password": "password123"
-            }
+                "password": "password123",
+            },
         )
 
         # Search for "alice"

@@ -94,11 +94,11 @@ class TestRouter:
         """Test dependency injection markers."""
         # Context dependency
         ctx_dep = Inject()
-        assert hasattr(ctx_dep, 'service_class')  # Check it has the expected attribute
+        assert hasattr(ctx_dep, "service_class")  # Check it has the expected attribute
 
         # Auth dependency
         auth_dep = Auth()
-        assert hasattr(auth_dep, 'required')  # Check it has auth attributes
+        assert hasattr(auth_dep, "required")  # Check it has auth attributes
         assert auth_dep.required
         assert auth_dep.scopes == []
 
@@ -108,7 +108,7 @@ class TestRouter:
 
         # File dependency
         file_dep = File("upload")
-        assert hasattr(file_dep, 'field_name')  # Check it has file attributes
+        assert hasattr(file_dep, "field_name")  # Check it has file attributes
         assert file_dep.field_name == "upload"
 
 

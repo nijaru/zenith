@@ -288,9 +288,13 @@ class TestMiddlewarePerformance:
                 Middleware(
                     RateLimitMiddleware,
                     default_limits=[
-                        RateLimit(requests=10000, window=60, per="ip"),  # Higher for testing
-                        RateLimit(requests=1000, window=1, per="ip")    # Higher for testing
-                    ]
+                        RateLimit(
+                            requests=10000, window=60, per="ip"
+                        ),  # Higher for testing
+                        RateLimit(
+                            requests=1000, window=1, per="ip"
+                        ),  # Higher for testing
+                    ],
                 )
             ],
         )

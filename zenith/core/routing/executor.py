@@ -98,14 +98,14 @@ class RouteExecutor:
             from ..container import set_current_db_session
 
             # Get database session from the app's database
-            if hasattr(app, 'app') and hasattr(app.app, 'database'):
+            if hasattr(app, "app") and hasattr(app.app, "database"):
                 # Get a new session from the app's database (enter the context manager)
                 session_cm = app.app.database.session()
                 session = await session_cm.__aenter__()
                 set_current_db_session(session)
                 # Store the context manager so we can clean it up later
                 self._session_context_manager = session_cm
-            elif hasattr(app, 'database'):
+            elif hasattr(app, "database"):
                 # Alternative path for direct database access
                 session_cm = app.database.session()
                 session = await session_cm.__aenter__()
@@ -123,6 +123,7 @@ class RouteExecutor:
         """Set up request context for dependency injection."""
         try:
             from ..scoped import set_current_request
+
             set_current_request(request)
         except Exception:
             # Don't block if request context setup fails
@@ -132,6 +133,7 @@ class RouteExecutor:
         """Clean up request context."""
         try:
             from ..scoped import clear_current_request
+
             clear_current_request()
         except Exception:
             # Don't block if cleanup fails
@@ -141,10 +143,14 @@ class RouteExecutor:
         """Clean up database session context."""
         try:
             from ..container import set_current_db_session
+
             set_current_db_session(None)
 
             # Clean up the session context manager
-            if hasattr(self, '_session_context_manager') and self._session_context_manager:
+            if (
+                hasattr(self, "_session_context_manager")
+                and self._session_context_manager
+            ):
                 await self._session_context_manager.__aexit__(None, None, None)
                 self._session_context_manager = None
         except Exception:
@@ -215,12 +221,12 @@ class RouteExecutor:
 
                 # Also check for Depends objects (from FastAPI or our mock)
                 is_depends = (
-                    hasattr(param.default, '__class__') and
-                    param.default.__class__.__name__ == 'Depends'
+                    hasattr(param.default, "__class__")
+                    and param.default.__class__.__name__ == "Depends"
                 )
 
                 # Check if it has a dependency attribute (our Depends objects)
-                has_dependency_attr = hasattr(param.default, 'dependency')
+                has_dependency_attr = hasattr(param.default, "dependency")
 
                 if is_dependency:
                     resolved = await self.dependency_resolver.resolve_dependency(
@@ -230,7 +236,7 @@ class RouteExecutor:
                     continue
                 elif is_depends or has_dependency_attr:
                     # Handle Depends objects
-                    if hasattr(param.default, 'dependency'):
+                    if hasattr(param.default, "dependency"):
                         # Our Depends object has a dependency function
                         dep_func = param.default.dependency
                         if inspect.iscoroutinefunction(dep_func):
@@ -303,20 +309,19 @@ class RouteExecutor:
                 continue
 
             # Rails-like dict parameter for request body (simplified DX)
-            if (
-                param_type is dict
-                and request.method in _POST_METHODS
-            ):
+            if param_type is dict and request.method in _POST_METHODS:
                 # Get raw body and parse as JSON for dict parameters
                 body_bytes = await request.body()
                 try:
                     # Use orjson if available for better performance
                     try:
                         import orjson
+
                         body = orjson.loads(body_bytes)
                     except ImportError:
                         # Fallback to standard json
                         import json
+
                         try:
                             body_str = body_bytes.decode("utf-8", errors="strict")
                             body = json.loads(body_str)

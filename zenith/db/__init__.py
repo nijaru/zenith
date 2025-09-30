@@ -76,8 +76,12 @@ class Database:
         self.pool_recycle = pool_recycle
 
         # Store engines per event loop - this is the KEY FIX
-        self._loop_engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = WeakKeyDictionary()
-        self._loop_sessions: WeakKeyDictionary[asyncio.AbstractEventLoop, async_sessionmaker] = WeakKeyDictionary()
+        self._loop_engines: WeakKeyDictionary[
+            asyncio.AbstractEventLoop, AsyncEngine
+        ] = WeakKeyDictionary()
+        self._loop_sessions: WeakKeyDictionary[
+            asyncio.AbstractEventLoop, async_sessionmaker
+        ] = WeakKeyDictionary()
 
     @property
     def engine(self) -> AsyncEngine:

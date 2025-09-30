@@ -18,7 +18,9 @@ from sqlmodel import Field
 
 from zenith import Zenith
 from zenith import Session
-from zenith.db import ZenithModel as Model  # Enhanced model with where/find/create methods
+from zenith.db import (
+    ZenithModel as Model,
+)  # Enhanced model with where/find/create methods
 
 # Set up environment
 # Set up database in examples directory
@@ -30,9 +32,11 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only")
 # 🚀 Zero-config app setup
 app = Zenith()
 
+
 # 📋 Define models - they'll automatically work with app's database sessions
 class User(Model, table=True):
     """User model with seamless database integration."""
+
     __tablename__ = "seamless_users"  # Unique table name to avoid conflicts
 
     id: Optional[int] = Field(primary_key=True)
@@ -44,18 +48,22 @@ class User(Model, table=True):
 
 class Post(Model, table=True):
     """Post model with seamless database integration."""
+
     __tablename__ = "seamless_posts"  # Unique table name to avoid conflicts
 
     id: Optional[int] = Field(primary_key=True)
     title: str = Field(max_length=200)
     content: str
     published: bool = Field(default=False)
-    user_id: int = Field(foreign_key="seamless_users.id")  # Updated foreign key reference
+    user_id: int = Field(
+        foreign_key="seamless_users.id"
+    )  # Updated foreign key reference
     created_at: datetime = Field(default_factory=datetime.now)
 
 
 # 🎯 Routes that demonstrate seamless Model integration
 # Notice: NO manual session management needed!
+
 
 @app.get("/")
 async def home():
@@ -65,15 +73,15 @@ async def home():
         "features": [
             "Enhanced Model automatically uses app's request-scoped sessions",
             "No manual session management in route handlers",
-            "Modern convenience with zero boilerplate"
+            "Modern convenience with zero boilerplate",
         ],
         "try_these": [
             "GET /users - List all users (seamless database access)",
             "POST /users - Create user (seamless saving)",
             "GET /users/{id} - Get user (seamless querying)",
             "DELETE /users/{id} - Delete user (seamless deletion)",
-            "GET /stats - Database statistics (seamless counting)"
-        ]
+            "GET /stats - Database statistics (seamless counting)",
+        ],
     }
 
 
@@ -84,7 +92,7 @@ async def list_users():
     No manual session management required!
     """
     # This just works! Enhanced Model automatically uses the request-scoped session
-    users = await User.where(active=True).order_by('-created_at').all()
+    users = await User.where(active=True).order_by("-created_at").all()
     return {"users": [user.to_dict() for user in users]}
 
 
@@ -124,10 +132,10 @@ async def delete_user(user_id: int):
 @app.get("/posts")
 async def list_posts():
     """List posts with complex queries - all seamless."""
-    published_posts = await Post.where(published=True).order_by('-created_at').limit(5)
+    published_posts = await Post.where(published=True).order_by("-created_at").limit(5)
     return {
         "posts": [post.to_dict() for post in published_posts],
-        "message": "Complex queries work seamlessly!"
+        "message": "Complex queries work seamlessly!",
     }
 
 
@@ -144,15 +152,9 @@ async def get_stats():
     published_posts = await Post.where(published=True).count()
 
     return {
-        "users": {
-            "total": total_users,
-            "active": active_users
-        },
-        "posts": {
-            "total": total_posts,
-            "published": published_posts
-        },
-        "message": "All database operations completed seamlessly!"
+        "users": {"total": total_users, "active": active_users},
+        "posts": {"total": total_posts, "published": published_posts},
+        "message": "All database operations completed seamlessly!",
     }
 
 
@@ -188,4 +190,5 @@ if __name__ == "__main__":
     print("   GET /stats      - Database stats (seamless counting)")
 
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8018)

@@ -20,6 +20,7 @@ from ..exceptions import HTTPException
 
 class NotFoundError(HTTPException):
     """Exception raised when a database record is not found."""
+
     def __init__(self, detail: str = "Resource not found"):
         super().__init__(status_code=404, detail=detail)
 
@@ -55,7 +56,7 @@ class QueryBuilder(Generic[ModelType]):
     def order_by(self, *columns: str) -> QueryBuilder[ModelType]:
         """Add ORDER BY clauses. Use '-column' for DESC order."""
         for column in columns:
-            if column.startswith('-'):
+            if column.startswith("-"):
                 column = column[1:]
                 if hasattr(self.model_class, column):
                     attr = getattr(self.model_class, column)
@@ -101,6 +102,7 @@ class QueryBuilder(Generic[ModelType]):
     async def count(self) -> int:
         """Count the number of records matching the query."""
         from sqlalchemy import func
+
         count_query = select(func.count()).select_from(self._query.subquery())
         result = await self.session.execute(count_query)
         return result.scalar() or 0
@@ -108,6 +110,7 @@ class QueryBuilder(Generic[ModelType]):
     async def exists(self) -> bool:
         """Check if any records match the query."""
         from sqlalchemy import exists as sql_exists
+
         exists_query = select(sql_exists(self._query))
         result = await self.session.execute(exists_query)
         return result.scalar() or False
@@ -163,12 +166,14 @@ class ZenithModel(SQLModel):
         """
         # First check for current session (set by app middleware or manually)
         from ..core.container import get_current_db_session
+
         current_session = get_current_db_session()
         if current_session is not None:
             return current_session
 
         # Fall back to container session
         from ..core.container import get_db_session
+
         session = await get_db_session()
         if session is None:
             raise RuntimeError(
@@ -339,6 +344,7 @@ class ZenithModel(SQLModel):
             user_count = await User.count()
         """
         from sqlalchemy import func
+
         session = await cls._get_session()
         result = await session.execute(select(func.count(cls.id)))
         return result.scalar() or 0
