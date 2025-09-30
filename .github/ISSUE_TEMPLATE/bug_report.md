@@ -32,7 +32,7 @@ If applicable, paste the full error message and traceback here
 **Environment (please complete the following information):**
  - OS: [e.g. macOS 14.x, Ubuntu 22.04]
  - Python version: [e.g. 3.12.5 or 3.13.0]
- - Zenith version: [e.g. 0.0.2]
+ - Zenith version: [e.g. 0.0.3]
  - Other relevant dependencies: [e.g. SQLAlchemy 2.0.23]
 
 **Additional context**
