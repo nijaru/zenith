@@ -1,7 +1,7 @@
 """
-Modern Developer Experience Example - Showcasing v0.0.2 Improvements
+Modern Developer Experience Example - Showcasing v0.0.3 Improvements
 
-This example demonstrates the new patterns in Zenith v0.0.2:
+This example demonstrates the new patterns in Zenith v0.0.3:
 - Enhanced Model with intuitive query methods
 - Enhanced dependency injection shortcuts
 - Zero-configuration auto-setup
@@ -16,7 +16,7 @@ from typing import Optional
 
 from sqlmodel import Field
 
-# Zenith v0.0.2 imports - much cleaner!
+# Zenith v0.0.3 imports - much cleaner!
 from zenith import Zenith
 from zenith import Session
 from zenith import Auth
@@ -69,7 +69,7 @@ async def home():
     """Homepage showing framework info."""
     return {
         "message": "Modern DX Example",
-        "framework": "Zenith v0.0.2",
+        "framework": "Zenith v0.0.3",
         "features": [
             "Zero-config setup",
             "Modern models",

@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.3] - 2025-09-29
+
+### Added
+- **Python 3.13 support** - Framework now supports Python 3.12-3.13
+- Removed Python 3.13 compatibility warning
+
+### Changed
+- Updated Python requirement to `>=3.12,<3.14`
+- Updated all documentation and examples to reference v0.0.3
+- Updated issue templates with Python 3.13 examples
+- Code formatting improvements across codebase (85 files)
+
+### Fixed
+- Test count updated to 862 tests (was showing 857)
+
 ## [0.0.2] - 2025-09-29
 
 ### Security
