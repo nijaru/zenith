@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4] - 2025-09-29
+
+### Security
+- **CRITICAL**: Fixed SQL injection vulnerability in `QueryBuilder.order_by()` - now validates column names
+- **HIGH**: Removed deprecated X-XSS-Protection header (can create vulnerabilities in modern browsers)
+- **HIGH**: Enhanced JWT secret key validation with entropy checking - rejects weak keys
+- **MEDIUM**: Improved SSRF protection using `ipaddress` module - properly blocks all private/reserved IPs
+- **MEDIUM**: Strengthened default Content Security Policy with modern directives
+
+### Fixed
+- Fixed race condition from duplicate database session creation in executor and middleware
+- Fixed silent error swallowing in cleanup handlers - now logs warnings for debugging
+- Fixed fragile database discovery that scanned all sys.modules - requires explicit registration
+- Fixed Application to properly register database as default for ZenithModel
+- Fixed inconsistent type hints in Service and database session functions
+- Fixed QueryBuilder.count() to preserve filters correctly
+
+### Changed
+- **BREAKING**: Removed deprecated `Application.register_shutdown_hook()` - use `add_shutdown_hook()`
+- **BREAKING**: `QueryBuilder.order_by()` now raises `ValueError` for invalid column names
+- **BREAKING**: JWT secret keys must have sufficient entropy (≥16 unique chars, no char >25% frequency)
+- Simplified database session management - removed O(n) module scanning
+- Extracted duplicate JSON parsing logic to single `_parse_json_body()` method
+- Removed unused string interning code
+- `NotFoundError` now properly exported from exceptions module
+
+### Performance
+- Optimized QueryBuilder operations by removing unnecessary subqueries
+- Reduced duplicate code in request body parsing (3 locations → 1)
+
 ## [0.0.3] - 2025-09-29
 
 ### Added

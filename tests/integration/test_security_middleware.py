@@ -64,7 +64,7 @@ def custom_security_app():
         hsts_preload=True,
         frame_options="DENY",
         content_type_nosniff=True,
-        xss_protection="1; mode=block",
+        # X-XSS-Protection removed (deprecated - creates security vulnerabilities)
         referrer_policy="strict-origin-when-cross-origin",
         permissions_policy="geolocation=(), microphone=(), camera=()",
         force_https=True,
@@ -108,7 +108,8 @@ class TestSecurityHeaders:
 
             # Check default security headers
             assert response.headers["x-content-type-options"] == "nosniff"
-            assert response.headers["x-xss-protection"] == "1; mode=block"
+            # X-XSS-Protection removed (deprecated - creates security vulnerabilities)
+            assert "x-xss-protection" not in response.headers
             assert response.headers["x-frame-options"] == "DENY"
             assert "strict-transport-security" in response.headers
             assert "referrer-policy" in response.headers
@@ -133,7 +134,8 @@ class TestSecurityHeaders:
             )
             assert response.headers["x-frame-options"] == "DENY"
             assert response.headers["x-content-type-options"] == "nosniff"
-            assert response.headers["x-xss-protection"] == "1; mode=block"
+            # X-XSS-Protection removed (deprecated - creates security vulnerabilities)
+            assert "x-xss-protection" not in response.headers
             assert (
                 response.headers["referrer-policy"] == "strict-origin-when-cross-origin"
             )
@@ -207,7 +209,6 @@ class TestSecurityHeaders:
 
         config = SecurityConfig(
             frame_options=None,
-            xss_protection=None,
             referrer_policy=None,
             permissions_policy=None,
             content_type_nosniff=False,
@@ -224,6 +225,7 @@ class TestSecurityHeaders:
 
             assert response.status_code == 200
             assert "x-frame-options" not in response.headers
+            # X-XSS-Protection header removed (deprecated security vulnerability)
             assert "x-xss-protection" not in response.headers
             assert "referrer-policy" not in response.headers
             assert "permissions-policy" not in response.headers
@@ -391,7 +393,7 @@ class TestSecurityEdgeCases:
             hsts_max_age=0,
             frame_options=None,
             content_type_nosniff=False,
-            xss_protection=None,
+            # X-XSS-Protection removed (deprecated)
             referrer_policy=None,
             permissions_policy=None,
         )

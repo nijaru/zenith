@@ -119,7 +119,6 @@ class TestSecurityMiddleware:
             headers = response.headers
             assert "x-frame-options" in headers
             assert "x-content-type-options" in headers
-            assert "x-xss-protection" in headers
             assert "referrer-policy" in headers
 
             # Check values match development config
@@ -152,7 +151,6 @@ class TestSecurityMiddleware:
         app = Zenith(debug=True)
         custom_config = SecurityConfig(
             frame_options="DENY",
-            xss_protection="1; mode=block",
             csp_policy="default-src 'self'",
         )
         app.add_security_headers(config=custom_config)
@@ -166,7 +164,6 @@ class TestSecurityMiddleware:
             headers = response.headers
 
             assert headers["x-frame-options"] == "DENY"
-            assert headers["x-xss-protection"] == "1; mode=block"
             assert headers["content-security-policy"] == "default-src 'self'"
 
 

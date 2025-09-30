@@ -229,8 +229,8 @@ class Service:
 
     def __init__(self):
         """Initialize without requiring container - it will be injected later."""
-        self.container = None
-        self.events = None
+        self.container: DIContainer | None = None
+        self.events: EventBus | None = None
         self._initialized = False
 
     def _inject_container(self, container: DIContainer):

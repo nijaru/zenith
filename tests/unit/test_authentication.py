@@ -394,6 +394,24 @@ class TestAuthenticationConfiguration:
         ):
             configure_auth(app, secret_key="short")
 
+    def test_configure_auth_weak_entropy(self):
+        """Test authentication configuration with weak entropy."""
+        app = Zenith(debug=True)
+
+        # Key with insufficient unique characters (only 10 unique chars)
+        with pytest.raises(
+            ValueError, match="JWT secret key has insufficient entropy"
+        ):
+            configure_auth(app, secret_key="aaaaaaaabbbbbbbbccccccccdddddddd")
+
+        # Key with character frequency >25% (50 a's out of 64 = 78%)
+        with pytest.raises(
+            ValueError, match="JWT secret key has insufficient entropy"
+        ):
+            configure_auth(
+                app, secret_key="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabcdefghijkl"
+            )
+
     @pytest.mark.asyncio
     async def test_multiple_auth_configurations(self):
         """Test that multiple auth configurations raise error."""

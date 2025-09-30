@@ -43,7 +43,9 @@ from zenith import Zenith
 app = Zenith()
 
 # Configuration
-SECRET_KEY = "your-secret-key-change-in-production"  # Use strong, random key
+# IMPORTANT: Generate secure keys with sufficient entropy (16+ unique chars)
+# Generate with: python -c 'import secrets; print(secrets.token_urlsafe(32))'
+SECRET_KEY = "your-secret-key-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
@@ -549,6 +551,8 @@ async def get_document(
 
 ### SQL Injection Prevention
 
+Zenith provides built-in protection against SQL injection through validated query builders.
+
 ```python
 # VULNERABLE: String concatenation
 @app.get("/users/search")
@@ -558,13 +562,23 @@ async def search_users_vulnerable(query: str, session: AsyncSession = Depends(ge
     result = await session.exec(text(sql))
     return result.all()
 
-# SAFE: Parameterized queries
+# SAFE: ZenithModel with validated query builder
 @app.get("/users/search")
-async def search_users_safe(query: str, session: AsyncSession = Depends(get_session)):
-    # Use parameterized queries
-    stmt = select(User).where(User.email == query)
-    result = await session.exec(stmt)
-    return result.all()
+async def search_users_safe(email: str):
+    # QueryBuilder validates column names and prevents injection
+    users = await User.where(email=email).all()
+    return users
+
+# SAFE: Direct column access (also validated)
+@app.get("/users")
+async def get_users(sort: str = "created_at"):
+    # order_by() validates column names - raises ValueError if invalid
+    try:
+        users = await User.where(active=True).order_by(f"-{sort}").limit(10)
+        return users
+    except ValueError as e:
+        # Invalid column name provided
+        raise HTTPException(400, detail=str(e))
 
 # SAFE: With raw SQL
 @app.get("/users/advanced-search")
@@ -633,7 +647,7 @@ async def add_security_headers(request: Request, call_next):
     # Other security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # Note: X-XSS-Protection removed - deprecated and can create vulnerabilities
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
     return response
@@ -944,10 +958,7 @@ class SecurityHeadersMiddleware:
         # X-Content-Type-Options
         response.headers["X-Content-Type-Options"] = "nosniff"
 
-        # X-XSS-Protection (legacy)
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-
-        # Referrer-Policy
+        # Referrer-Policy (X-XSS-Protection removed - deprecated and insecure)
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
         # Permissions-Policy
@@ -975,11 +986,12 @@ class SecurityHeadersMiddleware:
         return response
 
     def _get_csp(self) -> str:
-        """Build Content Security Policy."""
+        """Build Content Security Policy with modern secure defaults."""
         directives = {
             "default-src": ["'self'"],
-            "script-src": ["'self'", "'unsafe-inline'"] if settings.DEBUG else ["'self'"],
-            "style-src": ["'self'", "'unsafe-inline'"],
+            # Remove unsafe-inline in production - use nonces instead
+            "script-src": ["'self'"],
+            "style-src": ["'self'"],
             "img-src": ["'self'", "data:", "https:"],
             "font-src": ["'self'", "data:"],
             "connect-src": ["'self'"],
@@ -990,7 +1002,6 @@ class SecurityHeadersMiddleware:
             "base-uri": ["'self'"],
             "form-action": ["'self'"],
             "upgrade-insecure-requests": [],
-            "block-all-mixed-content": [],
             "report-uri": [settings.CSP_REPORT_URI] if settings.CSP_REPORT_URI else []
         }
 

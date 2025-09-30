@@ -122,8 +122,8 @@ class TestApplication:
         async def async_hook():
             hook_called.append("async")
 
-        app.register_shutdown_hook(sync_hook)
-        app.register_shutdown_hook(async_hook)
+        app.add_shutdown_hook(sync_hook)
+        app.add_shutdown_hook(async_hook)
 
         await app.startup()
         await app.shutdown()

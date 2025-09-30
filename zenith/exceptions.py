@@ -7,6 +7,33 @@ and JSON formatting for API consistency.
 
 from starlette.responses import JSONResponse
 
+__all__ = [
+    "ZenithException",
+    "HTTPException",
+    "BadRequestException",
+    "UnauthorizedException",
+    "ForbiddenException",
+    "NotFoundException",
+    "NotFoundError",
+    "ConflictException",
+    "ValidationException",
+    "InternalServerException",
+    "AuthenticationException",
+    "AuthorizationException",
+    "RateLimitException",
+    "DatabaseException",
+    "ServiceUnavailableException",
+    "PaymentException",
+    "ResourceLockedException",
+    "PreconditionFailedException",
+    "GoneException",
+    "ConfigError",
+    "BusinessLogicException",
+    "IntegrationException",
+    "DataIntegrityException",
+    "ConcurrencyException",
+]
+
 
 class ZenithException(Exception):
     """Base exception class for Zenith framework."""
@@ -69,6 +96,10 @@ class NotFoundException(HTTPException):
 
     def __init__(self, detail: str = "Not found", **kwargs):
         super().__init__(404, detail, **kwargs)
+
+
+# Alias for database models
+NotFoundError = NotFoundException
 
 
 class ConflictException(HTTPException):

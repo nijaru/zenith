@@ -13,19 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import SQLModel, select
 
-# Avoid circular imports by importing only when needed
-# from ..web.responses import JSONResponse  # Not needed yet
-from ..exceptions import HTTPException
+from ..exceptions import NotFoundError
 
-
-class NotFoundError(HTTPException):
-    """Exception raised when a database record is not found."""
-
-    def __init__(self, detail: str = "Resource not found"):
-        super().__init__(status_code=404, detail=detail)
-
-
-__all__ = ["QueryBuilder", "ZenithModel"]
+__all__ = ["QueryBuilder", "ZenithModel", "NotFoundError"]
 
 ModelType = TypeVar("ModelType", bound="ZenithModel")
 
@@ -56,15 +46,22 @@ class QueryBuilder(Generic[ModelType]):
     def order_by(self, *columns: str) -> QueryBuilder[ModelType]:
         """Add ORDER BY clauses. Use '-column' for DESC order."""
         for column in columns:
+            desc = False
             if column.startswith("-"):
+                desc = True
                 column = column[1:]
-                if hasattr(self.model_class, column):
-                    attr = getattr(self.model_class, column)
-                    self._query = self._query.order_by(attr.desc())
+
+            if not hasattr(self.model_class, column):
+                raise ValueError(
+                    f"Invalid order_by column '{column}' for {self.model_class.__name__}. "
+                    f"Available columns: {', '.join(self.model_class.model_fields.keys())}"
+                )
+
+            attr = getattr(self.model_class, column)
+            if desc:
+                self._query = self._query.order_by(attr.desc())
             else:
-                if hasattr(self.model_class, column):
-                    attr = getattr(self.model_class, column)
-                    self._query = self._query.order_by(attr)
+                self._query = self._query.order_by(attr)
         return self
 
     def limit(self, count: int) -> QueryBuilder[ModelType]:
@@ -103,6 +100,8 @@ class QueryBuilder(Generic[ModelType]):
         """Count the number of records matching the query."""
         from sqlalchemy import func
 
+        # Use subquery approach to preserve all filters, limits, joins
+        # This ensures count matches the actual query results
         count_query = select(func.count()).select_from(self._query.subquery())
         result = await self.session.execute(count_query)
         return result.scalar() or 0
@@ -163,15 +162,16 @@ class ZenithModel(SQLModel):
         3. Falls back to creating new session from container
 
         This enables seamless integration with Zenith app - no manual session management needed!
+
+        Raises:
+            RuntimeError: If no database session is available
         """
-        # First check for current session (set by app middleware or manually)
         from ..core.container import get_current_db_session
 
         current_session = get_current_db_session()
         if current_session is not None:
             return current_session
 
-        # Fall back to container session
         from ..core.container import get_db_session
 
         session = await get_db_session()

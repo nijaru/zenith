@@ -45,6 +45,11 @@ class Application:
 
         self.database = Database(url=db_url, echo=self.config.debug, pool_size=20)
 
+        # Register database as default for ZenithModel
+        from zenith.core.container import set_default_database
+
+        set_default_database(self.database)
+
         # State
         self._running = False
         self._startup_complete = False
@@ -129,10 +134,6 @@ class Application:
 
     def add_shutdown_hook(self, hook) -> None:
         """Register a function to be called during shutdown."""
-        self._shutdown_hooks.append(hook)
-
-    def register_shutdown_hook(self, hook) -> None:
-        """Register a function to be called during shutdown (deprecated)."""
         self._shutdown_hooks.append(hook)
 
     async def startup(self) -> None:

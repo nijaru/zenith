@@ -375,6 +375,26 @@ class TestQueryBuilder:
 
         assert result is builder  # Returns self for chaining
 
+    async def test_order_by_invalid_column(self, mock_session):
+        """Test QueryBuilder.order_by() with invalid column name."""
+        builder = QueryBuilder(UserModel, mock_session)
+
+        # Should raise ValueError for non-existent column
+        with pytest.raises(
+            ValueError, match="Invalid order_by column 'invalid_column' for UserModel"
+        ):
+            builder.order_by("invalid_column")
+
+    async def test_order_by_invalid_column_descending(self, mock_session):
+        """Test QueryBuilder.order_by() with invalid descending column."""
+        builder = QueryBuilder(UserModel, mock_session)
+
+        # Should raise ValueError even with - prefix
+        with pytest.raises(
+            ValueError, match="Invalid order_by column 'nonexistent' for UserModel"
+        ):
+            builder.order_by("-nonexistent")
+
     async def test_limit_method(self, mock_session):
         """Test QueryBuilder.limit() method."""
         builder = QueryBuilder(UserModel, mock_session)
