@@ -24,16 +24,38 @@ class QueryBuilder(Generic[ModelType]):
     """
     Rails-inspired query builder for chaining database operations.
 
+    Supports lazy session initialization for seamless chaining:
+        users = await User.where(active=True).order_by('-created_at').limit(10).all()
+        user = await User.where(email="test@example.com").first()
+
     Example usage:
         users = await User.where(active=True).order_by('-created_at').limit(10)
         posts = await Post.where(published=True).includes('author').all()
     """
 
-    def __init__(self, model_class: type[ModelType], session: AsyncSession):
+    def __init__(
+        self,
+        model_class: type[ModelType],
+        session: AsyncSession | None = None,
+        session_getter=None,
+    ):
         self.model_class = model_class
         self.session = session
+        self._session_getter = session_getter
         self._query = select(model_class)
         self._includes: list[str] = []
+
+    async def _ensure_session(self) -> AsyncSession:
+        """Get or fetch the session lazily when needed."""
+        if self.session is None:
+            if self._session_getter:
+                self.session = await self._session_getter()
+            else:
+                raise RuntimeError(
+                    f"No session available for {self.model_class.__name__}. "
+                    "Ensure database is configured and session context is set."
+                )
+        return self.session
 
     def where(self, **conditions) -> QueryBuilder[ModelType]:
         """Add WHERE conditions to the query."""
@@ -87,31 +109,35 @@ class QueryBuilder(Generic[ModelType]):
 
     async def all(self) -> list[ModelType]:
         """Execute query and return all results."""
-        result = await self.session.execute(self._query)
+        session = await self._ensure_session()
+        result = await session.execute(self._query)
         return list(result.scalars().all())
 
     async def first(self) -> ModelType | None:
         """Execute query and return first result or None."""
+        session = await self._ensure_session()
         self._query = self._query.limit(1)
-        result = await self.session.execute(self._query)
+        result = await session.execute(self._query)
         return result.scalars().first()
 
     async def count(self) -> int:
         """Count the number of records matching the query."""
         from sqlalchemy import func
 
+        session = await self._ensure_session()
         # Use subquery approach to preserve all filters, limits, joins
         # This ensures count matches the actual query results
         count_query = select(func.count()).select_from(self._query.subquery())
-        result = await self.session.execute(count_query)
+        result = await session.execute(count_query)
         return result.scalar() or 0
 
     async def exists(self) -> bool:
         """Check if any records match the query."""
         from sqlalchemy import exists as sql_exists
 
+        session = await self._ensure_session()
         exists_query = select(sql_exists(self._query))
-        result = await self.session.execute(exists_query)
+        result = await session.execute(exists_query)
         return result.scalar() or False
 
     def __aiter__(self):
@@ -267,7 +293,7 @@ class ZenithModel(SQLModel):
         Example:
             user = await User.find_by(email="alice@example.com")
         """
-        builder = await cls.where(**conditions)
+        builder = cls.where(**conditions)
         return await builder.first()
 
     @classmethod
@@ -294,9 +320,11 @@ class ZenithModel(SQLModel):
         return record
 
     @classmethod
-    async def where(cls, **conditions) -> QueryBuilder[Self]:
+    def where(cls, **conditions) -> QueryBuilder[Self]:
         """
-        Start a query with WHERE conditions.
+        Start a query with WHERE conditions (synchronous for chaining).
+
+        Sessions are fetched lazily when executing terminal methods.
 
         Args:
             **conditions: Field conditions to match
@@ -305,10 +333,12 @@ class ZenithModel(SQLModel):
             QueryBuilder for chaining more conditions
 
         Example:
-            users = await User.where(active=True).order_by('-created_at').limit(10)
+            # Chaining works seamlessly:
+            users = await User.where(active=True).order_by('-created_at').limit(10).all()
+            user = await User.where(email="test@example.com").first()
+            count = await User.where(active=True).count()
         """
-        session = await cls._get_session()
-        builder = QueryBuilder(cls, session)
+        builder = QueryBuilder(cls, session=None, session_getter=cls._get_session)
         return builder.where(**conditions)
 
     @classmethod
@@ -363,7 +393,7 @@ class ZenithModel(SQLModel):
         Example:
             exists = await User.exists(email="alice@example.com")
         """
-        builder = await cls.where(**conditions)
+        builder = cls.where(**conditions)
         return await builder.exists()
 
     async def save(self) -> Self:

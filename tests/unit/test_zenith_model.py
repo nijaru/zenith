@@ -509,7 +509,7 @@ class TestZenithModelWhereMethod:
             mock_session = AsyncMock()
             mock_get_session.return_value = mock_session
 
-            builder = await UserModel.where(active=True)
+            builder = UserModel.where(active=True)
 
             assert isinstance(builder, QueryBuilder)
             assert builder.model_class == UserModel
@@ -529,7 +529,7 @@ class TestZenithModelWhereMethod:
             mock_session.execute.return_value = mock_result
 
             # Test chaining: where -> order_by -> limit -> all
-            builder = await UserModel.where(active=True)
+            builder = UserModel.where(active=True)
             users = await builder.order_by("-created_at").limit(10).all()
 
             assert len(users) == 1
@@ -618,7 +618,7 @@ class TestZenithModelIntegration:
         mock_session_context.execute.return_value = mock_result
 
         # Execute complex query chain
-        builder = await UserModel.where(active=True, age__gte=18)  # Adults only
+        builder = UserModel.where(active=True, age__gte=18)  # Adults only
         users = await (
             builder.order_by("-created_at")  # Newest first
             .limit(10)  # Max 10 results

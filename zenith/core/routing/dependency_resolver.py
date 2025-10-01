@@ -39,7 +39,7 @@ class DependencyResolver:
             return await dependency_marker.get_or_create(request)
 
         elif isinstance(dependency_marker, InjectDependency):
-            return await self._resolve_context(dependency_marker, param_type, app)
+            return await self._resolve_context(dependency_marker, param_type, request, app)
 
         elif isinstance(dependency_marker, AuthDependency):
             return await self._resolve_auth(dependency_marker, request)
@@ -51,33 +51,67 @@ class DependencyResolver:
         return None
 
     async def _resolve_context(
-        self, dependency: InjectDependency, param_type: type, app
+        self, dependency: InjectDependency, param_type: type, request: Request, app
     ) -> Any:
-        """Resolve a Context dependency as a singleton."""
-        # Use the specified context class, or infer from parameter type
+        """
+        Resolve a Service dependency with constructor injection.
+
+        Uses DIContainer's _create_instance for automatic dependency resolution.
+        """
+        # Use the specified service class, or infer from parameter type
         service_class = dependency.service_class or param_type
 
         # Check if service is already created (singleton pattern)
         if service_class in _service_instances:
-            return _service_instances[service_class]
+            instance = _service_instances[service_class]
+            # Inject request context (services are singletons but request changes)
+            from zenith.core.service import Service
+            if isinstance(instance, Service) and request:
+                instance._inject_request(request)
+            return instance
 
         # Create new instance with thread-safe lock
         async with _service_lock:
             # Double-check pattern - another request might have created it
             if service_class in _service_instances:
-                return _service_instances[service_class]
+                instance = _service_instances[service_class]
+                from zenith.core.service import Service
+                if isinstance(instance, Service) and request:
+                    instance._inject_request(request)
+                return instance
 
             # Try to get from registered contexts first (for backward compatibility)
             if app and hasattr(app, "contexts"):
                 try:
                     instance = await app.contexts.get_by_type(service_class)
                     _service_instances[service_class] = instance
+                    # Inject request context
+                    from zenith.core.service import Service
+                    if isinstance(instance, Service) and request:
+                        instance._inject_request(request)
                     return instance
                 except (KeyError, AttributeError):
                     pass  # Not registered, create directly
 
-            # Create singleton instance
-            instance = service_class()
+            # Use DIContainer's injection for constructor dependencies
+            if app and hasattr(app, 'container'):
+                try:
+                    instance = app.container._create_instance(service_class)
+                except KeyError:
+                    # If dependency resolution fails, try without args (backward compat)
+                    instance = service_class()
+            else:
+                # No container available, instantiate without dependencies
+                instance = service_class()
+
+            # Inject framework internals for Service instances
+            from zenith.core.service import Service
+            if isinstance(instance, Service):
+                if app and hasattr(app, 'container'):
+                    instance._inject_container(app.container)
+                # Inject request context
+                if request:
+                    instance._inject_request(request)
 
             # Initialize if it has an async initialize method
             if hasattr(instance, "initialize") and callable(instance.initialize):

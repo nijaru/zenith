@@ -134,176 +134,312 @@ class EventBus:
                 await asyncio.gather(*tasks, return_exceptions=True)
 
 
-class ContainerService(ABC):
-    """
-    Base class for business services.
-
-    Provides a foundation for organizing business logic with:
-    - Dependency injection container access
-    - Event-driven communication
-    - Lifecycle management (initialize/shutdown)
-    - Transaction support
-
-    Attributes:
-        container: Dependency injection container for accessing shared resources
-        events: Event bus for emitting and subscribing to domain events
-        _initialized: Flag tracking initialization state
-
-    Methods:
-        initialize(): Async initialization hook for setting up resources
-        shutdown(): Async cleanup hook for releasing resources
-        emit(event, data): Emit a domain event to all subscribers
-        subscribe(event, callback): Subscribe to domain events
-        transaction(): Context manager for database transactions
-
-    Example:
-        class PaymentService(Service):
-            async def initialize(self):
-                self.stripe = await self.container.get("stripe_client")
-                self.subscribe("order.completed", self.process_payment)
-                await super().initialize()
-
-            async def process_payment(self, order):
-                async with self.transaction():
-                    payment = await self.stripe.charge(order.total)
-                    await self.emit("payment.processed", payment)
-                    return payment
-    """
-
-    __slots__ = ("_initialized", "container", "events")
-
-    def __init__(self, container: DIContainer):
-        self.container = container
-        self.events: EventBus = container.get("events")
-        self._initialized = False
-
-    async def initialize(self) -> None:
-        """Initialize the service. Override for custom initialization."""
-        if self._initialized:
-            return
-        self._initialized = True
-
-    async def shutdown(self) -> None:
-        """Cleanup service resources. Override for custom cleanup."""
-        pass
-
-    async def emit(self, event: str, data: Any = None) -> None:
-        """Emit a domain event."""
-        await self.events.emit(event, data)
-
-    def subscribe(self, event: str, callback: Callable) -> None:
-        """Subscribe to a domain event."""
-        self.events.subscribe(event, callback)
-
-    @asynccontextmanager
-    async def transaction(self):
-        """Context manager for database transactions. Override in subclasses."""
-        # Default implementation - no transaction support
-        yield
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
-
-
 class Service:
     """
     Base class for organizing business logic in services.
 
-    Services provide a clean way to organize business logic separate from
-    web concerns, with optional container integration and event handling.
+    Services provide a clean architecture for organizing business logic with
+    automatic dependency injection, request context access, and event handling.
 
-    Example:
-        class UserService(Service):
-            async def initialize(self):
-                # Optional: set up any resources you need
-                self.cache = {}
-                await super().initialize()
+    Usage Patterns:
 
-            async def create_user(self, email: str, name: str):
-                user = User(email=email, name=name)
-                # Your business logic here
-                return user
+    1. Simple Service (no dependencies):
+        class ProductService(Service):
+            async def get_product(self, product_id: int):
+                return await Product.find(product_id)
+
+    2. Service with Dependencies (constructor injection):
+        class OrderService(Service):
+            def __init__(self, products: ProductService, payments: PaymentService):
+                self.products = products
+                self.payments = payments
+
+            async def create_order(self, data: OrderCreate):
+                product = await self.products.get_product(data.product_id)
+                payment = await self.payments.charge(data.total)
+                return await Order.create(product=product, payment=payment)
+
+    3. Using in Routes:
+        @app.post("/orders")
+        async def create_order(
+            data: OrderCreate,
+            orders: OrderService = Inject()  # Fully wired with dependencies!
+        ):
+            return await orders.create_order(data)
+
+    4. Request Context Access:
+        class AuditService(Service):
+            async def log_action(self, action: str):
+                # Auto-available in request context
+                user_id = self.user.id if self.user else None
+                ip = self.request.client.host if self.request else "unknown"
+                await AuditLog.create(user_id=user_id, ip=ip, action=action)
+
+    Key Features:
+        - Constructor injection: Dependencies auto-resolved from type hints
+        - Request context: Access current request and user via properties
+        - Event system: Publish/subscribe for service communication
+        - Lifecycle hooks: initialize() and shutdown() for resource management
+        - Database access: Auto-managed sessions via ZenithModel
     """
 
-    __slots__ = ("_initialized", "container", "events")
+    __slots__ = ("_initialized", "_container", "_request", "_events")
 
     def __init__(self):
-        """Initialize without requiring container - it will be injected later."""
-        self.container: DIContainer | None = None
-        self.events: EventBus | None = None
-        self._initialized = False
+        """
+        Initialize service.
 
-    def _inject_container(self, container: DIContainer):
-        """Internal method to inject container after instantiation."""
-        self.container = container
-        self.events = container.get("events") if container else None
+        Note: User services don't need to call super().__init__().
+        Framework attributes are initialized lazily.
+
+        Example:
+            class OrderService(Service):
+                def __init__(self, products: ProductService):
+                    # No need to call super().__init__()!
+                    self.products = products
+        """
+        # Initialize framework attributes
+        # These will be initialized lazily if subclass overrides __init__
+        self._init_framework_attrs()
+
+    def _init_framework_attrs(self):
+        """Initialize framework attributes (can be called multiple times safely)."""
+        if not hasattr(self, '_container'):
+            self._container: DIContainer | None = None
+        if not hasattr(self, '_request'):
+            self._request: Any = None
+        if not hasattr(self, '_events'):
+            self._events: EventBus | None = None
+        if not hasattr(self, '_initialized'):
+            self._initialized = False
+
+    @classmethod
+    async def create(cls, *args, **kwargs):
+        """
+        Factory method to create and initialize a service instance.
+
+        Useful for standalone usage outside of DI context (CLI, helpers, tests).
+
+        Example:
+            service = await MyService.create()
+            result = await service.do_something()
+        """
+        instance = cls(*args, **kwargs)
+        await instance.initialize()
+        return instance
+
+    # Request Context Properties (auto-available in request context)
+
+    @property
+    def request(self) -> Any:
+        """
+        Current request object (when in request context).
+
+        Returns None when service is used outside of a web request
+        (e.g., in background jobs, CLI commands, or tests).
+
+        Example:
+            class AuditService(Service):
+                async def log_action(self, action: str):
+                    if self.request:
+                        ip = self.request.client.host
+                        user_agent = self.request.headers.get('user-agent')
+        """
+        self._init_framework_attrs()
+        return self._request
+
+    @property
+    def user(self) -> Any:
+        """
+        Current authenticated user (when in request context with auth).
+
+        Returns None when:
+        - Not in request context
+        - Request is not authenticated
+        - No auth middleware configured
+
+        Example:
+            class OrderService(Service):
+                async def create_order(self, data: OrderCreate):
+                    if self.user:
+                        order = await Order.create(user_id=self.user.id, ...)
+                    else:
+                        raise ValueError("Authentication required")
+        """
+        self._init_framework_attrs()
+        if self._request and hasattr(self._request, 'state'):
+            return getattr(self._request.state, 'user', None)
+        return None
+
+    @property
+    def session(self):
+        """
+        Database session (auto-managed via request context).
+
+        Returns the current database session from the request context.
+        In most cases, you don't need this - use ZenithModel instead.
+
+        Example:
+            # Prefer this (ZenithModel handles sessions):
+            users = await User.where(active=True).all()
+
+            # Only use self.session for raw queries:
+            result = await self.session.execute(select(User))
+        """
+        from zenith.core.container import get_current_db_session
+        return get_current_db_session()
+
+    @property
+    def events(self) -> EventBus | None:
+        """Event bus for pub/sub communication between services."""
+        self._init_framework_attrs()
+        if self._events is None and self._container:
+            try:
+                self._events = self._container.get("events")
+            except KeyError:
+                pass
+        return self._events
+
+    # Lifecycle Methods
 
     async def initialize(self) -> None:
-        """Initialize the service. Override for custom initialization."""
+        """
+        Initialize the service (called once after construction).
+
+        Override this for async setup like connecting to external services,
+        loading configuration, or initializing caches.
+
+        Example:
+            class CacheService(Service):
+                async def initialize(self):
+                    self.redis = await connect_redis()
+                    await super().initialize()
+        """
+        self._init_framework_attrs()
         if self._initialized:
             return
         self._initialized = True
 
     async def shutdown(self) -> None:
-        """Cleanup service resources. Override for custom cleanup."""
+        """
+        Cleanup service resources (called during app shutdown).
+
+        Override this to close connections, flush caches, or cleanup resources.
+
+        Example:
+            class CacheService(Service):
+                async def shutdown(self):
+                    if self.redis:
+                        await self.redis.close()
+        """
         pass
 
+    # Event System
+
     async def emit(self, event: str, data: Any = None) -> None:
-        """Emit a domain event."""
+        """
+        Emit a domain event to all subscribers.
+
+        Example:
+            class UserService(Service):
+                async def create_user(self, data):
+                    user = await User.create(**data)
+                    await self.emit("user.created", user)
+                    return user
+        """
+        self._init_framework_attrs()
         if self.events:
             await self.events.emit(event, data)
 
     def subscribe(self, event: str, callback: Callable) -> None:
-        """Subscribe to a domain event."""
+        """
+        Subscribe to a domain event.
+
+        Example:
+            class EmailService(Service):
+                async def initialize(self):
+                    self.subscribe("user.created", self.send_welcome_email)
+                    await super().initialize()
+
+                async def send_welcome_email(self, user):
+                    await send_email(user.email, "Welcome!")
+        """
+        self._init_framework_attrs()
         if self.events:
             self.events.subscribe(event, callback)
 
+    # Transaction Support
+
     @asynccontextmanager
     async def transaction(self):
-        """Context manager for database transactions. Override in subclasses."""
+        """
+        Context manager for database transactions.
+
+        Override in subclasses for custom transaction handling.
+
+        Example:
+            class OrderService(Service):
+                async def create_order(self, items):
+                    async with self.transaction():
+                        order = await Order.create(items=items)
+                        await self.update_inventory(items)
+                        return order
+        """
         # Default implementation - no transaction support
         yield
+
+    # Internal Framework Methods
+
+    def _inject_container(self, container: DIContainer) -> None:
+        """Internal: Inject DI container (called by framework)."""
+        self._init_framework_attrs()
+        self._container = container
+
+    def _inject_request(self, request: Any) -> None:
+        """Internal: Inject request context (called by framework)."""
+        self._init_framework_attrs()
+        self._request = request
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
 
 
 class ServiceRegistry:
-    """Registry for managing application services."""
+    """Registry for managing application services with dependency injection."""
 
     __slots__ = ("_service_classes", "_services", "container")
 
     def __init__(self, container: DIContainer):
         self.container = container
-        self._services: dict[str, Service | ContainerService] = {}
-        self._service_classes: dict[str, type] = {}
+        self._services: dict[str, Service] = {}
+        self._service_classes: dict[str, type[Service]] = {}
 
-    def register(self, name: str, service_class: type) -> None:
+    def register(self, name: str, service_class: type[Service]) -> None:
         """Register a service class."""
         self._service_classes[name] = service_class
 
-    async def get(self, name: str) -> Service | ContainerService:
-        """Get or create a service instance."""
+    async def get(self, name: str) -> Service:
+        """Get or create a service instance with dependency injection."""
         if name not in self._services:
             if name not in self._service_classes:
                 raise KeyError(f"Service not registered: {name}")
 
             service_class = self._service_classes[name]
 
-            # Check if it's a Service that doesn't need container in constructor
-            if issubclass(service_class, Service):
-                service = service_class()
-                service._inject_container(self.container)
-            else:
-                # ContainerService that requires container
-                service = service_class(self.container)
+            # Use DIContainer's injection for constructor DI
+            service = self.container._create_instance(service_class)
 
+            # Inject framework internals
+            if isinstance(service, Service):
+                service._inject_container(self.container)
+
+            # Initialize
             await service.initialize()
             self._services[name] = service
 
         return self._services[name]
 
-    async def get_by_type(self, service_class: type) -> Service | ContainerService:
+    async def get_by_type(self, service_class: type[Service]) -> Service:
         """Get or create a service instance by class type."""
         # Find the service name by class type
         service_name = None

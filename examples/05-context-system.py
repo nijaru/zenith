@@ -130,8 +130,8 @@ async def root():
 async def list_products(category: str | None = None) -> list[Product]:
     """List products with Modern query patterns."""
     if category:
-        # Clean: Product.where(category=category)
-        query = await Product.where(category=category)
+        # Clean: Product.where(category=category) - synchronous chaining
+        query = Product.where(category=category)
         products = await query.order_by("-created_at").all()
     else:
         # Clean: Product.all() - get all products

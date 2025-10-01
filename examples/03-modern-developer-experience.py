@@ -98,7 +98,7 @@ async def list_users():
     - Automatic async handling
     """
     # Clean query syntax: User.where(active=True).order_by('-created_at').limit(10)
-    query = await User.where(active=True)
+    query = User.where(active=True)
     users = await query.order_by("-created_at").limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
@@ -140,7 +140,7 @@ async def list_posts(published: bool = True):
     """
     if published:
         # Clean chaining: Post.where(published=True).order_by('-created_at')
-        query = await Post.where(published=True)
+        query = Post.where(published=True)
         posts = await query.order_by("-created_at").all()
     else:
         posts = await Post.all()
@@ -178,10 +178,10 @@ async def get_stats():
     """
     # Clean: User.count(), Post.where(published=True).count()
     total_users = await User.count()
-    active_query = await User.where(active=True)
+    active_query = User.where(active=True)
     active_users = await active_query.count()
     total_posts = await Post.count()
-    published_query = await Post.where(published=True)
+    published_query = Post.where(published=True)
     published_posts = await published_query.count()
 
     return {
