@@ -189,13 +189,9 @@ class TokenResponse(SQLModel):
 class UserService(Service):
     """User management business logic with repository pattern."""
 
-    def __init__(self, container):
-        super().__init__(container)
-        # In real apps, get AsyncSession from container:
-        # self.db = container.get(AsyncSession)
-        # self.users = create_repository(self.db, User)
-
+    def __init__(self):
         # For demo, create session directly
+        # In real apps, inject database session as dependency
         self.session_factory = SessionLocal
 
     async def create_user(self, user_data: UserCreate) -> User:
@@ -242,13 +238,9 @@ class UserService(Service):
 class TodoService(Service):
     """Todo management business logic with repository pattern."""
 
-    def __init__(self, container):
-        super().__init__(container)
-        # In real apps, get AsyncSession from container:
-        # self.db = container.get(AsyncSession)
-        # self.todos = create_repository(self.db, Todo)
-
+    def __init__(self):
         # For demo, create session directly
+        # In real apps, inject database session as dependency
         self.session_factory = SessionLocal
 
     async def create_todo(self, user_id: int, todo_data: TodoCreate) -> Todo:

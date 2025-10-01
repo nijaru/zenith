@@ -57,8 +57,7 @@ async def home():
 @app.get("/users")
 async def list_users():  # ✨ No session management needed!
     # Clean chaining: User.where().order_by().limit()
-    query = await User.where(active=True)
-    users = await query.order_by('-id').limit(10).all()
+    users = await User.where(active=True).order_by('-id').limit(10).all()
     return {"users": [user.to_dict() for user in users]}
 
 @app.post("/users")
@@ -96,7 +95,7 @@ app = Zenith()  # Just works! No complex configuration needed
 
 ### 🏗️ **Intuitive Database Models**
 ```python
-# Intuitive database operations
+# Intuitive database operations - seamless chaining!
 users = await User.where(active=True).order_by('-created_at').limit(10).all()
 user = await User.find_or_404(123)  # Automatic 404 handling
 user = await User.create(name="Alice", email="alice@example.com")

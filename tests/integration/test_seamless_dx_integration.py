@@ -252,7 +252,7 @@ class TestSeamlessZenithModelIntegration:
         @app.get("/users/active")
         async def get_active_users():
             # Rails-like chainable queries (current working pattern)
-            query = await IntegrationUser.where(active=True)
+            query = IntegrationUser.where(active=True)
             users = await query.order_by("-created_at").limit(10).all()
             return {"users": [user.to_dict() for user in users]}
 
@@ -260,7 +260,7 @@ class TestSeamlessZenithModelIntegration:
         async def get_stats():
             # Rails-like aggregate queries
             total_users = await IntegrationUser.count()
-            active_query = await IntegrationUser.where(active=True)
+            active_query = IntegrationUser.where(active=True)
             active_users = await active_query.count()
             return {"total_users": total_users, "active_users": active_users}
 
@@ -421,7 +421,7 @@ class TestCompleteRailsLikeDXWorkflow:
 
                 @app.get("/users/active")
                 async def get_active_users():
-                    query = await IntegrationUser.where(active=True)
+                    query = IntegrationUser.where(active=True)
                     users = await query.order_by("-created_at").limit(5).all()
                     return {"users": [user.to_dict() for user in users]}
 
@@ -558,21 +558,27 @@ class TestBackwardsCompatibility:
         assert "/rails-like" in routes
 
     def test_existing_service_patterns_preserved(self):
-        """Test existing Service base class patterns work with new features."""
-        from zenith.core.service import ContainerService, EventBus
-        from zenith.core.container import DIContainer
+        """Test new Service pattern with constructor injection."""
+        from zenith.core.service import Service
 
-        # ContainerService pattern should still work
-        class TraditionalService(ContainerService):
+        # New pattern: Services don't need container parameter
+        class SimpleService(Service):
             def get_data(self):
-                return "traditional"
+                return "simple"
 
-        # Should be instantiable with container
-        container = DIContainer()
-        container.register("events", EventBus())  # Service requires events
-        service = TraditionalService(container)
-        assert service.get_data() == "traditional"
+        # Should be instantiable without any parameters
+        service = SimpleService()
+        assert service.get_data() == "simple"
 
-        # Check that service has expected attributes
-        assert hasattr(service, "container")
-        assert hasattr(service, "events")
+        # Services with dependencies use constructor injection
+        class DependentService(Service):
+            def __init__(self, simple: SimpleService):
+                self.simple = simple
+
+            def get_data(self):
+                return f"dependent: {self.simple.get_data()}"
+
+        # Can instantiate manually for testing
+        simple = SimpleService()
+        dependent = DependentService(simple=simple)
+        assert dependent.get_data() == "dependent: simple"

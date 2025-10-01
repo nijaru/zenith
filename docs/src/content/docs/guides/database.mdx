@@ -346,9 +346,14 @@ await User.where(is_active=False).delete_all()
 
 ### Chainable Query API
 
-Build complex queries fluently:
+Build complex queries fluently with seamless method chaining:
 
 ```python
+# Seamless single-line chaining - no intermediate awaits needed!
+user = await User.where(email="alice@example.com").first()
+users = await User.where(active=True).order_by("-created_at").limit(10).all()
+count = await User.where(active=True).count()
+
 # Chain multiple conditions
 results = await (User
     .where(is_active=True)
@@ -363,7 +368,14 @@ users_with_posts = await (User
     .where(is_active=True)
     .includes("posts")  # Eager load posts
     .all())
+```
 
+<Aside type="tip">
+  **Seamless Chaining (v0.0.5+):**
+  `.where()` returns a QueryBuilder immediately (no await needed), enabling clean single-line chaining like `await User.where(email=email).first()`. The session is fetched lazily when you call terminal methods like `.first()`, `.all()`, `.count()`, or `.exists()`.
+</Aside>
+
+```python
 # Select specific columns
 emails = await (User
     .select(User.email, User.username)

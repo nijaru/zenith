@@ -280,20 +280,26 @@ class OrderService(Service):
 
     def __init__(
         self,
-        # Inject() automatically provides instances
-        products: ProductService = Inject(ProductService),
-        payments: PaymentService = Inject(PaymentService),
-        notifications: NotificationService = Inject(NotificationService)
+        container: DIContainer | None = None,
+        products: ProductService | None = None,
+        payments: PaymentService | None = None,
+        notifications: NotificationService | None = None
     ):
-        """Initialize with required services.
+        """Initialize with optional dependencies.
 
         Dependency injection benefits:
         1. Easy to test (mock dependencies)
         2. Loose coupling
         3. Single responsibility
         4. Easy to swap implementations
+
+        Args:
+            container: DI container (automatically provided in routes)
+            products: Product service (optional, for testing)
+            payments: Payment service (optional, for testing)
+            notifications: Notification service (optional, for testing)
         """
-        super().__init__()
+        super().__init__(container)
         self.products = products
         self.payments = payments
         self.notifications = notifications
@@ -584,6 +590,124 @@ class NotificationService(Service):
             context={"user": user}
         )
 ```
+
+### Standalone Service Usage (Outside DI)
+
+Sometimes you need to use Services outside of route handlers - in helper functions, middleware, background jobs, or CLI commands. The `Service.create()` factory method makes this easy:
+
+```python
+# In a helper function (not a route handler)
+async def get_user_from_request(request: Request) -> User | None:
+    """Extract and validate user from API key in request headers."""
+
+    # Get API key from header
+    api_key = request.headers.get("X-API-Key")
+    if not api_key:
+        return None
+
+    # Create service instance for standalone usage
+    auth_service = await ApiKeyService.create()
+
+    # Use service business logic
+    user = await auth_service.validate_api_key(api_key)
+    return user
+
+# In middleware
+class CustomAuthMiddleware:
+    async def __call__(self, request: Request, call_next):
+        # Use Service.create() to access business logic
+        user_service = await UserService.create()
+
+        # Authenticate user using service
+        user = await user_service.authenticate_from_request(request)
+
+        # Attach to request
+        request.state.user = user
+
+        return await call_next(request)
+
+# In a background job
+async def send_daily_reports():
+    """Background task that sends daily reports to active users."""
+
+    # Create services without DI
+    users = await UserService.create()
+    reports = await ReportService.create()
+
+    # Use business logic
+    active_users = await users.get_active_users()
+    for user in active_users:
+        report = await reports.generate_daily_report(user.id)
+        await reports.send_email(user.email, report)
+
+# In a CLI command
+async def cli_create_user(email: str, name: str):
+    """CLI command to create a user."""
+
+    # Create service for CLI usage
+    users = await UserService.create()
+
+    # Use same business logic as the API
+    try:
+        user = await users.create_user(UserCreate(email=email, name=name))
+        print(f"Created user: {user.email}")
+    except ValueError as e:
+        print(f"Error: {e}")
+```
+
+<Aside type="tip">
+  **When to use `Service.create()`:**
+  - Helper functions that need business logic
+  - Custom middleware
+  - Background jobs and scheduled tasks
+  - CLI commands and scripts
+  - Testing (when not using `TestService`)
+
+  **When to use `Inject()`:**
+  - Route handlers (preferred for DI container benefits)
+  - When you need container-managed services
+  - When you want singleton behavior
+</Aside>
+
+**How it works:**
+- `Service.create()` creates a new instance of the Service
+- Calls `initialize()` automatically
+- Returns a ready-to-use service without DI container
+- Service has `container = None` and `events = None`
+- Perfect for standalone usage patterns
+
+**Example: Refactoring from direct DB queries to Service:**
+
+```python
+# Before: Direct database queries (Issue #2 pattern)
+async def get_user_from_request(request: Request) -> User | None:
+    authorization = request.headers.get("authorization")
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+
+    key = authorization[7:]
+
+    # Direct database query - business logic scattered
+    api_key = await ApiKey.find_by(key=key, is_active=True)
+    if not api_key:
+        return None
+
+    return await User.find(api_key.user_id)
+
+# After: Using Service.create() (clean business logic)
+async def get_user_from_request(request: Request) -> User | None:
+    authorization = request.headers.get("authorization")
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+
+    key = authorization[7:]
+
+    # Use service for business logic
+    auth_service = await ApiKeyService.create()
+    return await auth_service.get_user_by_key(key)
+```
+
+This pattern was introduced to solve [Issue #2](https://github.com/anthropics/zenith/issues/2) from real-world usage.
 
 ## Testing Services
 

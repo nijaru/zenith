@@ -32,10 +32,8 @@ class UserService(Service):
     - Logging (self.logger)
     """
 
-    def __init__(self):
-        super().__init__()  # Sets up all the magic properties
-        # That's it! Database session is automatically available as self.db
-        # No need to inject database or manage connections
+    # No __init__ needed - inherits from Service base class
+    # Container is optional and automatically provided when used with DI
 
     async def create_user(self, email: str, name: str) -> User:
         """Create a new user - business logic, not HTTP logic.
@@ -108,22 +106,18 @@ class UserService(Service):
 
     def __init__(
         self,
-        # Inject() automatically provides service instances
-        email_service: EmailService = Inject(EmailService),
-        storage: StorageService = Inject(StorageService)
-        # Add more as needed:
-        # payments: PaymentService = Inject(PaymentService),
-        # analytics: AnalyticsService = Inject(AnalyticsService)
+        email_service: EmailService,
+        storage: StorageService
     ):
-        """Initialize with injected dependencies.
+        """Initialize with dependencies (auto-injected by framework).
 
-        Zenith creates these services for you!
-        No need to manually instantiate or manage them.
+        Dependencies are automatically resolved and injected based on type hints.
+        For manual/test usage, pass instances directly to constructor.
+
+        Args:
+            email_service: Email service instance (auto-injected)
+            storage: Storage service instance (auto-injected)
         """
-
-        super().__init__()  # Important: Sets up Service base features
-
-        # Store injected services for later use
         self.email_service = email_service
         self.storage = storage
 
@@ -169,13 +163,13 @@ class UserService(Service):
         result = await self.db.exec(statement)
         return result.first()
 
-# TESTING IS EASY WITH DI:
+# TESTING IS EASY WITH CONSTRUCTOR INJECTION:
 # async def test_register_user():
-#     # Mock the dependencies
-#     mock_email = Mock()
-#     mock_storage = Mock()
+#     # Create mock dependencies
+#     mock_email = Mock(EmailService)
+#     mock_storage = Mock(StorageService)
 #
-#     # Create service with mocks
+#     # Pass mocks directly to constructor - no framework needed!
 #     service = UserService(
 #         email_service=mock_email,
 #         storage=mock_storage
@@ -456,11 +450,11 @@ async def create_order(
 class OrderService(Service):
     def __init__(
         self,
-        users: UserService = Inject(UserService),
-        products: ProductService = Inject(ProductService),
-        notifications: NotificationService = Inject(NotificationService)
+        users: UserService,
+        products: ProductService,
+        notifications: NotificationService
     ):
-        super().__init__()
+        """Dependencies auto-injected by framework based on type hints."""
         self.users = users
         self.products = products
         self.notifications = notifications
@@ -630,8 +624,8 @@ app.configure_service(ProductService, {
 
 ```python
 class UserService(Service):
-    def __init__(self, config: dict = None):
-        super().__init__()
+    def __init__(self, config: dict | None = None):
+        """Initialize with optional configuration."""
         self.config = config or {}
         self.audit_enabled = self.config.get('audit_enabled', False)
         self.cache_ttl = self.config.get('cache_ttl', 60)

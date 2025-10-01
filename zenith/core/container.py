@@ -9,7 +9,7 @@ import inspect
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Union, get_args, get_origin
 
 T = TypeVar("T")
 
@@ -27,6 +27,41 @@ except ImportError:
 
 # Global registry for the default database instance
 _default_database = None
+
+
+def _unwrap_optional(annotation: Any) -> tuple[Any, bool]:
+    """
+    Unwrap optional types like `SomeType | None` or `Optional[SomeType]`.
+
+    Returns:
+        Tuple of (unwrapped_type, is_optional)
+    """
+    # Handle None type
+    if annotation is type(None):
+        return annotation, False
+
+    # Check if it's a Union type (typing.Union or types.UnionType from X | Y)
+    origin = get_origin(annotation)
+
+    # Handle both typing.Union and types.UnionType (Python 3.10+)
+    if origin is Union or (hasattr(annotation, '__args__') and type(annotation).__name__ == 'UnionType'):
+        # Get args - works for both Union[X, Y] and X | Y
+        args = get_args(annotation)
+        if not args:  # Fallback for UnionType
+            args = getattr(annotation, '__args__', ())
+
+        # Filter out NoneType
+        non_none_args = [arg for arg in args if arg is not type(None)]
+
+        if len(non_none_args) == 1:
+            # Optional[X] or X | None
+            return non_none_args[0], True
+        elif len(non_none_args) > 1:
+            # Union of multiple non-None types - return as is
+            return annotation, False
+
+    # Not an optional type
+    return annotation, False
 
 
 class DIContainer:
@@ -100,19 +135,66 @@ class DIContainer:
         raise KeyError(f"Service not registered: {key}")
 
     def _create_instance(self, factory: Callable) -> Any:
-        """Create instance with dependency injection."""
+        """
+        Create instance with dependency injection.
+
+        Automatically resolves dependencies from type hints.
+        For Service classes, creates instances recursively.
+        """
         sig = inspect.signature(factory)
         kwargs = {}
 
         for param_name, param in sig.parameters.items():
-            if param.annotation != inspect.Parameter.empty:
+            # Skip 'self' parameter
+            if param_name == 'self':
+                continue
+
+            # Skip if no type annotation
+            if param.annotation == inspect.Parameter.empty:
+                # Use default value if available
+                if param.default != inspect.Parameter.empty:
+                    kwargs[param_name] = param.default
+                continue
+
+            # Unwrap optional types (e.g., UserService | None -> UserService)
+            actual_type, is_optional = _unwrap_optional(param.annotation)
+
+            # If it's optional and has a default, skip resolution
+            if is_optional and param.default != inspect.Parameter.empty:
+                kwargs[param_name] = param.default
+                continue
+
+            # Try to resolve from container first
+            try:
+                dependency = self.get(actual_type)
+                kwargs[param_name] = dependency
+            except KeyError:
+                # If not in container, check if it's a Service class
                 try:
-                    dependency = self.get(param.annotation)
-                    kwargs[param_name] = dependency
-                except KeyError:
-                    if param.default == inspect.Parameter.empty:
+                    # Import Service here to avoid circular import
+                    from zenith.core.service import Service
+
+                    # Check if the annotation is a Service subclass
+                    if (inspect.isclass(actual_type) and
+                        issubclass(actual_type, Service)):
+                        # Recursively create the Service with its dependencies
+                        dependency = self._create_instance(actual_type)
+                        kwargs[param_name] = dependency
+                    elif param.default != inspect.Parameter.empty:
+                        # Use default value
+                        kwargs[param_name] = param.default
+                    else:
+                        # Cannot resolve - raise error
                         raise KeyError(
-                            f"Cannot resolve dependency: {param.annotation}"
+                            f"Cannot resolve dependency: {actual_type} for parameter '{param_name}'"
+                        ) from None
+                except (TypeError, AttributeError):
+                    # Not a class or not a Service, use default if available
+                    if param.default != inspect.Parameter.empty:
+                        kwargs[param_name] = param.default
+                    else:
+                        raise KeyError(
+                            f"Cannot resolve dependency: {actual_type} for parameter '{param_name}'"
                         ) from None
 
         return factory(**kwargs)

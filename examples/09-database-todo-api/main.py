@@ -112,9 +112,6 @@ db: Database | None = None
 class TodosService(Service):
     """Business logic for todo management with database persistence."""
 
-    def __init__(self, container):
-        super().__init__(container)
-
     async def _get_repository(self) -> TodoRepository:
         # Get database session
         if not db:

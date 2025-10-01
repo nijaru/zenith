@@ -84,8 +84,7 @@ app.add_middleware(
 
 
 class AuthService:
-    def __init__(self, container):
-        pass
+    """Authentication service for rate limiting example."""
 
     async def authenticate(self, email: str, password: str) -> dict:
         """Authenticate user."""

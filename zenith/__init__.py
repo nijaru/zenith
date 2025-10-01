@@ -74,8 +74,7 @@ from zenith.tasks.background import (
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
 from zenith.core.service import (
-    Service,  # Service base class for business logic (clean, standalone)
-    ContainerService,  # Advanced service with full container features
+    Service,  # Unified service base class for business logic
 )
 
 # ============================================================================
@@ -275,7 +274,6 @@ __all__ = [
     "SecurityHeadersMiddleware",
     # Business Logic
     "Service",
-    "ContainerService",
     # Routing
     "Router",
     # Sessions

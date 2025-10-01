@@ -11,7 +11,7 @@ import pytest
 from zenith import Zenith
 from zenith.core.container import DIContainer
 from zenith.core.routing.dependencies import Inject
-from zenith.core.service import ContainerService, EventBus
+from zenith.core.service import Service, EventBus
 
 
 class UserService:
@@ -37,11 +37,10 @@ class UserService:
         return self.users[:limit]
 
 
-class UserContext(ContainerService):
+class UserContext(Service):
     """Example context for testing."""
 
-    def __init__(self, container: DIContainer, user_service: UserService = None):
-        super().__init__(container)
+    def __init__(self, user_service: UserService | None = None):
         self.user_service = user_service or UserService()
 
     async def get_user(self, user_id: int):
@@ -61,11 +60,10 @@ class UserContext(ContainerService):
         return "@" in email and "." in email
 
 
-class NotificationService(ContainerService):
+class NotificationService(Service):
     """Another context for testing inter-context dependencies."""
 
-    def __init__(self, container: DIContainer, user_context: UserContext = None):
-        super().__init__(container)
+    def __init__(self, user_context: UserContext | None = None):
         self.user_context = user_context
 
     async def send_welcome_email(self, user_id: int):
@@ -82,32 +80,23 @@ class TestContextBasics:
 
     def test_context_creation(self):
         """Test basic context creation and inheritance."""
-        container = DIContainer()
-        container.register("events", EventBus())
-        ctx = UserContext(container)
+        ctx = UserContext()
 
-        assert isinstance(ctx, ContainerService)
+        assert isinstance(ctx, Service)
         assert hasattr(ctx, "user_service")
         assert hasattr(ctx, "get_user")
-        assert hasattr(ctx, "container")
-        assert hasattr(ctx, "events")
 
     def test_context_dependency_injection(self):
         """Test context with injected dependencies."""
-        container = DIContainer()
-        container.register("events", EventBus())
-
         mock_service = Mock()
         mock_service.get_user = AsyncMock(return_value={"id": 1, "name": "Test"})
 
-        ctx = UserContext(container, user_service=mock_service)
+        ctx = UserContext(user_service=mock_service)
         assert ctx.user_service is mock_service
 
     def test_context_methods(self):
         """Test context method definitions."""
-        container = DIContainer()
-        container.register("events", EventBus())
-        ctx = UserContext(container)
+        ctx = UserContext()
 
         # Check methods are callable
         assert callable(ctx.get_user)
@@ -126,9 +115,7 @@ class TestContextExecution:
 
     async def test_get_user(self):
         """Test getting user from context."""
-        container = DIContainer()
-        container.register("events", EventBus())
-        ctx = UserContext(container)
+        ctx = UserContext()
 
         user = await ctx.get_user(1)
         assert user is not None
@@ -141,9 +128,7 @@ class TestContextExecution:
 
     async def test_create_user(self):
         """Test creating user through context."""
-        container = DIContainer()
-        container.register("events", EventBus())
-        ctx = UserContext(container)
+        ctx = UserContext()
 
         new_user = await ctx.create_user("Test User", "test@example.com")
         assert new_user["name"] == "Test User"
@@ -156,9 +141,7 @@ class TestContextExecution:
 
     async def test_list_users(self):
         """Test listing users with pagination."""
-        container = DIContainer()
-        container.register("events", EventBus())
-        ctx = UserContext(container)
+        ctx = UserContext()
 
         # Default limit
         users = await ctx.list_users()
@@ -170,11 +153,8 @@ class TestContextExecution:
 
     async def test_inter_context_dependencies(self):
         """Test contexts that depend on other contexts."""
-        container = DIContainer()
-        container.register("events", EventBus())
-
-        user_ctx = UserContext(container)
-        notif_ctx = NotificationService(container, user_context=user_ctx)
+        user_ctx = UserContext()
+        notif_ctx = NotificationService(user_context=user_ctx)
 
         # Send welcome email to existing user
         result = await notif_ctx.send_welcome_email(1)
@@ -313,11 +293,7 @@ class TestContextTesting:
     @pytest.mark.asyncio
     async def test_test_context_basic(self):
         """Test basic TestContext functionality."""
-        # Note: TestContext utility may need implementation or we create manually
-        container = DIContainer()
-        container.register("events", EventBus())
-
-        ctx = UserContext(container)
+        ctx = UserContext()
         assert isinstance(ctx, UserContext)
 
         # Test context methods
@@ -327,13 +303,10 @@ class TestContextTesting:
     @pytest.mark.asyncio
     async def test_test_context_with_mocks(self):
         """Test TestContext with mocked dependencies."""
-        container = DIContainer()
-        container.register("events", EventBus())
-
         mock_service = Mock()
         mock_service.get_user = AsyncMock(return_value={"id": 1, "name": "Mocked"})
 
-        ctx = UserContext(container, user_service=mock_service)
+        ctx = UserContext(user_service=mock_service)
         user = await ctx.get_user(1)
         assert user["name"] == "Mocked"
         mock_service.get_user.assert_called_once_with(1)
@@ -342,16 +315,12 @@ class TestContextTesting:
     async def test_test_context_isolation(self):
         """Test that TestContext provides isolated instances."""
         # First context
-        container1 = DIContainer()
-        container1.register("events", EventBus())
-        ctx1 = UserContext(container1)
+        ctx1 = UserContext()
         await ctx1.create_user("User1", "user1@test.com")
         await ctx1.list_users()
 
         # Second context should be isolated
-        container2 = DIContainer()
-        container2.register("events", EventBus())
-        ctx2 = UserContext(container2)
+        ctx2 = UserContext()
         users2 = await ctx2.list_users()
 
         # Should have different instances with original data
@@ -366,19 +335,14 @@ class TestContextErrorHandling:
     async def test_context_method_errors(self):
         """Test error handling in context methods."""
 
-        class ErrorService(ContainerService):
-            def __init__(self, container: DIContainer):
-                super().__init__(container)
-
+        class ErrorService(Service):
             async def failing_method(self):
                 raise ValueError("Test error")
 
             async def db_error_method(self):
                 raise ConnectionError("Database connection failed")
 
-        container = DIContainer()
-        container.register("events", EventBus())
-        ctx = ErrorService(container)
+        ctx = ErrorService()
 
         # Test ValueError
         with pytest.raises(ValueError, match="Test error"):
@@ -391,13 +355,10 @@ class TestContextErrorHandling:
     @pytest.mark.asyncio
     async def test_context_dependency_errors(self):
         """Test error handling with dependency injection."""
-        container = DIContainer()
-        container.register("events", EventBus())
-
         mock_service = Mock()
         mock_service.get_user = AsyncMock(side_effect=Exception("Service error"))
 
-        ctx = UserContext(container, user_service=mock_service)
+        ctx = UserContext(user_service=mock_service)
 
         with pytest.raises(Exception, match="Service error"):
             await ctx.get_user(1)

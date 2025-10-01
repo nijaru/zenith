@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-09-30
+
+### Context
+This release implements NestJS-style constructor injection for Services, providing a cleaner and more intuitive dependency injection pattern. This is a **breaking change** but significantly improves the developer experience.
+
+### Added
+- **Constructor Injection** - Services now use type-hinted constructor parameters for automatic dependency resolution
+- **Service.create() factory method** - Services can be instantiated outside DI context for helper functions, middleware, background jobs, and CLI commands
+- **Union type support in DIContainer** - Handles optional dependencies (`SomeService | None`)
+- **Recursive dependency resolution** - DIContainer automatically resolves nested Service dependencies
+- Comprehensive test coverage for constructor injection patterns (6 new tests in test_service_di_injection.py)
+- Comprehensive test coverage for QueryBuilder chaining patterns (9 new tests)
+- Comprehensive test coverage for Service.create() patterns (10 new tests)
+- Documentation for constructor injection in services.mdx
+- Documentation for standalone Service usage
+
+### Fixed
+- Session now fetched lazily only when executing terminal methods (.first(), .all(), .count(), .exists())
+- Fixed ZenithModel.exists() to work with synchronous where() method
+- Service attribute initialization works correctly even when subclasses override `__init__` without calling `super()`
+
+### Changed
+- **BREAKING**: `ZenithModel.where()` is now synchronous - Enables clean single-line chaining: `await User.where(email=email).first()`
+- **BREAKING**: Removed `container` parameter from `Service.__init__()`
+- **BREAKING**: Services use constructor injection via type hints instead of manual container resolution
+- **Service pattern**: Dependencies injected via typed constructor parameters (NestJS-style)
+- `ServiceRegistry` now uses `DIContainer._create_instance()` for automatic dependency injection
+- `DependencyResolver` uses container's injection system for Service creation
+- Lazy initialization pattern for framework attributes (_container, _request, _events, _initialized)
+- Type hints simplified throughout service system
+
+### Developer Experience Improvements
+- **Cleaner syntax**: No `container` parameter needed in Service `__init__`
+- **Type-safe**: Full IDE support for dependency injection via type hints
+- **Easier testing**: Just pass mock dependencies to constructor
+- **Works standalone**: Services work identically in DI context and manual instantiation
+- **Pythonic**: Uses standard `__init__` patterns, no special framework magic required
+- Seamless QueryBuilder chaining eliminates awkward two-step pattern
+
+### Migration Guide
+**Service constructor injection:**
+```python
+# Before (v0.0.4)
+from zenith import Service
+from zenith.core.container import DIContainer
+
+class OrderService(Service):
+    def __init__(self, container: DIContainer | None = None):
+        super().__init__(container)
+        # Had to manually resolve dependencies
+        self.products = container.get(ProductService) if container else ProductService()
+
+# After (v0.0.5)
+from zenith import Service
+
+class OrderService(Service):
+    def __init__(self, products: ProductService):
+        # Dependencies auto-injected via type hints!
+        self.products = products
+        # No super().__init__() needed, no container parameter
+```
+
+**Service with no dependencies:**
+```python
+# Before (v0.0.4)
+class SimpleService(Service):
+    def __init__(self, container: DIContainer | None = None):
+        super().__init__(container)
+
+# After (v0.0.5)
+class SimpleService(Service):
+    # No __init__ needed at all!
+    pass
+```
+
+**Optional dependencies:**
+```python
+# v0.0.5 supports optional dependencies
+class CacheService(Service):
+    def __init__(self, redis: RedisService | None = None):
+        self.redis = redis  # Will be None if RedisService not registered
+```
+
+**Standalone service usage (new in v0.0.5):**
+```python
+# Use Service.create() for helper functions, CLI, background jobs
+async def process_data(data: str):
+    service = await MyService.create()
+    return await service.process(data)
+```
+
+**QueryBuilder pattern (BREAKING CHANGE):**
+```python
+# Before (v0.0.4) - .where() was async
+query = await User.where(email=email)
+user = await query.first()
+
+# After (v0.0.5) - .where() is now sync for seamless chaining
+user = await User.where(email=email).first()
+
+# Also works with chaining
+users = await User.where(active=True).order_by('-created_at').limit(10).all()
+```
+
+**Why this change?** The old async `.where()` forced a two-step pattern. Making it synchronous enables natural chaining like Rails/Django ORMs.
+
 ## [0.0.4] - 2025-09-29
 
 ### Security

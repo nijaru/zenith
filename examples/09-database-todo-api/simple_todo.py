@@ -87,10 +87,10 @@ class TodoStore:
 class TodosService(Service):
     """Business logic for todo management."""
 
-    def __init__(self, container):
-        super().__init__(container)
+    def __init__(self):
         # Shared store instance (simulating database)
-        self.store = container.get("todo_store") if container else TodoStore()
+        # In a real app with DI, this would be injected as a constructor parameter
+        self.store = todo_store
 
     async def create_todo(self, data: TodoCreate) -> Todo:
         return self.store.create(data)
@@ -114,23 +114,8 @@ app = Zenith()
 # Create shared store (simulating database)
 todo_store = TodoStore()
 
-
-# Register context with store
-class TodoContainer:
-    def get(self, key):
-        if key == "todo_store":
-            return todo_store
-        elif key == "events":
-            return None
-        return None
-
-
-# Register context properly
-def create_todos_context(container):
-    return TodosContext(TodoContainer())
-
-
-app.register_context("todoscontext", create_todos_context)
+# Register service (auto-injection handles the rest)
+app.register_context("todoscontext", TodosService)
 
 # Create router
 api = Router(prefix="/api/v1")
@@ -138,21 +123,21 @@ api = Router(prefix="/api/v1")
 
 # Routes
 @api.post("/todos")
-async def create_todo(data: TodoCreate, todos: TodosContext = Inject()) -> Todo:
+async def create_todo(data: TodoCreate, todos: TodosService = Inject()) -> Todo:
     """Create a new todo item."""
     return await todos.create_todo(data)
 
 
 @api.get("/todos")
 async def list_todos(
-    completed: bool | None = None, todos: TodosContext = Inject()
+    completed: bool | None = None, todos: TodosService = Inject()
 ) -> list[Todo]:
     """List todos, optionally filtered by completion status."""
     return await todos.list_todos(completed)
 
 
 @api.get("/todos/{todo_id}")
-async def get_todo(todo_id: int, todos: TodosContext = Inject()) -> Todo:
+async def get_todo(todo_id: int, todos: TodosService = Inject()) -> Todo:
     """Get a specific todo item."""
     todo = await todos.get_todo(todo_id)
     if not todo:
@@ -162,7 +147,7 @@ async def get_todo(todo_id: int, todos: TodosContext = Inject()) -> Todo:
 
 @api.patch("/todos/{todo_id}")
 async def update_todo(
-    todo_id: int, data: TodoUpdate, todos: TodosContext = Inject()
+    todo_id: int, data: TodoUpdate, todos: TodosService = Inject()
 ) -> Todo:
     """Update a todo item."""
     todo = await todos.update_todo(todo_id, data)
@@ -172,7 +157,7 @@ async def update_todo(
 
 
 @api.delete("/todos/{todo_id}")
-async def delete_todo(todo_id: int, todos: TodosContext = Inject()) -> dict:
+async def delete_todo(todo_id: int, todos: TodosService = Inject()) -> dict:
     """Delete a todo item."""
     deleted = await todos.delete_todo(todo_id)
     if not deleted:
@@ -190,20 +175,20 @@ async def health() -> dict:
 @app.on_startup
 async def seed_data():
     """Add some sample todos on startup."""
-    context = TodosContext(TodoContainer())
-    await context.create_todo(
+    service = TodosService()
+    await service.create_todo(
         TodoCreate(
             title="Build Zenith framework",
             description="Create a modern Python web framework",
         )
     )
-    await context.create_todo(
+    await service.create_todo(
         TodoCreate(
             title="Write documentation",
             description="Document all features and examples",
         )
     )
-    await context.create_todo(
+    await service.create_todo(
         TodoCreate(
             title="Add database support",
             description="Integrate SQLAlchemy for persistence",

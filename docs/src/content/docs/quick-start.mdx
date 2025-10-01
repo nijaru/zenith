@@ -103,9 +103,9 @@ async def list_posts(
     """List blog posts with optional filtering."""
     # Build query based on filters
     if published is not None:
-        query = await Post.where(published=published)
+        query = Post.where(published=published)
     else:
-        query = await Post.where()  # All posts
+        query = Post.where()  # All posts
 
     posts = await query.order_by('-created_at').limit(limit).offset(offset).all()
 
