@@ -14,15 +14,13 @@ from pydantic import BaseModel
 from starlette.datastructures import UploadFile
 
 from zenith import (
+    AUDIO_TYPES,
+    DOCUMENT_TYPES,
+    IMAGE_TYPES,
     File,
     UploadedFile,
-    IMAGE_TYPES,
-    DOCUMENT_TYPES,
-    AUDIO_TYPES,
-    MB,
     Zenith,
 )
-from zenith.exceptions import HTTPException
 
 # Create app
 app = Zenith()

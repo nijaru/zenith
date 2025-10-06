@@ -3,7 +3,6 @@ Application configuration with environment variables.
 """
 
 import os
-from typing import Optional
 from functools import lru_cache
 
 
@@ -30,10 +29,10 @@ class Settings:
     )
 
     # Email (optional)
-    SMTP_HOST: Optional[str] = os.getenv("SMTP_HOST")
+    SMTP_HOST: str | None = os.getenv("SMTP_HOST")
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USER: Optional[str] = os.getenv("SMTP_USER")
-    SMTP_PASSWORD: Optional[str] = os.getenv("SMTP_PASSWORD")
+    SMTP_USER: str | None = os.getenv("SMTP_USER")
+    SMTP_PASSWORD: str | None = os.getenv("SMTP_PASSWORD")
 
     @property
     def is_production(self) -> bool:
@@ -44,7 +43,7 @@ class Settings:
         return self.DEBUG
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()

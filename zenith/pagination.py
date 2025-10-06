@@ -4,7 +4,7 @@ Pagination utilities for Zenith applications.
 Provides clean, reusable pagination patterns for list endpoints.
 """
 
-from typing import Any, Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +23,7 @@ class PaginationParams(BaseModel):
         return (self.page - 1) * self.limit
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Standard paginated response format."""
 
     items: list[T]
@@ -70,7 +70,7 @@ class Paginate:
         self._page = 1
         self._limit = default_limit
 
-    def __call__(self, page: int = 1, limit: int = None) -> "Paginate":
+    def __call__(self, page: int = 1, limit: int | None = None) -> "Paginate":
         """Called by the framework to inject query parameters."""
         self._page = max(1, page)
 
@@ -129,7 +129,7 @@ class CursorPagination:
         self._limit = default_limit
 
     def __call__(
-        self, after: str = None, before: str = None, limit: int = None
+        self, after: str | None = None, before: str | None = None, limit: int | None = None
     ) -> "CursorPagination":
         """Called by the framework to inject query parameters."""
         self._after = after
@@ -159,8 +159,8 @@ class CursorPagination:
 
 # Export pagination utilities
 __all__ = [
-    "PaginationParams",
-    "PaginatedResponse",
-    "Paginate",
     "CursorPagination",
+    "Paginate",
+    "PaginatedResponse",
+    "PaginationParams",
 ]

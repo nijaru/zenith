@@ -120,7 +120,7 @@ def new(path: str, name: str | None):
 
     # Generate cryptographically secure secret key (64 bytes for stronger entropy)
     secret_key = secrets.token_urlsafe(64)
-    click.echo(f"🔑 Generated secure SECRET_KEY (64 bytes)")
+    click.echo("🔑 Generated secure SECRET_KEY (64 bytes)")
 
     # Create main app.py
     app_py_content = f'''"""
@@ -319,7 +319,6 @@ def _run_server(
 ):
     """Internal function to run uvicorn server."""
     import importlib.util
-    import os
 
     # Enhanced app discovery
     app_module = None
@@ -411,7 +410,7 @@ def _run_server(
                         spec.loader.exec_module(module)
 
                         if hasattr(module, "app"):
-                            attr = getattr(module, "app")
+                            attr = module.app
                             if hasattr(attr, "__class__") and "Zenith" in str(
                                 type(attr)
                             ):

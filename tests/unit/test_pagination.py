@@ -9,9 +9,9 @@ from pydantic import ValidationError
 
 from zenith.pagination import (
     CursorPagination,
+    Paginate,
     PaginatedResponse,
     PaginationParams,
-    Paginate,
 )
 
 

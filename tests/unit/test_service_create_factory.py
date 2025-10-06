@@ -56,7 +56,9 @@ async def test_service_create_factory():
     assert isinstance(service, SimpleService)
     assert service._initialized is True
     assert service._container is None  # No container in standalone mode
-    assert service.events is None  # No events in standalone mode (property returns None)
+    assert (
+        service.events is None
+    )  # No events in standalone mode (property returns None)
 
 
 @pytest.mark.asyncio

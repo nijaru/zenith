@@ -9,6 +9,7 @@ import inspect
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     get_origin,
     get_type_hints,
 )
@@ -50,7 +51,7 @@ class OpenAPIGenerator:
         self.components: dict[str, Any] = {"schemas": self.schemas}
 
     # Simple in-memory cache for generated specs
-    _spec_cache: dict[str, dict] = {}
+    _spec_cache: ClassVar[dict[str, dict]] = {}
 
     def _get_cache_key(self, routers: list["Router"]) -> str:
         """Create simple string cache key from router structure."""

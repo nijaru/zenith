@@ -30,7 +30,6 @@ from .utils import (
     validate_response_type,
 )
 
-
 __all__ = [
     # Dependencies
     "Auth",

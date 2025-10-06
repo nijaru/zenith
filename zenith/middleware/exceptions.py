@@ -6,8 +6,8 @@ logging, and user-friendly error responses.
 """
 
 import logging
-import traceback
 import re
+import traceback
 from collections.abc import Callable
 
 from pydantic import ValidationError
@@ -48,7 +48,9 @@ def _enhance_async_error_message(
             for frame in tb.stack:
                 if frame.filename and frame.lineno:
                     try:
-                        with open(frame.filename, "r") as f:
+                        from pathlib import Path
+
+                        with Path(frame.filename).open() as f:
                             lines = f.readlines()
                             if frame.lineno <= len(lines):
                                 line = lines[frame.lineno - 1].strip()
@@ -68,7 +70,7 @@ def _enhance_async_error_message(
                                         f"  def your_function(session: AsyncSession = Session):\n"
                                         f"File: {frame.filename}, Line: {frame.lineno}"
                                     )
-                    except (IOError, IndexError):
+                    except (OSError, IndexError):
                         pass
 
     # Pattern 2: Event loop context errors

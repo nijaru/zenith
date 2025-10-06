@@ -81,9 +81,8 @@ Transaction Support:
 """
 
 import asyncio
-from abc import ABC
 from collections.abc import Callable
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 from zenith.core.container import DIContainer
@@ -183,7 +182,7 @@ class Service:
         - Database access: Auto-managed sessions via ZenithModel
     """
 
-    __slots__ = ("_initialized", "_container", "_request", "_events")
+    __slots__ = ("_container", "_events", "_initialized", "_request")
 
     def __init__(self):
         """
@@ -204,13 +203,13 @@ class Service:
 
     def _init_framework_attrs(self):
         """Initialize framework attributes (can be called multiple times safely)."""
-        if not hasattr(self, '_container'):
+        if not hasattr(self, "_container"):
             self._container: DIContainer | None = None
-        if not hasattr(self, '_request'):
+        if not hasattr(self, "_request"):
             self._request: Any = None
-        if not hasattr(self, '_events'):
+        if not hasattr(self, "_events"):
             self._events: EventBus | None = None
-        if not hasattr(self, '_initialized'):
+        if not hasattr(self, "_initialized"):
             self._initialized = False
 
     @classmethod
@@ -267,8 +266,8 @@ class Service:
                         raise ValueError("Authentication required")
         """
         self._init_framework_attrs()
-        if self._request and hasattr(self._request, 'state'):
-            return getattr(self._request.state, 'user', None)
+        if self._request and hasattr(self._request, "state"):
+            return getattr(self._request.state, "user", None)
         return None
 
     @property
@@ -287,6 +286,7 @@ class Service:
             result = await self.session.execute(select(User))
         """
         from zenith.core.container import get_current_db_session
+
         return get_current_db_session()
 
     @property
@@ -294,10 +294,8 @@ class Service:
         """Event bus for pub/sub communication between services."""
         self._init_framework_attrs()
         if self._events is None and self._container:
-            try:
+            with suppress(KeyError):
                 self._events = self._container.get("events")
-            except KeyError:
-                pass
         return self._events
 
     # Lifecycle Methods

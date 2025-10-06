@@ -6,12 +6,10 @@ Automatically updates version across all files to maintain consistency.
 Provides both CLI and programmatic interfaces for version management.
 """
 
-import re
-import os
-import sys
 import argparse
+import re
+import sys
 from pathlib import Path
-from typing import List, Dict, Tuple
 
 
 class VersionManager:
@@ -85,7 +83,7 @@ class VersionManager:
 
         return f"{major}.{minor}.{patch}"
 
-    def find_files_with_version(self, old_version: str) -> List[Tuple[Path, int]]:
+    def find_files_with_version(self, old_version: str) -> list[tuple[Path, int]]:
         """Find all files containing version references."""
         files_with_version = []
 
@@ -175,7 +173,7 @@ class VersionManager:
 
     def update_all_versions(
         self, new_version: str, dry_run: bool = False
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """Update version across all relevant files."""
         old_version = self.get_current_version()
 

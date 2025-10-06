@@ -7,7 +7,7 @@ while maintaining SQLModel's type safety and FastAPI integration.
 
 from __future__ import annotations
 
-from typing import Any, Generic, Self, TypeVar
+from typing import Any, Self, TypeVar
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -15,12 +15,12 @@ from sqlmodel import SQLModel, select
 
 from ..exceptions import NotFoundError
 
-__all__ = ["QueryBuilder", "ZenithModel", "NotFoundError"]
+__all__ = ["NotFoundError", "QueryBuilder", "ZenithModel"]
 
 ModelType = TypeVar("ModelType", bound="ZenithModel")
 
 
-class QueryBuilder(Generic[ModelType]):
+class QueryBuilder[ModelType: "ZenithModel"]:
     """
     Rails-inspired query builder for chaining database operations.
 

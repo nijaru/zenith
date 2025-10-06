@@ -7,11 +7,13 @@ and lifecycle management.
 """
 
 import asyncio
+import contextlib
 import logging
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union
+from typing import Any, TypeVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -39,14 +41,14 @@ class Job(BaseModel):
     name: str
     status: JobStatus = JobStatus.PENDING
     created_at: float = Field(default_factory=time.time)
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    started_at: float | None = None
+    completed_at: float | None = None
     progress: float = 0.0
-    error: Optional[str] = None
+    error: str | None = None
     retry_count: int = 0
     max_retries: int = 3
-    result: Optional[Any] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    result: Any | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
@@ -61,7 +63,7 @@ class JobBackend(ABC):
         pass
 
     @abstractmethod
-    async def get_job(self, job_id: UUID) -> Optional[Job]:
+    async def get_job(self, job_id: UUID) -> Job | None:
         """Retrieve a job by ID."""
         pass
 
@@ -71,7 +73,7 @@ class JobBackend(ABC):
         pass
 
     @abstractmethod
-    async def list_jobs(self, status: Optional[JobStatus] = None) -> List[Job]:
+    async def list_jobs(self, status: JobStatus | None = None) -> list[Job]:
         """List jobs, optionally filtered by status."""
         pass
 
@@ -80,19 +82,19 @@ class MemoryJobBackend(JobBackend):
     """In-memory job storage backend."""
 
     def __init__(self):
-        self._jobs: Dict[UUID, Job] = {}
+        self._jobs: dict[UUID, Job] = {}
 
     async def store_job(self, job: Job) -> None:
         self._jobs[job.id] = job
 
-    async def get_job(self, job_id: UUID) -> Optional[Job]:
+    async def get_job(self, job_id: UUID) -> Job | None:
         return self._jobs.get(job_id)
 
     async def update_job(self, job: Job) -> None:
         if job.id in self._jobs:
             self._jobs[job.id] = job
 
-    async def list_jobs(self, status: Optional[JobStatus] = None) -> List[Job]:
+    async def list_jobs(self, status: JobStatus | None = None) -> list[Job]:
         jobs = list(self._jobs.values())
         if status:
             jobs = [job for job in jobs if job.status == status]
@@ -108,9 +110,9 @@ class BackgroundTaskManager:
 
     def __init__(self, max_concurrent_tasks: int = 10):
         self.max_concurrent_tasks = max_concurrent_tasks
-        self._tasks: Dict[UUID, asyncio.Task] = {}
-        self._task_metadata: Dict[UUID, Dict[str, Any]] = {}
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._tasks: dict[UUID, asyncio.Task] = {}
+        self._task_metadata: dict[UUID, dict[str, Any]] = {}
+        self._cleanup_task: asyncio.Task | None = None
 
     async def start(self):
         """Start the task manager with automatic cleanup."""
@@ -126,10 +128,8 @@ class BackgroundTaskManager:
         # Cancel cleanup task
         if self._cleanup_task:
             self._cleanup_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
         # Cancel all running tasks
         for task_id, task in self._tasks.items():
@@ -149,8 +149,8 @@ class BackgroundTaskManager:
         self,
         func: Callable,
         *args,
-        name: Optional[str] = None,
-        timeout: Optional[float] = None,
+        name: str | None = None,
+        timeout: float | None = None,
         **kwargs,
     ) -> UUID:
         """
@@ -197,7 +197,7 @@ class BackgroundTaskManager:
             except Exception as e:
                 duration = time.time() - start_time
                 logger.error(
-                    f"Background task failed: {task_name} ({duration:.2f}s) - {str(e)}"
+                    f"Background task failed: {task_name} ({duration:.2f}s) - {e!s}"
                 )
                 raise
 
@@ -212,7 +212,7 @@ class BackgroundTaskManager:
         logger.info(f"Added background task: {task_name} ({task_id})")
         return task_id
 
-    async def get_task_status(self, task_id: UUID) -> Dict[str, Any]:
+    async def get_task_status(self, task_id: UUID) -> dict[str, Any]:
         """Get status information for a task."""
         if task_id not in self._tasks:
             return {"status": "not_found"}
@@ -256,7 +256,7 @@ class BackgroundTaskManager:
             return True
         return False
 
-    async def list_tasks(self) -> List[Dict[str, Any]]:
+    async def list_tasks(self) -> list[dict[str, Any]]:
         """List all tasks with their status."""
         tasks = []
         for task_id in self._tasks:
@@ -303,15 +303,15 @@ class JobQueue:
 
     def __init__(
         self,
-        backend: Optional[JobBackend] = None,
+        backend: JobBackend | None = None,
         max_workers: int = 4,
         default_max_retries: int = 3,
     ):
         self.backend = backend or MemoryJobBackend()
         self.max_workers = max_workers
         self.default_max_retries = default_max_retries
-        self._workers: List[asyncio.Task] = []
-        self._job_handlers: Dict[str, Callable] = {}
+        self._workers: list[asyncio.Task] = []
+        self._job_handlers: dict[str, Callable] = {}
         self._shutdown_event = asyncio.Event()
         self._queue: asyncio.Queue = asyncio.Queue()
 
@@ -324,8 +324,8 @@ class JobQueue:
         self,
         job_name: str,
         data: Any = None,
-        max_retries: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        max_retries: int | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> UUID:
         """
         Enqueue a new job for processing.
@@ -357,7 +357,7 @@ class JobQueue:
         logger.info(f"Enqueued job: {job_name} ({job.id})")
         return job.id
 
-    async def get_job_status(self, job_id: UUID) -> Optional[Job]:
+    async def get_job_status(self, job_id: UUID) -> Job | None:
         """Get job status and details."""
         return await self.backend.get_job(job_id)
 
@@ -395,7 +395,7 @@ class JobQueue:
                     # Wait for job with timeout to check shutdown periodically
                     job_id = await asyncio.wait_for(self._queue.get(), timeout=1.0)
                     await self._process_job(worker_id, job_id)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
                 except Exception as e:
                     logger.error(f"Worker {worker_id} error: {e}")
@@ -479,9 +479,9 @@ class JobQueue:
 
 # Decorator for easy background task creation
 def background_task(
-    task_manager: Optional[BackgroundTaskManager] = None,
-    name: Optional[str] = None,
-    timeout: Optional[float] = None,
+    task_manager: BackgroundTaskManager | None = None,
+    name: str | None = None,
+    timeout: float | None = None,
 ):
     """
     Decorator to mark functions as background tasks.
@@ -515,11 +515,11 @@ def background_task(
 
 # Export main classes and functions
 __all__ = [
-    "Job",
-    "JobStatus",
-    "JobBackend",
-    "MemoryJobBackend",
     "BackgroundTaskManager",
+    "Job",
+    "JobBackend",
     "JobQueue",
+    "JobStatus",
+    "MemoryJobBackend",
     "background_task",
 ]

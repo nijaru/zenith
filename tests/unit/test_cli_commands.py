@@ -2,10 +2,6 @@
 Tests for Zenith CLI commands.
 """
 
-from unittest.mock import patch
-
-import pytest
-
 from zenith.dev.generators import (
     APIGenerator,
     ModelGenerator,
@@ -13,6 +9,7 @@ from zenith.dev.generators import (
     generate_code,
     parse_field_spec,
 )
+
 # Shell functionality removed - no longer part of CLI
 
 

@@ -91,13 +91,13 @@ class RequestScoped:
 
     async def cleanup(self, request: Request) -> None:
         """Clean up resources after request."""
+        import contextlib
+
         # Clean up async generators
         if hasattr(request.state, "_async_generators"):
             for gen in request.state._async_generators:
-                try:
+                with contextlib.suppress(Exception):
                     await gen.aclose()
-                except Exception:
-                    pass  # Ignore cleanup errors
             delattr(request.state, "_async_generators")
 
         # Remove cached instance

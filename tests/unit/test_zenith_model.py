@@ -9,17 +9,15 @@ Comprehensive test coverage for all ZenithModel features:
 - Error handling and 404s
 """
 
-import pytest
 from datetime import datetime
-from typing import Optional
 from unittest.mock import AsyncMock, Mock, patch
 
-from sqlmodel import Field
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import NoResultFound
+from sqlmodel import Field
 
-from zenith.db.models import ZenithModel, QueryBuilder, NotFoundError
 from zenith.core.container import set_current_db_session
+from zenith.db.models import NotFoundError, QueryBuilder, ZenithModel
 
 
 # Test models for testing (renamed to avoid pytest collection issues)
@@ -28,11 +26,11 @@ class UserModel(ZenithModel, table=True):
 
     __tablename__ = "test_users"
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     name: str = Field(max_length=100)
     email: str = Field(unique=True)
     active: bool = Field(default=True)
-    age: Optional[int] = Field(default=None)
+    age: int | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.now)
 
 
@@ -41,7 +39,7 @@ class PostModel(ZenithModel, table=True):
 
     __tablename__ = "test_posts"
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     title: str = Field(max_length=200)
     content: str
     published: bool = Field(default=False)

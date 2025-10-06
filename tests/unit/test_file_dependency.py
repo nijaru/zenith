@@ -6,19 +6,18 @@ and integration with the dependency injection system.
 """
 
 import pytest
-from unittest.mock import patch
 
 from zenith.core.dependencies import (
-    File,
-    _parse_size,
-    IMAGE_TYPES,
-    DOCUMENT_TYPES,
-    AUDIO_TYPES,
-    VIDEO_TYPES,
     ARCHIVE_TYPES,
+    AUDIO_TYPES,
+    DOCUMENT_TYPES,
+    GB,
+    IMAGE_TYPES,
     KB,
     MB,
-    GB,
+    VIDEO_TYPES,
+    File,
+    _parse_size,
 )
 
 

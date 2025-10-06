@@ -7,8 +7,9 @@ Tests for:
 - app.add_api() - API documentation setup
 """
 
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
 
 from zenith import Zenith
 from zenith.core.config import Config

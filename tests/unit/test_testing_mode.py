@@ -6,12 +6,9 @@ middleware when ZENITH_TESTING environment variable is set or testing=True.
 """
 
 import os
-from unittest.mock import patch
-
-import pytest
+from contextlib import contextmanager
 
 from zenith import Zenith
-from contextlib import contextmanager
 
 
 @contextmanager
@@ -322,8 +319,9 @@ class TestTestingModeDocumentation:
 
     def test_testing_mode_help_text(self):
         """Test that testing mode functionality is documented."""
-        from zenith.cli import main
         from click.testing import CliRunner
+
+        from zenith.cli import main
 
         runner = CliRunner()
         result = runner.invoke(main, ["dev", "--help"])

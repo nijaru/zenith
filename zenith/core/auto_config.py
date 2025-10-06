@@ -74,10 +74,12 @@ class Environment(str, Enum):
             return cls.PRODUCTION
 
         # File-based detection
-        if os.path.exists("/.dockerenv"):
+        from pathlib import Path
+
+        if Path("/.dockerenv").exists():
             # Running in Docker, likely production/staging
             return cls.PRODUCTION
-        elif os.path.exists("pytest.ini") or os.path.exists("conftest.py"):
+        elif Path("pytest.ini").exists() or Path("conftest.py").exists():
             # Testing environment detected
             return cls.TESTING
 

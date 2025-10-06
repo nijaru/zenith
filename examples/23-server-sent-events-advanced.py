@@ -20,14 +20,12 @@ Key features demonstrated:
 """
 
 import asyncio
-import json
 import random
 import time
 from datetime import datetime
-from typing import Dict, List
 
 from zenith import Zenith
-from zenith.web.sse import ServerSentEvents, SSEEventManager, create_sse_response
+from zenith.web.sse import SSEEventManager, create_sse_response
 
 # Initialize Zenith app
 app = Zenith()

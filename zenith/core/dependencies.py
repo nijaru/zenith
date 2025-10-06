@@ -31,21 +31,21 @@ from .container import get_db_session, set_current_db_session
 from .scoped import get_current_request
 
 __all__ = [
-    "Session",
+    "ARCHIVE_TYPES",
+    "AUDIO_TYPES",
+    "DOCUMENT_TYPES",
+    "GB",
+    # File upload constants for better DX
+    "IMAGE_TYPES",
+    "KB",
+    "MB",
+    "VIDEO_TYPES",
     "Auth",
     "CurrentUser",
     "File",
     "Inject",
     "Request",
-    # File upload constants for better DX
-    "IMAGE_TYPES",
-    "DOCUMENT_TYPES",
-    "AUDIO_TYPES",
-    "VIDEO_TYPES",
-    "ARCHIVE_TYPES",
-    "MB",
-    "GB",
-    "KB",
+    "Session",
 ]
 
 T = TypeVar("T")
@@ -195,7 +195,7 @@ def get_validated_file(
         field_name: Form field name (default: "file")
     """
     from starlette.datastructures import UploadFile as StarletteUploadFile
-    from starlette.requests import Request
+
     from zenith.exceptions import ValidationException
 
     # This function will be called during request handling
@@ -238,9 +238,9 @@ def get_validated_file(
 
         # Validate file extension
         if allowed_extensions and file.filename:
-            import os
+            from pathlib import Path
 
-            ext = os.path.splitext(file.filename)[1].lower()
+            ext = Path(file.filename).suffix.lower()
             if ext not in [e.lower() for e in allowed_extensions]:
                 raise ValidationException(
                     f"File extension '{ext}' not allowed. Allowed extensions: {', '.join(allowed_extensions)}"
@@ -321,7 +321,7 @@ def _get_service_lock():
     return _service_lock
 
 
-def Inject(service_type: type[T] | None = None) -> Any:
+def Inject[T](service_type: type[T] | None = None) -> Any:
     """
     Dependency injection for singleton services.
 

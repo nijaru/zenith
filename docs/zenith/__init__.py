@@ -28,7 +28,6 @@ from zenith.core.config import Config
 # ============================================================================
 # ROUTING & DEPENDENCY INJECTION
 # ============================================================================
-
 from zenith.core.routing import Auth, File, Router
 from zenith.core.routing.dependencies import (
     AuthDependency,
@@ -43,13 +42,11 @@ from zenith.core.scoped import DatabaseSession, Depends, RequestScoped, request_
 # ============================================================================
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
-
 from zenith.core.service import Service
 
 # ============================================================================
 # DATABASE & MIGRATIONS
 # ============================================================================
-
 from zenith.db import (
     AsyncSession,
     Base,
@@ -66,7 +63,6 @@ from zenith.db.migrations import MigrationManager
 # ============================================================================
 # HTTP EXCEPTIONS & ERROR HANDLING
 # ============================================================================
-
 from zenith.exceptions import (
     # Exception classes
     AuthenticationException,
@@ -93,14 +89,11 @@ from zenith.exceptions import (
 # ============================================================================
 # BACKGROUND PROCESSING & JOBS
 # ============================================================================
-
 from zenith.jobs import JobManager, JobQueue, Worker
-from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
 
 # ============================================================================
 # MIDDLEWARE
 # ============================================================================
-
 from zenith.middleware import (
     CompressionMiddleware,
     CORSMiddleware,
@@ -113,13 +106,12 @@ from zenith.middleware import (
 # ============================================================================
 # SESSIONS
 # ============================================================================
-
 from zenith.sessions import SessionManager, SessionMiddleware
+from zenith.tasks.background import BackgroundTasks, TaskQueue, background_task
 
 # ============================================================================
 # WEB UTILITIES & RESPONSES
 # ============================================================================
-
 from zenith.web import (
     OptimizedJSONResponse,
     error_response,
@@ -143,7 +135,6 @@ from zenith.web.static import serve_css_js, serve_images, serve_spa_files
 # ============================================================================
 # WEBSOCKETS & REAL-TIME
 # ============================================================================
-
 from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
 
 # ============================================================================

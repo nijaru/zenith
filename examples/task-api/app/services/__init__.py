@@ -2,13 +2,15 @@
 Service layer for business logic.
 """
 
-from typing import Optional, List
+from typing import List, Optional
+
 from sqlalchemy.exc import IntegrityError
+
 from app.exceptions import (
-    NotFoundError,
     ConflictError,
-    ValidationError,
+    NotFoundError,
     PermissionError,
+    ValidationError,
 )
 
 

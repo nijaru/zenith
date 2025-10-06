@@ -22,29 +22,35 @@ __author__ = "Nick"
 # ============================================================================
 
 from zenith.app import Zenith
+
+# ============================================================================
+# BACKGROUND PROCESSING (SIMPLIFIED)
+# ============================================================================
+from zenith.background import (
+    Job,  # Job data model
+    JobQueue,  # Comprehensive job queue with persistence and retry
+    JobStatus,  # Job status enum
+)
 from zenith.core.application import Application
 from zenith.core.config import Config
 
 # Rails-like dependency shortcuts - these are pre-configured Depends objects
 from zenith.core.dependencies import (
-    Session,  # Database session shortcut (the one true way)
+    ARCHIVE_TYPES,
+    AUDIO_TYPES,
+    DOCUMENT_TYPES,
+    GB,
+    # File upload constants for better DX
+    IMAGE_TYPES,
+    KB,  # Size constants
+    MB,
+    VIDEO_TYPES,
     Auth,  # Authentication dependency (the one true way)
     CurrentUser,  # Current authenticated user
     File,  # File upload dependency with validation
     Request,  # Request object shortcut
-    # File upload constants for better DX
-    IMAGE_TYPES,
-    DOCUMENT_TYPES,
-    AUDIO_TYPES,
-    VIDEO_TYPES,
-    ARCHIVE_TYPES,
-    MB,
-    GB,
-    KB,  # Size constants
+    Session,  # Database session shortcut (the one true way)
 )
-
-# File upload types
-from zenith.web.files import UploadedFile
 
 # ============================================================================
 # ROUTING & DEPENDENCY INJECTION
@@ -58,41 +64,10 @@ from zenith.core.routing.dependencies import (
 from zenith.core.scoped import Depends, RequestScoped, request_scoped
 
 # ============================================================================
-# BACKGROUND PROCESSING (SIMPLIFIED)
-# ============================================================================
-from zenith.background import (
-    JobQueue,  # Comprehensive job queue with persistence and retry
-    Job,  # Job data model
-    JobStatus,  # Job status enum
-)
-from zenith.tasks.background import (
-    BackgroundTasks,  # Simple tasks that run after response is sent
-    background_task,  # Decorator for background task functions
-)
-
-# ============================================================================
 # BUSINESS LOGIC ORGANIZATION
 # ============================================================================
 from zenith.core.service import (
     Service,  # Unified service base class for business logic
-)
-
-# ============================================================================
-# HIGH-LEVEL DECORATORS & UTILITIES
-# ============================================================================
-from zenith.decorators import (
-    cache,
-    rate_limit,
-    validate,
-    paginate,
-    returns,
-    auth_required,
-    transaction,
-)
-from zenith.pagination import (
-    Paginate,
-    PaginatedResponse,
-    CursorPagination,
 )
 
 # ============================================================================
@@ -111,6 +86,19 @@ from zenith.db import (
     create_repository,
 )
 from zenith.db.migrations import MigrationManager
+
+# ============================================================================
+# HIGH-LEVEL DECORATORS & UTILITIES
+# ============================================================================
+from zenith.decorators import (
+    auth_required,
+    cache,
+    paginate,
+    rate_limit,
+    returns,
+    transaction,
+    validate,
+)
 
 # ============================================================================
 # HTTP EXCEPTIONS & ERROR HANDLING
@@ -151,7 +139,6 @@ from zenith.exceptions import (
 
 # Note: Legacy job systems (JobManager, RedisJobQueue, Worker) have been removed
 # Use BackgroundTasks for simple tasks or JobQueue for comprehensive job processing
-
 # ============================================================================
 # MIDDLEWARE
 # ============================================================================
@@ -163,11 +150,20 @@ from zenith.middleware import (
     RequestLoggingMiddleware,
     SecurityHeadersMiddleware,
 )
+from zenith.pagination import (
+    CursorPagination,
+    Paginate,
+    PaginatedResponse,
+)
 
 # ============================================================================
 # SESSIONS
 # ============================================================================
 from zenith.sessions import SessionManager, SessionMiddleware
+from zenith.tasks.background import (
+    BackgroundTasks,  # Simple tasks that run after response is sent
+    background_task,  # Decorator for background task functions
+)
 
 # ============================================================================
 # WEB UTILITIES & RESPONSES
@@ -178,6 +174,9 @@ from zenith.web import (
     json_response,
     success_response,
 )
+
+# File upload types
+from zenith.web.files import UploadedFile
 
 # Server-Sent Events
 from zenith.web.sse import (
@@ -202,126 +201,127 @@ from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManag
 # ============================================================================
 
 __all__ = [
-    # Core Framework
-    "Zenith",
-    "Application",
-    "Config",
-    "__version__",
-    # Database & Models
-    "AsyncSession",
-    "Base",
-    "Database",
-    "Field",
-    "Model",  # Recommended base class for database models
-    "Relationship",
-    "SQLModel",
-    "SQLModelRepository",
-    "ZenithModel",  # Rails-like ActiveRecord model with async methods
-    # Dependency Injection (Rails-like shortcuts)
-    "Session",  # Database session shortcut (the one true way)
-    "Auth",  # Authentication dependency
-    "CurrentUser",  # Current authenticated user
-    "File",  # File upload dependency with validation
-    "Request",  # Request object shortcut
-    "Inject",  # Service injection
+    "ARCHIVE_TYPES",
+    "AUDIO_TYPES",
+    "DOCUMENT_TYPES",
+    "GB",
     # File upload helpers
     "IMAGE_TYPES",
-    "DOCUMENT_TYPES",
-    "AUDIO_TYPES",
-    "VIDEO_TYPES",
-    "ARCHIVE_TYPES",
-    "MB",
-    "GB",
     "KB",
-    # Request-scoped dependencies
-    "Depends",
-    "RequestScoped",
-    # Background Processing (Simplified API)
-    "BackgroundTasks",  # Simple tasks that run after response
-    "JobQueue",  # Comprehensive job processing with retry
-    "Job",  # Job data model
-    "JobStatus",  # Job status enum
-    "background_task",  # Decorator for background task functions
+    "MB",
+    "VIDEO_TYPES",
+    "Application",
+    # Database & Models
+    "AsyncSession",
+    "Auth",  # Authentication dependency
     # HTTP Exceptions
     "AuthenticationException",
     "AuthorizationException",
+    # Background Processing (Simplified API)
+    "BackgroundTasks",  # Simple tasks that run after response
     "BadRequestException",
+    "Base",
     "BusinessLogicException",
+    "CORSMiddleware",
+    "CSRFMiddleware",
+    # Middleware
+    "CompressionMiddleware",
     "ConcurrencyException",
+    "Config",
     "ConflictException",
-    "DatabaseException",
+    "CurrentUser",  # Current authenticated user
+    "CursorPagination",
     "DataIntegrityException",
+    "Database",
+    "DatabaseException",
+    # Request-scoped dependencies
+    "Depends",
+    "Field",
+    "File",  # File upload dependency with validation
     "ForbiddenException",
     "GoneException",
     "HTTPException",
+    "Inject",  # Service injection
     "IntegrationException",
     "InternalServerException",
-    "NotFoundException",
-    "PaymentException",
-    "PreconditionFailedException",
-    "RateLimitException",
-    "ResourceLockedException",
-    "ServiceUnavailableException",
-    "UnauthorizedException",
-    "ValidationException",
-    "ZenithException",
-    # Middleware
-    "CompressionMiddleware",
-    "CORSMiddleware",
-    "CSRFMiddleware",
-    "RequestIDMiddleware",
-    "RequestLoggingMiddleware",
-    "SecurityHeadersMiddleware",
-    # Business Logic
-    "Service",
-    # Routing
-    "Router",
-    # Sessions
-    "SessionManager",
-    "SessionMiddleware",
+    "Job",  # Job data model
+    "JobQueue",  # Comprehensive job processing with retry
+    "JobStatus",  # Job status enum
     # Note: Legacy job systems removed for API clarity
     # Database Migrations
     "MigrationManager",
-    "create_repository",
+    "Model",  # Recommended base class for database models
+    "NotFoundException",
     # Web Responses & Utilities
     "OptimizedJSONResponse",
-    "json_response",
-    "error_response",
-    "success_response",
-    # Exception Helpers
-    "bad_request",
-    "conflict",
-    "forbidden",
-    "internal_error",
-    "not_found",
-    "unauthorized",
-    "validation_error",
     # Pagination
     "Paginate",
     "PaginatedResponse",
-    "CursorPagination",
-    "paginate",
-    # Server-Sent Events
-    "ServerSentEvents",
+    "PaymentException",
+    "PreconditionFailedException",
+    "RateLimitException",
+    "Relationship",
+    "Request",  # Request object shortcut
+    "RequestIDMiddleware",
+    "RequestLoggingMiddleware",
+    "RequestScoped",
+    "ResourceLockedException",
+    # Routing
+    "Router",
+    "SQLModel",
+    "SQLModelRepository",
     "SSEConnection",
     "SSEConnectionState",
     "SSEEventManager",
-    "create_sse_response",
-    "sse",
+    "SecurityHeadersMiddleware",
+    # Server-Sent Events
+    "ServerSentEvents",
+    # Business Logic
+    "Service",
+    "ServiceUnavailableException",
+    # Dependency Injection (Rails-like shortcuts)
+    "Session",  # Database session shortcut (the one true way)
+    # Sessions
+    "SessionManager",
+    "SessionMiddleware",
+    "UnauthorizedException",
+    "UploadedFile",
+    "ValidationException",
     # WebSockets
     "WebSocket",
     "WebSocketDisconnect",
     "WebSocketManager",
+    # Core Framework
+    "Zenith",
+    "ZenithException",
+    "ZenithModel",  # Rails-like ActiveRecord model with async methods
+    "__version__",
+    "auth_required",
+    "background_task",  # Decorator for background task functions
+    # Exception Helpers
+    "bad_request",
+    # High-level Decorators
+    "cache",
+    "conflict",
+    "create_repository",
+    "create_sse_response",
+    "error_response",
+    "forbidden",
+    "internal_error",
+    "json_response",
+    "not_found",
+    "paginate",
+    "rate_limit",
+    "request_scoped",
+    "returns",
     # Static File Serving
     "serve_css_js",
     "serve_images",
     "serve_spa_files",
-    # High-level Decorators
-    "cache",
-    "rate_limit",
-    "validate",
-    "returns",
-    "auth_required",
+    "sse",
+    "success_response",
     "transaction",
-    "request_scoped",
+    "unauthorized",
+    "validate",
+    "validation_error",
 ]

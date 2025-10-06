@@ -15,10 +15,11 @@ import functools
 import hashlib
 import time
 from collections import OrderedDict
+from collections.abc import Callable
 from threading import Lock
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
-from zenith.exceptions import RateLimitException, ValidationException
+from zenith.exceptions import RateLimitException
 
 T = TypeVar("T")
 
@@ -32,7 +33,7 @@ _rate_limit_lock = Lock()
 _rate_limit_store: dict[str, list[float]] = {}
 
 
-def cache(ttl: int = 60, key_prefix: str = None):
+def cache(ttl: int = 60, key_prefix: str | None = None):
     """
     Cache endpoint responses for the specified time.
 
@@ -241,7 +242,7 @@ def rate_limit(limit: str):
     return decorator
 
 
-def validate(request_model: type = None, response_model: type = None):
+def validate(request_model: type | None = None, response_model: type | None = None):
     """
     Validate request and response data.
 
@@ -344,15 +345,15 @@ def paginate(default_limit: int = 20, max_limit: int = 100):
 
             # Check if function expects a Paginate object first
             has_paginate_param = False
-            for param_name, param in func_params.items():
+            for _param_name, param in func_params.items():
                 if param.annotation and "Paginate" in str(param.annotation):
                     # This is fundamentally incompatible - raise an error
                     raise TypeError(
-                        f"@paginate decorator cannot be used with Paginate dependency injection. "
-                        f"The Paginate object is instantiated by the DI system before the decorator runs. "
-                        f"Use one of these patterns instead:\n"
-                        f"  1. Use @paginate with simple page/limit parameters\n"
-                        f"  2. Remove @paginate and configure Paginate manually in your endpoint"
+                        "@paginate decorator cannot be used with Paginate dependency injection. "
+                        "The Paginate object is instantiated by the DI system before the decorator runs. "
+                        "Use one of these patterns instead:\n"
+                        "  1. Use @paginate with simple page/limit parameters\n"
+                        "  2. Remove @paginate and configure Paginate manually in your endpoint"
                     )
 
             # Only add individual parameters if no Paginate object is used
@@ -445,7 +446,7 @@ def returns(model: type):
     return decorator
 
 
-def auth_required(role: str = None, scopes: list[str] = None):
+def auth_required(role: str | None = None, scopes: list[str] | None = None):
     """
     Require authentication with optional role/scope checking.
 
@@ -530,11 +531,11 @@ def transaction(rollback_on: tuple[type[Exception]] = (Exception,)):
 
 # Export convenience shortcuts
 __all__ = [
-    "cache",
-    "rate_limit",
-    "validate",
-    "paginate",
-    "returns",
     "auth_required",
+    "cache",
+    "paginate",
+    "rate_limit",
+    "returns",
     "transaction",
+    "validate",
 ]

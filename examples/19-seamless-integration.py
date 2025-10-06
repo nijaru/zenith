@@ -12,12 +12,10 @@ Key features:
 
 import os
 from datetime import datetime
-from typing import Optional
 
 from sqlmodel import Field
 
 from zenith import Zenith
-from zenith import Session
 from zenith.db import (
     ZenithModel as Model,
 )  # Enhanced model with where/find/create methods
@@ -39,7 +37,7 @@ class User(Model, table=True):
 
     __tablename__ = "seamless_users"  # Unique table name to avoid conflicts
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     name: str = Field(max_length=100)
     email: str = Field(unique=True)
     active: bool = Field(default=True)
@@ -51,7 +49,7 @@ class Post(Model, table=True):
 
     __tablename__ = "seamless_posts"  # Unique table name to avoid conflicts
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     title: str = Field(max_length=200)
     content: str
     published: bool = Field(default=False)

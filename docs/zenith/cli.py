@@ -259,8 +259,8 @@ def version():
 @main.command()
 def info():
     """Show application information."""
-    from pathlib import Path
     import sys
+    from pathlib import Path
 
     click.echo("🔍 Zenith Application Information:")
     click.echo("─" * 40)

@@ -14,7 +14,7 @@ Then test:
 """
 
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, select

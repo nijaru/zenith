@@ -2,17 +2,18 @@
 Authentication utilities for JWT token handling.
 """
 
-from typing import Optional
 from datetime import datetime, timedelta
+
+from fastapi import Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import select
+
 from app.config import settings
 from app.database import get_session
-from app.models import User
 from app.exceptions import AuthenticationError
+from app.models import User
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -113,9 +114,9 @@ async def get_current_user(
 
 
 async def get_optional_user(
-    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     session=Depends(get_session),
-) -> Optional[User]:
+) -> User | None:
     """
     Get current user if authenticated, None otherwise.
 

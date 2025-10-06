@@ -11,15 +11,14 @@ Run with: python examples/03-context-system.py
 Then visit: http://localhost:8003
 """
 
-import asyncio
 from datetime import datetime
-from typing import Optional
 
-from zenith import Zenith, Router
-from zenith import Session
+from zenith import Router, Zenith
+from zenith.db import (
+    Field,
+)
 from zenith.db import (
     ZenithModel as Model,
-    Field,
 )  # Enhanced model with where/find/create methods
 
 # 🎯 Zero-config setup - just works!
@@ -33,22 +32,22 @@ app = Zenith()
 class Product(Model, table=True):
     """Modern Product model with database operations."""
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     name: str = Field(min_length=1, max_length=200, description="Product name")
     price: float = Field(gt=0, description="Product price")
     category: str = Field(min_length=1, max_length=100, description="Product category")
     stock: int = Field(ge=0, description="Stock quantity")
-    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    created_at: datetime | None = Field(default_factory=datetime.utcnow)
 
 
 class Order(Model, table=True):
     """Modern Order model with database operations."""
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     product_id: int = Field(description="ID of the product being ordered")
     quantity: int = Field(gt=0, description="Quantity to order")
     total: float = Field(description="Total order amount")
-    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+    created_at: datetime | None = Field(default_factory=datetime.utcnow)
 
 
 # ============================================================================

@@ -17,7 +17,6 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
     Returns:
         Dictionary of name -> object mappings for shell namespace
     """
-    from pathlib import Path
 
     import_errors = []
     namespace = {}
@@ -68,7 +67,7 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
 
     # Web utilities
     try:
-        from zenith.web.health import health_check, detailed_health_check
+        from zenith.web.health import detailed_health_check, health_check
         from zenith.web.metrics import metrics_endpoint
 
         namespace.update(
@@ -78,7 +77,7 @@ def create_shell_namespace(app_path: str | None = None) -> dict[str, Any]:
                 "metrics_endpoint": metrics_endpoint,
             }
         )
-    except ImportError as e:
+    except ImportError:
         # Try alternative imports
         try:
             from zenith.web import responses

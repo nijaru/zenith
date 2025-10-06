@@ -12,14 +12,11 @@ Shows the improved developer experience with clean, declarative code.
 
 import os
 from datetime import datetime
-from typing import Optional
 
 from sqlmodel import Field
 
 # Zenith v0.0.3 imports - much cleaner!
 from zenith import Zenith
-from zenith import Session
-from zenith import Auth
 from zenith.core import is_development
 from zenith.db import (
     ZenithModel as Model,
@@ -43,7 +40,7 @@ app = Zenith()
 class User(Model, table=True):
     """User model with Modern convenience methods."""
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     name: str = Field(max_length=100)
     email: str = Field(unique=True)
     active: bool = Field(default=True)
@@ -53,7 +50,7 @@ class User(Model, table=True):
 class Post(Model, table=True):
     """Blog post model."""
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     title: str = Field(max_length=200)
     content: str
     published: bool = Field(default=False)

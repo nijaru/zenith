@@ -5,11 +5,10 @@ Tests all response utilities including OptimizedJSONResponse, file responses,
 pagination, cookies, and content negotiation.
 """
 
-import json
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 from uuid import UUID
 
 import pytest

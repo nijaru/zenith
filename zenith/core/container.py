@@ -44,11 +44,13 @@ def _unwrap_optional(annotation: Any) -> tuple[Any, bool]:
     origin = get_origin(annotation)
 
     # Handle both typing.Union and types.UnionType (Python 3.10+)
-    if origin is Union or (hasattr(annotation, '__args__') and type(annotation).__name__ == 'UnionType'):
+    if origin is Union or (
+        hasattr(annotation, "__args__") and type(annotation).__name__ == "UnionType"
+    ):
         # Get args - works for both Union[X, Y] and X | Y
         args = get_args(annotation)
         if not args:  # Fallback for UnionType
-            args = getattr(annotation, '__args__', ())
+            args = getattr(annotation, "__args__", ())
 
         # Filter out NoneType
         non_none_args = [arg for arg in args if arg is not type(None)]
@@ -146,7 +148,7 @@ class DIContainer:
 
         for param_name, param in sig.parameters.items():
             # Skip 'self' parameter
-            if param_name == 'self':
+            if param_name == "self":
                 continue
 
             # Skip if no type annotation
@@ -175,8 +177,9 @@ class DIContainer:
                     from zenith.core.service import Service
 
                     # Check if the annotation is a Service subclass
-                    if (inspect.isclass(actual_type) and
-                        issubclass(actual_type, Service)):
+                    if inspect.isclass(actual_type) and issubclass(
+                        actual_type, Service
+                    ):
                         # Recursively create the Service with its dependencies
                         dependency = self._create_instance(actual_type)
                         kwargs[param_name] = dependency
@@ -237,6 +240,7 @@ class DIContainer:
     async def shutdown(self) -> None:
         """Execute shutdown hooks and cleanup with parallel async execution."""
         import logging
+
         logger = logging.getLogger("zenith.container")
 
         # Shutdown hooks should run in reverse order, but can parallelize async ones
@@ -277,7 +281,9 @@ class DIContainer:
                 elif hasattr(service, "close"):
                     service.close()
             except Exception as e:
-                logger.warning(f"Error closing service {service.__class__.__name__}: {e}")
+                logger.warning(
+                    f"Error closing service {service.__class__.__name__}: {e}"
+                )
 
         # Cleanup async services in parallel
         if service_cleanup_tasks:

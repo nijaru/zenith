@@ -14,14 +14,14 @@ Then test:
 """
 
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 from sqlalchemy import Column, Integer, String, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
-from zenith import Session, RequestScoped, Zenith
+from zenith import RequestScoped, Zenith
 
 # SQLAlchemy models
 Base = declarative_base()
