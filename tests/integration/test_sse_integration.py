@@ -12,7 +12,6 @@ Tests SSE functionality in real request/response contexts including:
 import asyncio
 import json
 import time
-from unittest.mock import patch
 
 import pytest
 from starlette.applications import Starlette
@@ -21,8 +20,8 @@ from starlette.routing import Route
 
 from zenith.testing.client import TestClient
 from zenith.web.sse import (
-    SSEEventManager,
     ServerSentEvents,
+    SSEEventManager,
     create_sse_response,
     sse,
 )

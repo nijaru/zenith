@@ -9,6 +9,7 @@ Combines the power of:
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from starlette.applications import Starlette
@@ -108,7 +109,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         self.environment = self.config._environment
 
         # Import os for environment variable access
-        import os
 
         # Configure based on environment (unless explicitly overridden)
         if self.environment == "production":
@@ -252,7 +252,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
     def _looks_like_production(self) -> bool:
         """Detect if we're running in a production-like environment."""
         import os
-        import sys
 
         indicators = [
             # Cloud platforms
@@ -266,8 +265,8 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             os.getenv("RAILWAY_ENVIRONMENT"),  # Railway
             os.getenv("DETA_RUNTIME"),  # Deta
             # Container environments
-            os.path.exists("/.dockerenv"),  # Docker
-            os.path.exists("/var/run/secrets/kubernetes.io"),  # K8s
+            Path("/.dockerenv").exists(),  # Docker
+            Path("/var/run/secrets/kubernetes.io").exists(),  # K8s
             # CI/CD environments (should not default to dev in CI)
             os.getenv("CI"),  # Generic CI
             os.getenv("GITHUB_ACTIONS"),  # GitHub Actions
@@ -275,17 +274,13 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             os.getenv("CIRCLECI"),  # CircleCI
         ]
 
-        # Check if any production indicator is present
-        if any(indicators):
-            return True
-
-        # Only consider it production if we have actual production deployment indicators
-        # The non-interactive check was too aggressive - many dev tools run non-interactively
-        return False
+        # Check if any production indicator is present and return
+        return any(indicators)
 
     def _validate_production_config(self) -> None:
         """Validate that production requirements are met."""
         import os
+
         from zenith.exceptions import ConfigError
 
         # Require a proper secret key
@@ -545,6 +540,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         # Import exception handler for rate limiting
         from starlette.responses import JSONResponse
+
         from zenith.exceptions import RateLimitException
 
         def rate_limit_handler(request, exc):
@@ -633,7 +629,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             # Use HTTP/3 for production (port 443) if available
             if port == 443 or self.config.port == 443:
                 try:
-                    import aioquic
+                    import aioquic  # noqa: F401
 
                     protocol = "http3"
                     self.logger.info("Auto-selected HTTP/3 for production")
@@ -689,10 +685,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         try:
             from zenith.http3 import create_http3_server
-        except ImportError:
+        except ImportError as e:
             raise RuntimeError(
                 "HTTP/3 support requires 'aioquic'. Install with: pip install zenithweb[http3]"
-            )
+            ) from e
 
         # Use standard HTTPS port for HTTP/3
         actual_port = port or 443
@@ -815,7 +811,6 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             app.add_auth()  # Uses secret from config or env
             app.add_auth("my-secret-key")
         """
-        from zenith.auth import JWTManager
         from zenith.middleware.auth import AuthenticationMiddleware
 
         # Use provided secret or fallback to config

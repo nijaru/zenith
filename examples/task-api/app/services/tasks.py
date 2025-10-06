@@ -2,12 +2,13 @@
 Task service with transaction support.
 """
 
-from typing import List, Optional
 from datetime import datetime, timedelta
-from sqlmodel import select, and_, or_, func
+
+from sqlmodel import and_, func, select
+
+from app.exceptions import NotFoundError, PermissionError
+from app.models import Project, Task, TaskCreate, TaskUpdate
 from app.services import BaseService
-from app.models import Task, TaskCreate, TaskUpdate, Project
-from app.exceptions import NotFoundError, PermissionError, ValidationError
 
 
 class TaskService(BaseService):
@@ -52,12 +53,12 @@ class TaskService(BaseService):
 
     async def list_tasks(
         self,
-        project_id: Optional[int] = None,
-        assignee_id: Optional[int] = None,
-        status: Optional[str] = None,
+        project_id: int | None = None,
+        assignee_id: int | None = None,
+        status: str | None = None,
         skip: int = 0,
         limit: int = 100,
-    ) -> tuple[List[Task], int]:
+    ) -> tuple[list[Task], int]:
         """List tasks with multiple filters."""
         # Start with base query
         query = select(Task)
@@ -167,7 +168,7 @@ class TaskService(BaseService):
         return True
 
     async def bulk_update_tasks(
-        self, task_ids: List[int], update_data: dict, user_id: int
+        self, task_ids: list[int], update_data: dict, user_id: int
     ) -> int:
         """Update multiple tasks at once."""
         updated_count = 0

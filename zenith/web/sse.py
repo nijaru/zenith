@@ -362,10 +362,7 @@ class ServerSentEvents:
             return True
 
         # Check if too many events are queued
-        if connection.events_queued > 50:  # Reasonable queue limit
-            return True
-
-        return False
+        return connection.events_queued > 50  # Reasonable queue limit
 
     async def _monitor_connection_backpressure(self, connection: SSEConnection) -> None:
         """Monitor connection for backpressure indicators and adjust flow control."""

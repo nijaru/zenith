@@ -8,7 +8,7 @@ and better UX based on production feedback.
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import mock_open, patch
 
 import pytest
 
@@ -50,8 +50,8 @@ class TestUploadedFile:
         """Test Starlette-compatible read() method."""
         file = self.create_test_uploaded_file()
 
-        # Mock file content
-        with patch("builtins.open", mock_open(read_data=b"test file content")):
+        # Mock file content (Path.open is used now)
+        with patch("pathlib.Path.open", mock_open(read_data=b"test file content")):
             content = await file.read()
             assert content == b"test file content"
 
@@ -271,8 +271,8 @@ class TestEnhancedFileUploadUX:
                 await file.move_to("/storage/audio/final_location.wav")
                 mock_move.assert_called_once()
 
-        # ✅ Starlette-compatible read
-        with patch("builtins.open", mock_open(read_data=b"audio data")):
+        # ✅ Starlette-compatible read (Path.open is used now)
+        with patch("pathlib.Path.open", mock_open(read_data=b"audio data")):
             content = await file.read()
             assert content == b"audio data"
 

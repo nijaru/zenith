@@ -10,6 +10,7 @@ Compare this to traditional setup - these methods save 20-50 lines each!
 """
 
 import os
+
 from zenith import Zenith
 
 # Set up environment for the example

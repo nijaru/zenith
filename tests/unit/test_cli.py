@@ -8,13 +8,6 @@ This file is kept for reference during the transition but should be removed
 once the new CLI tests are proven stable.
 """
 
-import os
-import subprocess
-import sys
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
-
 import pytest
 from click.testing import CliRunner
 

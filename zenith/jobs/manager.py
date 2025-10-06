@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from typing import Any, TypeVar
 from uuid import uuid4
 
-from zenith.jobs.queue import RedisJobQueue, JobStatus
+from zenith.jobs.queue import JobStatus, RedisJobQueue
 
 logger = logging.getLogger("zenith.jobs.manager")
 

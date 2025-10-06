@@ -184,8 +184,9 @@ async def test_real_asyncpg_connection():
 
     This test only runs in CI or when DATABASE_URL is set locally.
     """
-    import asyncpg
     import os
+
+    import asyncpg
 
     # Set proper environment for test
     os.environ["ZENITH_ENV"] = "test"

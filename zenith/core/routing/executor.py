@@ -89,6 +89,7 @@ class RouteExecutor:
             clear_current_request()
         except Exception as e:
             import logging
+
             logger = logging.getLogger("zenith.routing")
             logger.warning(f"Failed to cleanup request context: {e}")
 
@@ -251,17 +252,19 @@ class RouteExecutor:
         try:
             try:
                 import orjson
+
                 return orjson.loads(body_bytes)
             except ImportError:
                 import json
+
                 try:
                     body_str = body_bytes.decode("utf-8", errors="strict")
                     return json.loads(body_str)
                 except UnicodeDecodeError as e:
                     raise ValidationException(
                         f"Invalid UTF-8 encoding in request body: {e!s}"
-                    )
+                    ) from e
         except Exception as e:
             if hasattr(e, "__class__") and e.__class__.__name__ == "JSONDecodeError":
-                raise ValidationException(f"Invalid JSON in request body: {e!s}")
-            raise ValidationException(f"Failed to parse request body: {e!s}")
+                raise ValidationException(f"Invalid JSON in request body: {e!s}") from e
+            raise ValidationException(f"Failed to parse request body: {e!s}") from e

@@ -11,19 +11,16 @@ Tests all SSE features including:
 """
 
 import asyncio
-import json
 import time
-import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from starlette.responses import StreamingResponse
 
 from zenith.web.sse import (
+    ServerSentEvents,
     SSEConnection,
     SSEConnectionState,
     SSEEventManager,
-    ServerSentEvents,
     create_sse_response,
     sse,
 )
@@ -582,7 +579,6 @@ class TestSSEConvenienceFunctions:
 
     def test_global_sse_instance(self):
         """Test global SSE instance availability."""
-        from zenith.web.sse import sse
 
         assert isinstance(sse, ServerSentEvents)
 

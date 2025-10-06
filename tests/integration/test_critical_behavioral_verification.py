@@ -8,10 +8,12 @@ These are HIGH-PRIORITY tests that should always pass.
 """
 
 import asyncio
+
 import pytest
+
 from zenith import Zenith
-from zenith.testing import TestClient
 from zenith.middleware.rate_limit import RateLimit, RateLimitMiddleware
+from zenith.testing import TestClient
 
 
 class TestCriticalBehavior:

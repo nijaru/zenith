@@ -2,12 +2,13 @@
 Project service for managing projects and team collaboration.
 """
 
-from typing import List, Optional
 from datetime import datetime
-from sqlmodel import select, func
-from app.services import BaseService
-from app.models import Project, ProjectCreate, ProjectUpdate, User
+
+from sqlmodel import func, select
+
 from app.exceptions import NotFoundError, PermissionError
+from app.models import Project, ProjectCreate, ProjectUpdate
+from app.services import BaseService
 
 
 class ProjectService(BaseService):
@@ -40,11 +41,11 @@ class ProjectService(BaseService):
 
     async def list_projects(
         self,
-        user_id: Optional[int] = None,
+        user_id: int | None = None,
         skip: int = 0,
         limit: int = 100,
         include_archived: bool = False,
-    ) -> tuple[List[Project], int]:
+    ) -> tuple[list[Project], int]:
         """List projects with filters."""
         query = select(Project)
 

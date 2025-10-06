@@ -65,10 +65,7 @@ class JWTManager:
             char_freqs[char] = char_freqs.get(char, 0) + 1
 
         max_freq = max(char_freqs.values())
-        if max_freq > len(key) * 0.25:
-            return False
-
-        return True
+        return not max_freq > len(key) * 0.25
 
     def create_access_token(
         self,

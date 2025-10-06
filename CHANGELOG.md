@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.6] - 2025-10-06
+
+### Changed
+- **Code Quality Improvements** - Achieved 100% ruff compliance (fixed 506 linting issues)
+  - Replaced `os.path` with modern `pathlib.Path` API throughout codebase
+  - Added `UploadedFile` to public API (`__all__`)
+  - Simplified return conditions and exception handling patterns
+  - Added `ClassVar` annotations for class attributes
+  - Fixed mutable default in `ContextVar`
+  - Added exception chaining (`raise ... from e`) for better tracebacks
+  - Updated test mocks to work with `pathlib.Path`
+
+### Internal
+- Zero linting issues - completely clean codebase
+- All 890 tests passing
+
 ## [0.0.5] - 2025-09-30
 
 ### Context

@@ -2,30 +2,30 @@
 TaskFlow API - Complete task management system built with Zenith.
 """
 
-from typing import Optional, List
-from zenith import Zenith
-from zenith.responses import JSONResponse
-from fastapi import Depends, Query, Path, Body
+from fastapi import Body, Depends, Path, Query
+
+from app.auth import get_current_user, get_optional_user
 from app.config import settings
 from app.database import get_session, init_db
-from app.services.users import UserService
+from app.exceptions import APIException, AuthenticationError
+from app.models import (
+    LoginRequest,
+    ProjectCreate,
+    ProjectResponse,
+    ProjectUpdate,
+    TaskCreate,
+    TaskResponse,
+    TaskUpdate,
+    TokenResponse,
+    UserCreate,
+    UserResponse,
+    UserUpdate,
+)
 from app.services.projects import ProjectService
 from app.services.tasks import TaskService
-from app.models import (
-    UserCreate,
-    UserUpdate,
-    UserResponse,
-    ProjectCreate,
-    ProjectUpdate,
-    ProjectResponse,
-    TaskCreate,
-    TaskUpdate,
-    TaskResponse,
-    LoginRequest,
-    TokenResponse,
-)
-from app.auth import get_current_user, get_optional_user
-from app.exceptions import APIException, AuthenticationError
+from app.services.users import UserService
+from zenith import Zenith
+from zenith.responses import JSONResponse
 
 # Create application
 app = Zenith(
@@ -79,11 +79,11 @@ async def login(login_data: LoginRequest, session=Depends(get_session)):
 # ============= USER ENDPOINTS =============
 
 
-@app.get("/users", response_model=List[UserResponse])
+@app.get("/users", response_model=list[UserResponse])
 async def list_users(
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Max users to return"),
-    search: Optional[str] = Query(None, description="Search in name/email"),
+    search: str | None = Query(None, description="Search in name/email"),
     session=Depends(get_session),
 ):
     """List all users with pagination."""
@@ -146,7 +146,7 @@ async def create_project(
     return project
 
 
-@app.get("/projects", response_model=List[ProjectResponse])
+@app.get("/projects", response_model=list[ProjectResponse])
 async def list_projects(
     my_projects_only: bool = Query(False, description="Only show my projects"),
     include_archived: bool = Query(False, description="Include archived"),
@@ -231,11 +231,11 @@ async def create_task(
     return task
 
 
-@app.get("/tasks", response_model=List[TaskResponse])
+@app.get("/tasks", response_model=list[TaskResponse])
 async def list_tasks(
-    project_id: Optional[int] = Query(None, description="Filter by project"),
-    assignee_id: Optional[int] = Query(None, description="Filter by assignee"),
-    status: Optional[str] = Query(None, description="pending, completed, or overdue"),
+    project_id: int | None = Query(None, description="Filter by project"),
+    assignee_id: int | None = Query(None, description="Filter by assignee"),
+    status: str | None = Query(None, description="pending, completed, or overdue"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     session=Depends(get_session),
@@ -291,7 +291,7 @@ async def delete_task(
 
 @app.post("/tasks/bulk-update")
 async def bulk_update_tasks(
-    task_ids: List[int] = Body(..., description="List of task IDs"),
+    task_ids: list[int] = Body(..., description="List of task IDs"),
     update_data: dict = Body(..., description="Fields to update"),
     current_user=Depends(get_current_user),
     session=Depends(get_session),

@@ -11,7 +11,7 @@ import pytest
 from zenith import Zenith
 from zenith.core.container import DIContainer
 from zenith.core.routing.dependencies import Inject
-from zenith.core.service import Service, EventBus
+from zenith.core.service import EventBus, Service
 
 
 class UserService:

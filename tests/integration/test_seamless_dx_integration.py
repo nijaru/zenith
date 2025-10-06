@@ -9,21 +9,17 @@ Tests complete workflows of:
 """
 
 import os
-import pytest
 import tempfile
+from datetime import datetime
 from unittest.mock import patch
 
-from zenith import Zenith
-from zenith import Session
-from zenith import Auth
+import pytest
+from sqlmodel import Field
+
+from zenith import Auth, Session, Zenith
 from zenith.core import is_development
-from zenith.core.auto_config import Environment
 from zenith.db import ZenithModel
 from zenith.testing import TestClient
-
-from sqlmodel import Field
-from typing import Optional
-from datetime import datetime
 
 
 # Test models for integration testing
@@ -32,7 +28,7 @@ class IntegrationUser(ZenithModel, table=True):
 
     __tablename__ = "integration_users"
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     name: str = Field(max_length=100)
     email: str = Field(unique=True)
     active: bool = Field(default=True)
@@ -44,7 +40,7 @@ class IntegrationPost(ZenithModel, table=True):
 
     __tablename__ = "integration_posts"
 
-    id: Optional[int] = Field(primary_key=True)
+    id: int | None = Field(primary_key=True)
     title: str = Field(max_length=200)
     content: str
     published: bool = Field(default=False)
@@ -538,7 +534,6 @@ class TestBackwardsCompatibility:
 
     def test_traditional_fastapi_patterns_still_work(self):
         """Test traditional FastAPI patterns work alongside Rails-like patterns."""
-        from zenith.core.dependencies import get_database_session
 
         app = Zenith(middleware=[])
 

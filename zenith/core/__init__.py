@@ -22,25 +22,25 @@ from zenith.core.container import DIContainer
 
 # Enhanced dependency injection
 from zenith.core.dependencies import (
-    Session,
     Auth,
     DatabaseContext,
     Inject,
     Request,
     ServiceContext,
+    Session,
 )
 
 # HTTP patterns and constants
 from zenith.core.patterns import (
-    HTTP_GET,
-    HTTP_POST,
-    HTTP_PUT,
-    HTTP_PATCH,
+    CACHEABLE_METHODS,
     HTTP_DELETE,
+    HTTP_GET,
     HTTP_HEAD,
     HTTP_OPTIONS,
+    HTTP_PATCH,
+    HTTP_POST,
+    HTTP_PUT,
     METHODS_WITH_BODY,
-    CACHEABLE_METHODS,
     SAFE_METHODS,
     extract_path_params,
 )
@@ -50,7 +50,17 @@ from zenith.core.service import Service
 from zenith.core.supervisor import Supervisor
 
 __all__ = [
-    "Session",
+    "CACHEABLE_METHODS",
+    "HTTP_DELETE",
+    # HTTP patterns
+    "HTTP_GET",
+    "HTTP_HEAD",
+    "HTTP_OPTIONS",
+    "HTTP_PATCH",
+    "HTTP_POST",
+    "HTTP_PUT",
+    "METHODS_WITH_BODY",
+    "SAFE_METHODS",
     "Application",
     "Auth",
     "AutoConfig",
@@ -62,22 +72,12 @@ __all__ = [
     "Request",
     "Service",
     "ServiceContext",
+    "Session",
     "Supervisor",
-    # HTTP patterns
-    "HTTP_GET",
-    "HTTP_POST",
-    "HTTP_PUT",
-    "HTTP_PATCH",
-    "HTTP_DELETE",
-    "HTTP_HEAD",
-    "HTTP_OPTIONS",
-    "METHODS_WITH_BODY",
-    "CACHEABLE_METHODS",
-    "SAFE_METHODS",
-    "extract_path_params",
     # Auto-config functions
     "create_auto_config",
     "detect_environment",
+    "extract_path_params",
     "get_database_url",
     "get_secret_key",
     "is_development",

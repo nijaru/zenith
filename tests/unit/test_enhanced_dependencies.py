@@ -7,25 +7,25 @@ Tests for:
 - Context managers for manual resolution
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
 
 from zenith.core.dependencies import (
-    Session,
     Auth,
-    Request,
+    AuthenticatedUser,
+    DatabaseContext,
+    HttpRequest,
     Inject,
-    get_database_session,
+    Request,
+    ServiceContext,
+    Session,
     get_auth_user,
     get_current_request_dependency,
-    DatabaseContext,
-    ServiceContext,
-    resolve_db,
+    get_database_session,
     resolve_auth,
-    AuthenticatedUser,
-    HttpRequest,
+    resolve_db,
 )
-from zenith.core.container import set_current_db_session
 
 
 class TestDependencyShortcuts:
@@ -244,8 +244,9 @@ class TestDependencyIntegration:
 
     def test_dependency_shortcuts_work_with_type_hints(self):
         """Test dependency shortcuts work with type annotations."""
-        from sqlalchemy.ext.asyncio import AsyncSession
         from typing import get_type_hints
+
+        from sqlalchemy.ext.asyncio import AsyncSession
 
         # This should work in route definitions
         async def example_route(session: AsyncSession = Session, user=Auth):

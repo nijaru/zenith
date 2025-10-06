@@ -5,7 +5,6 @@ Tests all CLI commands to ensure they are error-free and working correctly.
 """
 
 import os
-import subprocess
 import sys
 import tempfile
 from pathlib import Path

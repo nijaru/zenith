@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from zenith.db import Database
 

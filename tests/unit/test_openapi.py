@@ -4,7 +4,6 @@ Tests for OpenAPI specification generator.
 Tests caching functionality, spec generation, and performance optimizations.
 """
 
-import pytest
 from pydantic import BaseModel
 
 from zenith.core.routing import Router

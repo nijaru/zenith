@@ -5,8 +5,8 @@ Handles Context, Auth, File, and other dependency injection patterns
 with clean separation from routing logic.
 """
 
-from typing import Any
 import asyncio
+from typing import Any
 
 from starlette.requests import Request
 
@@ -39,7 +39,9 @@ class DependencyResolver:
             return await dependency_marker.get_or_create(request)
 
         elif isinstance(dependency_marker, InjectDependency):
-            return await self._resolve_context(dependency_marker, param_type, request, app)
+            return await self._resolve_context(
+                dependency_marker, param_type, request, app
+            )
 
         elif isinstance(dependency_marker, AuthDependency):
             return await self._resolve_auth(dependency_marker, request)
@@ -66,6 +68,7 @@ class DependencyResolver:
             instance = _service_instances[service_class]
             # Inject request context (services are singletons but request changes)
             from zenith.core.service import Service
+
             if isinstance(instance, Service) and request:
                 instance._inject_request(request)
             return instance
@@ -76,6 +79,7 @@ class DependencyResolver:
             if service_class in _service_instances:
                 instance = _service_instances[service_class]
                 from zenith.core.service import Service
+
                 if isinstance(instance, Service) and request:
                     instance._inject_request(request)
                 return instance
@@ -87,6 +91,7 @@ class DependencyResolver:
                     _service_instances[service_class] = instance
                     # Inject request context
                     from zenith.core.service import Service
+
                     if isinstance(instance, Service) and request:
                         instance._inject_request(request)
                     return instance
@@ -94,7 +99,7 @@ class DependencyResolver:
                     pass  # Not registered, create directly
 
             # Use DIContainer's injection for constructor dependencies
-            if app and hasattr(app, 'container'):
+            if app and hasattr(app, "container"):
                 try:
                     instance = app.container._create_instance(service_class)
                 except KeyError:
@@ -106,8 +111,9 @@ class DependencyResolver:
 
             # Inject framework internals for Service instances
             from zenith.core.service import Service
+
             if isinstance(instance, Service):
-                if app and hasattr(app, 'container'):
+                if app and hasattr(app, "container"):
                     instance._inject_container(app.container)
                 # Inject request context
                 if request:

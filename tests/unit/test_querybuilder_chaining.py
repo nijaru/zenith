@@ -7,12 +7,14 @@ Addresses Issue 1 from ZENITH_ISSUES_ALTTEXT.md:
 """
 
 import os
-import pytest
 import tempfile
-from sqlmodel import Field
+
+import pytest
 from sqlalchemy import text
+from sqlmodel import Field
 
 from zenith.db import ZenithModel
+
 
 class ChainUser(ZenithModel, table=True):
     """Test user model for chaining tests."""
@@ -24,11 +26,11 @@ class ChainUser(ZenithModel, table=True):
     name: str
     active: bool = True
 
+
 @pytest.fixture
 async def app_with_database():
     """Create app with test database."""
     from zenith import Zenith
-    from zenith.testing import TestClient
 
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
         db_path = tmp.name
@@ -63,6 +65,8 @@ async def app_with_database():
         os.unlink(db_path)
     except Exception:
         pass
+
+
 @pytest.mark.asyncio
 async def test_where_returns_querybuilder_immediately(app_with_database):
     """Test that .where() returns QueryBuilder synchronously (no await needed)."""
@@ -78,6 +82,8 @@ async def test_where_returns_querybuilder_immediately(app_with_database):
         assert hasattr(builder, "first")
         assert hasattr(builder, "all")
         assert hasattr(builder, "order_by")
+
+
 @pytest.mark.asyncio
 async def test_where_chaining_single_statement(app_with_database):
     """Test seamless chaining: await ChainUser.where(...).first()"""
@@ -95,18 +101,22 @@ async def test_where_chaining_single_statement(app_with_database):
         assert user is not None
         assert user.email == "alice@example.com"
         assert user.name == "Alice"
+
+
 @pytest.mark.asyncio
 async def test_where_chaining_with_multiple_methods(app_with_database):
     """Test chaining multiple QueryBuilder methods."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Create test users
         await ChainUser.create(email="alice@example.com", name="Alice", active=True)
         await ChainUser.create(email="bob@example.com", name="Bob", active=True)
-        await ChainUser.create(email="charlie@example.com", name="Charlie", active=False)
+        await ChainUser.create(
+            email="charlie@example.com", name="Charlie", active=False
+        )
 
         # Chain multiple methods
         users = await ChainUser.where(active=True).order_by("-name").limit(10).all()
@@ -114,30 +124,36 @@ async def test_where_chaining_with_multiple_methods(app_with_database):
         assert len(users) == 2
         assert users[0].name == "Bob"  # Descending order
         assert users[1].name == "Alice"
+
+
 @pytest.mark.asyncio
 async def test_where_with_count(app_with_database):
     """Test chaining with count()."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Create test users
         await ChainUser.create(email="alice@example.com", name="Alice", active=True)
         await ChainUser.create(email="bob@example.com", name="Bob", active=True)
-        await ChainUser.create(email="charlie@example.com", name="Charlie", active=False)
+        await ChainUser.create(
+            email="charlie@example.com", name="Charlie", active=False
+        )
 
         # Single-line chaining with count()
         count = await ChainUser.where(active=True).count()
 
         assert count == 2
+
+
 @pytest.mark.asyncio
 async def test_where_with_exists(app_with_database):
     """Test chaining with exists()."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Create test user
         await ChainUser.create(email="alice@example.com", name="Alice", active=True)
@@ -148,13 +164,15 @@ async def test_where_with_exists(app_with_database):
 
         assert exists is True
         assert not_exists is False
+
+
 @pytest.mark.asyncio
 async def test_find_by_uses_synchronous_where(app_with_database):
     """Test that find_by() works with synchronous where()."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Create test user
         await ChainUser.create(email="alice@example.com", name="Alice", active=True)
@@ -164,13 +182,15 @@ async def test_find_by_uses_synchronous_where(app_with_database):
 
         assert user is not None
         assert user.email == "alice@example.com"
+
+
 @pytest.mark.asyncio
 async def test_where_lazy_session_only_fetched_on_execution(app_with_database):
     """Test that session is only fetched when executing terminal methods."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Building the query should not fetch session yet
         builder = ChainUser.where(active=True).order_by("-name").limit(5)
@@ -184,13 +204,15 @@ async def test_where_lazy_session_only_fetched_on_execution(app_with_database):
         # After execution, session should be set
         assert builder.session is not None
         assert isinstance(users, list)
+
+
 @pytest.mark.asyncio
 async def test_complex_chaining_scenario(app_with_database):
     """Test the exact scenario from the issue report."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Create test data
         await ChainUser.create(email="alice@example.com", name="Alice", active=True)
@@ -211,13 +233,15 @@ async def test_complex_chaining_scenario(app_with_database):
 
         assert len(users) == 3
         assert all(u.active for u in users)
+
+
 @pytest.mark.asyncio
 async def test_where_no_results(app_with_database):
     """Test chaining when no results match."""
     from zenith.testing import TestClient
 
     app = app_with_database
-    
+
     async with TestClient(app) as client:
         # Query with no matches
         user = await ChainUser.where(email="nobody@example.com").first()

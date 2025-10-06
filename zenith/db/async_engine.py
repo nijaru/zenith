@@ -21,7 +21,9 @@ from sqlalchemy.ext.asyncio import (
 _engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = (
     WeakKeyDictionary()
 )
-_engine_config: ContextVar[dict[str, Any]] = ContextVar("engine_config", default={})
+_engine_config: ContextVar[dict[str, Any] | None] = ContextVar(
+    "engine_config", default=None
+)
 
 
 class AsyncEngineManager:

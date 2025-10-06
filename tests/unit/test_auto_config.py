@@ -8,21 +8,22 @@ Tests for:
 """
 
 import os
-import pytest
 from unittest.mock import patch
 
+import pytest
+
 from zenith.core.auto_config import (
-    Environment,
     AutoConfig,
     DatabaseConfig,
-    SecurityConfig,
+    Environment,
     MiddlewareConfig,
-    detect_environment,
+    SecurityConfig,
     create_auto_config,
+    detect_environment,
     is_development,
     is_production,
-    is_testing,
     is_staging,
+    is_testing,
 )
 
 
@@ -79,23 +80,20 @@ class TestEnvironmentDetection:
 
     def test_file_based_detection(self):
         """Test file-based environment detection."""
-        with patch("os.path.exists") as mock_exists:
+        with patch("pathlib.Path.exists", lambda self, **kwargs: str(self) == "/.dockerenv"):
             # Test Docker environment
-            def exists_side_effect(path):
-                return path == "/.dockerenv"
-
-            mock_exists.side_effect = exists_side_effect
-
             with patch.dict(os.environ, {}, clear=True):
                 env = Environment.detect()
                 assert env == Environment.PRODUCTION
 
-        with patch("os.path.exists") as mock_exists:
+        with patch(
+            "pathlib.Path.exists",
+            lambda self, **kwargs: str(self) in ["pytest.ini", "conftest.py"],
+        ):
             # Test testing environment
-            def exists_side_effect(path):
-                return path in ["pytest.ini", "conftest.py"]
-
-            mock_exists.side_effect = exists_side_effect
+            with patch.dict(os.environ, {}, clear=True):
+                env = Environment.detect()
+                assert env == Environment.TESTING
 
             with patch.dict(os.environ, {}, clear=True):
                 env = Environment.detect()

@@ -2,18 +2,19 @@
 User service for authentication and user management.
 """
 
-from typing import Optional, List
 from datetime import datetime
-from sqlmodel import select, func, or_
-from app.services import BaseService
-from app.models import User, UserCreate, UserUpdate
-from app.auth import hash_password, verify_password, create_access_token
+
+from sqlmodel import func, or_, select
+
+from app.auth import create_access_token, hash_password, verify_password
 from app.exceptions import (
-    NotFoundError,
     ConflictError,
-    ValidationError,
+    NotFoundError,
     PermissionError,
+    ValidationError,
 )
+from app.models import User, UserCreate, UserUpdate
+from app.services import BaseService
 
 
 class UserService(BaseService):
@@ -52,15 +53,15 @@ class UserService(BaseService):
             raise NotFoundError(f"User {user_id} not found")
         return user
 
-    async def get_user_by_email(self, email: str) -> Optional[User]:
+    async def get_user_by_email(self, email: str) -> User | None:
         """Get user by email for authentication."""
         stmt = select(User).where(User.email == email)
         result = await self.session.exec(stmt)
         return result.first()
 
     async def list_users(
-        self, skip: int = 0, limit: int = 100, search: Optional[str] = None
-    ) -> tuple[List[User], int]:
+        self, skip: int = 0, limit: int = 100, search: str | None = None
+    ) -> tuple[list[User], int]:
         """List users with pagination and search."""
         # Build base query
         query = select(User).where(User.is_active == True)
@@ -130,7 +131,7 @@ class UserService(BaseService):
         await self.commit()
         return True
 
-    async def authenticate(self, email: str, password: str) -> Optional[dict]:
+    async def authenticate(self, email: str, password: str) -> dict | None:
         """Authenticate user and return tokens."""
         user = await self.get_user_by_email(email)
 

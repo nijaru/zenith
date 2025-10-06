@@ -5,7 +5,8 @@ Tests that Services can have dependencies auto-injected via constructor.
 """
 
 import pytest
-from zenith import Service, Zenith, Inject
+
+from zenith import Inject, Service, Zenith
 from zenith.testing import TestClient
 
 
@@ -34,11 +35,7 @@ class OrderService(Service):
     async def create_order(self, product_id: int, amount: float):
         product = await self.products.get_product(product_id)
         payment = await self.payments.charge(amount)
-        return {
-            "product": product,
-            "payment": payment,
-            "status": "created"
-        }
+        return {"product": product, "payment": payment, "status": "created"}
 
 
 @pytest.mark.asyncio
@@ -50,10 +47,7 @@ class TestConstructorInjection:
         app = Zenith(debug=True)
 
         @app.get("/product/{product_id}")
-        async def get_product(
-            product_id: int,
-            products: ProductService = Inject()
-        ):
+        async def get_product(product_id: int, products: ProductService = Inject()):
             return await products.get_product(product_id)
 
         async with TestClient(app) as client:
@@ -69,16 +63,13 @@ class TestConstructorInjection:
 
         @app.post("/orders")
         async def create_order(
-            product_id: int,
-            amount: float,
-            orders: OrderService = Inject()
+            product_id: int, amount: float, orders: OrderService = Inject()
         ):
             return await orders.create_order(product_id, amount)
 
         async with TestClient(app) as client:
             response = await client.post(
-                "/orders",
-                params={"product_id": 456, "amount": 99.99}
+                "/orders", params={"product_id": 456, "amount": 99.99}
             )
             assert response.status_code == 200
             data = response.json()
@@ -119,7 +110,7 @@ class TestConstructorInjection:
                     return {
                         "has_request": True,
                         "method": self.request.method,
-                        "path": self.request.url.path
+                        "path": self.request.url.path,
                     }
                 return {"has_request": False}
 
@@ -153,6 +144,7 @@ class TestManualServiceUsage:
 
     async def test_service_without_request_context(self):
         """Test that services work without request context."""
+
         class MyService(Service):
             async def do_something(self):
                 # Should work even without request

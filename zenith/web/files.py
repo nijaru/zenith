@@ -55,7 +55,7 @@ class UploadedFile(BaseModel):
     # Starlette-compatible methods for easier migration
     async def read(self) -> bytes:
         """Read the entire file content (Starlette UploadFile compatible)."""
-        with open(self.file_path, "rb") as f:
+        with self.file_path.open("rb") as f:
             return f.read()
 
     # Convenience methods for common patterns

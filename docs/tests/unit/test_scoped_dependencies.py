@@ -5,18 +5,15 @@ Covers the new RequestScoped, DatabaseSession, and Depends functionality
 that fixes async database issues.
 """
 
-import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from starlette.requests import Request
-from starlette.testclient import TestClient
+import pytest
 
-from zenith import Zenith, DatabaseSession, RequestScoped, Depends
+from zenith import DatabaseSession, Depends, RequestScoped, Zenith
 from zenith.core.scoped import (
+    clear_current_request,
     get_current_request,
     set_current_request,
-    clear_current_request,
 )
 
 
@@ -340,8 +337,7 @@ class TestAsyncGeneratorCleanup:
             return name in cache
 
         def mock_delattr(obj, name):
-            if name in cache:
-                del cache[name]
+            cache.pop(name, None)
 
         import builtins
 
