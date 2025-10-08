@@ -195,19 +195,19 @@ class TestSeamlessZenithModelIntegration:
         async def get_users():
             # No manual session management needed!
             users = await IntegrationUser.all()
-            return {"users": [user.to_dict() for user in users]}
+            return {"users": [user.model_dump() for user in users]}
 
         @app.post("/users")
         async def create_user(user_data: dict):
             # Seamless creation without session management
             user = await IntegrationUser.create(**user_data)
-            return {"user": user.to_dict()}
+            return {"user": user.model_dump()}
 
         @app.get("/users/{user_id}")
         async def get_user(user_id: int):
             # Automatic 404 handling
             user = await IntegrationUser.find_or_404(user_id)
-            return {"user": user.to_dict()}
+            return {"user": user.model_dump()}
 
         # Test the integration with TestClient
         async with TestClient(app) as client:
@@ -243,14 +243,14 @@ class TestSeamlessZenithModelIntegration:
         @app.post("/users")
         async def create_user(user_data: dict):
             user = await IntegrationUser.create(**user_data)
-            return {"user": user.to_dict()}
+            return {"user": user.model_dump()}
 
         @app.get("/users/active")
         async def get_active_users():
             # Rails-like chainable queries (current working pattern)
             query = IntegrationUser.where(active=True)
             users = await query.order_by("-created_at").limit(10).all()
-            return {"users": [user.to_dict() for user in users]}
+            return {"users": [user.model_dump() for user in users]}
 
         @app.get("/stats")
         async def get_stats():
@@ -408,23 +408,23 @@ class TestCompleteRailsLikeDXWorkflow:
                 @app.get("/users")
                 async def list_users():
                     users = await IntegrationUser.all()
-                    return {"users": [user.to_dict() for user in users]}
+                    return {"users": [user.model_dump() for user in users]}
 
                 @app.post("/users")
                 async def create_user(user_data: dict):
                     user = await IntegrationUser.create(**user_data)
-                    return {"user": user.to_dict()}
+                    return {"user": user.model_dump()}
 
                 @app.get("/users/active")
                 async def get_active_users():
                     query = IntegrationUser.where(active=True)
                     users = await query.order_by("-created_at").limit(5).all()
-                    return {"users": [user.to_dict() for user in users]}
+                    return {"users": [user.model_dump() for user in users]}
 
                 @app.get("/users/{user_id}")
                 async def get_user(user_id: int):
                     user = await IntegrationUser.find_or_404(user_id)
-                    return {"user": user.to_dict()}
+                    return {"user": user.model_dump()}
 
                 # 3. Test complete workflow
                 async with TestClient(app) as client:
@@ -506,7 +506,7 @@ class TestPerformanceWithRailsLikeFeatures:
                     start = time.time()
                     user = await IntegrationUser.create(**user_data)
                     end = time.time()
-                    return {"user": user.to_dict(), "duration_ms": (end - start) * 1000}
+                    return {"user": user.model_dump(), "duration_ms": (end - start) * 1000}
 
                 # Test ZenithModel performance
                 response = await client.post(

@@ -30,7 +30,7 @@ class TestSession:
         expires = datetime.now(UTC) + timedelta(hours=1)
 
         session = Session(
-            "test123", data=test_data, created_at=created, expires_at=expires
+            "test123", data=test_data, created_at=created, expires_at=expires, is_new=False
         )
 
         assert session.session_id == "test123"
@@ -121,9 +121,9 @@ class TestSession:
 
     def test_session_properties(self):
         """Test session properties."""
-        session = Session("test123", {"user": "test"})
+        session = Session("test123", {"user": "test"}, is_new=False)
 
-        # Initially not dirty, not new (has data)
+        # Initially not dirty, not new (loaded session)
         assert session.is_dirty is False
         assert session.is_new is False
 

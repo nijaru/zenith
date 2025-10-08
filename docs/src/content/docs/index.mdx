@@ -48,7 +48,7 @@ async def create_user(email: str, name: str):
 @app.get("/users")
 async def list_users():
     users = await User.all()
-    return {"users": [u.to_dict() for u in users]}
+    return {"users": [u.model_dump() for u in users]}
 ```
 
 ## Key Features
@@ -75,7 +75,7 @@ Zenith comes with everything you need for production APIs:
 ### Database & ORM
 - **ZenithModel**: Enhanced SQLModel with intuitive query methods
 - **Automatic sessions**: Request-scoped database sessions
-- **Built-in serialization**: `to_dict()` and `from_dict()` methods
+- **Built-in serialization**: Pydantic's `model_dump()` method
 - **Migration support**: Alembic integration
 
 ### Authentication & Security
@@ -137,20 +137,20 @@ class Task(ZenithModel, table=True):
 async def list_tasks(user=Auth):
     """List tasks for authenticated user."""
     tasks = await Task.where(user_id=user.id).all()
-    return {"tasks": [t.to_dict() for t in tasks]}
+    return {"tasks": [t.model_dump() for t in tasks]}
 
 @app.post("/tasks")
 async def create_task(title: str, user=Auth):
     """Create a new task."""
     task = await Task.create(title=title, user_id=user.id)
-    return {"task": task.to_dict()}
+    return {"task": task.model_dump()}
 
 @app.patch("/tasks/{task_id}/complete")
 async def complete_task(task_id: int, user=Auth):
     """Mark task as completed."""
     task = await Task.find_or_404(task_id)
     await task.update(completed=True)
-    return {"task": task.to_dict()}
+    return {"task": task.model_dump()}
 ```
 
 This gives you:

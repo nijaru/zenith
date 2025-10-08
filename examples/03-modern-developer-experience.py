@@ -12,6 +12,7 @@ Shows the improved developer experience with clean, declarative code.
 
 import os
 from datetime import datetime
+from pathlib import Path
 
 from sqlmodel import Field
 
@@ -23,8 +24,8 @@ from zenith.db import (
 )  # Enhanced model with where/find/create methods
 
 # Set up database in examples directory
-example_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(example_dir, "modern_dx_example.db")
+example_dir = Path(__file__).resolve().parent
+db_path = example_dir / "modern_dx_example.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 
 # 🚀 Zero-config application setup
@@ -97,7 +98,7 @@ async def list_users():
     # Clean query syntax: User.where(active=True).order_by('-created_at').limit(10)
     query = User.where(active=True)
     users = await query.order_by("-created_at").limit(10).all()
-    return {"users": [user.to_dict() for user in users]}
+    return {"users": [user.model_dump() for user in users]}
 
 
 @app.post("/users")
@@ -112,7 +113,7 @@ async def create_user(user_data: dict):
     """
     # Clean: User.create(name="Alice", email="alice@example.com")
     user = await User.create(**user_data)
-    return {"user": user.to_dict(), "message": "User created successfully"}
+    return {"user": user.model_dump(), "message": "User created successfully"}
 
 
 @app.get("/users/{user_id}")
@@ -125,7 +126,7 @@ async def get_user(user_id: int):
     """
     # Clean: User.find_or_404(123) - raises 404 if not found
     user = await User.find_or_404(user_id)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 
 @app.get("/posts")
@@ -142,7 +143,7 @@ async def list_posts(published: bool = True):
     else:
         posts = await Post.all()
 
-    return {"posts": [post.to_dict() for post in posts], "count": len(posts)}
+    return {"posts": [post.model_dump() for post in posts], "count": len(posts)}
 
 
 @app.post("/posts")
@@ -163,7 +164,7 @@ async def create_post(post_data: dict):
 
     # Clean creation
     post = await Post.create(**post_data)
-    return {"post": post.to_dict(), "message": "Post created successfully"}
+    return {"post": post.model_dump(), "message": "Post created successfully"}
 
 
 @app.get("/stats")

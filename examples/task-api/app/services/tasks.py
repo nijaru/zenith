@@ -74,12 +74,12 @@ class TaskService(BaseService):
 
         if status:
             if status == "completed":
-                conditions.append(Task.is_completed == True)
+                conditions.append(Task.is_completed)
             elif status == "pending":
-                conditions.append(Task.is_completed == False)
+                conditions.append(not Task.is_completed)
             elif status == "overdue":
                 conditions.append(
-                    and_(Task.is_completed == False, Task.due_date < datetime.utcnow())
+                    and_(not Task.is_completed, Task.due_date < datetime.utcnow())
                 )
 
         # Apply all conditions

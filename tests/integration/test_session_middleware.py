@@ -138,6 +138,56 @@ class TestSessionMiddleware:
             assert "custom_session_id" in cookies
             assert "session" not in cookies
 
+    async def test_session_cookie_only_set_when_modified(self):
+        """Test that session cookie is only set when session is new or modified."""
+        app = Zenith()
+
+        session_store = CookieSessionStore(
+            secret_key="test-secret-key-that-is-long-enough-for-session-testing"
+        )
+        session_manager = SessionManager(
+            store=session_store, cookie_name="session", is_secure=False
+        )
+        app.add_middleware(SessionMiddleware, session_manager=session_manager)
+
+        @app.get("/read-only")
+        async def read_only(request):
+            # Read session without modifying
+            user_id = request.session.get("user_id", "none")
+            return {"user_id": user_id}
+
+        @app.get("/modify")
+        async def modify(request):
+            # Modify session
+            request.session["user_id"] = 999
+            return {"status": "modified"}
+
+        async with TestClient(app) as client:
+            # First request - should set cookie (new session)
+            response1 = await client.get("/read-only")
+            assert response1.status_code == 200
+            assert "set-cookie" in response1.headers
+            assert "session" in response1.cookies
+
+            # Second request - read-only, should NOT set cookie
+            response2 = await client.get("/read-only")
+            assert response2.status_code == 200
+            # No set-cookie header when session unchanged
+            assert "set-cookie" not in response2.headers
+
+            # Third request - modify session, should set cookie
+            response3 = await client.get("/modify")
+            assert response3.status_code == 200
+            assert "set-cookie" in response3.headers
+
+            # Fourth request - read-only again, should NOT set cookie
+            response4 = await client.get("/read-only")
+            assert response4.status_code == 200
+            assert "set-cookie" not in response4.headers
+            # But session data should persist
+            data = response4.json()
+            assert data["user_id"] == 999
+
 
 @pytest.mark.asyncio
 class TestSessionStoreIntegration:

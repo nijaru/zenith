@@ -24,6 +24,8 @@ gh release create v{version} --title "v{version}: Brief Description" \
 - Regular patches: PyPI required, GitHub optional
 
 **Pre-Release Checklist:**
+- `uv run ruff check .` (linting - must be 0 errors)
+- `uv format --check` (formatting - must pass)
 - `uv run pip-audit` (security scan)
 - `uv run pytest` (all tests passing)
 - Examples work: `uv run python examples/00-hello-world.py`
@@ -33,10 +35,45 @@ gh release create v{version} --title "v{version}: Brief Description" \
 **CRITICAL**: Never release without explicit approval. "Prep release" = prepare only, STOP before publishing.
 
 ## Quick Facts
-- **Status**: v0.0.2 - Production-ready framework
+- **Status**: v0.0.6 - Production-ready framework
 - **Performance**: 9,600+ req/s with middleware stack
-- **Python**: 3.12-3.13 (TaskGroups, PEP 695 generics, pattern matching)
+- **Python**: 3.12-3.14 (TaskGroups, PEP 695 generics, pattern matching)
 - **CLI**: `zen` command for development tools
+
+## Code Quality Tools
+
+**Run before every commit:**
+```bash
+# Auto-fix linting issues
+uv run ruff check . --fix
+
+# Format code
+uv format
+
+# Run tests
+uv run pytest
+```
+
+**Run before releases:**
+```bash
+# Linting (must be 0 errors)
+uv run ruff check .
+
+# Formatting (must pass)
+uv format --check
+
+# Dead code detection
+uvx vulture . --min-confidence 80
+
+# Security audit
+uv run pip-audit
+
+# Type checking (when ty is stable - currently pre-alpha)
+# uvx ty check .
+
+# Full test suite
+uv run pytest --cov=zenith
+```
 
 ## Framework Philosophy
 
@@ -198,4 +235,4 @@ your-app/
 
 **Current Focus**: API stabilization for v1.0, performance optimization, documentation
 
-*Updated September 2025 - v0.0.2 with Pydantic v2 and Service-based architecture*
+*Updated October 2025 - v0.0.6 with Python 3.14 support and code quality improvements*

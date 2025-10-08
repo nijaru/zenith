@@ -10,12 +10,13 @@ Compare this to traditional setup - these methods save 20-50 lines each!
 """
 
 import os
+from pathlib import Path
 
 from zenith import Zenith
 
 # Set up environment for the example
-example_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(example_dir, "oneliner_example.db")
+example_dir = Path(__file__).resolve().parent
+db_path = example_dir / "oneliner_example.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only-32-chars-long")
 

@@ -1,7 +1,7 @@
 # Zenith Framework
 
 [![PyPI version](https://badge.fury.io/py/zenithweb.svg)](https://badge.fury.io/py/zenithweb)
-[![Python 3.12-3.13](https://img.shields.io/badge/python-3.12--3.13-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/nijaru/zenith/workflows/Test%20Suite/badge.svg)](https://github.com/nijaru/zenith/actions)
 [![Documentation](https://img.shields.io/badge/docs-passing-brightgreen.svg)](https://nijaru.github.io/zenith/)
@@ -32,6 +32,7 @@ from zenith import Zenith
 from zenith import Session  # Database session dependency
 from zenith.db import ZenithModel  # Modern database models
 from sqlmodel import Field
+from pydantic import BaseModel
 from typing import Optional
 
 # 🎯 Zero-config setup - just works!
@@ -49,6 +50,11 @@ class User(ZenithModel, table=True):
     email: str = Field(unique=True)
     active: bool = Field(default=True)
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    active: bool = True
+
 # 🎨 Clean routes with enhanced DX
 @app.get("/")
 async def home():
@@ -58,19 +64,19 @@ async def home():
 async def list_users():  # ✨ No session management needed!
     # Clean chaining: User.where().order_by().limit()
     users = await User.where(active=True).order_by('-id').limit(10).all()
-    return {"users": [user.to_dict() for user in users]}
+    return {"users": [user.model_dump() for user in users]}
 
 @app.post("/users")
-async def create_user(user_data: dict):
+async def create_user(user_data: UserCreate):
     # Clean API: User.create() - no session management!
-    user = await User.create(**user_data)
-    return {"user": user.to_dict()}
+    user = await User.create(**user_data.model_dump())
+    return {"user": user.model_dump()}
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: int):
     # Automatic 404 handling
     user = await User.find_or_404(user_id)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 # 🏃‍♂️ Run it
 if __name__ == "__main__":
@@ -85,13 +91,14 @@ uvicorn main:app --reload
 
 ## 🎯 Modern DX Features
 
-### 🚀 **Zero-Config Setup**
+### 🚀 **Zero-Config Setup (for Development)**
 ```python
 app = Zenith()  # Just works! No complex configuration needed
 ```
-- **Intelligent defaults** - Development vs production auto-detection
+- **Intelligent defaults** - Development uses SQLite, auto-generated dev keys
+- **Production ready** - Set `DATABASE_URL` and `SECRET_KEY` env vars for production
 - **Automatic middleware** - Security, CORS, logging configured automatically
-- **Environment-aware** - Uses `ZENITH_ENV` or sensible detection
+- **Environment-aware** - Uses `ZENITH_ENV` or intelligent detection
 
 ### 🏗️ **Intuitive Database Models**
 ```python
@@ -174,6 +181,8 @@ your-app/
 - Simple endpoints: **9,557 req/s**
 - JSON endpoints: **9,602 req/s**
 - With full middleware: **6,694 req/s** (70% retention)
+
+*Tested on Apple M3 Max, Python 3.13, uvloop enabled*
 
 Run your own benchmarks:
 ```bash
@@ -286,7 +295,7 @@ pytest  # Run tests
 ## Status
 
 **Latest Version**: v0.0.3
-**Python Support**: 3.12-3.13
+**Python Support**: 3.12-3.14
 **Test Suite**: 100% passing (862 tests)
 **Performance**: Production-ready with 9,600+ req/s capability  
 **Architecture**: Clean separation with Service system and simple dependency patterns  

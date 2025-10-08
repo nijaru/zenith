@@ -27,6 +27,7 @@ class Session:
         data: dict | None = None,
         created_at: datetime | None = None,
         expires_at: datetime | None = None,
+        is_new: bool = True,
     ):
         """
         Initialize session.
@@ -36,13 +37,14 @@ class Session:
             data: Session data dictionary
             created_at: Session creation timestamp
             expires_at: Session expiration timestamp
+            is_new: Whether this is a newly created session
         """
         self.session_id = session_id
         self._data = data or {}
         self.created_at = created_at or datetime.now(UTC)
         self.expires_at = expires_at
         self._dirty = False
-        self._new = data is None
+        self._new = is_new
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get session value."""
@@ -111,6 +113,7 @@ class Session:
             data=data.get("data", {}),
             created_at=datetime.fromisoformat(data["created_at"]),
             expires_at=expires_at,
+            is_new=False,  # Loaded sessions are not new
         )
 
     # Dict-like interface
@@ -128,6 +131,10 @@ class Session:
 
     def __len__(self) -> int:
         return len(self._data)
+
+    def __bool__(self) -> bool:
+        """Sessions are always truthy, even when empty."""
+        return True
 
     def keys(self):
         return self._data.keys()
@@ -199,7 +206,7 @@ class SessionManager:
 
         session = Session(
             session_id=session_id,
-            data=data or {},
+            data=data,  # Keep None to mark as new
             expires_at=expires_at,
         )
 

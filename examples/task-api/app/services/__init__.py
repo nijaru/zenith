@@ -2,14 +2,10 @@
 Service layer for business logic.
 """
 
-from typing import List, Optional
-
 from sqlalchemy.exc import IntegrityError
 
 from app.exceptions import (
     ConflictError,
-    NotFoundError,
-    PermissionError,
     ValidationError,
 )
 
@@ -28,5 +24,5 @@ class BaseService:
             await self.session.rollback()
             # Convert database errors to API errors
             if "UNIQUE constraint" in str(e):
-                raise ConflictError("Resource already exists")
-            raise ValidationError(f"Database constraint violation: {e}")
+                raise ConflictError("Resource already exists") from e
+            raise ValidationError(f"Database constraint violation: {e}") from e

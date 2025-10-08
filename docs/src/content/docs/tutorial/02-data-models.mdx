@@ -127,7 +127,7 @@ async def create_user(email: str, full_name: str, password: str):
         full_name=full_name,
         password=password  # ZenithModel handles hashing!
     )
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 @app.get("/users/{user_id}/projects")
 async def get_user_projects(user_id: int):
@@ -138,7 +138,7 @@ async def get_user_projects(user_id: int):
                .order_by('-created_at')
                .all()
     )
-    return {"projects": [p.to_dict() for p in projects]}
+    return {"projects": [p.model_dump() for p in projects]}
 
 # No manual session management needed - ZenithModel handles it!
 # No manual CRUD functions - built into the models!
@@ -171,7 +171,7 @@ pip install alembic
   - Automatic session management (no manual `get_db()` functions)
   - Built-in CRUD operations (`User.create()`, `User.find()`, `User.update()`)
   - Password hashing and security features
-  - Automatic `to_dict()` serialization
+  - Automatic `model_dump()` serialization (via Pydantic)
 </Aside>
 
 ### Configure Database Connection

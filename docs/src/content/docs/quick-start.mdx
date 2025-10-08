@@ -162,14 +162,14 @@ async def publish_post(post_id: int, user=Auth):
         raise HTTPException(403, "Not authorized")
 
     await post.update(published=True)
-    return {"message": "Post published", "post": post.to_dict()}
+    return {"message": "Post published", "post": post.model_dump()}
 
 # Optional: Add custom endpoint for user's posts
 @app.get("/my-posts")
 async def my_posts(user=Auth):
     """Get current user's posts."""
     posts = await Post.where(author_id=user.id).order_by('-created_at').all()
-    return {"posts": [p.to_dict() for p in posts]}
+    return {"posts": [p.model_dump() for p in posts]}
 ```
 
 ## Run Your API
@@ -263,8 +263,8 @@ await post.delete()
 count = await Post.where(published=True).count()
 
 # Serialization
-data = post.to_dict()                   # Convert to dictionary
-post = Post.from_dict(data)             # Create from dictionary
+data = post.model_dump()                   # Convert to dictionary
+post = Post(**data)                     # Create from dictionary
 ```
 
 ## Next Steps
@@ -304,7 +304,7 @@ async def list_posts(page: int = 1, per_page: int = 10):
     total = await Post.where(published=True).count()
 
     return {
-        "posts": [p.to_dict() for p in posts],
+        "posts": [p.model_dump() for p in posts],
         "page": page,
         "per_page": per_page,
         "total": total,
@@ -332,7 +332,7 @@ async def search_posts(q: str):
     result = await session.execute(stmt)
     posts = result.scalars().all()
 
-    return {"query": q, "posts": [p.to_dict() for p in posts]}
+    return {"query": q, "posts": [p.model_dump() for p in posts]}
 ```
 
 ## Key Benefits

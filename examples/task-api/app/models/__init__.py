@@ -3,9 +3,8 @@ Database models for TaskFlow API.
 """
 
 from datetime import datetime
-from typing import List, Optional
 
-from pydantic import EmailStr, validator
+from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
 # ============= USER MODELS =============

@@ -70,8 +70,8 @@ def decode_access_token(token: str) -> dict:
             token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
         )
         return payload
-    except JWTError:
-        raise AuthenticationError("Invalid or expired token")
+    except JWTError as e:
+        raise AuthenticationError("Invalid or expired token") from e
 
 
 async def get_current_user(

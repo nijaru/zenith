@@ -249,13 +249,13 @@ async def home():
 async def list_tasks(user=Auth):
     """List tasks for authenticated user."""
     tasks = await Task.where(user_id=user.id).all()
-    return {"tasks": [t.to_dict() for t in tasks]}
+    return {"tasks": [t.model_dump() for t in tasks]}
 
 @app.post("/tasks")
 async def create_task(title: str, user=Auth):
     """Create a new task."""
     task = await Task.create(title=title, user_id=user.id)
-    return {"task": task.to_dict()}
+    return {"task": task.model_dump()}
 
 if __name__ == "__main__":
     import uvicorn

@@ -64,7 +64,7 @@ class UserService(BaseService):
     ) -> tuple[list[User], int]:
         """List users with pagination and search."""
         # Build base query
-        query = select(User).where(User.is_active == True)
+        query = select(User).where(User.is_active)
 
         # Add search filter if provided
         if search:

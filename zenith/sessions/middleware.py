@@ -78,54 +78,66 @@ class SessionMiddleware:
             if message["type"] == "http.response.start" and not response_started:
                 response_started = True
 
-                # Save session and prepare cookie headers
+                # Only set cookie if session is new or modified
+                should_set_cookie = False
+
                 if session_to_save:
-                    await self.session_manager.save_session(session_to_save)
+                    # Check if we need to set cookie BEFORE saving (save calls mark_clean)
+                    should_set_cookie = session_to_save.is_dirty or session_to_save.is_new
 
-                    # Get cookie configuration
-                    cookie_config = self.session_manager.get_cookie_config()
+                    # Save session if dirty or new
+                    if should_set_cookie:
+                        await self.session_manager.save_session(session_to_save)
 
-                    # Determine cookie value
-                    if isinstance(self.session_manager.store, CookieSessionStore):
-                        # For cookie sessions, get the encoded cookie value
-                        cookie_value = self.session_manager.store.get_cookie_value(
-                            session_to_save
-                        )
-                    else:
-                        # For Redis/DB sessions, set the session ID
-                        cookie_value = session_to_save.session_id
+                    if should_set_cookie:
+                        # Get cookie configuration
+                        cookie_config = self.session_manager.get_cookie_config()
 
-                    if cookie_value:
-                        # Add session cookie to response headers
-                        cookie_name = self.session_manager.cookie_name
+                        # Determine cookie value
+                        if isinstance(self.session_manager.store, CookieSessionStore):
+                            # For cookie sessions, get the encoded cookie value
+                            cookie_value = self.session_manager.store.get_cookie_value(
+                                session_to_save
+                            )
+                        else:
+                            # For Redis/DB sessions, set the session ID
+                            cookie_value = session_to_save.session_id
 
-                        # Build cookie string
-                        cookie_parts = [f"{cookie_name}={cookie_value}"]
+                        if cookie_value:
+                            # Add session cookie to response headers
+                            cookie_name = self.session_manager.cookie_name
 
-                        # Add cookie attributes
-                        if cookie_config.get("max_age"):
-                            cookie_parts.append(f"Max-Age={cookie_config['max_age']}")
-                        if cookie_config.get("path"):
-                            cookie_parts.append(f"Path={cookie_config['path']}")
-                        if cookie_config.get("domain"):
-                            cookie_parts.append(f"Domain={cookie_config['domain']}")
-                        if cookie_config.get("secure"):
-                            cookie_parts.append("Secure")
-                        if cookie_config.get("httponly"):
-                            cookie_parts.append("HttpOnly")
-                        if cookie_config.get("samesite"):
-                            cookie_parts.append(f"SameSite={cookie_config['samesite']}")
+                            # Build cookie string
+                            cookie_parts = [f"{cookie_name}={cookie_value}"]
 
-                        cookie_header = "; ".join(cookie_parts).encode("latin-1")
+                            # Add cookie attributes
+                            if cookie_config.get("max_age"):
+                                cookie_parts.append(
+                                    f"Max-Age={cookie_config['max_age']}"
+                                )
+                            if cookie_config.get("path"):
+                                cookie_parts.append(f"Path={cookie_config['path']}")
+                            if cookie_config.get("domain"):
+                                cookie_parts.append(f"Domain={cookie_config['domain']}")
+                            if cookie_config.get("secure"):
+                                cookie_parts.append("Secure")
+                            if cookie_config.get("httponly"):
+                                cookie_parts.append("HttpOnly")
+                            if cookie_config.get("samesite"):
+                                cookie_parts.append(
+                                    f"SameSite={cookie_config['samesite']}"
+                                )
 
-                        # Add to headers
-                        headers = list(message.get("headers", []))
-                        headers.append((b"set-cookie", cookie_header))
-                        message["headers"] = headers
+                            cookie_header = "; ".join(cookie_parts).encode("latin-1")
 
-                        logger.debug(
-                            f"Set session cookie for {session_to_save.session_id}"
-                        )
+                            # Add to headers
+                            headers = list(message.get("headers", []))
+                            headers.append((b"set-cookie", cookie_header))
+                            message["headers"] = headers
+
+                            logger.debug(
+                                f"Set session cookie for {session_to_save.session_id} (new={session_to_save.is_new}, dirty={session_to_save.is_dirty})"
+                            )
 
             await send(message)
 

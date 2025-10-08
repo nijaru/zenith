@@ -56,12 +56,12 @@ class User(ZenithModel, table=True):
 @app.get("/users")
 async def list_users():
     users = await User.where(active=True).order_by('-id').limit(10).all()
-    return {"users": [user.to_dict() for user in users]}
+    return {"users": [user.model_dump() for user in users]}
 
 @app.post("/users")
 async def create_user(user_data: dict):
     user = await User.create(**user_data)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 ```
 
 **Built-in Features:**

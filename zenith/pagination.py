@@ -129,7 +129,10 @@ class CursorPagination:
         self._limit = default_limit
 
     def __call__(
-        self, after: str | None = None, before: str | None = None, limit: int | None = None
+        self,
+        after: str | None = None,
+        before: str | None = None,
+        limit: int | None = None,
     ) -> "CursorPagination":
         """Called by the framework to inject query parameters."""
         self._after = after

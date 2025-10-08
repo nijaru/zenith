@@ -55,7 +55,7 @@ class ProjectService(BaseService):
 
         # Exclude archived unless requested
         if not include_archived:
-            query = query.where(Project.is_archived == False)
+            query = query.where(not Project.is_archived)
 
         # Get total count
         count_stmt = select(func.count()).select_from(query.subquery())

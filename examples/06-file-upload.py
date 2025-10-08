@@ -6,7 +6,6 @@ showing both the enhanced UploadedFile API and traditional patterns.
 This addresses common pain points found in production applications.
 """
 
-import os
 import uuid
 from pathlib import Path
 
@@ -111,7 +110,7 @@ async def upload_image(
 
     # Save file
     save_path = UPLOAD_DIR / f"image_{file.filename}"
-    with open(save_path, "wb") as f:
+    with save_path.open("wb") as f:
         f.write(contents)
 
     return FileInfo(
@@ -133,7 +132,7 @@ async def upload_document(
     # Read and save
     contents = await file.read()
     save_path = UPLOAD_DIR / f"doc_{file.filename}"
-    with open(save_path, "wb") as f:
+    with save_path.open("wb") as f:
         f.write(contents)
 
     return FileInfo(
@@ -157,7 +156,7 @@ async def upload_multiple(
         # Save each file
         contents = await file.read()
         save_path = UPLOAD_DIR / f"multi_{file.filename}"
-        with open(save_path, "wb") as f:
+        with save_path.open("wb") as f:
             f.write(contents)
 
         results.append(
@@ -184,7 +183,7 @@ async def upload_profile(
     ext = Path(avatar.filename).suffix.lower()
     contents = await avatar.read()
     avatar_path = UPLOAD_DIR / f"avatar_{username}{ext}"
-    with open(avatar_path, "wb") as f:
+    with avatar_path.open("wb") as f:
         f.write(contents)
 
     return {
@@ -219,7 +218,7 @@ async def delete_file(filename: str) -> dict:
     if not filepath.exists():
         raise ValueError(f"File {filename} not found")
 
-    os.remove(filepath)
+    filepath.unlink()
     return {"message": f"File {filename} deleted"}
 
 
