@@ -30,7 +30,11 @@ class TestSession:
         expires = datetime.now(UTC) + timedelta(hours=1)
 
         session = Session(
-            "test123", data=test_data, created_at=created, expires_at=expires, is_new=False
+            "test123",
+            data=test_data,
+            created_at=created,
+            expires_at=expires,
+            is_new=False,
         )
 
         assert session.session_id == "test123"
