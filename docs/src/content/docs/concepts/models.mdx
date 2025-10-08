@@ -184,8 +184,8 @@ async def list_users():
     users = await User.where(active=True).all()
 
     # Convert to dict for JSON serialization
-    # to_dict() excludes sensitive fields automatically
-    return {"users": [u.to_dict() for u in users]}
+    # Use explicit response models to exclude sensitive fields
+    return {"users": [u.model_dump() for u in users]}
 
 # GET /users/{id} - Get specific user
 @app.get("/users/{user_id}")
@@ -199,8 +199,8 @@ async def get_user(user_id: int):
 
     user = await User.find_or_404(user_id)
 
-    # to_dict() is safe - excludes password_hash and other sensitive fields
-    return user.to_dict()
+    # Best practice: Use explicit response models to exclude sensitive fields
+    return user.model_dump()
 
 # POST /users - Create new user
 @app.post("/users")
@@ -223,7 +223,7 @@ async def create_user(data: UserCreate):
     )
 
     # Return 201 Created with the new user
-    return {"user": user.to_dict()}, 201
+    return {"user": user.model_dump()}, 201
 
 # PUT /users/{id} - Update user
 @app.put("/users/{user_id}")
@@ -234,7 +234,7 @@ async def update_user(user_id: int, data: UserUpdate):
     # Update only provided fields
     await user.update(**data.model_dump(exclude_unset=True))
 
-    return user.to_dict()
+    return user.model_dump()
 
 # DELETE /users/{id} - Delete user
 @app.delete("/users/{user_id}")
@@ -292,7 +292,7 @@ async def list_users(
 
     # Return paginated response with metadata
     return {
-        "users": [u.to_dict() for u in users],
+        "users": [u.model_dump() for u in users],
         "pagination": {
             "page": page,
             "per_page": per_page,
@@ -323,7 +323,7 @@ async def user_feed(
     next_cursor = users[-1].id if users else None
 
     return {
-        "users": [u.to_dict() for u in users],
+        "users": [u.model_dump() for u in users],
         "next_cursor": next_cursor
     }
 ```
@@ -347,7 +347,7 @@ async def search_users(
         query = query.where(role=role)
 
     users = await query.order_by('-created_at').all()
-    return {"users": [u.to_dict() for u in users]}
+    return {"users": [u.model_dump() for u in users]}
 ```
 
 ### Relationships (Avoiding N+1 Queries)

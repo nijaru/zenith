@@ -457,7 +457,7 @@ async def create_user(
     3. Provides it to your route
     """
     user = await users.create_user(data)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 ```
 
 ### Custom Dependencies
@@ -601,7 +601,7 @@ async def list_articles(
     """List articles - public endpoint."""
     query = Article.where(published=published) if published else Article
     articles = await query.order_by("-created_at").limit(limit).all()
-    return {"articles": [a.to_dict() for a in articles]}
+    return {"articles": [a.model_dump() for a in articles]}
 
 # Protected endpoints requiring authentication
 @app.post("/articles")
@@ -612,7 +612,7 @@ async def create_article(
 ):
     """Create article - requires authentication."""
     article = await articles.create_article(data, user.id)
-    return {"article": article.to_dict()}
+    return {"article": article.model_dump()}
 
 @app.put("/articles/{article_id}/publish")
 async def publish_article(
@@ -622,7 +622,7 @@ async def publish_article(
 ):
     """Publish article - requires authentication."""
     article = await articles.publish_article(article_id)
-    return {"article": article.to_dict()}
+    return {"article": article.model_dump()}
 
 # Admin endpoints
 @app.delete("/admin/articles/{article_id}")

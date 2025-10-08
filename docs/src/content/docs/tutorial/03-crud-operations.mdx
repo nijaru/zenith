@@ -126,7 +126,7 @@ async def create_user(email: str, password: str, full_name: str):
         password=password,  # Automatically hashed with bcrypt
         full_name=full_name
     )
-    return {"user": user.to_dict()}  # Built-in serialization
+    return {"user": user.model_dump()}  # Built-in serialization
 
 # Finding users - simple and safe
 @app.get("/users/{user_id}")
@@ -134,7 +134,7 @@ async def get_user(user_id: int):
     """Get user with automatic 404 handling."""
     # find_or_404() automatically raises HTTP 404 if not found
     user = await User.find_or_404(user_id)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 # Pagination - built-in and powerful
 @app.get("/users")
@@ -147,7 +147,7 @@ async def list_users(page: int = 1, per_page: int = 20, active: bool = True):
     result = await query.paginate(page=page, per_page=per_page)
 
     return {
-        "users": [u.to_dict() for u in result.items],
+        "users": [u.model_dump() for u in result.items],
         "total": result.total,
         "page": result.page,
         "pages": result.pages,
@@ -162,7 +162,7 @@ async def update_user(user_id: int, **updates):
 
     # Built-in update method with validation
     await user.update(**updates)  # Only updates provided fields
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 # Delete user - with soft delete option
 @app.delete("/users/{user_id}")

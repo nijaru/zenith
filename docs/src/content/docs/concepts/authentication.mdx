@@ -551,7 +551,7 @@ async def update_post(
     post = await Post.find_or_404(post_id)
     await post.update(**post_update.model_dump())
 
-    return {"updated": post_id, "post": post.to_dict()}
+    return {"updated": post_id, "post": post.model_dump()}
 
 # COMPLEX AUTHORIZATION - Multiple checks
 @app.post("/teams/{team_id}/invite")

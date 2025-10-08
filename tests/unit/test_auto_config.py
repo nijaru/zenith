@@ -80,7 +80,9 @@ class TestEnvironmentDetection:
 
     def test_file_based_detection(self):
         """Test file-based environment detection."""
-        with patch("pathlib.Path.exists", lambda self, **kwargs: str(self) == "/.dockerenv"):
+        with patch(
+            "pathlib.Path.exists", lambda self, **kwargs: str(self) == "/.dockerenv"
+        ):
             # Test Docker environment
             with patch.dict(os.environ, {}, clear=True):
                 env = Environment.detect()

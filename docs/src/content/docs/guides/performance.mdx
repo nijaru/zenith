@@ -221,7 +221,7 @@ async def get_user(user_id: int):
         # Cache miss - fetch from database
         user = await User.find(user_id)
         if user:
-            await cache.set(cache_key, user.to_dict())
+            await cache.set(cache_key, user.model_dump())
 
     return user
 ```
@@ -641,12 +641,12 @@ print(sys.getsizeof(slotted_user))  # ~56 bytes (83% reduction!)
 async def export_data():
     # Memory-inefficient - loads all data
     # all_users = await User.all()
-    # return {"users": [u.to_dict() for u in all_users]}
+    # return {"users": [u.model_dump() for u in all_users]}
 
     # Memory-efficient - streaming with generator
     async def generate_users():
         async for user in User.stream():  # Fetch in batches
-            yield json.dumps(user.to_dict()) + "\n"
+            yield json.dumps(user.model_dump()) + "\n"
 
     return StreamingResponse(
         generate_users(),

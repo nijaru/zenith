@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import declarative_base
 
 from zenith import RequestScoped, Zenith
+from zenith.exceptions import NotFoundError
 
 # SQLAlchemy models
 Base = declarative_base()
@@ -132,7 +133,7 @@ async def get_user(user_id: int, db: AsyncSession = RequestScoped(get_db)):
     result = await db.execute(select(UserModel).where(UserModel.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(404, "User not found")
+        raise NotFoundError(f"User {user_id} not found")
     return User.model_validate(user)
 
 

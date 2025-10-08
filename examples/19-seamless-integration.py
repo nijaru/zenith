@@ -12,6 +12,7 @@ Key features:
 
 import os
 from datetime import datetime
+from pathlib import Path
 
 from sqlmodel import Field
 
@@ -22,8 +23,8 @@ from zenith.db import (
 
 # Set up environment
 # Set up database in examples directory
-example_dir = os.path.dirname(os.path.abspath(__file__))
-db_path = os.path.join(example_dir, "seamless_integration.db")
+example_dir = Path(__file__).resolve().parent
+db_path = example_dir / "seamless_integration.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only")
 
@@ -91,7 +92,7 @@ async def list_users():
     """
     # This just works! Enhanced Model automatically uses the request-scoped session
     users = await User.where(active=True).order_by("-created_at").all()
-    return {"users": [user.to_dict() for user in users]}
+    return {"users": [user.model_dump() for user in users]}
 
 
 @app.post("/users")
@@ -102,7 +103,7 @@ async def create_user(user_data: dict):
     """
     # This just works! No session.add() or session.commit() needed
     user = await User.create(**user_data)
-    return {"user": user.to_dict(), "message": "User created seamlessly!"}
+    return {"user": user.model_dump(), "message": "User created seamlessly!"}
 
 
 @app.get("/users/{user_id}")
@@ -113,7 +114,7 @@ async def get_user(user_id: int):
     """
     # This just works! Automatic session management + 404 handling
     user = await User.find_or_404(user_id)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 
 @app.delete("/users/{user_id}")
@@ -132,7 +133,7 @@ async def list_posts():
     """List posts with complex queries - all seamless."""
     published_posts = await Post.where(published=True).order_by("-created_at").limit(5)
     return {
-        "posts": [post.to_dict() for post in published_posts],
+        "posts": [post.model_dump() for post in published_posts],
         "message": "Complex queries work seamlessly!",
     }
 

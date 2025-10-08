@@ -301,13 +301,13 @@ class TestZenithModelCRUD:
         assert result is user  # Returns self for chaining
         mock_session.refresh.assert_called_once_with(user)
 
-    def test_to_dict_method(self):
-        """Test user.to_dict() converts to dictionary."""
+    def test_model_dump_method(self):
+        """Test user.model_dump() converts to dictionary."""
         user = UserModel(
             id=1, name="Alice", email="alice@example.com", active=True, age=25
         )
 
-        data = user.to_dict()
+        data = user.model_dump()
 
         assert isinstance(data, dict)
         assert data["id"] == 1
@@ -316,13 +316,13 @@ class TestZenithModelCRUD:
         assert data["active"] is True
         assert data["age"] == 25
 
-    def test_to_dict_method_with_exclude(self):
-        """Test user.to_dict(exclude=set) excludes specified fields."""
+    def test_model_dump_method_with_exclude(self):
+        """Test user.model_dump(exclude=set) excludes specified fields."""
         user = UserModel(
             id=1, name="Alice", email="alice@example.com", active=True, age=25
         )
 
-        data = user.to_dict(exclude={"email", "age"})
+        data = user.model_dump(exclude={"email", "age"})
 
         assert "email" not in data
         assert "age" not in data

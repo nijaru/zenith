@@ -32,7 +32,7 @@ class ConflictError(APIException):
 class ValidationError(APIException):
     """Validation failed."""
 
-    def __init__(self, message: str = "Validation failed", details: dict = None):
+    def __init__(self, message: str = "Validation failed", details: dict | None = None):
         super().__init__(message, status_code=422, details=details)
 
 

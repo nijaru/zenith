@@ -111,7 +111,7 @@ async def get_users():
     # No need to inject or manage database sessions
     users = await User.where(active=True).all()
     return {
-        "users": [u.to_dict() for u in users],
+        "users": [u.model_dump() for u in users],
         "count": len(users)
     }
 
@@ -119,25 +119,25 @@ async def get_users():
 async def create_user(name: str, email: str):
     # Create, save, and return in one operation
     user = await User.create(name=name, email=email)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: int):
     # Automatic 404 handling
     user = await User.find_or_404(user_id)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 ```
 
 ### Built-in Serialization
 
-Every ZenithModel includes a `to_dict()` method for easy JSON serialization:
+Every ZenithModel inherits Pydantic's `model_dump()` method for JSON serialization:
 
 ```python
 @app.get("/api/users")
 async def api_users():
     users = await User.all()
     return {
-        "users": [user.to_dict() for user in users],
+        "users": [user.model_dump() for user in users],
         "total": len(users)
     }
 ```
@@ -231,7 +231,7 @@ async def list_users(active: bool = True, limit: int = 10):
             .all()
     )
     return {
-        "users": [u.to_dict() for u in users],
+        "users": [u.model_dump() for u in users],
         "total": len(users),
         "filters": {"active": active, "limit": limit}
     }
@@ -242,14 +242,14 @@ async def create_user(name: str, email: str):
     user = await User.create(name=name, email=email)
     return {
         "message": "User created successfully",
-        "user": user.to_dict()
+        "user": user.model_dump()
     }
 
 @app.get("/users/{user_id}")
 async def get_user(user_id: int):
     """Get user by ID."""
     user = await User.find_or_404(user_id)
-    return {"user": user.to_dict()}
+    return {"user": user.model_dump()}
 
 @app.post("/users/{user_id}/posts")
 async def create_post(user_id: int, title: str, content: str):
@@ -266,7 +266,7 @@ async def create_post(user_id: int, title: str, content: str):
 
     return {
         "message": "Post created",
-        "post": post.to_dict()
+        "post": post.model_dump()
     }
 
 @app.get("/posts")
@@ -279,7 +279,7 @@ async def list_posts():
             .all()
     )
     return {
-        "posts": [p.to_dict() for p in posts],
+        "posts": [p.model_dump() for p in posts],
         "count": len(posts)
     }
 

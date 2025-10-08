@@ -41,7 +41,7 @@ dynamic = ["version"]
 description = "Modern Python web framework for building APIs with minimal boilerplate"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.12,<3.14"
+requires-python = ">=3.12,<3.15"
 authors = [
     {name = "Nick Russo", email = "nijaru7@gmail.com"}
 ]
@@ -53,6 +53,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
@@ -79,7 +80,7 @@ dependencies = [
     "prometheus-client>=0.22.1",
     "greenlet>=3.2.4",
     "psutil>=7.0.0",
-    "pydantic>=2.11.9",
+    "pydantic>=2.12.0",
     "starlette>=0.32.0",
 ]
 
