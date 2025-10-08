@@ -83,7 +83,9 @@ class SessionMiddleware:
 
                 if session_to_save:
                     # Check if we need to set cookie BEFORE saving (save calls mark_clean)
-                    should_set_cookie = session_to_save.is_dirty or session_to_save.is_new
+                    should_set_cookie = (
+                        session_to_save.is_dirty or session_to_save.is_new
+                    )
 
                     # Save session if dirty or new
                     if should_set_cookie:

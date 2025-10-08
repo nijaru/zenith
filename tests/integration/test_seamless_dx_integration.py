@@ -506,7 +506,10 @@ class TestPerformanceWithRailsLikeFeatures:
                     start = time.time()
                     user = await IntegrationUser.create(**user_data)
                     end = time.time()
-                    return {"user": user.model_dump(), "duration_ms": (end - start) * 1000}
+                    return {
+                        "user": user.model_dump(),
+                        "duration_ms": (end - start) * 1000,
+                    }
 
                 # Test ZenithModel performance
                 response = await client.post(
