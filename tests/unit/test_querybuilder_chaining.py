@@ -10,7 +10,6 @@ import os
 import tempfile
 
 import pytest
-from sqlalchemy import text
 from sqlmodel import Field
 
 from zenith.db import ZenithModel
@@ -38,23 +37,12 @@ async def app_with_database():
     app = Zenith(middleware=[])
     app.config.database_url = f"sqlite+aiosqlite:///{db_path}"
 
-    # Create tables
+    # Drop and create tables for clean state
+    try:
+        await app.app.database.drop_all()
+    except Exception:
+        pass  # Ignore if tables don't exist yet
     await app.app.database.create_all()
-
-    # Create chain_users table manually since it's not part of main models
-    async with app.app.database.session() as session:
-        await session.execute(text("DROP TABLE IF EXISTS chain_users"))
-        await session.execute(
-            text("""
-            CREATE TABLE chain_users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email VARCHAR NOT NULL UNIQUE,
-                name VARCHAR NOT NULL,
-                active BOOLEAN DEFAULT TRUE
-            )
-        """)
-        )
-        await session.commit()
 
     yield app
 
