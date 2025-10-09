@@ -136,46 +136,8 @@ class TestSeamlessZenithModelIntegration:
         app = Zenith(middleware=[])  # Minimal middleware for testing
         app.config.database_url = f"sqlite+aiosqlite:///{db_path}"
 
-        # Create tables for test models
+        # Create tables (models will be included automatically via SQLModel metadata)
         await app.app.database.create_all()
-
-        # Create fresh test model tables for each test
-        from sqlalchemy import text
-
-        async with app.app.database.session() as session:
-            # Drop existing tables to ensure clean state
-            await session.execute(text("DROP TABLE IF EXISTS integration_posts"))
-            await session.execute(text("DROP TABLE IF EXISTS integration_users"))
-
-            # Create integration_users table
-            await session.execute(
-                text("""
-                CREATE TABLE integration_users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name VARCHAR(100) NOT NULL,
-                    email VARCHAR NOT NULL UNIQUE,
-                    active BOOLEAN DEFAULT TRUE,
-                    created_at DATETIME NOT NULL
-                )
-            """)
-            )
-
-            # Create integration_posts table
-            await session.execute(
-                text("""
-                CREATE TABLE integration_posts (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title VARCHAR(200) NOT NULL,
-                    content TEXT NOT NULL,
-                    published BOOLEAN DEFAULT FALSE,
-                    user_id INTEGER NOT NULL,
-                    created_at DATETIME NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES integration_users(id)
-                )
-            """)
-            )
-
-            await session.commit()
 
         yield app
 
@@ -371,38 +333,8 @@ class TestCompleteRailsLikeDXWorkflow:
                 # 1. Zero-config setup with one-liner features
                 app = Zenith().add_auth().add_admin().add_api("Rails-like API", "1.0.0")
 
-                # Create tables for test models
+                # Create tables (models will be included automatically via SQLModel metadata)
                 await app.app.database.create_all()
-
-                # Manually create integration tables since they're not part of the main models
-                from sqlalchemy import text
-
-                async with app.app.database.session() as session:
-                    await session.execute(
-                        text("""
-                        CREATE TABLE IF NOT EXISTS integration_users (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            name VARCHAR(100) NOT NULL,
-                            email VARCHAR NOT NULL UNIQUE,
-                            active BOOLEAN DEFAULT TRUE,
-                            created_at DATETIME NOT NULL
-                        )
-                    """)
-                    )
-                    await session.execute(
-                        text("""
-                        CREATE TABLE IF NOT EXISTS integration_posts (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            title VARCHAR(200) NOT NULL,
-                            content TEXT NOT NULL,
-                            published BOOLEAN DEFAULT FALSE,
-                            user_id INTEGER NOT NULL,
-                            created_at DATETIME NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES integration_users(id)
-                        )
-                    """)
-                    )
-                    await session.commit()
 
                 # 2. Rails-like model operations in routes
                 @app.get("/users")
