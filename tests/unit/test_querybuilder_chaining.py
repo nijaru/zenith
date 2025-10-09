@@ -30,27 +30,28 @@ class ChainUser(ZenithModel, table=True):
 async def app_with_database():
     """Create app with test database."""
     from zenith import Zenith
+    from zenith.core.container import set_default_database
+    import uuid
 
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
-        db_path = tmp.name
-
+    # Use named in-memory database with unique name for perfect test isolation
+    # Using file::memory: with unique name ensures each test gets isolated database
+    db_name = f"test_chain_{uuid.uuid4().hex}"
     app = Zenith(middleware=[])
-    app.config.database_url = f"sqlite+aiosqlite:///{db_path}"
+    app.config.database_url = f"sqlite+aiosqlite:///file:{db_name}?mode=memory&cache=shared&uri=true"
 
-    # Drop and create tables for clean state
-    try:
-        await app.app.database.drop_all()
-    except Exception:
-        pass  # Ignore if tables don't exist yet
+    # Create tables (SQLModel metadata will create all registered models)
     await app.app.database.create_all()
+
+    # Set this database as the default for ZenithModel operations
+    set_default_database(app.app.database)
 
     yield app
 
-    # Cleanup
+    # Cleanup - clear default database and close connections
+    set_default_database(None)
     try:
         if hasattr(app.app, "database") and app.app.database:
             await app.app.database.close()
-        os.unlink(db_path)
     except Exception:
         pass
 
@@ -76,18 +77,21 @@ async def test_where_returns_querybuilder_immediately(app_with_database):
 async def test_where_chaining_single_statement(app_with_database):
     """Test seamless chaining: await ChainUser.where(...).first()"""
     from zenith.testing import TestClient
+    import uuid
 
     app = app_with_database
+    # Use unique email per test run to avoid conflicts
+    email = f"alice_{uuid.uuid4().hex[:8]}@example.com"
 
     async with TestClient(app) as client:
         # Create test user
-        await ChainUser.create(email="alice@example.com", name="Alice", active=True)
+        await ChainUser.create(email=email, name="Alice", active=True)
 
         # This is the KEY test - single-line chaining should work
-        user = await ChainUser.where(email="alice@example.com").first()
+        user = await ChainUser.where(email=email).first()
 
         assert user is not None
-        assert user.email == "alice@example.com"
+        assert user.email == email
         assert user.name == "Alice"
 
 
@@ -95,15 +99,17 @@ async def test_where_chaining_single_statement(app_with_database):
 async def test_where_chaining_with_multiple_methods(app_with_database):
     """Test chaining multiple QueryBuilder methods."""
     from zenith.testing import TestClient
+    import uuid
 
     app = app_with_database
+    uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
-        # Create test users
-        await ChainUser.create(email="alice@example.com", name="Alice", active=True)
-        await ChainUser.create(email="bob@example.com", name="Bob", active=True)
+        # Create test users with unique emails
+        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(email=f"bob_{uid}@example.com", name="Bob", active=True)
         await ChainUser.create(
-            email="charlie@example.com", name="Charlie", active=False
+            email=f"charlie_{uid}@example.com", name="Charlie", active=False
         )
 
         # Chain multiple methods
@@ -118,15 +124,17 @@ async def test_where_chaining_with_multiple_methods(app_with_database):
 async def test_where_with_count(app_with_database):
     """Test chaining with count()."""
     from zenith.testing import TestClient
+    import uuid
 
     app = app_with_database
+    uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
-        # Create test users
-        await ChainUser.create(email="alice@example.com", name="Alice", active=True)
-        await ChainUser.create(email="bob@example.com", name="Bob", active=True)
+        # Create test users with unique emails
+        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(email=f"bob_{uid}@example.com", name="Bob", active=True)
         await ChainUser.create(
-            email="charlie@example.com", name="Charlie", active=False
+            email=f"charlie_{uid}@example.com", name="Charlie", active=False
         )
 
         # Single-line chaining with count()
@@ -141,13 +149,15 @@ async def test_where_with_exists(app_with_database):
     from zenith.testing import TestClient
 
     app = app_with_database
+    import uuid
+    uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
         # Create test user
-        await ChainUser.create(email="alice@example.com", name="Alice", active=True)
+        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
 
         # Single-line chaining with exists()
-        exists = await ChainUser.where(email="alice@example.com").exists()
+        exists = await ChainUser.where(email=f"alice_{uid}@example.com").exists()
         not_exists = await ChainUser.where(email="nobody@example.com").exists()
 
         assert exists is True
@@ -160,16 +170,18 @@ async def test_find_by_uses_synchronous_where(app_with_database):
     from zenith.testing import TestClient
 
     app = app_with_database
+    import uuid
+    uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
         # Create test user
-        await ChainUser.create(email="alice@example.com", name="Alice", active=True)
+        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
 
         # find_by should work seamlessly
-        user = await ChainUser.find_by(email="alice@example.com")
+        user = await ChainUser.find_by(email=f"alice_{uid}@example.com")
 
         assert user is not None
-        assert user.email == "alice@example.com"
+        assert user.email == f"alice_{uid}@example.com"
 
 
 @pytest.mark.asyncio
@@ -200,19 +212,21 @@ async def test_complex_chaining_scenario(app_with_database):
     from zenith.testing import TestClient
 
     app = app_with_database
+    import uuid
+    uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
         # Create test data
-        await ChainUser.create(email="alice@example.com", name="Alice", active=True)
-        await ChainUser.create(email="bob@example.com", name="Bob", active=True)
-        await ChainUser.create(email="charlie@example.com", name="Charlie", active=True)
+        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(email=f"bob_{uid}@example.com", name="Bob", active=True)
+        await ChainUser.create(email=f"charlie_{uid}@example.com", name="Charlie", active=True)
 
         # This is the exact pattern from the issue that should now work:
         # user = await ChainUser.where(email=email).first()
-        user = await ChainUser.where(email="bob@example.com").first()
+        user = await ChainUser.where(email=f"bob_{uid}@example.com").first()
 
         assert user is not None
-        assert user.email == "bob@example.com"
+        assert user.email == f"bob_{uid}@example.com"
         assert user.name == "Bob"
 
         # And also this pattern:
