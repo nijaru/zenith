@@ -50,17 +50,13 @@ async def app_with_database():
 
     yield app
 
-    # Cleanup - drop all tables, clear default database, close connections, and delete file
+    # Cleanup - close connections, clear default database, and delete file
     set_default_database(None)
     try:
         if hasattr(app.app, "database") and app.app.database:
-            # Drop all tables to ensure clean state for next test
-            await app.app.database.drop_all()
             # Close database and clear all cached engines/sessions
+            # This ensures connections are closed before deleting the file
             await app.app.database.close()
-            # Clear the WeakKeyDictionaries to ensure fresh engines next test
-            app.app.database._loop_engines.clear()
-            app.app.database._loop_sessions.clear()
     except Exception:
         pass
 
