@@ -141,10 +141,9 @@ class TestSeamlessZenithModelIntegration:
 
         yield app
 
-        # Clean up - drop tables, close database, and delete file
+        # Clean up - close database and delete file
         try:
             if hasattr(app.app, "database") and app.app.database:
-                await app.app.database.drop_all()
                 await app.app.database.close()
             os.unlink(db_path)
         except Exception:
