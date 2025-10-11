@@ -37,7 +37,9 @@ async def app_with_database():
     # Using file::memory: with unique name ensures each test gets isolated database
     db_name = f"test_chain_{uuid.uuid4().hex}"
     app = Zenith(middleware=[])
-    app.config.database_url = f"sqlite+aiosqlite:///file:{db_name}?mode=memory&cache=shared&uri=true"
+    app.config.database_url = (
+        f"sqlite+aiosqlite:///file:{db_name}?mode=memory&cache=shared&uri=true"
+    )
 
     # Create tables (SQLModel metadata will create all registered models)
     await app.app.database.create_all()
@@ -106,7 +108,9 @@ async def test_where_chaining_with_multiple_methods(app_with_database):
 
     async with TestClient(app) as client:
         # Create test users with unique emails
-        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(
+            email=f"alice_{uid}@example.com", name="Alice", active=True
+        )
         await ChainUser.create(email=f"bob_{uid}@example.com", name="Bob", active=True)
         await ChainUser.create(
             email=f"charlie_{uid}@example.com", name="Charlie", active=False
@@ -131,7 +135,9 @@ async def test_where_with_count(app_with_database):
 
     async with TestClient(app) as client:
         # Create test users with unique emails
-        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(
+            email=f"alice_{uid}@example.com", name="Alice", active=True
+        )
         await ChainUser.create(email=f"bob_{uid}@example.com", name="Bob", active=True)
         await ChainUser.create(
             email=f"charlie_{uid}@example.com", name="Charlie", active=False
@@ -150,11 +156,14 @@ async def test_where_with_exists(app_with_database):
 
     app = app_with_database
     import uuid
+
     uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
         # Create test user
-        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(
+            email=f"alice_{uid}@example.com", name="Alice", active=True
+        )
 
         # Single-line chaining with exists()
         exists = await ChainUser.where(email=f"alice_{uid}@example.com").exists()
@@ -171,11 +180,14 @@ async def test_find_by_uses_synchronous_where(app_with_database):
 
     app = app_with_database
     import uuid
+
     uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
         # Create test user
-        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(
+            email=f"alice_{uid}@example.com", name="Alice", active=True
+        )
 
         # find_by should work seamlessly
         user = await ChainUser.find_by(email=f"alice_{uid}@example.com")
@@ -213,13 +225,18 @@ async def test_complex_chaining_scenario(app_with_database):
 
     app = app_with_database
     import uuid
+
     uid = uuid.uuid4().hex[:8]
 
     async with TestClient(app) as client:
         # Create test data
-        await ChainUser.create(email=f"alice_{uid}@example.com", name="Alice", active=True)
+        await ChainUser.create(
+            email=f"alice_{uid}@example.com", name="Alice", active=True
+        )
         await ChainUser.create(email=f"bob_{uid}@example.com", name="Bob", active=True)
-        await ChainUser.create(email=f"charlie_{uid}@example.com", name="Charlie", active=True)
+        await ChainUser.create(
+            email=f"charlie_{uid}@example.com", name="Charlie", active=True
+        )
 
         # This is the exact pattern from the issue that should now work:
         # user = await ChainUser.where(email=email).first()
