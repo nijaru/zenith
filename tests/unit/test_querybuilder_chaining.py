@@ -7,7 +7,6 @@ Addresses Issue 1 from ZENITH_ISSUES_ALTTEXT.md:
 """
 
 import os
-import tempfile
 
 import pytest
 import pytest_asyncio
@@ -33,9 +32,10 @@ class ChainUser(ZenithModel, table=True):
 @pytest_asyncio.fixture
 async def app_with_database():
     """Create app with test database."""
+    import uuid
+
     from zenith import Zenith
     from zenith.core.container import set_default_database
-    import uuid
 
     # Use unique database file per test for perfect isolation
     db_path = f"/tmp/test_chain_{uuid.uuid4().hex}.db"
@@ -90,8 +90,9 @@ async def test_where_returns_querybuilder_immediately(app_with_database):
 @pytest.mark.asyncio
 async def test_where_chaining_single_statement(app_with_database):
     """Test seamless chaining: await ChainUser.where(...).first()"""
-    from zenith.testing import TestClient
     import uuid
+
+    from zenith.testing import TestClient
 
     app = app_with_database
     # Use unique email per test run to avoid conflicts
@@ -112,8 +113,9 @@ async def test_where_chaining_single_statement(app_with_database):
 @pytest.mark.asyncio
 async def test_where_chaining_with_multiple_methods(app_with_database):
     """Test chaining multiple QueryBuilder methods."""
-    from zenith.testing import TestClient
     import uuid
+
+    from zenith.testing import TestClient
 
     app = app_with_database
     uid = uuid.uuid4().hex[:8]
@@ -139,8 +141,9 @@ async def test_where_chaining_with_multiple_methods(app_with_database):
 @pytest.mark.asyncio
 async def test_where_with_count(app_with_database):
     """Test chaining with count()."""
-    from zenith.testing import TestClient
     import uuid
+
+    from zenith.testing import TestClient
 
     app = app_with_database
     uid = uuid.uuid4().hex[:8]
