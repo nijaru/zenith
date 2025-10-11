@@ -10,9 +10,13 @@ import os
 import tempfile
 
 import pytest
+import pytest_asyncio
 from sqlmodel import Field
 
 from zenith.db import ZenithModel
+
+# Force pytest-asyncio to use function-scoped event loops for isolation
+pytestmark = pytest.mark.asyncio(scope="function")
 
 
 class ChainUser(ZenithModel, table=True):
@@ -26,20 +30,17 @@ class ChainUser(ZenithModel, table=True):
     active: bool = True
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def app_with_database():
     """Create app with test database."""
     from zenith import Zenith
     from zenith.core.container import set_default_database
     import uuid
 
-    # Use named in-memory database with unique name for perfect test isolation
-    # Using file::memory: with unique name ensures each test gets isolated database
-    db_name = f"test_chain_{uuid.uuid4().hex}"
+    # Use unique database file per test for perfect isolation
+    db_path = f"/tmp/test_chain_{uuid.uuid4().hex}.db"
     app = Zenith(middleware=[])
-    app.config.database_url = (
-        f"sqlite+aiosqlite:///file:{db_name}?mode=memory&cache=shared&uri=true"
-    )
+    app.config.database_url = f"sqlite+aiosqlite:///{db_path}"
 
     # Create tables (SQLModel metadata will create all registered models)
     await app.app.database.create_all()
@@ -49,11 +50,22 @@ async def app_with_database():
 
     yield app
 
-    # Cleanup - clear default database and close connections
+    # Cleanup - drop all tables, clear default database, close connections, and delete file
     set_default_database(None)
     try:
         if hasattr(app.app, "database") and app.app.database:
+            # Drop all tables to ensure clean state for next test
+            await app.app.database.drop_all()
+            # Close database and clear all cached engines/sessions
             await app.app.database.close()
+            # Clear the WeakKeyDictionaries to ensure fresh engines next test
+            app.app.database._loop_engines.clear()
+            app.app.database._loop_sessions.clear()
+    except Exception:
+        pass
+
+    try:
+        os.unlink(db_path)
     except Exception:
         pass
 
