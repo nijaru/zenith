@@ -281,6 +281,7 @@ class TestPerformanceIntegration:
             assert response.status_code == 200
             assert response.json() == {"status": "profiled"}
 
+    @pytest.mark.performance
     def test_performance_monitoring_overhead(self):
         """Test that performance monitoring has minimal overhead."""
 
