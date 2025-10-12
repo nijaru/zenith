@@ -37,9 +37,7 @@ async def app_with_database():
 
     # Use DATABASE_URL from environment (PostgreSQL in CI) or SQLite (local)
     # Single database for all tests with table truncation for isolation
-    database_url = os.getenv(
-        "DATABASE_URL", "sqlite+aiosqlite:///test_querybuilder.db"
-    )
+    database_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///test_querybuilder.db")
 
     app = Zenith(middleware=[])
     app.config.database_url = database_url
