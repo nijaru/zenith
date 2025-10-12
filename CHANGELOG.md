@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.9] - 2025-10-12
+
+### Changed
+- **Dependency updates** - Updated core dependencies to latest stable versions
+  - SQLModel 0.0.25 → 0.0.27 (adds Python 3.14 support)
+  - SQLAlchemy 2.0.43 → 2.0.44 (PostgreSQL 17.3+ fixes, MySQL reflection improvements, mypy 1.11 compatibility)
+  - Alembic 1.16.5 → 1.17.0 (latest migration tooling)
+  - Updated various supporting packages (certifi, rich, idna, httptools, markupsafe, msgpack, etc.)
+
+### Testing
+- All 891 tests passing (including performance tests)
+- Comprehensive test coverage maintained
+
 ## [0.0.8] - 2025-10-12
 
 ### Fixed
