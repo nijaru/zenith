@@ -31,18 +31,20 @@ class ChainUser(ZenithModel, table=True):
 
 @pytest_asyncio.fixture
 async def app_with_database():
-    """Create app with test database."""
-    import uuid
-
+    """Create app with test database - single database with table truncation."""
     from zenith import Zenith
     from zenith.core.container import set_default_database
 
-    # Use unique database file per test for perfect isolation
-    db_path = f"/tmp/test_chain_{uuid.uuid4().hex}.db"
-    app = Zenith(middleware=[])
-    app.config.database_url = f"sqlite+aiosqlite:///{db_path}"
+    # Use DATABASE_URL from environment (PostgreSQL in CI) or SQLite (local)
+    # Single database for all tests with table truncation for isolation
+    database_url = os.getenv(
+        "DATABASE_URL", "sqlite+aiosqlite:///test_querybuilder.db"
+    )
 
-    # Create tables (SQLModel metadata will create all registered models)
+    app = Zenith(middleware=[])
+    app.config.database_url = database_url
+
+    # Create tables (idempotent - won't fail if already exist)
     await app.app.database.create_all()
 
     # Set this database as the default for ZenithModel operations
@@ -50,20 +52,19 @@ async def app_with_database():
 
     yield app
 
-    # Cleanup - close connections, clear default database, and delete file
-    set_default_database(None)
+    # Cleanup - truncate all tables for test isolation
+    from sqlmodel import SQLModel
+
     try:
-        if hasattr(app.app, "database") and app.app.database:
-            # Close database and clear all cached engines/sessions
-            # This ensures connections are closed before deleting the file
-            await app.app.database.close()
+        async with app.app.database.engine.begin() as conn:
+            # Truncate tables in reverse order to handle foreign keys
+            for table in reversed(SQLModel.metadata.sorted_tables):
+                await conn.execute(table.delete())
     except Exception:
         pass
 
-    try:
-        os.unlink(db_path)
-    except Exception:
-        pass
+    # Clear default database
+    set_default_database(None)
 
 
 @pytest.mark.asyncio
