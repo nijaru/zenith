@@ -129,23 +129,28 @@ class TestSeamlessZenithModelIntegration:
 
     @pytest.fixture
     async def app_with_models(self):
-        """Create app with test models."""
-        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
-            db_path = tmp.name
+        """Create app with test models - single database with table truncation."""
+        # Use DATABASE_URL from environment (PostgreSQL in CI) or SQLite (local)
+        database_url = os.getenv(
+            "DATABASE_URL", "sqlite+aiosqlite:///test_seamless_dx.db"
+        )
 
         app = Zenith(middleware=[])  # Minimal middleware for testing
-        app.config.database_url = f"sqlite+aiosqlite:///{db_path}"
+        app.config.database_url = database_url
 
-        # Create tables (models will be included automatically via SQLModel metadata)
+        # Create tables (idempotent - won't fail if already exist)
         await app.app.database.create_all()
 
         yield app
 
-        # Clean up - close database and delete file
+        # Cleanup - truncate all tables for test isolation
+        from sqlmodel import SQLModel
+
         try:
-            if hasattr(app.app, "database") and app.app.database:
-                await app.app.database.close()
-            os.unlink(db_path)
+            async with app.app.database.engine.begin() as conn:
+                # Truncate tables in reverse order to handle foreign keys
+                for table in reversed(SQLModel.metadata.sorted_tables):
+                    await conn.execute(table.delete())
         except Exception:
             pass
 
