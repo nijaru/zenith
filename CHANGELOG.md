@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2025-10-12
+
+### Fixed
+- **Python 3.14 compatibility** - Fixed `Path.suffix` behavior change for filenames ending with dot (e.g., "file.")
+- **Test isolation** - Switched from unique databases to table truncation pattern for reliable test isolation
+- **Auto-config tests** - Fixed DATABASE_URL environment variable interference with default value tests
+- **Performance test markers** - Fixed pytest marker application to only affect performance directory tests
+- **Password hashing** - Pinned bcrypt to <4.2.0 for passlib 1.7.4 compatibility
+- **Type annotations** - Removed quoted type annotation for Python 3.13+ compatibility
+
+### Testing
+- Excluded flaky performance tests from CI (still runnable locally with `pytest -m performance`)
+- All 845 core tests passing on Python 3.12, 3.13, and 3.14
+- Performance tests now properly isolated with markers
+
+### Internal
+- Improved CI reliability by skipping timing-dependent tests in shared runner environment
+- Better test organization with performance marker system
+
 ## [0.0.7] - 2025-10-08
 
 ### Fixed
