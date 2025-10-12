@@ -10,6 +10,7 @@ from zenith.testing import TestClient
 
 # Set up environment
 os.environ["SECRET_KEY"] = "benchmark-secret-key-for-testing-long-enough"
+os.environ["ZENITH_ENV"] = "testing"  # Disable rate limiting for benchmarks
 
 
 async def benchmark_zenith():
