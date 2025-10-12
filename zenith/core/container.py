@@ -321,7 +321,7 @@ def get_current_db_session():
     return None
 
 
-async def get_db_session() -> "AsyncSession":
+async def get_db_session() -> AsyncSession:
     """
     Get the current database session for use with ZenithModel.
 
