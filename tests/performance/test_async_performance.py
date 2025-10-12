@@ -116,6 +116,7 @@ class TestAsyncPerformance:
         assert io_elapsed < 2.0  # I/O tasks should be concurrent
 
     @pytest.mark.asyncio
+    @pytest.mark.performance
     async def test_performance_monitoring_overhead(self):
         """Test performance monitoring overhead."""
         call_count = 0

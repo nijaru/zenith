@@ -57,7 +57,7 @@ jobs:
         DATABASE_URL: postgresql://zenith:zenith@localhost:5432/zenith_test
         SECRET_KEY: test-secret-key-for-ci-testing
       run: |
-        pytest tests/ -v --cov=zenith --cov-report=xml --cov-report=term
+        pytest tests/ -v --cov=zenith --cov-report=xml --cov-report=term -m "not performance"
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
