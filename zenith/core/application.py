@@ -5,6 +5,8 @@ Manages application lifecycle, supervision tree, dependency injection,
 and coordinates all framework components.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import signal

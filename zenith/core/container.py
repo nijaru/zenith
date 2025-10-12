@@ -4,6 +4,8 @@ Dependency injection container for service management.
 Provides service registration, resolution, and lifecycle management.
 """
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 from collections.abc import Callable

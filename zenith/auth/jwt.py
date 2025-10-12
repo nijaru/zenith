@@ -5,6 +5,8 @@ Provides secure token generation, validation, and user authentication
 using industry-standard JWT (JSON Web Tokens).
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any

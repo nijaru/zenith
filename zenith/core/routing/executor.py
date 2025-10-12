@@ -5,6 +5,8 @@ Handles calling route handlers with proper dependency resolution,
 parameter injection, and error handling.
 """
 
+from __future__ import annotations
+
 import inspect
 from typing import Any, get_type_hints
 
