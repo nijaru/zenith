@@ -114,21 +114,23 @@ class TestDatabaseConfig:
 
     def test_development_config(self):
         """Test development database configuration."""
-        config = DatabaseConfig.from_environment(Environment.DEVELOPMENT)
+        with patch.dict(os.environ, {}, clear=True):
+            config = DatabaseConfig.from_environment(Environment.DEVELOPMENT)
 
-        assert config.url == "sqlite+aiosqlite:///app.db"
-        assert config.echo is True
-        assert config.pool_size == 5
-        assert config.max_overflow == 10
+            assert config.url == "sqlite+aiosqlite:///app.db"
+            assert config.echo is True
+            assert config.pool_size == 5
+            assert config.max_overflow == 10
 
     def test_testing_config(self):
         """Test testing database configuration."""
-        config = DatabaseConfig.from_environment(Environment.TESTING)
+        with patch.dict(os.environ, {}, clear=True):
+            config = DatabaseConfig.from_environment(Environment.TESTING)
 
-        assert config.url == "sqlite+aiosqlite:///:memory:"
-        assert config.echo is False
-        assert config.pool_size == 1
-        assert config.max_overflow == 5
+            assert config.url == "sqlite+aiosqlite:///:memory:"
+            assert config.echo is False
+            assert config.pool_size == 1
+            assert config.max_overflow == 5
 
     def test_production_config_with_url(self):
         """Test production config with DATABASE_URL set."""
@@ -281,11 +283,12 @@ class TestAutoConfig:
 
     def test_create_auto_config_explicit_env(self):
         """Test creating auto config with explicit environment."""
-        config = AutoConfig.create(Environment.TESTING)
+        with patch.dict(os.environ, {}, clear=True):
+            config = AutoConfig.create(Environment.TESTING)
 
-        assert config.environment == Environment.TESTING
-        assert config.debug is True
-        assert config.database.url == "sqlite+aiosqlite:///:memory:"
+            assert config.environment == Environment.TESTING
+            assert config.debug is True
+            assert config.database.url == "sqlite+aiosqlite:///:memory:"
 
 
 class TestConvenienceFunctions:
