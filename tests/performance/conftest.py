@@ -25,12 +25,14 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     """Modify test collection for performance tests."""
     for item in items:
-        # Add performance marker to all tests in performance directory
-        item.add_marker(pytest.mark.performance)
+        # Only mark tests in the performance directory
+        if "performance" in str(item.fspath):
+            # Add performance marker to tests in performance directory
+            item.add_marker(pytest.mark.performance)
 
-        # Mark certain tests as slow
-        if "load" in item.name.lower() or "sustained" in item.name.lower():
-            item.add_marker(pytest.mark.slow)
+            # Mark certain tests as slow
+            if "load" in item.name.lower() or "sustained" in item.name.lower():
+                item.add_marker(pytest.mark.slow)
 
 
 @pytest.fixture(scope="session")
