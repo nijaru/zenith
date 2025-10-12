@@ -80,6 +80,8 @@ Transaction Support:
                 return order
 """
 
+from __future__ import annotations
+
 import asyncio
 from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
