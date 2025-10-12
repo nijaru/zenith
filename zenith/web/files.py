@@ -61,7 +61,8 @@ class UploadedFile(BaseModel):
     # Convenience methods for common patterns
     def get_extension(self) -> str:
         """Get file extension including the dot (e.g., '.pdf', '.jpg')."""
-        return Path(self.filename).suffix
+        suffix = Path(self.filename).suffix
+        return "" if suffix == "." else suffix
 
     def is_image(self) -> bool:
         """Check if file is an image based on content type."""
