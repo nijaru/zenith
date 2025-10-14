@@ -46,7 +46,7 @@ jobs:
 
     - name: Install dependencies (cached)
       run: |
-        uv pip install -e ".[dev]"
+        uv pip install --system -e ".[dev]"
     
     - name: Critical tests only
       env:
@@ -81,11 +81,11 @@ jobs:
 
     - name: Full test suite for releases
       run: |
-        uv pip install -e ".[dev]"
+        uv pip install --system -e ".[dev]"
         ZENITH_ENV=test SECRET_KEY=test pytest tests/ --tb=short
 
     - name: Build check
       run: |
-        uv pip install twine
+        uv pip install --system twine
         uv build
         twine check dist/*
