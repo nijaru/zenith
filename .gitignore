@@ -227,3 +227,6 @@ examples/*.db
 CLAUDE_CODE_REFERENCE.md
 
 benchmark_results.json
+
+# Docs directory has its own git repo
+docs/.git/

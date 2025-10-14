@@ -10,8 +10,7 @@ help:
 	@echo "  make install       Install development dependencies"
 	@echo "  make format        Auto-format code with ruff"
 	@echo "  make lint          Check code style with ruff"
-	@echo "  make type-check    Run pyright type checking"
-	@echo "  make type-check-ty Run ty type checking (alpha)"
+	@echo "  make type-check    Run ty type checking (alpha)"
 	@echo "  make test          Run test suite"
 	@echo "  make test-cov      Run tests with coverage"
 	@echo "  make clean         Remove build artifacts"
@@ -36,18 +35,12 @@ format:
 # Linting - checks without fixing
 lint:
 	@echo "🔍 Running linter..."
-	ruff format --check .
+	ruff format --check zenith/ tests/
 	ruff check zenith/ tests/ --ignore B904,F841,B007,PTH108,PTH116,E722,SIM105,RUF006,F821,B017,PTH207,B023,SIM103
 	@echo "✅ Linting passed"
 
-# Type checking (informational - doesn't block on errors)
-type-check:
-	@echo "🔍 Running pyright type checker..."
-	-pyright
-	@echo "✅ Pyright check complete"
-
 # Type checking with ty (Astral's fast type checker - alpha, informational)
-type-check-ty:
+type-check:
 	@echo "🔍 Running ty type checker (alpha)..."
 	-uvx ty check zenith/
 	@echo "✅ ty check complete"

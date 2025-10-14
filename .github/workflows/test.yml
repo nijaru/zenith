@@ -49,10 +49,6 @@ jobs:
     - name: Run ruff linting
       run: ruff check zenith/ tests/ --ignore B904,F841,B007,PTH108,PTH116,E722,SIM105,RUF006,F821,B017,PTH207,B023,SIM103
 
-    - name: Run pyright type checking
-      run: pyright
-      continue-on-error: true  # Don't fail CI on type errors yet
-
     - name: Run ty type checking (alpha)
       run: uvx ty check zenith/
       continue-on-error: true  # Don't fail CI on type errors (alpha software)

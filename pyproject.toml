@@ -91,7 +91,6 @@ dev = [
     "pytest-cov>=4.1.0",
     "httpx>=0.25.0",
     "ruff>=0.1.6",
-    "pyright>=1.1.350",
     "ipdb>=0.13.0",
 ]
 benchmark = [
@@ -172,13 +171,6 @@ line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["zenith"]
-
-[tool.pyright]
-include = ["zenith"]  # Focus strict type checking on core framework
-exclude = ["**/__pycache__", "examples/**", "tests/**"]  # Tests use mocking patterns that are intentionally looser
-reportMissingImports = true
-reportMissingTypeStubs = false
-pythonVersion = "3.12"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
