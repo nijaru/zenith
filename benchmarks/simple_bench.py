@@ -4,6 +4,7 @@
 import asyncio
 import os
 import time
+from pathlib import Path
 
 from zenith import Zenith
 from zenith.testing import TestClient
@@ -155,7 +156,8 @@ async def main():
         },
     ]
 
-    with open("benchmark_results.json", "w") as f:
+    output_file = Path("benchmark_results.json")
+    with output_file.open("w") as f:
         json.dump(results, f, indent=2)
     print("\n✅ Results written to benchmark_results.json")
 
