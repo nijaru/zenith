@@ -226,3 +226,4 @@ test_migrations/
 examples/*.db
 CLAUDE_CODE_REFERENCE.md
 
+benchmark_results.json
