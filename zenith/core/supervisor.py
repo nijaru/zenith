@@ -113,7 +113,7 @@ class SupervisedTask:
 class Supervisor:
     """Process supervisor with fault tolerance."""
 
-    def __init__(self, spec: SupervisorSpec = None):
+    def __init__(self, spec: SupervisorSpec | None = None):
         self.spec = spec or SupervisorSpec()
         self.children: dict[str, SupervisedTask] = {}
         self.restart_times: list[float] = []

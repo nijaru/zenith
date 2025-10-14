@@ -267,6 +267,8 @@ def get_database_url() -> str:
     """
     env = detect_environment()
     config = DatabaseConfig.from_environment(env)
+    if config.url is None:
+        raise ValueError("Database URL not configured")
     return config.url
 
 
@@ -282,6 +284,8 @@ def get_secret_key() -> str:
     """
     env = detect_environment()
     config = SecurityConfig.from_environment(env)
+    if config.secret_key is None:
+        raise ValueError("Secret key not configured")
     return config.secret_key
 
 

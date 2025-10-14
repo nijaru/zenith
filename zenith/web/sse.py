@@ -526,7 +526,7 @@ class SSEEventManager:
     Provides convenient methods for event broadcasting and connection management.
     """
 
-    def __init__(self, sse_instance: ServerSentEvents = None):
+    def __init__(self, sse_instance: ServerSentEvents | None = None):
         self.sse = sse_instance or ServerSentEvents()
 
     async def create_event_stream(

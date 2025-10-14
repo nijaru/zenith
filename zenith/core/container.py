@@ -19,13 +19,13 @@ T = TypeVar("T")
 try:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    _current_db_session: ContextVar[AsyncSession | None] = cast(
+    _current_db_session: ContextVar[AsyncSession | None] | None = cast(
         ContextVar[AsyncSession | None],
         ContextVar("current_db_session", default=None),
     )
     _HAS_SQLALCHEMY = True
 except ImportError:
-    _current_db_session = None
+    _current_db_session: ContextVar[Any | None] | None = None
     _HAS_SQLALCHEMY = False
 
 # Global registry for the default database instance

@@ -136,7 +136,7 @@ class FileUploadError(Exception):
 class FileUploader:
     """Handles file upload operations."""
 
-    def __init__(self, config: FileUploadConfig = None):
+    def __init__(self, config: FileUploadConfig | None = None):
         self.config = config or FileUploadConfig()
 
     def validate_file(self, file: UploadFile) -> bool:
@@ -260,7 +260,7 @@ default_uploader = FileUploader()
 
 
 async def handle_file_upload(
-    request: Request, field_name: str = "file", config: FileUploadConfig = None
+    request: Request, field_name: str = "file", config: FileUploadConfig | None = None
 ) -> UploadedFile | list[UploadedFile]:
     """
     Handle file upload from request.
@@ -299,6 +299,6 @@ async def handle_file_upload(
 class FileUpload:
     """Dependency marker for file upload handling."""
 
-    def __init__(self, field_name: str = "file", config: FileUploadConfig = None):
+    def __init__(self, field_name: str = "file", config: FileUploadConfig | None = None):
         self.field_name = field_name
         self.config = config
