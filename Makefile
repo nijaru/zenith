@@ -22,7 +22,7 @@ help:
 
 # Development setup
 install:
-	pip install -e ".[dev,benchmark]"
+	uv pip install -e ".[dev,benchmark]"
 	@echo "✅ Development environment ready"
 
 # Code formatting - automatically fixes issues
@@ -70,7 +70,7 @@ clean:
 # Build distribution
 build: clean
 	@echo "📦 Building distribution..."
-	python -m build
+	uv build
 	@echo "✅ Build complete"
 
 # Publish to Test PyPI
@@ -82,7 +82,7 @@ publish-test: build
 # Install pre-commit hooks
 pre-commit:
 	@echo "🔧 Installing pre-commit hooks..."
-	pip install pre-commit
+	uv pip install pre-commit
 	pre-commit install
 	pre-commit run --all-files
 	@echo "✅ Pre-commit hooks installed"

@@ -16,14 +16,16 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v3
+
     - name: Install build tools
       run: |
-        python -m pip install --upgrade pip
-        pip install build twine
-    
+        uv pip install twine
+
     - name: Build package
-      run: python -m build
+      run: uv build
     
     - name: Check package
       run: twine check dist/*
@@ -42,7 +44,7 @@ jobs:
         body: |
           ## Installation
           ```bash
-          pip install zenith-framework
+          pip install zenithweb
           ```
-          
+
           See [documentation](https://nijaru.github.io/zenith/) for details.

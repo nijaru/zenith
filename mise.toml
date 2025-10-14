@@ -1,2 +1,6 @@
 [tools]
-python = "3.12"
+python = "3.12"  # Default version for development
+
+# All supported Python versions for testing
+# Switch with: mise use python@3.13 or mise use python@3.14
+# Install all: mise install python@3.12 python@3.13 python@3.14
