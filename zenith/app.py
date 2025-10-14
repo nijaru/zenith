@@ -304,28 +304,29 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
     def _add_health_endpoints(self) -> None:
         """Add health check endpoints."""
+        from starlette.requests import Request
 
         # Add built-in health endpoints
         @self._app_router.get("/health")
-        async def health_check():
+        async def health_check(request: Request):
             """Health check endpoint."""
             from zenith.monitoring.health import health_endpoint
 
-            return await health_endpoint(None)
+            return await health_endpoint(request)
 
         @self._app_router.get("/ready")
-        async def readiness_check():
+        async def readiness_check(request: Request):
             """Readiness check endpoint."""
             from zenith.monitoring.health import readiness_endpoint
 
-            return await readiness_endpoint(None)
+            return await readiness_endpoint(request)
 
         @self._app_router.get("/live")
-        async def liveness_check():
+        async def liveness_check(request: Request):
             """Liveness check endpoint."""
             from zenith.monitoring.health import liveness_endpoint
 
-            return await liveness_endpoint(None)
+            return await liveness_endpoint(request)
 
     def _add_openapi_endpoints(
         self,
