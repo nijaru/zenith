@@ -53,6 +53,10 @@ jobs:
       run: pyright
       continue-on-error: true  # Don't fail CI on type errors yet
 
+    - name: Run ty type checking (alpha)
+      run: uvx ty check zenith/
+      continue-on-error: true  # Don't fail CI on type errors (alpha software)
+
     - name: Run tests with coverage
       env:
         ZENITH_ENV: test
