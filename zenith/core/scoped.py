@@ -9,15 +9,16 @@ import asyncio
 import inspect
 from collections.abc import AsyncGenerator, Callable
 from contextvars import ContextVar
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from starlette.requests import Request
 
 T = TypeVar("T")
 
 # Context variable to track current request
-_current_request: ContextVar[Request | None] = ContextVar(
-    "current_request", default=None
+_current_request: ContextVar[Request | None] = cast(
+    ContextVar[Request | None],
+    ContextVar("current_request", default=None),
 )
 
 

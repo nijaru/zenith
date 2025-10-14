@@ -11,7 +11,7 @@ import inspect
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
-from typing import Any, TypeVar, Union, get_args, get_origin
+from typing import Any, TypeVar, Union, cast, get_args, get_origin
 
 T = TypeVar("T")
 
@@ -19,8 +19,9 @@ T = TypeVar("T")
 try:
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    _current_db_session: ContextVar[AsyncSession | None] = ContextVar(
-        "current_db_session", default=None
+    _current_db_session: ContextVar[AsyncSession | None] = cast(
+        ContextVar[AsyncSession | None],
+        ContextVar("current_db_session", default=None),
     )
     _HAS_SQLALCHEMY = True
 except ImportError:

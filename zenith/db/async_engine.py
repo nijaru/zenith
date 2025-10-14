@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import AsyncGenerator
 from contextvars import ContextVar
-from typing import Any
+from typing import Any, cast
 from weakref import WeakKeyDictionary
 
 from sqlalchemy.ext.asyncio import (
@@ -23,8 +23,9 @@ from sqlalchemy.ext.asyncio import (
 _engines: WeakKeyDictionary[asyncio.AbstractEventLoop, AsyncEngine] = (
     WeakKeyDictionary()
 )
-_engine_config: ContextVar[dict[str, Any] | None] = ContextVar(
-    "engine_config", default=None
+_engine_config: ContextVar[dict[str, Any] | None] = cast(
+    ContextVar[dict[str, Any] | None],
+    ContextVar("engine_config", default=None),
 )
 
 
