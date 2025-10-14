@@ -28,8 +28,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install -e ".[dev]"
-        uv pip install wrk pytest-benchmark
+        uv pip install --system -e ".[dev]"
+        uv pip install --system wrk pytest-benchmark
     
     - name: Run performance benchmarks
       run: |

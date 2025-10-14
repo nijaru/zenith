@@ -41,7 +41,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        uv pip install -e ".[dev]"
+        uv pip install --system -e ".[dev]"
     
     - name: Run ruff formatting check
       run: ruff format --check .
