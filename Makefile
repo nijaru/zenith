@@ -7,17 +7,18 @@
 help:
 	@echo "Zenith Framework - Available Commands:"
 	@echo ""
-	@echo "  make install      Install development dependencies"
-	@echo "  make format       Auto-format code with ruff"
-	@echo "  make lint         Check code style with ruff"
-	@echo "  make type-check   Run pyright type checking"
-	@echo "  make test         Run test suite"
-	@echo "  make test-cov     Run tests with coverage"
-	@echo "  make clean        Remove build artifacts"
-	@echo "  make build        Build distribution packages"
-	@echo "  make publish-test Publish to Test PyPI"
-	@echo "  make pre-commit   Install pre-commit hooks"
-	@echo "  make ci           Run all CI checks locally"
+	@echo "  make install       Install development dependencies"
+	@echo "  make format        Auto-format code with ruff"
+	@echo "  make lint          Check code style with ruff"
+	@echo "  make type-check    Run pyright type checking"
+	@echo "  make type-check-ty Run ty type checking (alpha)"
+	@echo "  make test          Run test suite"
+	@echo "  make test-cov      Run tests with coverage"
+	@echo "  make clean         Remove build artifacts"
+	@echo "  make build         Build distribution packages"
+	@echo "  make publish-test  Publish to Test PyPI"
+	@echo "  make pre-commit    Install pre-commit hooks"
+	@echo "  make ci            Run all CI checks locally"
 	@echo ""
 
 # Development setup
@@ -41,9 +42,15 @@ lint:
 
 # Type checking
 type-check:
-	@echo "🔍 Running type checker..."
+	@echo "🔍 Running pyright type checker..."
 	pyright
-	@echo "✅ Type checking passed"
+	@echo "✅ Pyright passed"
+
+# Type checking with ty (Astral's fast type checker - alpha)
+type-check-ty:
+	@echo "🔍 Running ty type checker (alpha)..."
+	uvx ty check zenith/
+	@echo "✅ ty passed"
 
 # Testing
 test:
