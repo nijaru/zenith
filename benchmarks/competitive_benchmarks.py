@@ -948,10 +948,12 @@ if __name__ == "__main__":
 
         while time.time() - start_time < timeout:
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(f"{url}/health") as response:
-                        if response.status == 200:
-                            return
+                async with (
+                    aiohttp.ClientSession() as session,
+                    session.get(f"{url}/health") as response,
+                ):
+                    if response.status == 200:
+                        return
             except Exception:
                 pass
 
@@ -1157,7 +1159,7 @@ if __name__ == "__main__":
                 )
 
         output_file = Path("competitive_benchmark_results.json")
-        with open(output_file, "w") as f:
+        with output_file.open("w") as f:
             json.dump(output, f, indent=2)
 
         print(f"\n📊 Detailed results saved to: {output_file}")
