@@ -59,7 +59,7 @@ class SecurityConfig:
 class SecurityHeadersMiddleware:
     """Middleware for adding security headers."""
 
-    def __init__(self, app: ASGIApp, config: SecurityConfig = None):
+    def __init__(self, app: ASGIApp, config: SecurityConfig | None = None):
         self.app = app
         self.config = config or SecurityConfig()
 

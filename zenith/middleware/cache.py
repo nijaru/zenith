@@ -120,7 +120,7 @@ class MemoryCache:
 class ResponseCacheMiddleware:
     """Pure ASGI middleware for caching HTTP responses."""
 
-    def __init__(self, app: ASGIApp, config: CacheConfig = None):
+    def __init__(self, app: ASGIApp, config: CacheConfig | None = None):
         self.app = app
         self.config = config or CacheConfig()
 
