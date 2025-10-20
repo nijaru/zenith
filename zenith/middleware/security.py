@@ -9,7 +9,6 @@ import hmac
 import secrets
 from urllib.parse import urlparse
 
-from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp, Receive, Scope, Send
 

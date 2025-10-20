@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Enhanced proxy support** - TrustedProxyMiddleware now handles X-Forwarded-Host, X-Forwarded-Port, and X-Forwarded-Prefix headers
+  - Supports apps behind nginx, Cloudflare, AWS ALB/ELB, or other reverse proxies
+  - Path prefix support for apps mounted at /api, /v1, etc.
+  - Virtual host support via X-Forwarded-Host
+  - Port forwarding for apps behind load balancers
+  - 8 new comprehensive tests for proxy header handling
+
+### Fixed
+- **Code quality** - Resolved 78 linting errors (144 → 66, 54% improvement)
+  - Fixed all undefined name errors (Context → Service naming)
+  - Added missing HTTPException imports in examples
+  - Formatted code per ruff standards
+- **Test isolation** - Fixed database cleanup issue in seamless DX integration tests
+  - Added pre-test cleanup to prevent leftover data from previous runs
+  - 899 tests now passing (up from 891)
+- **Dependencies** - Excluded yanked pydantic 2.12.1 from installation
+  - Updated to pydantic 2.12.3 and pydantic-core 2.41.4
+
+### Security
+- **Documented pip CVE-2025-8869** - All pip versions ≤25.2 affected, fix planned for 25.3
+  - Low risk for development environments (requires malicious sdist installation)
+  - Tracking issue in pyproject.toml comments
+
 ## [0.0.9] - 2025-10-12
 
 ### Changed
