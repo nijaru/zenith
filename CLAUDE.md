@@ -166,10 +166,25 @@ async def protected(user=Auth):  # vs Depends(get_current_user)
 
 ## Built-in Features
 
-**Middleware**: Security headers, CORS, rate limiting, CSRF, compression, logging
+**Middleware**: Security headers, CORS, rate limiting, CSRF, compression, logging, trusted proxy headers
 **Monitoring**: `/health`, `/health/detailed`, `/metrics` (Prometheus)
 **Database**: Async SQLAlchemy, Alembic migrations, connection pooling
 **Testing**: `TestClient`, `TestService`, `MockAuth` helpers
+
+### Proxy Header Handling
+```python
+from zenith.middleware import TrustedProxyMiddleware
+
+app = Zenith()
+app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["10.0.0.1", "nginx"])
+```
+
+**Supported headers:**
+- `X-Forwarded-For` - Client IP address
+- `X-Forwarded-Proto` - HTTP/HTTPS scheme
+- `X-Forwarded-Host` - Original host header
+- `X-Forwarded-Port` - Original port
+- `X-Forwarded-Prefix` - Path prefix (for apps behind `/api` routes)
 
 ### CLI Tools
 ```bash

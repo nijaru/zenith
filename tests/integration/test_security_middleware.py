@@ -331,6 +331,159 @@ class TestTrustedProxyMiddleware:
             response = await client.get("/test")
             assert response.status_code == 200
 
+    async def test_x_forwarded_for_header(self):
+        """Test X-Forwarded-For header processing."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/ip")
+        async def get_ip(request):
+            return {"client_ip": request.client.host if request.client else None}
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/ip", headers={"X-Forwarded-For": "203.0.113.1, 192.168.1.5"}
+            )
+            assert response.status_code == 200
+            # Should extract the first IP from the chain
+            data = response.json()
+            assert data["client_ip"] == "203.0.113.1"
+
+    async def test_x_forwarded_proto_header(self):
+        """Test X-Forwarded-Proto header processing."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/scheme")
+        async def get_scheme(request):
+            return {"scheme": request.url.scheme}
+
+        async with TestClient(app) as client:
+            response = await client.get("/scheme", headers={"X-Forwarded-Proto": "https"})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["scheme"] == "https"
+
+    async def test_x_forwarded_host_header(self):
+        """Test X-Forwarded-Host header processing."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/host")
+        async def get_host(request):
+            return {"host": request.url.hostname}
+
+        async with TestClient(app) as client:
+            response = await client.get("/host", headers={"X-Forwarded-Host": "example.com"})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["host"] == "example.com"
+
+    async def test_x_forwarded_port_header(self):
+        """Test X-Forwarded-Port header processing."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/port")
+        async def get_port(request):
+            return {"port": request.url.port}
+
+        async with TestClient(app) as client:
+            response = await client.get("/port", headers={"X-Forwarded-Port": "8443"})
+            assert response.status_code == 200
+            data = response.json()
+            assert data["port"] == 8443
+
+    async def test_x_forwarded_prefix_header(self):
+        """Test X-Forwarded-Prefix header processing."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/api/test")
+        async def test_endpoint(request):
+            return {"path": request.url.path, "root_path": request.scope.get("root_path", "")}
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/api/test", headers={"X-Forwarded-Prefix": "/v1"}
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["path"] == "/v1/api/test"
+            assert data["root_path"] == "/v1"
+
+    async def test_multiple_forwarded_headers(self):
+        """Test processing multiple X-Forwarded-* headers together."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/info")
+        async def get_info(request):
+            return {
+                "client_ip": request.client.host if request.client else None,
+                "scheme": request.url.scheme,
+                "host": request.url.hostname,
+                "port": request.url.port,
+                "path": request.url.path,
+            }
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/info",
+                headers={
+                    "X-Forwarded-For": "198.51.100.42",
+                    "X-Forwarded-Proto": "https",
+                    "X-Forwarded-Host": "api.example.com",
+                    "X-Forwarded-Port": "443",
+                },
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["client_ip"] == "198.51.100.42"
+            assert data["scheme"] == "https"
+            assert data["host"] == "api.example.com"
+            assert data["port"] == 443
+
+    async def test_invalid_port_ignored(self):
+        """Test that invalid port values are ignored."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/port")
+        async def get_port(request):
+            return {"port": request.url.port}
+
+        async with TestClient(app) as client:
+            # Invalid port should be ignored
+            response = await client.get("/port", headers={"X-Forwarded-Port": "invalid"})
+            assert response.status_code == 200
+            # Port should remain unchanged (default test client port)
+
+    async def test_forwarded_prefix_trailing_slash_stripped(self):
+        """Test that trailing slashes are stripped from X-Forwarded-Prefix."""
+        app = Zenith()
+
+        app.add_middleware(TrustedProxyMiddleware, trusted_proxies=["127.0.0.1"])
+
+        @app.get("/test")
+        async def test_endpoint(request):
+            return {"path": request.url.path, "root_path": request.scope.get("root_path", "")}
+
+        async with TestClient(app) as client:
+            response = await client.get(
+                "/test", headers={"X-Forwarded-Prefix": "/api/v2/"}
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["root_path"] == "/api/v2"  # Trailing slash removed
+
 
 class TestSecurityPresets:
     """Test security configuration presets."""

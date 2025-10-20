@@ -239,44 +239,84 @@ class TrustedProxyMiddleware:
         return client[0] if client else ""
 
     def _process_proxy_headers_asgi(self, scope: Scope) -> None:
-        """Process X-Forwarded-* headers for ASGI requests."""
+        """
+        Process X-Forwarded-* headers for ASGI requests.
+
+        Handles: X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host,
+        X-Forwarded-Port, and X-Forwarded-Prefix for reverse proxy scenarios.
+        """
         headers = dict(scope.get("headers", []))
 
-        # X-Forwarded-For
+        # X-Forwarded-For - client IP address
         forwarded_for_bytes = headers.get(b"x-forwarded-for")
         if forwarded_for_bytes:
             forwarded_for = forwarded_for_bytes.decode("latin-1")
-            # Take the first IP in the chain
+            # Take the first IP in the chain (original client)
             first_ip = forwarded_for.split(",")[0].strip()
             # Update client in scope
             scope["client"] = (first_ip, scope.get("client", ("", 0))[1])
 
-        # X-Forwarded-Proto
+        # X-Forwarded-Proto - HTTP or HTTPS
         forwarded_proto_bytes = headers.get(b"x-forwarded-proto")
         if forwarded_proto_bytes:
             forwarded_proto = forwarded_proto_bytes.decode("latin-1")
             # Update scheme in scope
             scope["scheme"] = forwarded_proto
 
-    def _get_client_ip(self, request: Request) -> str:
-        """Get the client IP address."""
-        return request.client.host if request.client else ""
+        # X-Forwarded-Port - original port (process before host to include in host header)
+        forwarded_port = None
+        forwarded_port_bytes = headers.get(b"x-forwarded-port")
+        if forwarded_port_bytes:
+            try:
+                forwarded_port = int(forwarded_port_bytes.decode("latin-1"))
+                # Update server port in scope
+                server = scope.get("server", ("localhost", 80))
+                scope["server"] = (server[0], forwarded_port)
+            except ValueError:
+                # Invalid port, ignore
+                pass
 
-    def _process_proxy_headers(self, request: Request) -> None:
-        """Process X-Forwarded-* headers."""
-        # X-Forwarded-For
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for:
-            # Take the first IP in the chain
-            forwarded_for.split(",")[0].strip()
-            # Update request.client if needed
-            pass
+        # X-Forwarded-Host - original Host header
+        forwarded_host_bytes = headers.get(b"x-forwarded-host")
+        forwarded_host = None
+        if forwarded_host_bytes:
+            forwarded_host = forwarded_host_bytes.decode("latin-1")
+            # Take the first host in the chain
+            forwarded_host = forwarded_host.split(",")[0].strip()
+            # Update server hostname in scope
+            server = scope.get("server", ("localhost", 80))
+            scope["server"] = (forwarded_host, server[1])
 
-        # X-Forwarded-Proto
-        forwarded_proto = request.headers.get("x-forwarded-proto")
-        if forwarded_proto:
-            # Update request.url.scheme if needed
-            pass
+        # Update host header if either host or port was forwarded
+        if forwarded_host or forwarded_port:
+            # Get current host from headers or server
+            if not forwarded_host:
+                current_host_bytes = headers.get(b"host")
+                if current_host_bytes:
+                    forwarded_host = current_host_bytes.decode("latin-1").split(":")[0]
+                else:
+                    server = scope.get("server", ("localhost", 80))
+                    forwarded_host = server[0]
+
+            # Include port in host header if provided (Starlette uses this to build request.url)
+            if forwarded_port:
+                host_with_port = f"{forwarded_host}:{forwarded_port}"
+                headers[b"host"] = host_with_port.encode("latin-1")
+            else:
+                headers[b"host"] = forwarded_host.encode("latin-1")
+            scope["headers"] = list(headers.items())
+
+        # X-Forwarded-Prefix - path prefix (e.g., /api when behind nginx location)
+        forwarded_prefix_bytes = headers.get(b"x-forwarded-prefix")
+        if forwarded_prefix_bytes:
+            forwarded_prefix = forwarded_prefix_bytes.decode("latin-1").rstrip("/")
+            if forwarded_prefix:
+                # Prepend prefix to the path
+                original_path = scope.get("path", "/")
+                if not original_path.startswith(forwarded_prefix):
+                    scope["path"] = forwarded_prefix + original_path
+                    # Update root_path for ASGI spec compliance
+                    scope["root_path"] = forwarded_prefix
 
 
 # Input validation utilities
