@@ -86,6 +86,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    # Note: pip <=25.2 affected by CVE-2025-8869, fix planned for 25.3
+    # Low risk for dev env (requires malicious sdist installation)
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
