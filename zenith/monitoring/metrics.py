@@ -407,7 +407,9 @@ def add_metrics_route(app, metrics_path: str = "/metrics") -> None:
 class CustomCounter:
     """Simple counter metric for user-defined counters."""
 
-    def __init__(self, name: str, description: str, collector: MetricsCollector | None = None):
+    def __init__(
+        self, name: str, description: str, collector: MetricsCollector | None = None
+    ):
         self.name = name
         self.description = description
         self.collector = collector or metrics
@@ -422,7 +424,9 @@ class CustomCounter:
 class CustomGauge:
     """Simple gauge metric for user-defined gauges."""
 
-    def __init__(self, name: str, description: str, collector: MetricsCollector | None = None):
+    def __init__(
+        self, name: str, description: str, collector: MetricsCollector | None = None
+    ):
         self.name = name
         self.description = description
         self.collector = collector or metrics
@@ -447,7 +451,9 @@ class CustomGauge:
 class CustomHistogram:
     """Simple histogram metric for user-defined histograms."""
 
-    def __init__(self, name: str, description: str, collector: MetricsCollector | None = None):
+    def __init__(
+        self, name: str, description: str, collector: MetricsCollector | None = None
+    ):
         self.name = name
         self.description = description
         self.collector = collector or metrics

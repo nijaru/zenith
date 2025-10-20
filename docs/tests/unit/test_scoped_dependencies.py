@@ -100,9 +100,7 @@ class TestRequestScoped:
 
         # Mock hasattr to return False initially
         def mock_hasattr(obj, name):
-            if name == "_async_generators":
-                return True
-            return False
+            return name == "_async_generators"
 
         import builtins
 

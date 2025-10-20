@@ -7,6 +7,7 @@ Tests for:
 - Context managers for manual resolution
 """
 
+import contextlib
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -66,10 +67,8 @@ class TestDependencyFunctions:
         assert session == mock_db_session
 
         # Clean up the generator
-        try:
+        with contextlib.suppress(StopAsyncIteration):
             await gen.__anext__()
-        except StopAsyncIteration:
-            pass
 
     async def test_get_auth_user_without_request_context(self):
         """Test auth user dependency function returns None without request context."""

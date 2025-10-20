@@ -5,6 +5,7 @@ Covers the improved UploadedFile API with convenience methods
 and better UX based on production feedback.
 """
 
+import contextlib
 import os
 import tempfile
 from pathlib import Path
@@ -99,7 +100,7 @@ class TestUploadedFile:
         video_file = self.create_test_uploaded_file("movie.mp4", "video/mp4")
         assert video_file.is_video() is True
 
-        webm_file = self.create_test_uploaded_file("clip.webm", "video/webm")
+        self.create_test_uploaded_file("clip.webm", "video/webm")
         assert video_file.is_video() is True
 
         pdf_file = self.create_test_uploaded_file("doc.pdf", "application/pdf")
@@ -164,10 +165,8 @@ class TestUploadedFile:
 
         temp_files = glob.glob("/tmp/tmp*")
         for temp_file in temp_files:
-            try:
+            with contextlib.suppress(OSError, FileNotFoundError):
                 os.unlink(temp_file)
-            except (OSError, FileNotFoundError):
-                pass
 
 
 class TestFileTypeDetection:

@@ -100,7 +100,7 @@ async def health():
             # Mock subprocess.run to avoid actually starting the server
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, ["dev"])
+            runner.invoke(main, ["dev"])
 
             # Should try to start the server
             assert mock_run.called
@@ -117,7 +117,7 @@ async def health():
 
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, ["dev", "--host", "0.0.0.0", "--port", "3000"])
+            runner.invoke(main, ["dev", "--host", "0.0.0.0", "--port", "3000"])
 
             assert mock_run.called
             call_args = mock_run.call_args[0][0]
@@ -132,7 +132,7 @@ async def health():
 
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, ["serve"])
+            runner.invoke(main, ["serve"])
 
             assert mock_run.called
             call_args = mock_run.call_args[0][0]
@@ -150,7 +150,7 @@ async def health():
 
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, ["serve", "--workers", "8"])
+            runner.invoke(main, ["serve", "--workers", "8"])
 
             assert mock_run.called
             call_args = mock_run.call_args[0][0]
@@ -161,7 +161,7 @@ async def health():
         """Test zen test command."""
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = runner.invoke(main, ["test"])
+        runner.invoke(main, ["test"])
 
         assert mock_run.called
         call_args = mock_run.call_args[0][0]
@@ -174,7 +174,7 @@ async def health():
         """Test zen test command with verbose and failfast options."""
         mock_run.return_value = MagicMock(returncode=0)
 
-        result = runner.invoke(main, ["test", "--verbose", "--failfast"])
+        runner.invoke(main, ["test", "--verbose", "--failfast"])
 
         assert mock_run.called
         call_args = mock_run.call_args[0][0]
@@ -209,7 +209,7 @@ async def health():
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
 
-            result = runner.invoke(main, ["shell", "--no-ipython"])
+            runner.invoke(main, ["shell", "--no-ipython"])
 
             # Should call run_shell
             assert mock_run_shell.called
@@ -223,7 +223,7 @@ async def health():
         with runner.isolated_filesystem(temp_dir=temp_dir):
             os.chdir(temp_dir)
 
-            result = runner.invoke(main, ["shell", "--app", "app.app"])
+            runner.invoke(main, ["shell", "--app", "app.app"])
 
             assert mock_run_shell.called
             assert mock_run_shell.call_args[1]["app_path"] == "app.app"
@@ -237,7 +237,7 @@ async def health():
                 # Create a dummy app.py
                 Path("app.py").write_text("from zenith import Zenith\napp = Zenith()")
 
-                result = runner.invoke(main, ["d"])
+                runner.invoke(main, ["d"])
 
                 assert mock_run.called
                 call_args = mock_run.call_args[0][0]
@@ -252,7 +252,7 @@ async def health():
                 # Create a dummy app.py
                 Path("app.py").write_text("from zenith import Zenith\napp = Zenith()")
 
-                result = runner.invoke(main, ["s"])
+                runner.invoke(main, ["s"])
 
                 assert mock_run.called
                 call_args = mock_run.call_args[0][0]
@@ -298,7 +298,7 @@ async def health():
 
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = runner.invoke(main, ["dev", "--open"])
+            runner.invoke(main, ["dev", "--open"])
 
             assert mock_browser.called
             assert "http://127.0.0.1:8000" in mock_browser.call_args[0][0]

@@ -8,6 +8,8 @@ Tests complete workflows of:
 - End-to-end Rails-like patterns
 """
 
+import builtins
+import contextlib
 import os
 import tempfile
 from datetime import datetime
@@ -93,10 +95,8 @@ class TestZeroConfigIntegration:
                 assert app.config.secret_key == "test-secret-key-32-characters-long"
 
         finally:
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 os.unlink(db_path)
-            except:
-                pass
 
     def test_zero_config_one_liner_chaining(self):
         """Test zero-config with one-liner feature chaining."""
@@ -141,11 +141,20 @@ class TestSeamlessZenithModelIntegration:
         # Create tables (idempotent - won't fail if already exist)
         await app.app.database.create_all()
 
-        yield app
-
-        # Cleanup - truncate all tables for test isolation
+        # Cleanup before test - remove any leftover data from previous runs
         from sqlmodel import SQLModel
 
+        try:
+            async with app.app.database.engine.begin() as conn:
+                # Truncate tables in reverse order to handle foreign keys
+                for table in reversed(SQLModel.metadata.sorted_tables):
+                    await conn.execute(table.delete())
+        except Exception:
+            pass
+
+        yield app
+
+        # Cleanup after test - truncate all tables for test isolation
         try:
             async with app.app.database.engine.begin() as conn:
                 # Truncate tables in reverse order to handle foreign keys
@@ -414,10 +423,8 @@ class TestCompleteRailsLikeDXWorkflow:
                     assert response.status_code == 404
 
         finally:
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 os.unlink(db_path)
-            except:
-                pass
 
 
 class TestPerformanceWithRailsLikeFeatures:
@@ -463,10 +470,8 @@ class TestPerformanceWithRailsLikeFeatures:
                 )
 
         finally:
-            try:
+            with contextlib.suppress(builtins.BaseException):
                 os.unlink(db_path)
-            except:
-                pass
 
 
 class TestBackwardsCompatibility:

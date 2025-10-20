@@ -199,7 +199,7 @@ class TestTestingModeIntegration:
         from zenith.middleware.rate_limit import RateLimit
 
         # Even with explicit rate limit configuration, testing mode should disable it
-        rate_limits = [RateLimit(requests=10, window=60)]
+        [RateLimit(requests=10, window=60)]
 
         app = Zenith(testing=True)
         middleware_classes = [m.cls.__name__ for m in app.middleware]
@@ -289,12 +289,12 @@ class TestTestingModePerformance:
 
         # Measure normal mode startup
         start_normal = time.time()
-        app_normal = Zenith(testing=False)
+        Zenith(testing=False)
         normal_time = time.time() - start_normal
 
         # Measure testing mode startup
         start_testing = time.time()
-        app_testing = Zenith(testing=True)
+        Zenith(testing=True)
         testing_time = time.time() - start_testing
 
         # Testing mode should be faster or similar (fewer middleware)
@@ -393,7 +393,7 @@ class TestTestingModeRealWorldScenarios:
         client = SyncTestClient(app)
         # Make multiple rapid requests (would normally trigger rate limiting)
         responses = []
-        for i in range(20):  # More than typical rate limit
+        for _i in range(20):  # More than typical rate limit
             response = client.get("/api/test")
             responses.append(response)
 

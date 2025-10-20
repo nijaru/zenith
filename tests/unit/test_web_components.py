@@ -46,7 +46,7 @@ class TestFileUploads:
                 upload_dir = Path(temp_dir) / "uploads"
                 upload_dir.mkdir()
 
-                config = FileUploadConfig(
+                FileUploadConfig(
                     upload_dir=upload_dir,
                     max_file_size_bytes=1024,  # 1KB
                     allowed_extensions=[".txt", ".json"],
@@ -114,7 +114,7 @@ class TestFileUploads:
                 upload_dir = Path(temp_dir) / "uploads"
                 upload_dir.mkdir()
 
-                config = FileUploadConfig(
+                FileUploadConfig(
                     upload_dir=upload_dir,
                     max_file_size_bytes=10,  # Very small limit
                     allowed_extensions=[".txt"],

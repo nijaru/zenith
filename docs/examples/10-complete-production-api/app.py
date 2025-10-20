@@ -192,8 +192,8 @@ jwt_manager = configure_auth(
     public_paths=["/", "/health", "/docs", "/login", "/register"],
 )
 
-# Register business contexts
-app.register_context("users", lambda: UsersContext(database))
+# Register business services
+app.register_service("users", lambda: UsersService(database))
 
 # Create router
 api = Router(prefix="/api/v1")
@@ -234,7 +234,7 @@ async def health_check():
 
 @api.post("/register", response_model=UserResponse)
 async def register(
-    user_data: UserCreate, users: UsersContext = Inject()
+    user_data: UserCreate, users: UsersService = Inject()
 ) -> UserResponse:
     """Register a new user."""
     # Check if user already exists
@@ -259,7 +259,7 @@ async def register(
 @api.post("/login", response_model=TokenResponse)
 async def login(
     credentials: LoginRequest,
-    users: UsersContext = Inject(),
+    users: UsersService = Inject(),
     # Note: session = Inject()  # Session dependency injection - requires session modules
 ) -> TokenResponse:
     """Login user and return JWT token."""
@@ -298,7 +298,7 @@ async def login(
 
 @api.get("/profile", response_model=UserResponse)
 async def get_profile(
-    current_user=Auth(required=True), users: UsersContext = Inject()
+    current_user=Auth(required=True), users: UsersService = Inject()
 ) -> UserResponse:
     """Get current user's profile."""
     user = await users.get_user(current_user["user_id"])
@@ -310,7 +310,7 @@ async def get_profile(
 
 @api.get("/admin/users")
 async def list_users(
-    current_user=Auth(required=True, scopes=["admin"]), users: UsersContext = Inject()
+    current_user=Auth(required=True, scopes=["admin"]), users: UsersService = Inject()
 ) -> list[UserResponse]:
     """Admin endpoint to list all users."""
     # In a real app, implement pagination and filtering

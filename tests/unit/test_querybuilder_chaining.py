@@ -72,7 +72,7 @@ async def test_where_returns_querybuilder_immediately(app_with_database):
 
     app = app_with_database
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # This should work WITHOUT await before .first()
         # Previously would fail with: TypeError: 'coroutine' object has no attribute 'first'
         builder = ChainUser.where(email="test@example.com")
@@ -93,7 +93,7 @@ async def test_where_chaining_single_statement(app_with_database):
     # Use unique email per test run to avoid conflicts
     email = f"alice_{uuid.uuid4().hex[:8]}@example.com"
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Create test user
         await ChainUser.create(email=email, name="Alice", active=True)
 
@@ -115,7 +115,7 @@ async def test_where_chaining_with_multiple_methods(app_with_database):
     app = app_with_database
     uid = uuid.uuid4().hex[:8]
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Create test users with unique emails
         await ChainUser.create(
             email=f"alice_{uid}@example.com", name="Alice", active=True
@@ -143,7 +143,7 @@ async def test_where_with_count(app_with_database):
     app = app_with_database
     uid = uuid.uuid4().hex[:8]
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Create test users with unique emails
         await ChainUser.create(
             email=f"alice_{uid}@example.com", name="Alice", active=True
@@ -169,7 +169,7 @@ async def test_where_with_exists(app_with_database):
 
     uid = uuid.uuid4().hex[:8]
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Create test user
         await ChainUser.create(
             email=f"alice_{uid}@example.com", name="Alice", active=True
@@ -193,7 +193,7 @@ async def test_find_by_uses_synchronous_where(app_with_database):
 
     uid = uuid.uuid4().hex[:8]
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Create test user
         await ChainUser.create(
             email=f"alice_{uid}@example.com", name="Alice", active=True
@@ -213,7 +213,7 @@ async def test_where_lazy_session_only_fetched_on_execution(app_with_database):
 
     app = app_with_database
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Building the query should not fetch session yet
         builder = ChainUser.where(active=True).order_by("-name").limit(5)
 
@@ -238,7 +238,7 @@ async def test_complex_chaining_scenario(app_with_database):
 
     uid = uuid.uuid4().hex[:8]
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Create test data
         await ChainUser.create(
             email=f"alice_{uid}@example.com", name="Alice", active=True
@@ -271,7 +271,7 @@ async def test_where_no_results(app_with_database):
 
     app = app_with_database
 
-    async with TestClient(app) as client:
+    async with TestClient(app):
         # Query with no matches
         user = await ChainUser.where(email="nobody@example.com").first()
         users = await ChainUser.where(active=False).all()

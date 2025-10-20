@@ -212,7 +212,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # Current version command
-    current_parser = subparsers.add_parser("current", help="Show current version")
+    subparsers.add_parser("current", help="Show current version")
 
     # Update version command
     update_parser = subparsers.add_parser("update", help="Update version")
@@ -239,7 +239,7 @@ def main():
     )
 
     # Find command
-    find_parser = subparsers.add_parser(
+    subparsers.add_parser(
         "find", help="Find files with version references"
     )
 

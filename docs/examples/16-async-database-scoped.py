@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import declarative_base
 
 from zenith import DatabaseSession, RequestScoped, Zenith
+from zenith.exceptions import HTTPException
 
 # SQLAlchemy models
 Base = declarative_base()

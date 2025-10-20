@@ -209,7 +209,7 @@ class TestCriticalBehavior:
 
             # 3. Test rate limiting works (after 3 login attempts, should be blocked)
             for i in range(3):  # We already made 1 login request above
-                response = await client.post(
+                await client.post(
                     "/auth/login", json={"username": f"user{i}", "password": "pass"}
                 )
                 # These should work or fail based on credentials, but count toward rate limit

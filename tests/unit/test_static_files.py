@@ -206,7 +206,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(str(test_file), stat_result, scope)
+            static_files.file_response(str(test_file), stat_result, scope)
 
             # When etag=False in config, we don't add our own etag
             # but Starlette's FileResponse may add its own
@@ -241,7 +241,7 @@ class TestZenithStaticFiles:
             stat_result = os.stat(test_file)
             scope = {"type": "http", "method": "GET"}
 
-            response = static_files.file_response(str(test_file), stat_result, scope)
+            static_files.file_response(str(test_file), stat_result, scope)
 
             # When last_modified=False in config, we don't add our own header
             # but Starlette's FileResponse may add its own
@@ -392,7 +392,7 @@ class TestSecurityFeatures:
             secret_file.write_text("secret data")
 
             config = StaticFileConfig(directory=tmpdir)
-            static_files = ZenithStaticFiles(config)
+            ZenithStaticFiles(config)
 
             # Attempt to access file outside directory with path traversal
             # This should be handled by the underlying StaticFiles implementation

@@ -125,12 +125,12 @@ class TodoContainer:
         return None
 
 
-# Register context properly
-def create_todos_context(container):
-    return TodosContext(TodoContainer())
+# Register service properly
+def create_todos_service(container):
+    return TodosService(TodoContainer())
 
 
-app.register_context("todoscontext", create_todos_context)
+app.register_service("todosservice", create_todos_service)
 
 # Create router
 api = Router(prefix="/api/v1")
@@ -138,21 +138,21 @@ api = Router(prefix="/api/v1")
 
 # Routes
 @api.post("/todos")
-async def create_todo(data: TodoCreate, todos: TodosContext = Inject()) -> Todo:
+async def create_todo(data: TodoCreate, todos: TodosService = Inject()) -> Todo:
     """Create a new todo item."""
     return await todos.create_todo(data)
 
 
 @api.get("/todos")
 async def list_todos(
-    completed: bool | None = None, todos: TodosContext = Inject()
+    completed: bool | None = None, todos: TodosService = Inject()
 ) -> list[Todo]:
     """List todos, optionally filtered by completion status."""
     return await todos.list_todos(completed)
 
 
 @api.get("/todos/{todo_id}")
-async def get_todo(todo_id: int, todos: TodosContext = Inject()) -> Todo:
+async def get_todo(todo_id: int, todos: TodosService = Inject()) -> Todo:
     """Get a specific todo item."""
     todo = await todos.get_todo(todo_id)
     if not todo:
@@ -162,7 +162,7 @@ async def get_todo(todo_id: int, todos: TodosContext = Inject()) -> Todo:
 
 @api.patch("/todos/{todo_id}")
 async def update_todo(
-    todo_id: int, data: TodoUpdate, todos: TodosContext = Inject()
+    todo_id: int, data: TodoUpdate, todos: TodosService = Inject()
 ) -> Todo:
     """Update a todo item."""
     todo = await todos.update_todo(todo_id, data)
@@ -172,7 +172,7 @@ async def update_todo(
 
 
 @api.delete("/todos/{todo_id}")
-async def delete_todo(todo_id: int, todos: TodosContext = Inject()) -> dict:
+async def delete_todo(todo_id: int, todos: TodosService = Inject()) -> dict:
     """Delete a todo item."""
     deleted = await todos.delete_todo(todo_id)
     if not deleted:
@@ -190,7 +190,7 @@ async def health() -> dict:
 @app.on_startup
 async def seed_data():
     """Add some sample todos on startup."""
-    context = TodosContext(TodoContainer())
+    context = TodosService(TodoContainer())
     await context.create_todo(
         TodoCreate(
             title="Build Zenith framework",

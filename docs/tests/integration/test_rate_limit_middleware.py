@@ -662,7 +662,7 @@ class TestRedisRateLimitStorage:
             assert response.status_code == 200
 
             # Should have called Redis storage methods
-            assert mock_storage.increment.called or redis_storage.increment
+            assert mock_storage.increment.called
 
 
 @pytest.mark.asyncio

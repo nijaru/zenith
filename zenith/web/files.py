@@ -299,6 +299,8 @@ async def handle_file_upload(
 class FileUpload:
     """Dependency marker for file upload handling."""
 
-    def __init__(self, field_name: str = "file", config: FileUploadConfig | None = None):
+    def __init__(
+        self, field_name: str = "file", config: FileUploadConfig | None = None
+    ):
         self.field_name = field_name
         self.config = config

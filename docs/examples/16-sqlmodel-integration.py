@@ -271,14 +271,14 @@ api = Router(prefix="/api")
 
 
 @api.post("/users", response_model=User)
-async def create_user(user_data: UserCreate, blog: BlogContext = Inject()) -> User:
+async def create_user(user_data: UserCreate, blog: BlogService = Inject()) -> User:
     """Create a new user."""
     return await blog.create_user(user_data)
 
 
 @api.get("/users", response_model=list[User])
 async def list_users(
-    skip: int = 0, limit: int = 10, blog: BlogContext = Inject()
+    skip: int = 0, limit: int = 10, blog: BlogService = Inject()
 ) -> list[User]:
     """List users with pagination."""
     return await blog.list_users(skip, limit)
@@ -286,7 +286,7 @@ async def list_users(
 
 @api.get("/users/{user_id}", response_model=User)
 async def get_user(
-    user_id: int, include_posts: bool = False, blog: BlogContext = Inject()
+    user_id: int, include_posts: bool = False, blog: BlogService = Inject()
 ) -> User:
     """Get user by ID."""
     user = await blog.get_user(user_id, include_posts)
@@ -297,7 +297,7 @@ async def get_user(
 
 @api.put("/users/{user_id}", response_model=User)
 async def update_user(
-    user_id: int, updates: UserUpdate, blog: BlogContext = Inject()
+    user_id: int, updates: UserUpdate, blog: BlogService = Inject()
 ) -> User:
     """Update user information."""
     user = await blog.update_user(user_id, updates)
@@ -307,13 +307,13 @@ async def update_user(
 
 
 @api.get("/users/{user_id}/activity")
-async def get_user_activity(user_id: int, blog: BlogContext = Inject()) -> dict:
+async def get_user_activity(user_id: int, blog: BlogService = Inject()) -> dict:
     """Get user activity summary."""
     return await blog.get_user_activity(user_id)
 
 
 @api.post("/posts", response_model=Post)
-async def create_post(post_data: PostCreate, blog: BlogContext = Inject()) -> Post:
+async def create_post(post_data: PostCreate, blog: BlogService = Inject()) -> Post:
     """Create a new blog post."""
     return await blog.create_post(post_data)
 
@@ -322,7 +322,7 @@ async def create_post(post_data: PostCreate, blog: BlogContext = Inject()) -> Po
 async def list_posts(
     published_only: bool = True,
     author_id: int | None = None,
-    blog: BlogContext = Inject(),
+    blog: BlogService = Inject(),
 ) -> list[Post]:
     """List blog posts with filters."""
     if author_id:
@@ -335,7 +335,7 @@ async def list_posts(
 
 @api.get("/posts/{post_id}", response_model=Post)
 async def get_post(
-    post_id: int, include_all: bool = False, blog: BlogContext = Inject()
+    post_id: int, include_all: bool = False, blog: BlogService = Inject()
 ) -> Post:
     """Get post by ID with optional relationships."""
     if include_all:
@@ -350,7 +350,7 @@ async def get_post(
 
 @api.post("/posts/{post_id}/comments", response_model=Comment)
 async def add_comment(
-    post_id: int, user_id: int, content: str, blog: BlogContext = Inject()
+    post_id: int, user_id: int, content: str, blog: BlogService = Inject()
 ) -> Comment:
     """Add a comment to a post."""
     return await blog.add_comment(post_id, user_id, content)
@@ -358,7 +358,7 @@ async def add_comment(
 
 @api.get("/posts/{post_id}/comments", response_model=list[Comment])
 async def get_post_comments(
-    post_id: int, blog: BlogContext = Inject()
+    post_id: int, blog: BlogService = Inject()
 ) -> list[Comment]:
     """Get all comments for a post."""
     return await blog.get_post_comments(post_id)
@@ -412,7 +412,7 @@ async def init_db():
 
     # Create some sample data
     async with async_session() as session:
-        blog = BlogContext(session)
+        blog = BlogService(session)
 
         # Check if we already have data
         users = await blog.list_users()
