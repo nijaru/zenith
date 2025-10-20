@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.10] - 2025-10-20
+
 ### Added
 - **Enhanced proxy support** - TrustedProxyMiddleware now handles X-Forwarded-Host, X-Forwarded-Port, and X-Forwarded-Prefix headers
   - Supports apps behind nginx, Cloudflare, AWS ALB/ELB, or other reverse proxies
