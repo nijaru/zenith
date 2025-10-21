@@ -13,9 +13,6 @@
 - **[feedback/djscout-migration.md](feedback/djscout-migration.md)** - DJScout project migration experience
 - **[feedback/wealthscope-migration.md](feedback/wealthscope-migration.md)** - WealthScope project migration lessons
 
-### 📦 Archive
-- **[archive/](archive/)** - Historical development documents (reference only)
-
 ## Quick Navigation
 
 ### For AI Agents
