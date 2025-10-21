@@ -5,7 +5,7 @@ Provides persistent job storage, status tracking, and job scheduling.
 """
 
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from enum import Enum
 from typing import Any
 
@@ -87,7 +87,7 @@ class RedisJobQueue:
             "args": args,
             "kwargs": kwargs,
             "status": JobStatus.PENDING,
-            "created_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "scheduled_at": scheduled_at.isoformat() if scheduled_at else None,
             "started_at": None,
             "completed_at": None,
@@ -101,7 +101,7 @@ class RedisJobQueue:
 
         # Store job data
         job_key = f"{self.job_prefix}{job_id}"
-        await self.redis.set(job_key, msgspec.json.encode(job_data).decode())
+        await self.redis.set(job_key, msgspec.json.encode(job_data))
 
         # Add to appropriate queue
         if scheduled_at:
@@ -293,13 +293,13 @@ class RedisJobQueue:
         job_key = f"{self.job_prefix}{job_id}"
         data = await self.redis.get(job_key)
         if data:
-            return msgspec.json.decode(data.encode())
+            return msgspec.json.decode(data)
         return None
 
     async def _update_job_data(self, job_id: str, job_data: dict) -> None:
         """Update job data in Redis."""
         job_key = f"{self.job_prefix}{job_id}"
-        await self.redis.set(job_key, msgspec.json.encode(job_data).decode())
+        await self.redis.set(job_key, msgspec.json.encode(job_data))
 
     async def _move_scheduled_jobs(self) -> None:
         """Move scheduled jobs that are ready to the pending queue."""

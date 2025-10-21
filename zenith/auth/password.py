@@ -1,57 +1,41 @@
 """
 Secure password hashing for Zenith applications.
 
-Uses bcrypt for industry-standard password security with
-configurable rounds and secure verification.
+Uses Argon2 - the most modern and secure password hashing algorithm.
 """
 
 import logging
 
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
 
 logger = logging.getLogger("zenith.auth.password")
 
 
 class PasswordManager:
     """
-    Secure password manager using bcrypt.
+    Secure password manager using Argon2.
 
     Features:
-    - bcrypt hashing with configurable rounds
-    - Secure password verification
+    - Argon2 password hashing (most secure and modern)
     - Protection against timing attacks
     - Automatic salt generation
-    - Future-proof algorithm upgrading
+    - Configurable time/memory cost
+    - Future-proof algorithm
     """
 
-    def __init__(self, rounds: int = 12):
+    def __init__(self):
         """
-        Initialize password manager.
-
-        Args:
-            rounds: bcrypt rounds (4-31, default 12)
-                   Higher = more secure but slower
-                   12 rounds = ~250ms on modern hardware
+        Initialize password manager with Argon2.
         """
-        if not 4 <= rounds <= 31:
-            raise ValueError("bcrypt rounds must be between 4 and 31")
+        self.password_hash = PasswordHash.recommended()  # Uses Argon2 with good defaults
+        logger.info("Password manager initialized with Argon2")
 
-        self.rounds = rounds
-
-        # Create passlib context for secure password handling
-        self.pwd_context = CryptContext(
-            schemes=["bcrypt"],
-            default="bcrypt",
-            bcrypt__rounds=rounds,
-            # Automatically upgrade to new rounds if changed
-            deprecated="auto",
-        )
-
-        logger.info(f"Password manager initialized with {rounds} bcrypt rounds")
+        # Keep reference for compatibility
+        self.pwd_context = self.password_hash
 
     def hash_password(self, password: str) -> str:
         """
-        Hash a password securely using bcrypt.
+        Hash a password securely.
 
         Args:
             password: Plain text password
@@ -63,7 +47,7 @@ class PasswordManager:
             raise ValueError("Password cannot be empty")
 
         try:
-            hashed = self.pwd_context.hash(password)
+            hashed = self.password_hash.hash(password)
             logger.debug("Password hashed successfully")
             return hashed
         except Exception as e:
@@ -85,14 +69,14 @@ class PasswordManager:
             return False
 
         try:
-            is_valid = self.pwd_context.verify(password, hashed)
+            is_valid, updated_hash = self.password_hash.verify_and_update(password, hashed)
 
             if is_valid:
                 logger.debug("Password verification successful")
 
-                # Check if hash needs upgrading (if rounds changed)
-                if self.pwd_context.needs_update(hashed):
-                    logger.info("Password hash needs updating to new rounds")
+                # Check if hash needs upgrading
+                if updated_hash:
+                    logger.info("Password hash upgraded to newer algorithm/parameters")
                     # Note: Framework could automatically rehash here on login
             else:
                 logger.debug("Password verification failed")
@@ -106,7 +90,9 @@ class PasswordManager:
     def needs_rehash(self, hashed: str) -> bool:
         """Check if a password hash needs updating."""
         try:
-            return self.pwd_context.needs_update(hashed)
+            # pwdlib handles this in verify_and_update, but we can check if it would produce an updated hash
+            is_valid, updated_hash = self.password_hash.verify_and_update("dummy", hashed)
+            return updated_hash is not None
         except Exception:
             return True  # If we can't check, assume it needs updating
 
@@ -115,17 +101,17 @@ class PasswordManager:
 _password_manager: PasswordManager | None = None
 
 
-def configure_password_manager(rounds: int = 12) -> PasswordManager:
-    """Configure the global password manager."""
+def configure_password_manager() -> PasswordManager:
+    """Configure the global password manager with Argon2."""
     global _password_manager
-    _password_manager = PasswordManager(rounds=rounds)
+    _password_manager = PasswordManager()
     return _password_manager
 
 
 def get_password_manager() -> PasswordManager:
     """Get the configured password manager."""
     if _password_manager is None:
-        # Auto-configure with defaults if not set
+        # Auto-configure with defaults if not set (uses Argon2)
         configure_password_manager()
     assert _password_manager is not None  # Type hint for pyright
     return _password_manager

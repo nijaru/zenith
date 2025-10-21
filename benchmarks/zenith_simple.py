@@ -41,7 +41,7 @@ engine = create_async_engine("sqlite+aiosqlite:///:memory:")
 AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # App
-app = Zenith()
+app = Zenith(debug=False)
 
 
 # Startup

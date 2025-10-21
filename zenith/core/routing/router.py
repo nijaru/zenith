@@ -157,17 +157,13 @@ class Router:
                 starlette_routes.append(websocket_route)
             else:
                 # HTTP routes - delegate execution to RouteExecutor
-                def create_endpoint(spec):
-                    async def endpoint(request):
-                        return await self.executor.execute_route(
-                            request, spec, self._app
-                        )
-
-                    return endpoint
+                # Pre-create optimized endpoint to avoid closure overhead
+                async def execute_route(request, spec=route_spec, executor=self.executor, app=self._app):
+                    return await executor.execute_route(request, spec, app)
 
                 starlette_route = Route(
                     route_spec.path,
-                    endpoint=create_endpoint(route_spec),
+                    endpoint=execute_route,
                     methods=route_spec.methods,
                     name=route_spec.name,
                 )

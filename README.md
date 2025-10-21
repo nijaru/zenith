@@ -134,10 +134,10 @@ async def get_users(session: AsyncSession = Session):
 - **Type-safe** - Full IDE support and autocompletion
 
 ### 🏎️ **Exceptional Performance**
-- **9,600+ req/s** - Exceptional performance with modern features
-- **No performance penalty** - Zero overhead from convenience features
+- **~10,000 req/s** - High performance for JSON endpoints
+- **~7,000 req/s** - With production middleware stack (71% retention)
 - **Async-first** - Full async/await with Python 3.12+ optimizations
-- **Production tested** - 70% middleware retention with full feature stack
+- **Production tested** - Benchmarked with comprehensive test suite
 
 ### 🛡️ **Production-Ready**
 - **Security by default** - CSRF, CORS, security headers automatic
@@ -178,18 +178,18 @@ your-app/
 ## Performance
 
 **Verified Benchmark Results:**
-- Simple endpoints: **9,557 req/s**
-- JSON endpoints: **9,602 req/s**
-- With full middleware: **6,694 req/s** (70% retention)
+- **JSON endpoints**: **~10,000 req/s** (9,917 req/s measured)
+- **Simple endpoints**: **~8,000 req/s** (7,743 req/s measured)
+- **With middleware**: **~7,000 req/s** (71% retention, 29% overhead)
 
-*Tested on Apple M3 Max, Python 3.13, uvloop enabled*
+*Tested on Apple M3 Max, Python 3.12, using performance test suite*
 
 Run your own benchmarks:
 ```bash
-python scripts/run_performance_tests.py --quick
+uv run pytest tests/performance/ -v
 ```
 
-*Performance varies by hardware and application complexity.*
+*Performance varies by hardware, middleware configuration, and application complexity.*
 
 ## Documentation
 
@@ -223,6 +223,14 @@ zen new my-api
 
 # Generate secure SECRET_KEY
 zen keygen
+
+# Show configuration and environment info
+zen config --all
+
+# Generate boilerplate code
+zen generate model User
+zen generate service UserService
+zen generate graphql UserSchema
 
 # Development server with hot reload
 zen dev
@@ -294,11 +302,11 @@ pytest  # Run tests
 
 ## Status
 
-**Latest Version**: v0.0.3
+**Latest Version**: v0.0.10
 **Python Support**: 3.12-3.14
-**Test Suite**: 100% passing (862 tests)
-**Performance**: Production-ready with 9,600+ req/s capability  
-**Architecture**: Clean separation with Service system and simple dependency patterns  
+**Test Suite**: 100% passing (900 tests)
+**Performance**: ~10,000 req/s JSON endpoints, ~7,000 req/s with middleware
+**Architecture**: Clean separation with Service system and simple dependency patterns
 
 Zenith is production-ready with comprehensive middleware, performance optimizations, and clean architecture patterns for modern Python applications.
 

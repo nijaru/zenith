@@ -71,8 +71,7 @@ dependencies = [
     "structlog>=23.0.0",
     "click>=8.1.0",
     "pyjwt>=2.8.0",
-    "bcrypt>=4.0.0,<5.0.0",  # passlib 1.7.4 incompatible with bcrypt 5.0+ (internal detect_wrap_bug fails on 72-byte limit)
-    "passlib[bcrypt]>=1.7.4",
+    "pwdlib[argon2]>=0.2.1",  # Modern password hashing with Argon2 (more secure than bcrypt)
     "python-multipart>=0.0.6",
     "uvloop>=0.21.0",
     "orjson>=3.11.3",
@@ -114,6 +113,13 @@ compression = [
     "brotli>=1.1.0",  # Brotli compression (20-30% better than gzip)
     "zstandard>=0.23.0",  # Zstandard compression (fast with good ratio)
 ]
+graphql = [
+    "strawberry-graphql[cli]>=0.284.0",  # GraphQL support with Strawberry (for code generation)
+]
+tracing = [
+    "opentelemetry-distro>=0.59b0",  # Distributed tracing (experimental)
+    "opentelemetry-instrumentation-fastapi>=0.59b0",
+]
 
 [project.scripts]
 zen = "zenith.cli:main"
@@ -127,6 +133,8 @@ Issues = "https://github.com/nijaru/zenith/issues"
 [dependency-groups]
 benchmark = [
     "fastapi>=0.116.1",
+    "flask>=3.1.2",
+    "flask-sqlalchemy>=3.1.1",
 ]
 dev = [
     "aiosqlite>=0.21.0",
@@ -135,6 +143,7 @@ dev = [
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.3.0",
     "ruff>=0.13.1",
+    "ty>=0.0.1a23",
 ]
 
 

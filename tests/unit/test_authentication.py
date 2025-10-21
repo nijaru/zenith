@@ -160,8 +160,8 @@ class TestPasswordHashing:
 
         assert isinstance(hashed, str)
         assert hashed != password  # Should be hashed, not plain text
-        assert len(hashed) > 50  # bcrypt hashes are long
-        assert hashed.startswith("$2b$")  # bcrypt format
+        assert len(hashed) > 50  # Argon2 hashes are long
+        assert hashed.startswith("$argon2")  # Argon2 format
 
     def test_hash_different_passwords_different_hashes(self):
         """Test that different passwords produce different hashes."""

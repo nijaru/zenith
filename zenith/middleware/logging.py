@@ -222,7 +222,7 @@ class RequestLoggingMiddleware:
         if self.include_body and response_body:
             if len(response_body) <= self.max_body_size:
                 try:
-                    response_data["body"] = msgspec.json.decode(response_body)
+                    response_data["body"] = msgspec.json.decode(response_body.decode() if isinstance(response_body, bytes) else response_body)
                 except (msgspec.DecodeError, UnicodeDecodeError):
                     response_data["body"] = response_body.decode(
                         "utf-8", errors="replace"
@@ -279,7 +279,7 @@ class RequestLoggingMiddleware:
                 if len(body) <= self.max_body_size:
                     # Try to decode as JSON for better formatting
                     try:
-                        data["body"] = msgspec.json.decode(body)
+                        data["body"] = msgspec.json.decode(body.decode() if isinstance(body, bytes) else body)
                     except (msgspec.DecodeError, UnicodeDecodeError):
                         data["body"] = body.decode("utf-8", errors="replace")[
                             : self.max_body_size
@@ -311,7 +311,7 @@ class RequestLoggingMiddleware:
                 if isinstance(body, bytes) and len(body) <= self.max_body_size:
                     # Try to decode as JSON for better formatting
                     try:
-                        data["body"] = msgspec.json.decode(body)
+                        data["body"] = msgspec.json.decode(body.decode() if isinstance(body, bytes) else body)
                     except (msgspec.DecodeError, UnicodeDecodeError):
                         data["body"] = body.decode("utf-8", errors="replace")[
                             : self.max_body_size
@@ -470,4 +470,4 @@ class JsonFormatter(logging.Formatter):
         if hasattr(record, "request_data"):
             log_entry.update(record.request_data)
 
-        return msgspec.json.encode(log_entry).decode()
+        return msgspec.json.encode(log_entry).decode('utf-8')

@@ -123,7 +123,7 @@ class CookieSessionStore(SessionStore):
             json_data = base64.b64decode(b64_data).decode()
 
             # Parse JSON
-            session_dict = msgspec.json.decode(json_data.encode())
+            session_dict = msgspec.json.decode(json_data)
 
             # Create session object
             return Session.from_dict(session_dict)

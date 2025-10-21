@@ -189,6 +189,7 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             RateLimitMiddleware,
             RequestIDMiddleware,
             RequestLoggingMiddleware,
+            ResponseCacheMiddleware,
             SecurityHeadersMiddleware,
         )
 
@@ -207,7 +208,11 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         # 4. Security headers (fast header additions)
         self.add_middleware(SecurityHeadersMiddleware)
 
-        # 5. Rate limiting (fast memory/Redis operations) - Skip in testing mode
+        # 5. Response caching (significant performance boost for read-heavy APIs)
+        if not self.config.debug:  # Skip caching in debug mode for development
+            self.add_middleware(ResponseCacheMiddleware)
+
+        # 6. Rate limiting (fast memory/Redis operations) - Skip in testing mode
         if not self.testing:
             from zenith.middleware.rate_limit import RateLimit
 
@@ -216,11 +221,11 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 default_limits=[RateLimit(requests=100, window=60, per="ip")],
             )
 
-        # 6. Minimal logging
+        # 7. Minimal logging
         if self.config.debug:
             self.add_middleware(RequestLoggingMiddleware)
 
-        # 7. Compression last (most expensive)
+        # 8. Compression last (most expensive)
         self.add_middleware(CompressionMiddleware)
 
     def _setup_contexts(self) -> None:
@@ -599,6 +604,15 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             debug=self.config.debug,
             exception_handlers=exception_handlers,
         )
+
+        # Apply OpenTelemetry instrumentation if tracing was enabled
+        if hasattr(self, '_otel_instrumented') and self._otel_instrumented:
+            try:
+                from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+                # Instrument the Starlette app (FastAPIInstrumentor works with Starlette)
+                FastAPIInstrumentor.instrument_app(self._starlette_app)
+            except ImportError:
+                pass  # Shouldn't happen since we check in add_tracing
 
         return self._starlette_app
 
@@ -1014,6 +1028,127 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
 
         self.logger.info(
             f"✅ API documentation added - {docs_url} and {redoc_url} available"
+        )
+        return self
+
+    def add_graphql(
+        self,
+        schema,
+        path: str = "/graphql",
+        graphiql: bool = True,
+        debug: bool = False,
+    ) -> "Zenith":
+        """
+        Add GraphQL support with Strawberry GraphQL.
+
+        Args:
+            schema: Strawberry GraphQL schema instance
+            path: URL path for GraphQL endpoint
+            graphiql: Enable GraphiQL interactive interface
+            debug: Enable GraphQL debug mode
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            import strawberry
+            from strawberry.fastapi import GraphQLRouter
+
+            @strawberry.type
+            class Query:
+                @strawberry.field
+                def hello(self) -> str:
+                    return "Hello World!"
+
+            schema = strawberry.Schema(Query)
+            app = Zenith()
+            app.add_graphql(schema)
+        """
+        try:
+            from strawberry.fastapi import GraphQLRouter
+        except ImportError:
+            raise ImportError(
+                "GraphQL support requires strawberry-graphql. Install with: pip install strawberry-graphql"
+            )
+
+        # Create GraphQL router
+        graphql_app = GraphQLRouter(
+            schema,
+            graphiql=graphiql,
+            debug=debug,
+        )
+
+        # Mount GraphQL app
+        self.mount(path, graphql_app, name="graphql")
+
+        self.logger.info(
+            f"🔺 GraphQL endpoint added at {path}{' with GraphiQL' if graphiql else ''}"
+        )
+        return self
+
+    def add_tracing(
+        self,
+        service_name: str | None = None,
+        service_version: str | None = None,
+        exporter_endpoint: str | None = None,
+    ) -> "Zenith":
+        """
+        Add distributed tracing with OpenTelemetry.
+
+        Args:
+            service_name: Name of the service for tracing
+            service_version: Version of the service
+            exporter_endpoint: OTLP exporter endpoint (e.g., "http://localhost:4318")
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            app = Zenith()
+            app.add_tracing(
+                service_name="my-api",
+                service_version="1.0.0",
+                exporter_endpoint="http://jaeger:4318"
+            )
+        """
+        try:
+            from opentelemetry import trace
+            from opentelemetry.sdk.trace import TracerProvider
+            from opentelemetry.sdk.trace.export import BatchSpanProcessor
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+            from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+        except ImportError:
+            raise ImportError(
+                "Tracing support requires OpenTelemetry. Install with: pip install opentelemetry-distro opentelemetry-instrumentation-fastapi"
+            )
+
+        # Configure tracing
+        service_name = service_name or "zenith-app"
+        service_version = service_version or "1.0.0"
+
+        # Set up tracer provider
+        trace.set_tracer_provider(TracerProvider(
+            resource=trace.Resource.create({
+                "service.name": service_name,
+                "service.version": service_version,
+            })
+        ))
+
+        # Add OTLP exporter if endpoint provided
+        if exporter_endpoint:
+            otlp_exporter = OTLPSpanExporter(
+                endpoint=exporter_endpoint,
+                insecure=True,
+            )
+            span_processor = BatchSpanProcessor(otlp_exporter)
+            trace.get_tracer_provider().add_span_processor(span_processor)
+
+        # Instrument FastAPI (will be applied when Starlette app is built)
+        self._otel_instrumented = True
+
+        self.logger.info(
+            f"🔍 Distributed tracing enabled for {service_name} v{service_version}"
+            f"{' (OTLP export enabled)' if exporter_endpoint else ''}"
         )
         return self
 

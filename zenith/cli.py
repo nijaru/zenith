@@ -291,7 +291,224 @@ def dev(host: str, port: int, app: str | None, open: bool, testing: bool):
         # Set development environment by default for zen dev
         os.environ.setdefault("ZENITH_ENV", "development")
 
-    _run_server(host, port, reload=True, workers=1, open_browser=open, app_path=app)
+    try:
+        _run_server(host, port, reload=True, workers=1, open_browser=open, app_path=app)
+    except KeyboardInterrupt:
+        click.echo("\n🛑 Development server stopped by user")
+    except Exception as e:
+        click.echo(f"❌ Failed to start development server: {e}")
+        click.echo("💡 Make sure your app file exists and is properly configured")
+        click.echo("   Try: zen config --all")
+        sys.exit(1)
+
+
+@main.command("config")
+@click.option("--env", is_flag=True, help="Show environment variables")
+@click.option("--all", "show_all", is_flag=True, help="Show all configuration")
+def config(env: bool, show_all: bool):
+    """Show Zenith configuration and environment information."""
+    import os
+    from pathlib import Path
+
+    click.echo("🔧 Zenith Configuration")
+    click.echo("=" * 40)
+
+    # Show Python version and environment
+    click.echo(f"🐍 Python: {sys.version.split()[0]}")
+    click.echo(f"📁 CWD: {Path.cwd()}")
+
+    # Show environment detection
+    zenith_env = os.getenv("ZENITH_ENV", "development")
+    click.echo(f"🌍 Environment: {zenith_env}")
+
+    # Show key environment variables
+    if env or show_all:
+        click.echo("\n🔐 Environment Variables:")
+        env_vars = ["SECRET_KEY", "DATABASE_URL", "REDIS_URL", "DEBUG"]
+        for var in env_vars:
+            value = os.getenv(var, "<not set>")
+            if var == "SECRET_KEY" and value != "<not set>":
+                # Mask secret key
+                value = value[:8] + "..." if len(value) > 8 else "***"
+            click.echo(f"  {var}: {value}")
+
+    # Show configuration if requested
+    if show_all:
+        click.echo("\n⚙️  Configuration:")
+        try:
+            from zenith.core.config import Config
+            config = Config.from_env()
+            click.echo(f"  Debug: {config.debug}")
+            click.echo(f"  Host: {config.host}")
+            click.echo(f"  Port: {config.port}")
+            click.echo(f"  Database URL: {'***' if config.database_url else '<not configured>'}")
+        except Exception as e:
+            click.echo(f"  Error loading config: {e}")
+
+    click.echo("\n📚 For more help: zen --help")
+
+
+@main.command("generate")
+@click.argument("type", type=click.Choice(["model", "service", "route", "graphql"]))
+@click.argument("name")
+@click.option("--path", "-p", default=".", help="Output directory")
+def generate(type: str, name: str, path: str):
+    """Generate boilerplate code for models, services, routes, or GraphQL schemas.
+
+    Examples:
+        zen generate model User
+        zen generate service UserService
+        zen generate route api/users
+        zen generate graphql UserSchema
+    """
+    import os
+    from pathlib import Path
+
+    output_dir = Path(path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if type == "model":
+        content = f'''from zenith.db import ZenithModel
+from sqlmodel import Field
+from typing import Optional
+from datetime import datetime
+
+
+class {name}(ZenithModel, table=True):
+    """{name} database model."""
+
+    __tablename__ = "{name.lower()}s"
+
+    id: Optional[int] = Field(primary_key=True)
+    name: str = Field(max_length=100)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
+'''
+        filename = f"{name.lower()}.py"
+
+    elif type == "service":
+        content = f'''from zenith import Service
+from typing import Optional, List
+from .{name.lower()} import {name}
+
+
+class {name}Service(Service):
+    """Business logic for {name} operations."""
+
+    async def get_{name.lower()}(self, {name.lower()}_id: int) -> Optional[{name}]:
+        """Get a {name.lower()} by ID."""
+        return await {name}.find_or_404({name.lower()}_id)
+
+    async def list_{name.lower()}s(self, limit: int = 100) -> List[{name}]:
+        """List all {name.lower()}s."""
+        return await {name}.all().limit(limit)
+
+    async def create_{name.lower()}(self, data: dict) -> {name}:
+        """Create a new {name.lower()}."""
+        return await {name}.create(**data)
+'''
+        filename = f"{name.lower()}_service.py"
+
+    elif type == "route":
+        content = f'''from zenith import Zenith
+from .{name.lower()}_service import {name}Service
+from typing import List
+
+app = Zenith()
+
+@app.get("/{name.lower()}s")
+async def list_{name.lower()}s(service: {name}Service = app.inject({name}Service)) -> List[dict]:
+    """List all {name.lower()}s."""
+    items = await service.list_{name.lower()}s()
+    return [item.model_dump() for item in items]
+
+@app.get("/{name.lower()}s/{{{name.lower()}_id}}")
+async def get_{name.lower()}({name.lower()}_id: int, service: {name}Service = app.inject({name}Service)):
+    """Get a {name.lower()} by ID."""
+    item = await service.get_{name.lower()}({name.lower()}_id)
+    return item.model_dump()
+
+@app.post("/{name.lower()}s")
+async def create_{name.lower()}(data: dict, service: {name}Service = app.inject({name}Service)):
+    """Create a new {name.lower()}."""
+    item = await service.create_{name.lower()}(data)
+    return item.model_dump()
+'''
+        filename = f"{name.lower()}_routes.py"
+
+    elif type == "graphql":
+        content = f'''import strawberry
+from typing import List, Optional
+from .{name.lower()}_service import {name}Service
+
+
+@strawberry.type
+class {name}:
+    """GraphQL type for {name}."""
+    id: int
+    name: str
+    created_at: str
+
+
+@strawberry.type
+class Query:
+    """GraphQL query operations."""
+
+    @strawberry.field
+    async def {name.lower()}(self, {name.lower()}_id: int) -> Optional[{name}]:
+        """Get a {name.lower()} by ID."""
+        service = {name}Service()
+        item = await service.get_{name.lower()}({name.lower()}_id)
+        if item:
+            return {name}(
+                id=item.id,
+                name=item.name,
+                created_at=item.created_at.isoformat()
+            )
+        return None
+
+    @strawberry.field
+    async def {name.lower()}s(self) -> List[{name}]:
+        """List all {name.lower()}s."""
+        service = {name}Service()
+        items = await service.list_{name.lower()}s()
+        return [
+            {name}(
+                id=item.id,
+                name=item.name,
+                created_at=item.created_at.isoformat()
+            )
+            for item in items
+        ]
+
+
+@strawberry.type
+class Mutation:
+    """GraphQL mutation operations."""
+
+    @strawberry.mutation
+    async def create_{name.lower()}(self, name: str) -> {name}:
+        """Create a new {name.lower()}."""
+        service = {name}Service()
+        item = await service.create_{name.lower()}(dict(name=name))
+        return {name}(
+            id=item.id,
+            name=item.name,
+            created_at=item.created_at.isoformat()
+        )
+
+
+# Create schema
+schema = strawberry.Schema(query=Query, mutation=Mutation)
+'''
+        filename = f"{name.lower()}_schema.py"
+
+    # Write the file
+    output_path = output_dir / filename
+    output_path.write_text(content)
+
+    click.echo(f"✅ Generated {type} '{name}' at {output_path}")
+    click.echo(f"📝 Edit the generated file to customize it for your needs")
 
 
 @main.command("serve")
@@ -306,7 +523,15 @@ def serve(host: str, port: int, workers: int, reload: bool):
     # Set production environment by default for zen serve
     os.environ.setdefault("ZENITH_ENV", "production")
 
-    _run_server(host, port, reload=reload, workers=workers)
+    try:
+        _run_server(host, port, reload=reload, workers=workers)
+    except KeyboardInterrupt:
+        click.echo("\n🛑 Production server stopped by user")
+    except Exception as e:
+        click.echo(f"❌ Failed to start production server: {e}")
+        click.echo("💡 Check your configuration and environment variables")
+        click.echo("   Try: zen config --all")
+        sys.exit(1)
 
 
 def _run_server(
