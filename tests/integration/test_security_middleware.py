@@ -361,7 +361,9 @@ class TestTrustedProxyMiddleware:
             return {"scheme": request.url.scheme}
 
         async with TestClient(app) as client:
-            response = await client.get("/scheme", headers={"X-Forwarded-Proto": "https"})
+            response = await client.get(
+                "/scheme", headers={"X-Forwarded-Proto": "https"}
+            )
             assert response.status_code == 200
             data = response.json()
             assert data["scheme"] == "https"
@@ -377,7 +379,9 @@ class TestTrustedProxyMiddleware:
             return {"host": request.url.hostname}
 
         async with TestClient(app) as client:
-            response = await client.get("/host", headers={"X-Forwarded-Host": "example.com"})
+            response = await client.get(
+                "/host", headers={"X-Forwarded-Host": "example.com"}
+            )
             assert response.status_code == 200
             data = response.json()
             assert data["host"] == "example.com"
@@ -406,7 +410,10 @@ class TestTrustedProxyMiddleware:
 
         @app.get("/api/test")
         async def test_endpoint(request):
-            return {"path": request.url.path, "root_path": request.scope.get("root_path", "")}
+            return {
+                "path": request.url.path,
+                "root_path": request.scope.get("root_path", ""),
+            }
 
         async with TestClient(app) as client:
             response = await client.get(
@@ -462,7 +469,9 @@ class TestTrustedProxyMiddleware:
 
         async with TestClient(app) as client:
             # Invalid port should be ignored
-            response = await client.get("/port", headers={"X-Forwarded-Port": "invalid"})
+            response = await client.get(
+                "/port", headers={"X-Forwarded-Port": "invalid"}
+            )
             assert response.status_code == 200
             # Port should remain unchanged (default test client port)
 
@@ -474,7 +483,10 @@ class TestTrustedProxyMiddleware:
 
         @app.get("/test")
         async def test_endpoint(request):
-            return {"path": request.url.path, "root_path": request.scope.get("root_path", "")}
+            return {
+                "path": request.url.path,
+                "root_path": request.scope.get("root_path", ""),
+            }
 
         async with TestClient(app) as client:
             response = await client.get(

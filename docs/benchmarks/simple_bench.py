@@ -2,8 +2,10 @@
 """Simple benchmark using just the Zenith TestClient for comparison."""
 
 import asyncio
+import json
 import os
 import time
+from pathlib import Path
 
 from zenith import Zenith
 from zenith.testing import TestClient
@@ -133,8 +135,6 @@ async def main():
         print("⚠️  Performance: Below expectations (<500 req/s)")
 
     # Write results to JSON for GitHub Actions
-    import json
-
     # Format for customBiggerIsBetter expects an array
     results = [
         {
@@ -154,9 +154,10 @@ async def main():
         },
     ]
 
-    with open("benchmark_results.json", "w") as f:
+    output_file = Path("benchmark_results.json")
+    with output_file.open("w") as f:
         json.dump(results, f, indent=2)
-    print("\n✅ Results written to benchmark_results.json")
+    print(f"\n✅ Results written to {output_file}")
 
 
 if __name__ == "__main__":

@@ -239,9 +239,7 @@ def main():
     )
 
     # Find command
-    subparsers.add_parser(
-        "find", help="Find files with version references"
-    )
+    subparsers.add_parser("find", help="Find files with version references")
 
     args = parser.parse_args()
 

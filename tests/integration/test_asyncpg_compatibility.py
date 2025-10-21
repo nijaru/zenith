@@ -121,6 +121,7 @@ async def test_asyncpg_in_background_task():
 
     # Track background task execution
     task_results = []
+    background_tasks = []
 
     async def db_background_task(item_id: int):
         """Simulate a database operation in background."""
@@ -131,15 +132,17 @@ async def test_asyncpg_in_background_task():
     async def process_item(item_id: int):
         """Trigger background database operation."""
         # Add task to be executed after response
-        asyncio.create_task(db_background_task(item_id))
+        task = asyncio.create_task(db_background_task(item_id))
+        background_tasks.append(task)
         return {"status": "queued", "item_id": item_id}
 
     async with TestClient(app) as client:
         response = await client.post("/process/123")
         assert response.status_code == 200
 
-        # Give background task time to complete
-        await asyncio.sleep(0.02)
+        # Wait for background tasks to complete
+        if background_tasks:
+            await asyncio.gather(*background_tasks)
 
         # Verify background task executed
         assert len(task_results) == 1

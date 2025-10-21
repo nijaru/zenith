@@ -9,6 +9,7 @@ Tests performance with and without optimizations:
 """
 
 import asyncio
+import importlib.util
 import json
 import time
 from datetime import datetime
@@ -32,20 +33,16 @@ try:
 except ImportError:
     print("❌ uvloop not available (install with: pip install uvloop)")
 
-try:
-    import msgspec
-
+if importlib.util.find_spec("msgspec") is not None:
     optimizations_available["msgspec"] = True
     print("✅ msgspec available")
-except ImportError:
+else:
     print("❌ msgspec not available (install with: pip install msgspec)")
 
-try:
-    import orjson
-
+if importlib.util.find_spec("orjson") is not None:
     optimizations_available["orjson"] = True
     print("✅ orjson available")
-except ImportError:
+else:
     print("❌ orjson not available (install with: pip install orjson)")
 
 print("-" * 60)
