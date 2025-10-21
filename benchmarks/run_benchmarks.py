@@ -14,7 +14,7 @@ import psutil
 
 # Configuration
 FRAMEWORKS = {
-    "zenith": {"file": "zenith_minimal.py", "port": 8000},
+    "zenith": {"file": "zenith_minimal.py", "port": 8100},
     "fastapi": {"file": "fastapi_app.py", "port": 8001},
     "flask": {"file": "flask_app.py", "port": 8002},
 }
@@ -64,7 +64,8 @@ class BenchmarkRunner:
         """Start a framework server."""
         print(f"Starting {framework} server...")
 
-        cmd = ["python", config["file"]]
+        venv_python = Path(__file__).parent.parent / ".venv" / "bin" / "python"
+        cmd = [str(venv_python), config["file"]]
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
