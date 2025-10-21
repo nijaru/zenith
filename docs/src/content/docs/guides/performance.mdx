@@ -34,14 +34,14 @@ Master performance optimization in Zenith with profiling, caching, database opti
 ### Zenith Performance Characteristics
 
 <Aside type="tip">
-  Zenith achieves **9,600+ requests/second** on simple endpoints with optimized middleware stack.
+  Zenith achieves **12,000+ requests/second** on JSON endpoints with optimized middleware stack.
 </Aside>
 
 ```python
-# Performance baseline (measured on M1 MacBook Pro)
-# - Simple endpoints: 9,557 req/s
-# - JSON endpoints: 9,602 req/s
-# - With full middleware: 6,694 req/s (70% retention)
+# Performance baseline (measured on M3 Max, Python 3.13)
+# - Simple endpoints: 13,074 req/s (+69% from routing optimization)
+# - JSON endpoints: 12,274 req/s (+24% from routing optimization)
+# - With full middleware: 8,781 req/s (72% retention)
 # - Memory usage: <100MB for 1000 concurrent requests
 # - Startup time: <100ms
 ```

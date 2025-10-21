@@ -80,7 +80,7 @@ Zenith comes with everything you need for production APIs:
 
 ### Authentication & Security
 - **JWT authentication**: `app.add_auth()` for complete auth system
-- **Password hashing**: Built-in bcrypt integration
+- **Password hashing**: Argon2 password hashing (modern, secure)
 - **Security middleware**: CORS, CSRF, security headers
 
 ### Development Experience
@@ -90,7 +90,7 @@ Zenith comes with everything you need for production APIs:
 - **CLI tools**: Project generation and management
 
 ### Performance & Production
-- **9,600+ req/s**: High-performance async request handling
+- **12,000+ req/s**: High-performance async request handling
 - **Automatic middleware**: Production-ready CORS, rate limiting, logging
 - **Environment detection**: Development vs production configuration
 - **Health checks**: Built-in monitoring endpoints
@@ -177,7 +177,7 @@ While opinionated about structure, Zenith doesn't lock you in - use any database
 
 ## Performance
 
-- **High throughput**: 9,600+ requests per second
+- **High throughput**: 12,000+ requests per second
 - **Low latency**: Sub-millisecond response times
 - **Memory efficient**: Optimized for concurrent requests
 - **Async throughout**: Non-blocking I/O for better scalability

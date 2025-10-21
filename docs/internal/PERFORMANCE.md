@@ -467,15 +467,15 @@ def cached_json_response(content_hash: int) -> bytes:
 
 ## 📊 Performance Benchmarking Standards
 
-### Current Performance Targets (v0.0.10)
+### Current Performance Targets (v0.0.11)
 
 **Bare Framework:**
-- Simple endpoints: **≥9,600 req/s** (Current: 7,743 req/s baseline)
-- JSON endpoints: **≥9,800 req/s** (Current: 9,917 req/s with optimizations)
+- Simple endpoints: **≥13,000 req/s** (Current: 13,074 req/s - routing optimization)
+- JSON endpoints: **≥12,000 req/s** (Current: 12,274 req/s - routing optimization)
 
 **With Full Middleware Stack:**
-- Performance retention: **≥25%** (Current: 71% - 7,044 req/s)
-- Middleware overhead: **≤75%** (Current: 29% overhead)
+- Performance retention: **≥70%** (Current: 72% - 8,781 req/s)
+- Middleware overhead: **≤30%** (Current: 28% overhead)
 
 ### Regression Testing
 
@@ -532,8 +532,11 @@ SECRET_KEY=test-secret-key-that-is-long-enough-for-testing uv run python benchma
 | Object Pooling | 15-25% GC reduction | 🔴 Complex | 🔄 **Future** |
 
 ### Implementation Results
-- **Overall performance improvement**: 4.8% (9,464 req/s → 9,917 req/s JSON endpoints)
-- **Middleware performance**: 71% retention (7,044 req/s with full stack)  
+- **Routing optimization (v0.0.11)**: 24-69% improvement (eliminated closure overhead)
+  - Simple endpoints: 7,743 req/s → 13,074 req/s (+69%)
+  - JSON endpoints: 9,917 req/s → 12,274 req/s (+24%)
+  - With middleware: 7,044 req/s → 8,781 req/s (+25%)
+- **Middleware performance**: 72% retention (8,781 req/s with full stack)
 - **Memory optimization**: __slots__ applied to 3 high-usage dependency classes
 - **Code efficiency**: 15% faster string comparisons with interned HTTP constants
 - **Async improvements**: TaskGroup pattern applied to health check system
