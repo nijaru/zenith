@@ -210,7 +210,7 @@ import json
 data = json.dumps(payload)  # Slowest
 ```
 
-### 🌊 Pure ASGI Optimization Opportunities (v0.1.4+)
+### 🌊 Pure ASGI Optimization Opportunities (Implemented)
 
 *With BaseHTTPMiddleware eliminated, these ASGI-native optimizations become available:*
 
@@ -467,7 +467,7 @@ def cached_json_response(content_hash: int) -> bytes:
 
 ## 📊 Performance Benchmarking Standards
 
-### Current Performance Targets (as of v0.1.4)
+### Current Performance Targets (v0.0.10)
 
 **Bare Framework:**
 - Simple endpoints: **≥9,600 req/s** (Current: 7,743 req/s baseline)
@@ -519,7 +519,7 @@ SECRET_KEY=test-secret-key-that-is-long-enough-for-testing uv run python benchma
 
 ## 📈 Optimization Impact Summary
 
-| Optimization Category | Expected Improvement | Implementation Effort | v0.1.4 Status |
+| Optimization Category | Expected Improvement | Implementation Effort | Status |
 |----------------------|---------------------|----------------------|----------------|
 | msgspec JSON | 2-10x JSON operations | ✅ **Done** | ✅ **Implemented** |
 | ASGI Middleware | +127% middleware perf | ✅ **Done** | ✅ **Implemented** |
@@ -531,7 +531,7 @@ SECRET_KEY=test-secret-key-that-is-long-enough-for-testing uv run python benchma
 | Precompiled Regex | 10-50x pattern matching | 🟡 Medium | 🔄 **Future** |
 | Object Pooling | 15-25% GC reduction | 🔴 Complex | 🔄 **Future** |
 
-### v0.1.4 Implementation Results
+### Implementation Results
 - **Overall performance improvement**: 4.8% (9,464 req/s → 9,917 req/s JSON endpoints)
 - **Middleware performance**: 71% retention (7,044 req/s with full stack)  
 - **Memory optimization**: __slots__ applied to 3 high-usage dependency classes
@@ -607,4 +607,4 @@ kernprof -l -v script.py
 
 ---
 
-*This document should be updated whenever significant optimizations are implemented or discovered. Last updated: September 2025 (v0.1.4 - Performance Optimization Release)*
+*This document should be updated whenever significant optimizations are implemented or discovered. Last updated: October 2025 (v0.0.10)*

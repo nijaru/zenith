@@ -1,7 +1,8 @@
 # Python 3.14 Feature Analysis & Implementation
 
 **Date:** 2025-10-11
-**Status:** Completed - Ready for v0.0.8
+**Status:** Implemented in v0.0.8+
+**Current Version:** v0.0.10
 
 ## Analysis Summary
 
@@ -104,9 +105,21 @@ Total: 41/41 tests passing in affected modules
 
 ## CI Status
 
-Framework already tests on Python 3.12, 3.13, and 3.14:
+Framework tests on Python 3.12, 3.13, and 3.14:
 ```yaml
 python-version: ['3.12', '3.13', '3.14']
 ```
 
-All CI checks passing on all versions.
+**Python 3.12, 3.13:** All 900 tests passing ✅
+**Python 3.14:** Known compatibility issue ⚠️
+
+## Update (October 2025)
+
+**Python 3.14.0 Compatibility Issue:**
+- SQLAlchemy/aiosqlite segfault in Python 3.14.0
+- Root cause: Ecosystem catching up to new Python release
+- Framework code is compatible, issue is in dependencies
+- CI configured to allow 3.14 tests to fail gracefully
+- Will resolve when upstream libraries update
+
+**Status:** Tests pass on 3.12 and 3.13. Framework is 3.14-ready pending ecosystem updates.

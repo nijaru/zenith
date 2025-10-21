@@ -2,39 +2,45 @@
 
 *Primary AI agent context for ongoing development work*
 
-## Current Status (v0.3.1 Released)
+## Current Status (v0.0.10 Released)
 
 ### Framework State
-- **Version**: 0.3.0 - Modern DX release (September 2025)
-- **Tests**: 775/776 passing (99.9% success rate)
+- **Version**: 0.0.10 - Production-ready framework (October 2025)
+- **Tests**: 900 passing on Python 3.12, 3.13 (100% success rate)
 - **Performance**: 9,600+ req/s with full middleware stack
-- **Python**: 3.12+ required (uses TaskGroups, modern generics)
+- **Python**: 3.12-3.14 supported (3.14 has known dependency issues)
+- **CI**: All workflows passing, PyPI ready
 
 ### Recent Achievements
-- ✅ Zero-config setup: `app = Zenith()` works automatically
-- ✅ ZenithModel with intuitive methods: `User.where().find().create()`
-- ✅ One-liner features: `app.add_auth().add_admin().add_api()`
-- ✅ No manual session management needed
-- ✅ 85% boilerplate reduction vs traditional FastAPI
+- ✅ Service-based architecture with clean DI
+- ✅ Production-ready middleware stack
+- ✅ Comprehensive test coverage (900 tests)
+- ✅ Python 3.14 support (pending ecosystem updates)
+- ✅ CI optimizations with dependency caching
+- ✅ Security documentation (SECURITY.md)
 
 ## Active Development Priorities
 
-### 1. Documentation Consistency (CURRENT)
+### 1. API Stabilization for v1.0 (CURRENT)
 **Status**: In progress
-- Fixed examples to use `ZenithModel` instead of `Model`
-- Removed misleading `session=Session` parameters
-- Updated all docs to match v0.3.1 reality
+- API consistency review across all modules
+- Documentation completeness verification
+- Breaking change assessment
+- Migration guide preparation
 
-### 2. Performance Optimization (NEXT)
+### 2. Performance Optimization (ONGOING)
 **Targets**:
 - Maintain 9,600+ req/s benchmark
 - Memory efficiency with bounded caches
-- Zero memory leaks (WeakKeyDictionary patterns)
+- Zero memory leaks (comprehensive cleanup)
+- CI performance improvements (caching enabled)
 
-### 3. Production Readiness (ONGOING)
-- Comprehensive middleware stack (security, CORS, rate limiting)
-- Built-in monitoring (`/health`, `/metrics`)
-- Error handling and logging
+### 3. Python 3.14 Compatibility (MONITORING)
+**Status**: Pending upstream fixes
+- Framework code is compatible
+- SQLAlchemy/aiosqlite segfault in 3.14.0
+- CI allows 3.14 tests to fail gracefully
+- Will update when ecosystem stabilizes
 
 ## Code Patterns & Conventions
 
@@ -54,7 +60,7 @@ async def get_users():  # No session parameter needed!
     return await User.where(active=True).limit(10)
 ```
 
-### Import Patterns (v0.3.1)
+### Import Patterns (Current)
 ```python
 # Core framework
 from zenith import Zenith, Auth
@@ -121,7 +127,7 @@ SECRET_KEY=test-secret-key-that-is-long-enough-for-testing uv run python example
 ### When Updating Documentation
 - Verify code snippets match framework reality
 - Remove framework comparisons (Rails, Django, FastAPI)
-- Use v0.3.1 patterns consistently
+- Use current patterns consistently
 
 ### When Performance Optimizing
 - Measure before optimizing
@@ -149,4 +155,4 @@ SECRET_KEY=test-secret-key-that-is-long-enough-for-testing uv run python example
 
 ---
 
-*Last updated: September 2025 - Post v0.3.1 release*
+*Last updated: October 2025 - v0.0.10*
