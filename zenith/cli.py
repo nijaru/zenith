@@ -364,7 +364,6 @@ def generate(type: str, name: str, path: str):
         zen generate route api/users
         zen generate graphql UserSchema
     """
-    import os
     from pathlib import Path
 
     output_dir = Path(path)
@@ -511,7 +510,7 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
     output_path.write_text(content)
 
     click.echo(f"✅ Generated {type} '{name}' at {output_path}")
-    click.echo(f"📝 Edit the generated file to customize it for your needs")
+    click.echo("📝 Edit the generated file to customize it for your needs")
 
 
 @main.command("serve")

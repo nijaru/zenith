@@ -95,9 +95,7 @@ class PasswordManager:
         """Check if a password hash needs updating."""
         try:
             # pwdlib handles this in verify_and_update, but we can check if it would produce an updated hash
-            is_valid, updated_hash = self.password_hash.verify_and_update(
-                "dummy", hashed
-            )
+            _, updated_hash = self.password_hash.verify_and_update("dummy", hashed)
             return updated_hash is not None
         except Exception:
             return True  # If we can't check, assume it needs updating

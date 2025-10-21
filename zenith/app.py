@@ -1112,18 +1112,29 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
                 exporter_endpoint="http://jaeger:4318"
             )
         """
-        try:
-            from opentelemetry import trace
-            from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.trace.export import BatchSpanProcessor
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
-                OTLPSpanExporter,
-            )
-            from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-        except ImportError:
-            raise ImportError(
-                "Tracing support requires OpenTelemetry. Install with: pip install opentelemetry-distro opentelemetry-instrumentation-fastapi"
-            )
+        import importlib.util
+
+        # Check for required dependencies
+        required_packages = [
+            "opentelemetry",
+            "opentelemetry.sdk.trace",
+            "opentelemetry.exporter.otlp.proto.grpc.trace_exporter",
+            "opentelemetry.instrumentation.fastapi",
+        ]
+
+        for package in required_packages:
+            if importlib.util.find_spec(package) is None:
+                raise ImportError(
+                    "Tracing support requires OpenTelemetry. Install with: pip install opentelemetry-distro opentelemetry-instrumentation-fastapi"
+                )
+
+        # Import after verifying availability
+        from opentelemetry import trace
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+            OTLPSpanExporter,
+        )
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
         # Configure tracing
         service_name = service_name or "zenith-app"
