@@ -158,7 +158,9 @@ class Router:
             else:
                 # HTTP routes - delegate execution to RouteExecutor
                 # Pre-create optimized endpoint to avoid closure overhead
-                async def execute_route(request, spec=route_spec, executor=self.executor, app=self._app):
+                async def execute_route(
+                    request, spec=route_spec, executor=self.executor, app=self._app
+                ):
                     return await executor.execute_route(request, spec, app)
 
                 starlette_route = Route(

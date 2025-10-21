@@ -16,9 +16,9 @@ async def benchmark_framework(name: str, file: str, port: int):
     # Start server
     venv_python = Path(__file__).parent.parent / ".venv" / "bin" / "python"
     process = subprocess.Popen(
-    [str(venv_python), file],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
+        [str(venv_python), file],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         cwd=Path(__file__).parent,
     )
 

@@ -606,9 +606,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         )
 
         # Apply OpenTelemetry instrumentation if tracing was enabled
-        if hasattr(self, '_otel_instrumented') and self._otel_instrumented:
+        if hasattr(self, "_otel_instrumented") and self._otel_instrumented:
             try:
                 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
                 # Instrument the Starlette app (FastAPIInstrumentor works with Starlette)
                 FastAPIInstrumentor.instrument_app(self._starlette_app)
             except ImportError:
@@ -1115,7 +1116,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
             from opentelemetry import trace
             from opentelemetry.sdk.trace import TracerProvider
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
-            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+            from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
+                OTLPSpanExporter,
+            )
             from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
         except ImportError:
             raise ImportError(
@@ -1127,12 +1130,16 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         service_version = service_version or "1.0.0"
 
         # Set up tracer provider
-        trace.set_tracer_provider(TracerProvider(
-            resource=trace.Resource.create({
-                "service.name": service_name,
-                "service.version": service_version,
-            })
-        ))
+        trace.set_tracer_provider(
+            TracerProvider(
+                resource=trace.Resource.create(
+                    {
+                        "service.name": service_name,
+                        "service.version": service_version,
+                    }
+                )
+            )
+        )
 
         # Add OTLP exporter if endpoint provided
         if exporter_endpoint:

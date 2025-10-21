@@ -257,7 +257,7 @@ class ResponseCacheMiddleware:
             query_params.pop(ignore_param, None)
 
         if query_params:
-            key_parts.append(msgspec.json.encode(query_params).decode('utf-8'))
+            key_parts.append(msgspec.json.encode(query_params).decode("utf-8"))
 
         # Add vary headers
         for header in self.config.vary_headers:
@@ -282,7 +282,7 @@ class RedisCache:
             data = self.redis.get(f"{self.prefix}{key}")
             if data:
                 return msgspec.json.decode(
-                    data.encode('utf-8') if isinstance(data, str) else data
+                    data.encode("utf-8") if isinstance(data, str) else data
                 )
             return None
         except Exception:
@@ -291,7 +291,7 @@ class RedisCache:
     def set(self, key: str, data: dict, ttl: int) -> None:
         """Set cached item in Redis with TTL."""
         try:
-            serialized = msgspec.json.encode(data).decode('utf-8')
+            serialized = msgspec.json.encode(data).decode("utf-8")
             self.redis.setex(f"{self.prefix}{key}", ttl, serialized)
         except Exception:
             pass  # Fail silently for cache errors

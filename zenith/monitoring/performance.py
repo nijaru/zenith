@@ -335,7 +335,7 @@ def _generate_cache_key(func_name: str, args: tuple, kwargs: dict) -> str:
 
     # Use JSON serialization for consistent key generation
     try:
-        key_string = msgspec.json.encode(key_data).decode('utf-8')
+        key_string = msgspec.json.encode(key_data).decode("utf-8")
     except (TypeError, ValueError):
         # Fallback to string representation
         key_string = f"{func_name}:{args!s}:{sorted(kwargs.items())!s}"
@@ -376,7 +376,7 @@ def query_cache_key(
     if filters:
         # Sort filters for consistent key generation
         sorted_filters = sorted(filters.items())
-        parts.append(msgspec.json.encode(sorted_filters).decode('utf-8'))
+        parts.append(msgspec.json.encode(sorted_filters).decode("utf-8"))
 
     if order_by:
         parts.append(f"order_by:{order_by}")

@@ -27,7 +27,9 @@ class PasswordManager:
         """
         Initialize password manager with Argon2.
         """
-        self.password_hash = PasswordHash.recommended()  # Uses Argon2 with good defaults
+        self.password_hash = (
+            PasswordHash.recommended()
+        )  # Uses Argon2 with good defaults
         logger.info("Password manager initialized with Argon2")
 
         # Keep reference for compatibility
@@ -69,7 +71,9 @@ class PasswordManager:
             return False
 
         try:
-            is_valid, updated_hash = self.password_hash.verify_and_update(password, hashed)
+            is_valid, updated_hash = self.password_hash.verify_and_update(
+                password, hashed
+            )
 
             if is_valid:
                 logger.debug("Password verification successful")
@@ -91,7 +95,9 @@ class PasswordManager:
         """Check if a password hash needs updating."""
         try:
             # pwdlib handles this in verify_and_update, but we can check if it would produce an updated hash
-            is_valid, updated_hash = self.password_hash.verify_and_update("dummy", hashed)
+            is_valid, updated_hash = self.password_hash.verify_and_update(
+                "dummy", hashed
+            )
             return updated_hash is not None
         except Exception:
             return True  # If we can't check, assume it needs updating

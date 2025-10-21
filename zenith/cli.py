@@ -337,11 +337,14 @@ def config(env: bool, show_all: bool):
         click.echo("\n⚙️  Configuration:")
         try:
             from zenith.core.config import Config
+
             config = Config.from_env()
             click.echo(f"  Debug: {config.debug}")
             click.echo(f"  Host: {config.host}")
             click.echo(f"  Port: {config.port}")
-            click.echo(f"  Database URL: {'***' if config.database_url else '<not configured>'}")
+            click.echo(
+                f"  Database URL: {'***' if config.database_url else '<not configured>'}"
+            )
         except Exception as e:
             click.echo(f"  Error loading config: {e}")
 
