@@ -1067,10 +1067,10 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
         """
         try:
             from strawberry.fastapi import GraphQLRouter
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "GraphQL support requires strawberry-graphql. Install with: pip install strawberry-graphql"
-            )
+            ) from e
 
         # Create GraphQL router
         graphql_app = GraphQLRouter(

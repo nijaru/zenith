@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.11] - 2025-10-21
+
+### Performance
+- **Major routing optimization** - Eliminated closure overhead in route registration (+24-69% performance gain)
+  - Simple endpoints: 13,074 req/s (+69% from 7,743 req/s)
+  - JSON endpoints: 12,274 req/s (+24% from 9,917 req/s)
+  - With middleware: 8,781 req/s (+25% from 7,044 req/s)
+  - Pre-compile endpoint functions instead of creating closures dynamically
+  - Bind parameters at registration time, not call time
+
+### Security
+- **Argon2 password hashing** - Migrated from bcrypt to Argon2id via pwdlib
+  - More secure and modern algorithm (winner of Password Hashing Competition 2015)
+  - Automatic hash upgrades on login
+  - Backward compatible with existing bcrypt hashes
+
+### Documentation
+- **Accurate performance claims** - Updated all docs with verified benchmark numbers
+  - Conservative, reproducible measurements
+  - Documented testing methodology and caveats
+
+### Fixed
+- **GraphQL error handling** - Add proper exception chaining in ImportError (zenith/app.py:1071)
+
 ## [0.0.10] - 2025-10-20
 
 ### Added
