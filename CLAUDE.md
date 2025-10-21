@@ -35,8 +35,8 @@ gh release create v{version} --title "v{version}: Brief Description" \
 **CRITICAL**: Never release without explicit approval. "Prep release" = prepare only, STOP before publishing.
 
 ## Quick Facts
-- **Status**: v0.0.6 - Production-ready framework
-- **Performance**: 9,600+ req/s with middleware stack
+- **Status**: v0.0.10 - Production-ready framework
+- **Performance**: ~10,000 req/s JSON endpoints, ~7,000 req/s with middleware
 - **Python**: 3.12-3.14 (TaskGroups, PEP 695 generics, pattern matching)
 - **CLI**: `zen` command for development tools
 
@@ -199,8 +199,10 @@ python scripts/run_performance_tests.py
 
 ## Performance
 
-**Benchmarks (September 2025)**:
-- 9,600+ req/s with middleware (6,694 req/s baseline)
+**Benchmarks (October 2025)**:
+- ~10,000 req/s JSON endpoints (9,917 req/s measured)
+- ~8,000 req/s simple endpoints (7,743 req/s measured)
+- ~7,000 req/s with middleware (71% retention, 29% overhead)
 - <100MB memory for 1000 requests
 - <100ms startup time
 

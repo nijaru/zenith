@@ -7,7 +7,7 @@
 ### Framework State
 - **Version**: 0.0.10 - Production-ready framework (October 2025)
 - **Tests**: 900 passing on Python 3.12, 3.13 (100% success rate)
-- **Performance**: 9,600+ req/s with full middleware stack
+- **Performance**: ~10,000 req/s JSON endpoints, ~7,000 req/s with middleware (71% retention)
 - **Python**: 3.12-3.14 supported (3.14 has known dependency issues)
 - **CI**: All workflows passing, PyPI ready
 
@@ -29,11 +29,16 @@
 - Migration guide preparation
 
 ### 2. Performance Optimization (ONGOING)
+**Current Performance**:
+- JSON endpoints: ~10,000 req/s (9,917 req/s measured)
+- Simple endpoints: ~8,000 req/s (7,743 req/s measured)
+- With middleware: ~7,000 req/s (71% retention, 29% overhead)
+
 **Targets**:
-- Maintain 9,600+ req/s benchmark
+- Maintain current performance levels
+- Reduce middleware overhead below 25%
 - Memory efficiency with bounded caches
 - Zero memory leaks (comprehensive cleanup)
-- CI performance improvements (caching enabled)
 
 ### 3. Python 3.14 Compatibility (MONITORING)
 **Status**: Pending upstream fixes

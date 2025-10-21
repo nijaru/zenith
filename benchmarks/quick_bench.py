@@ -14,10 +14,11 @@ async def benchmark_framework(name: str, file: str, port: int):
     print(f"\nBenchmarking {name}...")
 
     # Start server
+    venv_python = Path(__file__).parent.parent / ".venv" / "bin" / "python"
     process = subprocess.Popen(
-        ["python", file],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+    [str(venv_python), file],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
         cwd=Path(__file__).parent,
     )
 
@@ -72,7 +73,7 @@ async def main():
     results = {}
 
     # Test each framework
-    results["zenith"] = await benchmark_framework("Zenith", "zenith_minimal.py", 8000)
+    results["zenith"] = await benchmark_framework("Zenith", "zenith_minimal.py", 8100)
     results["fastapi"] = await benchmark_framework("FastAPI", "fastapi_app.py", 8001)
     results["flask"] = await benchmark_framework("Flask", "flask_app.py", 8002)
 
@@ -87,10 +88,12 @@ async def main():
 
     # Performance comparison
     if results["zenith"] > 0:
-        print(
-            f"\nZenith vs FastAPI: {results['zenith'] / results['fastapi'] * 100:.1f}%"
-        )
-        print(f"Zenith vs Flask: {results['zenith'] / results['flask'] * 100:.1f}%")
+        if results["fastapi"] > 0:
+            print(
+                f"\nZenith vs FastAPI: {results['zenith'] / results['fastapi'] * 100:.1f}%"
+            )
+        if results["flask"] > 0:
+            print(f"Zenith vs Flask: {results['zenith'] / results['flask'] * 100:.1f}%")
 
 
 if __name__ == "__main__":

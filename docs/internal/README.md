@@ -29,7 +29,7 @@
 
 ### Current Framework State (v0.0.10)
 - ✅ 900 tests passing (Python 3.12, 3.13)
-- ✅ 9,600+ req/s performance
+- ✅ ~10,000 req/s JSON endpoints, ~7,000 req/s with middleware
 - ✅ Zero-config setup working
 - ✅ Service-based architecture with DI
 - ✅ Production-ready middleware stack
@@ -40,10 +40,10 @@
 3. Documentation enhancement
 4. Python 3.14 ecosystem compatibility (SQLAlchemy segfault pending upstream fix)
 
-### Performance Targets
-- Simple endpoints: >9,500 req/s
-- JSON endpoints: >9,600 req/s
-- With middleware: >6,500 req/s (70% retention)
+### Performance Achievements
+- Simple endpoints: ~8,000 req/s (7,743 req/s measured)
+- JSON endpoints: ~10,000 req/s (9,917 req/s measured)
+- With middleware: ~7,000 req/s (71% retention, 29% overhead)
 
 ## Development Workflow
 

@@ -42,7 +42,7 @@ user = await User.find_or_404(123)
 ### 3. Production Ready by Default
 - Security headers, CORS, rate limiting
 - Built-in monitoring (`/health`, `/metrics`)
-- Performance: 9,600+ req/s with full stack
+- Performance: ~10,000 req/s JSON endpoints, ~7,000 req/s with middleware
 
 ## Development Roadmap
 
