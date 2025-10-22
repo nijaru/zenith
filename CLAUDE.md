@@ -24,13 +24,23 @@ gh release create v{version} --title "v{version}: Brief Description" \
 - Regular patches: PyPI required, GitHub optional
 
 **Pre-Release Checklist:**
-- `uv run ruff check .` (linting - must be 0 errors)
+
+**Code Quality:**
+- `uv run ruff check .` (linting - must be 0 errors in core package)
 - `uv format --check` (formatting - must pass)
 - `uv run pip-audit` (security scan)
 - `uv run pytest` (all tests passing)
-- Examples work: `uv run python examples/00-hello-world.py`
-- Clean temp files: `ZENITH_BUGS_*.md`, test outputs
-- CHANGELOG.md updated
+
+**Documentation & Examples:**
+- All performance numbers updated (README.md, CLAUDE.md, docs/, docs/internal/)
+- Password hashing references updated (Argon2, not bcrypt)
+- Examples tested: `uv run python examples/00-hello-world.py`
+- Website docs build: `cd docs && npm run build` (no errors)
+- All internal docs reflect current version (docs/internal/README.md, PERFORMANCE.md)
+
+**Release Files:**
+- CHANGELOG.md updated with all changes
+- Clean temp files: `ZENITH_BUGS_*.md`, test outputs, `__pycache__`
 
 **CRITICAL**: Never release without explicit approval. "Prep release" = prepare only, STOP before publishing.
 

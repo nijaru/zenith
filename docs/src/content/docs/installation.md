@@ -29,7 +29,7 @@ Zenith bundles commonly needed dependencies so you can start building immediatel
 
 **Authentication & Security**
 - JWT libraries (PyJWT)
-- Password hashing (bcrypt + passlib)
+- Password hashing (Argon2 via pwdlib)
 - Security headers middleware
 
 **Performance & Caching**

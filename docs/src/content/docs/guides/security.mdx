@@ -50,12 +50,18 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
 
-# Password hashing
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__rounds=12  # Adjust rounds for security/performance balance
-)
+# Password hashing (Zenith uses pwdlib with Argon2 by default)
+from pwdlib import PasswordHash
+
+pwd_hash = PasswordHash.recommended()  # Argon2id - modern, secure
+
+# Or customize Argon2 parameters
+from pwdlib.hashers.argon2 import Argon2Hasher
+pwd_hash = PasswordHash((Argon2Hasher(
+    time_cost=3,
+    memory_cost=65536,
+    parallelism=4
+),))
 
 def create_access_token(data: Dict[str, Any]) -> str:
     """
@@ -810,15 +816,21 @@ from passlib.context import CryptContext
 import secrets
 import string
 
-# Configure password hashing
-pwd_context = CryptContext(
-    schemes=["argon2", "bcrypt"],  # Argon2 preferred, bcrypt fallback
-    deprecated="auto",
-    argon2__rounds=3,
-    argon2__memory_cost=65536,
-    argon2__parallelism=4,
-    bcrypt__rounds=12
-)
+# Configure password hashing (Zenith v0.0.11+ uses pwdlib with Argon2)
+from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
+
+pwd_hash = PasswordHash((
+    Argon2Hasher(
+        time_cost=3,
+        memory_cost=65536,
+        parallelism=4
+    ),
+))
+
+# Verify and hash passwords
+hashed = pwd_hash.hash("user_password")
+is_valid = pwd_hash.verify("user_password", hashed)
 
 class PasswordValidator:
     """Validate password strength."""
@@ -1393,7 +1405,7 @@ class TestVulnerabilities:
 ### Authentication & Authorization
 
 - [ ] Strong password requirements
-- [ ] Password hashing with salt (bcrypt/argon2)
+- [ ] Password hashing with Argon2 (Zenith default via pwdlib)
 - [ ] JWT tokens with expiration
 - [ ] Refresh token rotation
 - [ ] Account lockout after failed attempts

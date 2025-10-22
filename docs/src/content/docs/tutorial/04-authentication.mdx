@@ -15,7 +15,7 @@ Security is critical for any API. In this part, we'll implement a complete authe
 
 By the end of this part:
 - JWT token authentication with refresh tokens
-- Secure password hashing with bcrypt
+- Secure password hashing with Argon2 (via pwdlib)
 - Login, logout, and registration endpoints
 - Password reset flow with email tokens
 - Role-based access control (RBAC)
@@ -47,16 +47,16 @@ if not user.can_delete_project(project):
 First, install the required packages:
 
 ```bash
-# Using uv
-uv add python-jose[cryptography] passlib[bcrypt] python-multipart
+# Using uv (Zenith already includes pwdlib with Argon2)
+uv add python-jose[cryptography] python-multipart
 
 # Or using pip
-pip install python-jose[cryptography] passlib[bcrypt] python-multipart
+pip install python-jose[cryptography] python-multipart pwdlib[argon2]
 ```
 
 ## Password Hashing
 
-Never store passwords in plain text. We'll use bcrypt for secure hashing.
+Never store passwords in plain text. We'll use Argon2id for secure hashing (via pwdlib, included with Zenith).
 
 Update `app/auth.py`:
 
@@ -65,7 +65,7 @@ Update `app/auth.py`:
 Authentication system with JWT tokens and secure password handling.
 
 This module handles:
-- Password hashing with bcrypt
+- Password hashing with Argon2id (modern, secure)
 - JWT token generation and validation
 - User authentication
 - Permission checking
@@ -74,15 +74,12 @@ This module handles:
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
 from app.config import settings
 
 # Password hashing configuration
-# bcrypt is the recommended algorithm for passwords
-pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto"  # Automatically handle algorithm updates
-)
+# Argon2id is the modern recommended algorithm (winner of Password Hashing Competition 2015)
+pwd_hash = PasswordHash.recommended()  # Uses Argon2id with secure defaults
 
 # JWT Configuration
 SECRET_KEY = settings.SECRET_KEY
@@ -92,11 +89,11 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 def hash_password(password: str) -> str:
     """
-    Hash a password using bcrypt.
+    Hash a password using Argon2id.
 
-    Bcrypt automatically handles:
+    Argon2id automatically handles:
     - Salt generation (unique per password)
-    - Multiple rounds (default 12, adjustable for security/speed)
+    - Memory-hard computation (resistant to GPU/ASIC attacks)
     - Timing attack resistance
 
     Args:
@@ -105,7 +102,7 @@ def hash_password(password: str) -> str:
     Returns:
         Hashed password safe for storage
     """
-    return pwd_context.hash(password)
+    return pwd_hash.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
@@ -121,7 +118,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         True if password matches, False otherwise
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_hash.verify(plain_password, hashed_password)
 
 def create_access_token(
     data: Dict[str, Any],
@@ -1012,8 +1009,8 @@ class TestPasswordHashing:
         # Hash should be different from original
         assert hashed != password
 
-        # Should be a valid bcrypt hash
-        assert hashed.startswith("$2b$")
+        # Should be a valid Argon2 hash
+        assert hashed.startswith("$argon2id$")
 
     def test_verify_password(self):
         """Test password verification."""
@@ -1312,7 +1309,7 @@ def validate_email_address(email: str) -> str:
 
 In this part, you've implemented:
 JWT authentication with access and refresh tokens
-Secure password hashing with bcrypt
+Secure password hashing with Argon2id (via pwdlib)
 Account lockout for brute force protection
 Password reset flow with email tokens
 Role-based access control (RBAC)
@@ -1337,7 +1334,8 @@ In [Part 5: Testing](/tutorial/05-testing), we'll:
 
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 - [JWT Best Practices](https://tools.ietf.org/html/rfc8725)
-- [bcrypt Documentation](https://github.com/pyca/bcrypt)
+- [pwdlib Documentation](https://github.com/frankie567/pwdlib) - Argon2 password hashing
+- [Argon2 Specification](https://github.com/P-H-C/phc-winner-argon2) - Password Hashing Competition winner
 
 ---
 
