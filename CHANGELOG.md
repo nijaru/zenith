@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2025-10-21
+
+### Changed
+- **Marketing messaging** - Updated performance claims to use vague, industry-standard language
+  - Changed from specific "~12,000 req/s" to "high-performance async architecture"
+  - Aligns with how FastAPI and other frameworks communicate performance
+  - Specific benchmarks still available via test suite: `uv run pytest tests/performance/ -v`
+  - Internal docs retain specific numbers for development tracking
+
+### Documentation
+- Updated README.md, CLAUDE.md, and website docs with conservative performance language
+- Performance claims now follow industry best practices (vague but honest)
+
 ## [0.0.11] - 2025-10-21
 
 ### Performance

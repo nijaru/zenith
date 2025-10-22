@@ -46,7 +46,7 @@ gh release create v{version} --title "v{version}: Brief Description" \
 
 ## Quick Facts
 - **Status**: v0.0.11 - Production-ready framework
-- **Performance**: ~12,000 req/s JSON endpoints, ~9,000 req/s with middleware
+- **Performance**: High-performance async architecture with production-tested throughput
 - **Python**: 3.12-3.14 (TaskGroups, PEP 695 generics, pattern matching)
 - **CLI**: `zen` command for development tools
 
@@ -209,10 +209,9 @@ python scripts/run_performance_tests.py
 
 ## Performance
 
-**Benchmarks (October 2025)**:
-- ~12,000 req/s JSON endpoints (12,274 req/s measured)
-- ~13,000 req/s simple endpoints (13,074 req/s measured)
-- ~9,000 req/s with middleware (8,781 req/s, 72% retention)
+**Architecture**:
+- High-performance async request handling
+- Production-tested with comprehensive benchmark suite
 - <100MB memory for 1000 requests
 - <100ms startup time
 
@@ -222,6 +221,8 @@ python scripts/run_performance_tests.py
 - Connection pooling (80% overhead reduction)
 - Slotted classes (40% memory reduction)
 - See `docs/internal/PERFORMANCE_OPTIMIZATIONS.md`
+
+**Note**: Specific req/s numbers vary significantly by hardware, middleware configuration, and workload. Run benchmarks locally: `uv run pytest tests/performance/ -v`
 
 ## Testing Patterns
 

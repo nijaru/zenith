@@ -18,7 +18,7 @@ Zenith brings together **exceptional productivity**, **outstanding performance**
 - **🏗️ Intuitive models** - `User.where(active=True).order_by('-created_at').limit(10)`
 - **⚡ One-liner features** - `app.add_auth()`, `app.add_admin()`, `app.add_api()`
 - **🎯 Enhanced DX** - No session management, ZenithModel handles it automatically
-- **🏎️ Exceptional performance** - 12,000+ req/s with full async support
+- **🏎️ High performance** - Fast async architecture with production-tested throughput
 - **🛡️ Production-ready** - Security, monitoring, and middleware built-in
 
 ## 🚀 Zero-Config Quick Start
@@ -133,11 +133,11 @@ async def get_users(session: AsyncSession = Session):
 - **Service injection** - `Inject(ServiceClass)` for business logic
 - **Type-safe** - Full IDE support and autocompletion
 
-### 🏎️ **Exceptional Performance**
-- **~12,000 req/s** - High performance for JSON endpoints
-- **~9,000 req/s** - With production middleware stack (72% retention)
+### 🏎️ **High Performance**
+- **Fast async architecture** - Thousands of requests per second
+- **Production-tested** - Comprehensive benchmark suite validates throughput
 - **Async-first** - Full async/await with Python 3.12+ optimizations
-- **Production tested** - Benchmarked with comprehensive test suite
+- **Optimized** - Connection pooling, slotted classes, efficient middleware
 
 ### 🛡️ **Production-Ready**
 - **Security by default** - CSRF, CORS, security headers automatic
@@ -177,19 +177,14 @@ your-app/
 
 ## Performance
 
-**Verified Benchmark Results:**
-- **JSON endpoints**: **~12,000 req/s** (12,274 req/s measured)
-- **Simple endpoints**: **~13,000 req/s** (13,074 req/s measured)
-- **With middleware**: **~9,000 req/s** (8,781 req/s measured, 72% retention)
+Zenith delivers **high-performance async request handling** with production-tested throughput.
 
-*Tested on Apple M3 Max, Python 3.13, using performance test suite*
-
-Run your own benchmarks:
+**Run your own benchmarks:**
 ```bash
 uv run pytest tests/performance/ -v
 ```
 
-*Performance varies by hardware, middleware configuration, and application complexity.*
+The framework is optimized with connection pooling, slotted classes, and efficient middleware. Performance varies by hardware, middleware configuration, and application complexity.
 
 ## Documentation
 
@@ -305,7 +300,7 @@ pytest  # Run tests
 **Latest Version**: v0.0.11
 **Python Support**: 3.12-3.14
 **Test Suite**: 100% passing (899 tests)
-**Performance**: ~12,000 req/s JSON endpoints, ~9,000 req/s with middleware
+**Performance**: High-performance async architecture with production-tested throughput
 **Architecture**: Clean separation with Service system and simple dependency patterns
 
 Zenith is production-ready with comprehensive middleware, performance optimizations, and clean architecture patterns for modern Python applications.
