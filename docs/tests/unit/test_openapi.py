@@ -170,9 +170,9 @@ class TestOpenAPIGenerator:
         for i in range(51):
             router = Router()
 
-            # Create unique handler to ensure different cache keys
-            async def handler():
-                return {"id": i}
+            # Create unique handler with bound variable to fix B023
+            async def handler(id_val=i):
+                return {"id": id_val}
 
             handler.__name__ = f"handler_{i}"  # Unique name for cache key
 
@@ -354,8 +354,8 @@ class TestOpenAPICachePerformance:
 
             for j in range(20):  # Multiple routes per router
 
-                async def handler():
-                    return {"data": f"route_{i}_{j}"}
+                async def handler(i_val=i, j_val=j):
+                    return {"data": f"route_{i_val}_{j_val}"}
 
                 handler.__name__ = f"handler_{i}_{j}"
 
@@ -389,8 +389,8 @@ class TestOpenAPICachePerformance:
         for i in range(60):  # Exceed the 50 entry limit to trigger cleanup
             router = Router()
 
-            async def handler():
-                return {"id": i}
+            async def handler(id_val=i):
+                return {"id": id_val}
 
             handler.__name__ = f"unique_handler_{i}"
 

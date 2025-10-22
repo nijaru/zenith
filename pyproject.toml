@@ -179,7 +179,7 @@ line-ending = "auto"
 "zenith/**/*.py" = ["B008", "RUF006", "B024", "B027", "SIM102"]  # Allow Context(), Auth(), asyncio patterns, ABC design, readable if nesting
 "examples/**/*.py" = ["B008"]  # Allow DI patterns in examples
 "benchmarks/**/*.py" = ["B008"]  # Allow Depends() in benchmarks
-"tests/**/*.py" = ["B008", "SIM102", "SIM117"]  # Allow DI patterns, readable if/with nesting
+"tests/**/*.py" = ["B008", "B017", "SIM102", "SIM117"]  # Allow DI patterns, blind exceptions in tests, readable if/with nesting
 
 [tool.ruff.lint.isort]
 known-first-party = ["zenith"]
