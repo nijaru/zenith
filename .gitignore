@@ -230,3 +230,4 @@ benchmark_results.json
 
 # Docs directory has its own git repo
 docs/.git/
+CURRENT_CONTEXT.md
