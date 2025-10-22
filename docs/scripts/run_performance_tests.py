@@ -57,7 +57,7 @@ def run_performance_tests(
     try:
         # Run tests
         if output_file:
-            with open(output_file, "w") as f:
+            with Path(output_file).open("w") as f:
                 result = subprocess.run(
                     cmd,
                     env={**os.environ, **env},

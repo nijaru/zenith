@@ -250,9 +250,9 @@ def setup_frontend_serving():
     # Find first available frontend directory
     frontend_dir = None
     for dir_path, description in frontend_dirs:
-        if Path(dir_path).exists() and Path(dir_path).is_dir():
-            # Check if directory has files
-            if any(Path(dir_path).iterdir()):
+        if Path(dir_path).exists() and Path(dir_path).is_dir() and any(Path(dir_path).iterdir()):
+
+
                 frontend_dir = dir_path
                 print(f"📁 Found frontend files: {dir_path} ({description})")
                 break

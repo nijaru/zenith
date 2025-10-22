@@ -6,7 +6,6 @@ and better UX based on production feedback.
 """
 
 import contextlib
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import mock_open, patch
@@ -161,12 +160,11 @@ class TestUploadedFile:
     def teardown_method(self):
         """Clean up temporary files after each test."""
         # Clean up any temporary files created during tests
-        import glob
 
-        temp_files = glob.glob("/tmp/tmp*")
+        temp_files = list(Path("/tmp").glob("tmp*"))
         for temp_file in temp_files:
             with contextlib.suppress(OSError, FileNotFoundError):
-                os.unlink(temp_file)
+                Path(temp_file).unlink()
 
 
 class TestFileTypeDetection:

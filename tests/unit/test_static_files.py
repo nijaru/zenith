@@ -5,7 +5,6 @@ Tests static file serving, security features, caching headers,
 SPA support, and various edge cases.
 """
 
-import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -76,7 +75,7 @@ class TestZenithStaticFiles:
             static_files = ZenithStaticFiles(config)
 
             # Mock stat result
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -96,7 +95,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, allow_hidden=False)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -112,7 +111,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, allow_hidden=True)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -135,13 +134,13 @@ class TestZenithStaticFiles:
 
             # CSS file should be allowed
             css_response = static_files.file_response(
-                str(css_file), os.stat(css_file), scope
+                str(css_file), Path(css_file).stat(), scope
             )
             assert css_response.status_code == 200
 
             # PHP file should be blocked
             php_response = static_files.file_response(
-                str(php_file), os.stat(php_file), scope
+                str(php_file), Path(php_file).stat(), scope
             )
             assert php_response.status_code == 404
 
@@ -154,7 +153,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, max_age=7200)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -169,7 +168,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, max_age=0)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -185,7 +184,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, etag=True)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -203,7 +202,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, etag=False)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             static_files.file_response(str(test_file), stat_result, scope)
@@ -221,7 +220,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, last_modified=True)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -238,7 +237,7 @@ class TestZenithStaticFiles:
             config = StaticFileConfig(directory=tmpdir, last_modified=False)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             static_files.file_response(str(test_file), stat_result, scope)
@@ -407,7 +406,7 @@ class TestSecurityFeatures:
             config = StaticFileConfig(directory=tmpdir)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(test_file)
+            stat_result = Path(test_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(test_file), stat_result, scope)
@@ -434,13 +433,13 @@ class TestSecurityFeatures:
 
             # CSS should work (no dot in config)
             response = static_files.file_response(
-                str(css_file), os.stat(css_file), scope
+                str(css_file), Path(css_file).stat(), scope
             )
             assert response.status_code == 200
 
             # JPG should work (uppercase in config)
             response = static_files.file_response(
-                str(jpg_file), os.stat(jpg_file), scope
+                str(jpg_file), Path(jpg_file).stat(), scope
             )
             assert response.status_code == 200
 
@@ -477,7 +476,7 @@ class TestEdgeCases:
             config = StaticFileConfig(directory=tmpdir)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(large_file)
+            stat_result = Path(large_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(large_file), stat_result, scope)
@@ -494,7 +493,7 @@ class TestEdgeCases:
             config = StaticFileConfig(directory=tmpdir)
             static_files = ZenithStaticFiles(config)
 
-            stat_result = os.stat(special_file)
+            stat_result = Path(special_file).stat()
             scope = {"type": "http", "method": "GET"}
 
             response = static_files.file_response(str(special_file), stat_result, scope)
@@ -525,7 +524,7 @@ class TestEdgeCases:
                 file_path.write_text("test content")
 
                 response = static_files.file_response(
-                    str(file_path), os.stat(file_path), scope
+                    str(file_path), Path(file_path).stat(), scope
                 )
 
                 # mimetypes module should detect the correct type

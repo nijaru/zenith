@@ -9,6 +9,7 @@ Tests complete workflows of:
 """
 
 import builtins
+from pathlib import Path
 import contextlib
 import os
 import tempfile
@@ -96,7 +97,7 @@ class TestZeroConfigIntegration:
 
         finally:
             with contextlib.suppress(builtins.BaseException):
-                os.unlink(db_path)
+                Path(db_path).unlink()
 
     def test_zero_config_one_liner_chaining(self):
         """Test zero-config with one-liner feature chaining."""
@@ -424,7 +425,7 @@ class TestCompleteRailsLikeDXWorkflow:
 
         finally:
             with contextlib.suppress(builtins.BaseException):
-                os.unlink(db_path)
+                Path(db_path).unlink()
 
 
 class TestPerformanceWithRailsLikeFeatures:
@@ -471,7 +472,7 @@ class TestPerformanceWithRailsLikeFeatures:
 
         finally:
             with contextlib.suppress(builtins.BaseException):
-                os.unlink(db_path)
+                Path(db_path).unlink()
 
 
 class TestBackwardsCompatibility:

@@ -445,9 +445,9 @@ class TestMiddlewarePerformance:
             }
 
         print("\nMiddleware Memory Usage:")
-        for name, usage in memory_usage.items():
+        for _name, usage in memory_usage.items():
             print(f"  {name:8s}: {usage['increase']:5.1f}MB increase")
 
         # Memory usage should be reasonable
-        for name, usage in memory_usage.items():
+        for _name, usage in memory_usage.items():
             assert usage["increase"] < 50  # < 50MB increase per configuration

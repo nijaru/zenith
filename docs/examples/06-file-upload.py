@@ -6,7 +6,6 @@ showing both the enhanced UploadedFile API and traditional patterns.
 This addresses common pain points found in production applications.
 """
 
-import os
 import uuid
 from pathlib import Path
 
@@ -118,7 +117,7 @@ async def upload_image(file: UploadFile = File()) -> FileInfo:
 
     # Save file
     save_path = UPLOAD_DIR / f"image_{file.filename}"
-    with open(save_path, "wb") as f:
+    with Path(save_path).open("wb") as f:
         f.write(contents)
 
     return FileInfo(
@@ -144,7 +143,7 @@ async def upload_document(file: UploadFile = File()) -> FileInfo:
     # Read and save
     contents = await file.read()
     save_path = UPLOAD_DIR / f"doc_{file.filename}"
-    with open(save_path, "wb") as f:
+    with Path(save_path).open("wb") as f:
         f.write(contents)
 
     return FileInfo(
@@ -164,7 +163,7 @@ async def upload_multiple(files: list[UploadFile] = File()) -> list[FileInfo]:
         # Save each file
         contents = await file.read()
         save_path = UPLOAD_DIR / f"multi_{file.filename}"
-        with open(save_path, "wb") as f:
+        with Path(save_path).open("wb") as f:
             f.write(contents)
 
         results.append(
@@ -192,7 +191,7 @@ async def upload_profile(
     # Save avatar
     contents = await avatar.read()
     avatar_path = UPLOAD_DIR / f"avatar_{username}{ext}"
-    with open(avatar_path, "wb") as f:
+    with Path(avatar_path).open("wb") as f:
         f.write(contents)
 
     return {
@@ -227,7 +226,7 @@ async def delete_file(filename: str) -> dict:
     if not filepath.exists():
         raise ValueError(f"File {filename} not found")
 
-    os.remove(filepath)
+    Path(filepath).unlink()
     return {"message": f"File {filename} deleted"}
 
 
