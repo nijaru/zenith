@@ -5,8 +5,7 @@ import starlight from '@astrojs/starlight';
 // https://astro.build/config
 export default defineConfig({
 	output: 'static',
-	site: 'https://nijaru.com',
-	base: '/zenith',
+	site: 'https://zenith.nijaru.com',
 	integrations: [
 		starlight({
 			title: '⚡ Zenith',
