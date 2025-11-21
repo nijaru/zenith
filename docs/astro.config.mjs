@@ -35,7 +35,7 @@ export default defineConfig({
 				{
 					tag: 'script',
 					attrs: {
-						src: '/zenith/zenith-console.js',
+						src: '/zenith-console.js',
 						'data-cfasync': 'false',
 						defer: true
 					},
