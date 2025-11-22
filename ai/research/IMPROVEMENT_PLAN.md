@@ -45,6 +45,11 @@ Zenith has a strong foundation with excellent DX ("One-line features", "Zero-con
 - [ ] **Client Generator:** Create a script to generate typed TypeScript clients from Zenith models/routes.
 - [ ] **Enhanced One-Liners:** Add `app.add_oauth()` and `app.add_job_queue()`.
 
+### Phase 4: Python 3.14 Native (SOTA)
+- [ ] **No-GIL Verification:** Audit dependencies (uvloop, asyncpg) for Python 3.14 free-threading compatibility.
+- [ ] **JIT Benchmarking:** Measure performance gains with Python 3.13/3.14 JIT enabled.
+- [ ] **Modern Typing:** Adopt PEP 695 `type Alias[T] = ...` syntax throughout the codebase.
+
 ## 4. Action Plan
 1.  **Prove & Fix Bug:** Create a reproduction test case for the Service race condition, then implement the `contextvars` fix.
 2.  **Benchmark:** Establish a baseline RPS with the current router.

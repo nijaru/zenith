@@ -13,10 +13,6 @@ jobs:
       fail-fast: false  # Continue testing other versions if one fails
       matrix:
         python-version: ['3.12', '3.13', '3.14']  # Test all supported versions
-        include:
-          - python-version: '3.14'
-            experimental: true  # Allow 3.14 to fail (ecosystem catching up)
-    continue-on-error: ${{ matrix.experimental || false }}
     
     services:
       postgres:
