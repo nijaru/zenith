@@ -83,11 +83,17 @@ Transaction Support:
 from __future__ import annotations
 
 import asyncio
+import contextvars
 from collections.abc import Callable
 from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 from zenith.core.container import DIContainer
+
+# ContextVar for thread-safe request context in services
+_request_ctx_var: contextvars.ContextVar[Any | None] = contextvars.ContextVar(
+    "zenith_service_request", default=None
+)
 
 
 class EventBus:
@@ -184,7 +190,7 @@ class Service:
         - Database access: Auto-managed sessions via ZenithModel
     """
 
-    __slots__ = ("_container", "_events", "_initialized", "_request")
+    __slots__ = ("_container", "_events", "_initialized")
 
     def __init__(self):
         """
@@ -207,8 +213,7 @@ class Service:
         """Initialize framework attributes (can be called multiple times safely)."""
         if not hasattr(self, "_container"):
             self._container: DIContainer | None = None
-        if not hasattr(self, "_request"):
-            self._request: Any = None
+        # _request is now managed by ContextVar, no instance attribute needed
         if not hasattr(self, "_events"):
             self._events: EventBus | None = None
         if not hasattr(self, "_initialized"):
@@ -246,8 +251,7 @@ class Service:
                         ip = self.request.client.host
                         user_agent = self.request.headers.get('user-agent')
         """
-        self._init_framework_attrs()
-        return self._request
+        return _request_ctx_var.get()
 
     @property
     def user(self) -> Any:
@@ -267,9 +271,9 @@ class Service:
                     else:
                         raise ValueError("Authentication required")
         """
-        self._init_framework_attrs()
-        if self._request and hasattr(self._request, "state"):
-            return getattr(self._request.state, "user", None)
+        req = self.request
+        if req and hasattr(req, "state"):
+            return getattr(req.state, "user", None)
         return None
 
     @property
@@ -397,8 +401,8 @@ class Service:
 
     def _inject_request(self, request: Any) -> None:
         """Internal: Inject request context (called by framework)."""
-        self._init_framework_attrs()
-        self._request = request
+        # Use ContextVar for thread-safe request storage
+        _request_ctx_var.set(request)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}()"
