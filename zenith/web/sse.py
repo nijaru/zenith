@@ -123,7 +123,7 @@ class ServerSentEvents:
 
     def stream_response(
         self,
-        event_generator: AsyncGenerator[dict[str, Any], None],
+        event_generator: AsyncGenerator[dict[str, Any]],
         headers: dict[str, str] | None = None,
     ) -> StreamingResponse:
         """
@@ -156,8 +156,8 @@ class ServerSentEvents:
         )
 
     async def _stream_events_with_backpressure(
-        self, event_generator: AsyncGenerator[dict[str, Any], None]
-    ) -> AsyncGenerator[str, None]:
+        self, event_generator: AsyncGenerator[dict[str, Any]]
+    ) -> AsyncGenerator[str]:
         """Stream events with intelligent backpressure handling."""
         # Create connection for tracking
         connection_id = self._generate_connection_id()
@@ -234,8 +234,8 @@ class ServerSentEvents:
     async def _process_events_concurrent(
         self,
         connection: SSEConnection,
-        event_generator: AsyncGenerator[dict[str, Any], None],
-    ) -> AsyncGenerator[dict[str, Any], None]:
+        event_generator: AsyncGenerator[dict[str, Any]],
+    ) -> AsyncGenerator[dict[str, Any]]:
         """Process events with concurrent handling and flow control."""
         event_queue: asyncio.Queue = asyncio.Queue(maxsize=100)
 
@@ -291,7 +291,7 @@ class ServerSentEvents:
 
     async def _generate_sse_stream(
         self, connection: SSEConnection, stream_task: asyncio.Task
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[str]:
         """Generate formatted SSE messages with performance tracking."""
         heartbeat_counter = 0
 
@@ -530,7 +530,7 @@ class SSEEventManager:
         self.sse = sse_instance or ServerSentEvents()
 
     async def create_event_stream(
-        self, event_generator: AsyncGenerator[dict[str, Any], None]
+        self, event_generator: AsyncGenerator[dict[str, Any]]
     ):
         """Create optimized event stream response."""
         return self.sse.stream_response(event_generator)
@@ -551,7 +551,7 @@ sse = ServerSentEvents()
 
 
 def create_sse_response(
-    event_generator: AsyncGenerator[dict[str, Any], None],
+    event_generator: AsyncGenerator[dict[str, Any]],
 ) -> StreamingResponse:
     """
     Create Server-Sent Events response with built-in backpressure optimizations.

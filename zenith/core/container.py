@@ -15,6 +15,22 @@ from typing import Any, TypeVar, Union, cast, get_args, get_origin
 
 T = TypeVar("T")
 
+# Context variable for the current container (allows Inject() to find it)
+_current_container: ContextVar[DIContainer | None] = ContextVar(
+    "current_container", default=None
+)
+
+
+def get_current_container() -> DIContainer | None:
+    """Get the current DI container from context."""
+    return _current_container.get()
+
+
+def set_current_container(container: DIContainer | None) -> None:
+    """Set the current DI container in context."""
+    _current_container.set(container)
+
+
 # Context variable to store the current database session
 try:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,6 +90,8 @@ class DIContainer:
 
     __slots__ = (
         "_factories",
+        "_service_instances",
+        "_service_lock",
         "_services",
         "_shutdown_hooks",
         "_singletons",
@@ -86,6 +104,9 @@ class DIContainer:
         self._factories: dict[str, Callable] = {}
         self._startup_hooks: list[Callable] = []
         self._shutdown_hooks: list[Callable] = []
+        # Single source of truth for service singletons (used by Inject())
+        self._service_instances: dict[type, Any] = {}
+        self._service_lock: asyncio.Lock | None = None
         # Register the container itself for injection
         container_key = f"{DIContainer.__module__}.{DIContainer.__name__}"
         self._services[container_key] = self
@@ -210,6 +231,70 @@ class DIContainer:
         if isinstance(service_type, str):
             return service_type
         return f"{service_type.__module__}.{service_type.__name__}"
+
+    def _get_service_lock(self) -> asyncio.Lock:
+        """Get or create the async lock for thread-safe service creation."""
+        if self._service_lock is None:
+            self._service_lock = asyncio.Lock()
+        return self._service_lock
+
+    async def get_or_create_service(
+        self, service_class: type[T], request: Any = None
+    ) -> T:
+        """
+        Get or create a singleton service instance.
+
+        This is the single source of truth for service singletons.
+        Used by Inject() and DependencyResolver.
+
+        Args:
+            service_class: The service class to get/create
+            request: Optional request to inject into the service
+
+        Returns:
+            The singleton service instance
+        """
+        # Fast path: return existing instance
+        if service_class in self._service_instances:
+            instance = self._service_instances[service_class]
+            # Inject request context if provided
+            if request is not None:
+                from zenith.core.service import Service
+
+                if isinstance(instance, Service):
+                    instance._inject_request(request)
+            return instance
+
+        # Slow path: create instance with lock
+        async with self._get_service_lock():
+            # Double-check pattern
+            if service_class in self._service_instances:
+                instance = self._service_instances[service_class]
+                if request is not None:
+                    from zenith.core.service import Service
+
+                    if isinstance(instance, Service):
+                        instance._inject_request(request)
+                return instance
+
+            # Create instance with dependency injection
+            instance = self._create_instance(service_class)
+
+            # Inject framework internals for Service instances
+            from zenith.core.service import Service
+
+            if isinstance(instance, Service):
+                instance._inject_container(self)
+                if request is not None:
+                    instance._inject_request(request)
+
+            # Initialize if it has an async initialize method
+            if hasattr(instance, "initialize") and callable(instance.initialize):
+                await instance.initialize()
+
+            # Store singleton
+            self._service_instances[service_class] = instance
+            return instance
 
     def register_startup(self, hook: Callable) -> None:
         """Register startup hook."""

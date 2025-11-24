@@ -6,13 +6,21 @@ generate comprehensive API documentation.
 """
 
 import inspect
+import types
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
+from enum import Enum
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Union,
+    get_args,
     get_origin,
     get_type_hints,
 )
+from uuid import UUID
 
 if TYPE_CHECKING:
     from zenith.core.routing import Router
@@ -58,8 +66,20 @@ class OpenAPIGenerator:
         route_sigs = []
         for router in routers:
             for route_spec in router.routes:
-                sig = f"{route_spec.path}:{','.join(sorted(route_spec.methods))}:{route_spec.handler.__name__}"
-                route_sigs.append(sig)
+                # Include all spec fields that affect output
+                sig_parts = [
+                    route_spec.path,
+                    ",".join(sorted(route_spec.methods)),
+                    route_spec.handler.__name__,
+                    str(route_spec.include_in_schema),
+                    str(route_spec.status_code),
+                    route_spec.summary or "",
+                    route_spec.description or "",
+                    route_spec.response_description,
+                    ",".join(route_spec.tags) if route_spec.tags else "",
+                    route_spec.response_model.__name__ if route_spec.response_model else "",
+                ]
+                route_sigs.append(":".join(sig_parts))
 
         routes_hash = hash(tuple(sorted(route_sigs)))
         config_hash = hash((self.title, self.version, self.description))
@@ -105,6 +125,10 @@ class OpenAPIGenerator:
     def _process_route(self, spec: dict, route_spec: RouteSpec) -> None:
         """Process a single route and add to spec."""
 
+        # Skip routes excluded from schema
+        if not route_spec.include_in_schema:
+            return
+
         path = route_spec.path
         methods = route_spec.methods
         handler = route_spec.handler
@@ -121,14 +145,31 @@ class OpenAPIGenerator:
         for method in methods:
             method_lower = method.lower()
 
+            # Use RouteSpec fields with docstring fallback
+            summary = route_spec.summary or self._get_operation_summary(handler, method)
+            description = (
+                route_spec.description or self._get_operation_description(handler)
+            )
+
+            # Determine response type: RouteSpec.response_model > return type hint
+            response_type = route_spec.response_model or type_hints.get("return")
+
             # Build operation spec
             operation = {
-                "summary": self._get_operation_summary(handler, method),
-                "description": self._get_operation_description(handler),
+                "summary": summary,
+                "description": description,
                 "operationId": f"{method_lower}_{path.replace('/', '_').replace('{', '').replace('}', '')}",
                 "parameters": [],
-                "responses": self._get_responses(type_hints.get("return")),
+                "responses": self._get_responses(
+                    response_type,
+                    route_spec.status_code,
+                    route_spec.response_description,
+                ),
             }
+
+            # Add tags if specified
+            if route_spec.tags:
+                operation["tags"] = route_spec.tags
 
             # Process parameters
             request_body = None
@@ -234,42 +275,43 @@ class OpenAPIGenerator:
 
         return extract_path_params(path)
 
-    def _get_responses(self, return_type: type | None) -> dict[str, Any]:
+    def _get_responses(
+        self,
+        return_type: type | None,
+        status_code: int = 200,
+        response_description: str = "Successful Response",
+    ) -> dict[str, Any]:
         """Generate response specifications from return type."""
 
         responses = {}
+        status_key = str(status_code)
 
         if return_type and return_type != inspect.Parameter.empty:
-            # Handle successful response (200)
+            # Handle Pydantic model response
             if inspect.isclass(return_type) and issubclass(return_type, BaseModel):
                 schema_name = return_type.__name__
                 self._add_schema(return_type)
 
-                responses["200"] = {
-                    "description": "Successful response",
+                responses[status_key] = {
+                    "description": response_description,
                     "content": {
                         "application/json": {
                             "schema": {"$ref": f"#/components/schemas/{schema_name}"}
                         }
                     },
                 }
-            elif return_type is dict or self._is_dict_type(return_type):
-                responses["200"] = {
-                    "description": "Successful response",
-                    "content": {"application/json": {"schema": {"type": "object"}}},
-                }
-            elif return_type is list or self._is_list_type(return_type):
-                responses["200"] = {
-                    "description": "Successful response",
+            elif return_type is dict or self._is_dict_type(return_type) or return_type is list or self._is_list_type(return_type):
+                responses[status_key] = {
+                    "description": response_description,
                     "content": {
                         "application/json": {
-                            "schema": {"type": "array", "items": {"type": "object"}}
+                            "schema": self._get_type_schema(return_type)
                         }
                     },
                 }
             else:
-                responses["200"] = {
-                    "description": "Successful response",
+                responses[status_key] = {
+                    "description": response_description,
                     "content": {
                         "application/json": {
                             "schema": self._get_type_schema(return_type)
@@ -277,8 +319,11 @@ class OpenAPIGenerator:
                     },
                 }
         else:
-            # Default response
-            responses["200"] = {"description": "Successful response"}
+            # Default response (no content for 204, etc.)
+            if status_code == 204:
+                responses[status_key] = {"description": response_description}
+            else:
+                responses[status_key] = {"description": response_description}
 
         # Add common error responses
         responses["400"] = {"description": "Bad Request"}
@@ -304,21 +349,123 @@ class OpenAPIGenerator:
     def _get_type_schema(self, type_hint: type) -> dict[str, Any]:
         """Convert Python type to OpenAPI schema."""
 
+        # Handle None type
+        if type_hint is None or type_hint is type(None):
+            return {"nullable": True}
+
+        # Basic types
         if type_hint is str:
             return {"type": "string"}
-        elif type_hint is int:
+        if type_hint is int:
             return {"type": "integer"}
-        elif type_hint is float:
+        if type_hint is float:
             return {"type": "number"}
-        elif type_hint is bool:
+        if type_hint is bool:
             return {"type": "boolean"}
-        elif type_hint is list:
+        if type_hint is bytes:
+            return {"type": "string", "format": "binary"}
+
+        # Date/time types
+        if type_hint is datetime:
+            return {"type": "string", "format": "date-time"}
+        if type_hint is date:
+            return {"type": "string", "format": "date"}
+        if type_hint is time:
+            return {"type": "string", "format": "time"}
+        if type_hint is timedelta:
+            return {"type": "string", "format": "duration"}
+
+        # UUID
+        if type_hint is UUID:
+            return {"type": "string", "format": "uuid"}
+
+        # Decimal
+        if type_hint is Decimal:
+            return {"type": "string", "format": "decimal"}
+
+        # Path
+        if type_hint is Path:
+            return {"type": "string", "format": "path"}
+
+        # Enum types
+        if inspect.isclass(type_hint) and issubclass(type_hint, Enum):
+            enum_values = [e.value for e in type_hint]
+            # Infer type from first value
+            if enum_values:
+                first_val = enum_values[0]
+                if isinstance(first_val, int):
+                    return {"type": "integer", "enum": enum_values}
+                elif isinstance(first_val, str):
+                    return {"type": "string", "enum": enum_values}
+            return {"enum": enum_values}
+
+        # Pydantic models
+        if inspect.isclass(type_hint) and issubclass(type_hint, BaseModel):
+            schema_name = type_hint.__name__
+            self._add_schema(type_hint)
+            return {"$ref": f"#/components/schemas/{schema_name}"}
+
+        # Generic types (List, Dict, Optional, Union)
+        origin = get_origin(type_hint)
+        args = get_args(type_hint)
+
+        # List[T]
+        if origin is list:
+            if args:
+                return {"type": "array", "items": self._get_type_schema(args[0])}
             return {"type": "array", "items": {"type": "object"}}
-        elif type_hint is dict:
+
+        # Dict[K, V]
+        if origin is dict:
+            if args and len(args) >= 2:
+                return {
+                    "type": "object",
+                    "additionalProperties": self._get_type_schema(args[1]),
+                }
             return {"type": "object"}
-        else:
-            # For complex types, return generic object
+
+        # Optional[T] / T | None / Union[T, None]
+        # Handle both typing.Union and types.UnionType (Python 3.10+)
+        if origin is Union or isinstance(type_hint, types.UnionType):
+            non_none_args = [a for a in args if a is not type(None)]
+            if len(non_none_args) == 1:
+                # Optional[T] - single type + None
+                schema = self._get_type_schema(non_none_args[0])
+                schema["nullable"] = True
+                return schema
+            elif len(non_none_args) > 1:
+                # Union of multiple types - use oneOf
+                return {"oneOf": [self._get_type_schema(a) for a in non_none_args]}
+
+        # tuple types
+        if origin is tuple:
+            if args:
+                return {
+                    "type": "array",
+                    "items": [self._get_type_schema(a) for a in args],
+                    "minItems": len(args),
+                    "maxItems": len(args),
+                }
+            return {"type": "array"}
+
+        # set types
+        if origin is set or origin is frozenset:
+            if args:
+                return {
+                    "type": "array",
+                    "items": self._get_type_schema(args[0]),
+                    "uniqueItems": True,
+                }
+            return {"type": "array", "uniqueItems": True}
+
+        # Plain list/dict without type params
+        if type_hint is list:
+            return {"type": "array", "items": {"type": "object"}}
+        if type_hint is dict:
             return {"type": "object"}
+
+        # Fallback for unknown types
+        return {"type": "object"}
 
     def _add_schema(self, model_class: type[BaseModel]) -> None:
         """Add Pydantic model schema to components."""

@@ -137,6 +137,19 @@ from zenith.exceptions import (
     validation_error,
 )
 
+# ============================================================================
+# LOGGING
+# ============================================================================
+from zenith.logging import (
+    LoggingMiddleware,
+    bind_context,
+    clear_context,
+    configure_for_development,
+    configure_for_production,
+    configure_logging,
+    get_logger,
+)
+
 # Note: Legacy job systems (JobManager, RedisJobQueue, Worker) have been removed
 # Use BackgroundTasks for simple tasks or JobQueue for comprehensive job processing
 # ============================================================================
@@ -247,6 +260,8 @@ __all__ = [
     "Job",  # Job data model
     "JobQueue",  # Comprehensive job processing with retry
     "JobStatus",  # Job status enum
+    # Logging
+    "LoggingMiddleware",
     # Note: Legacy job systems removed for API clarity
     # Database Migrations
     "MigrationManager",
@@ -300,13 +315,19 @@ __all__ = [
     "background_task",  # Decorator for background task functions
     # Exception Helpers
     "bad_request",
+    "bind_context",
     # High-level Decorators
     "cache",
+    "clear_context",
+    "configure_for_development",
+    "configure_for_production",
+    "configure_logging",
     "conflict",
     "create_repository",
     "create_sse_response",
     "error_response",
     "forbidden",
+    "get_logger",
     "internal_error",
     "json_response",
     "not_found",

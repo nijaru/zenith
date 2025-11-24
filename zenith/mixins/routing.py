@@ -8,6 +8,11 @@ Contains HTTP verb decorators and route management methods.
 class RoutingMixin:
     """Mixin for HTTP routing decorator methods."""
 
+    @property
+    def routers(self) -> list:
+        """Return list of routers for backward compatibility."""
+        return [self._app_router]
+
     def get(self, path: str, **kwargs):
         """Register a GET route."""
         return self._app_router.get(path, **kwargs)

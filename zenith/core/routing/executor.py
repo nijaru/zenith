@@ -130,9 +130,11 @@ class RouteExecutor:
                 continue
 
             # Path parameters
-            if param_name in request.path_params:
+            # Check scope["path_params"] explicitly for RadixRouter compatibility
+            path_params = request.path_params or request.scope.get("path_params", {})
+            if param_name in path_params:
                 kwargs[param_name] = self._convert_path_param(
-                    request.path_params[param_name], param_type
+                    path_params[param_name], param_type
                 )
                 continue
 

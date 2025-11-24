@@ -106,7 +106,7 @@ ARCHIVE_TYPES = [
 ]
 
 
-async def get_database_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_database_session() -> AsyncGenerator[AsyncSession]:
     """
     Get database session dependency for FastAPI routes.
 
@@ -306,21 +306,6 @@ def File(
     return Depends(file_validator)
 
 
-# Global service registry for singleton instances
-_service_instances: dict[type, Any] = {}
-_service_lock = None  # Will be initialized on first use
-
-
-def _get_service_lock():
-    """Get or create the async lock for thread-safe singleton creation."""
-    global _service_lock
-    if _service_lock is None:
-        import asyncio
-
-        _service_lock = asyncio.Lock()
-    return _service_lock
-
-
 def Inject[T](service_type: type[T] | None = None) -> Any:
     """
     Dependency injection for singleton services.
@@ -339,39 +324,28 @@ def Inject[T](service_type: type[T] | None = None) -> Any:
     Note: Services should be stateless or thread-safe as they're shared across requests.
     """
     if service_type is None:
-        # For auto-resolution, FastAPI needs to inspect type hints
-        # This requires the service to be registered or type hint to work
         async def auto_resolve_service():
-            # FastAPI will provide the actual type through inspection
-            # This is a placeholder that shouldn't be called directly
             raise NotImplementedError(
                 "Auto-resolution requires type hints. Use Inject(ServiceClass) explicitly."
             )
 
         return Depends(auto_resolve_service)
 
-    # Explicit service type - create singleton resolver
+    # Explicit service type - resolve from DIContainer (single source of truth)
     async def resolve_service() -> service_type:
-        """Get or create singleton instance of the service."""
-        # Check if instance already exists
-        if service_type in _service_instances:
-            return _service_instances[service_type]
+        """Get or create singleton instance of the service from DIContainer."""
+        from .container import get_current_container
 
-        # Create new instance with thread-safe lock
-        async with _get_service_lock():
-            # Double-check pattern - another request might have created it
-            if service_type in _service_instances:
-                return _service_instances[service_type]
-
-            # Create and store singleton instance
+        container = get_current_container()
+        if container is None:
+            # Fallback: create instance directly (for testing or standalone use)
             instance = service_type()
-
-            # Initialize if it has an async initialize method
             if hasattr(instance, "initialize") and callable(instance.initialize):
                 await instance.initialize()
-
-            _service_instances[service_type] = instance
             return instance
+
+        # Use container's centralized service management
+        return await container.get_or_create_service(service_type)
 
     return Depends(resolve_service)
 

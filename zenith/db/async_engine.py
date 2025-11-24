@@ -88,7 +88,7 @@ class AsyncEngineManager:
 
         return self._session_makers[loop]
 
-    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+    async def get_session(self) -> AsyncGenerator[AsyncSession]:
         """
         Get a database session for the current request.
 
@@ -160,7 +160,7 @@ def get_async_engine_manager() -> AsyncEngineManager:
     return _engine_manager
 
 
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_async_session() -> AsyncGenerator[AsyncSession]:
     """
     Dependency to get an async database session.
 
@@ -228,7 +228,7 @@ class AsyncDatabase:
         """Disconnect from the database (dispose all engines)."""
         await self.manager.dispose_all()
 
-    async def get_session(self) -> AsyncGenerator[AsyncSession, None]:
+    async def get_session(self) -> AsyncGenerator[AsyncSession]:
         """
         Get a database session.
 

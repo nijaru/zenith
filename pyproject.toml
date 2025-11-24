@@ -47,7 +47,7 @@ authors = [
 ]
 keywords = ["web", "framework", "api", "async", "websockets", "database", "performance"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -102,9 +102,7 @@ benchmark = [
     "psutil>=5.9.0",
     "aiosqlite>=0.19.0",
 ]
-performance = [
-    "msgspec>=0.18.0",  # Ultra-fast serialization with validation (already have uvloop and orjson in main deps)
-]
+performance = []
 http3 = [
     "aioquic>=1.2.0",  # HTTP/3 and QUIC protocol support
     "cryptography>=42.0.0",  # For self-signed certificates

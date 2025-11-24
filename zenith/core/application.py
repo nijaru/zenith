@@ -146,6 +146,11 @@ class Application:
         self.logger.info("Starting Zenith application")
 
         try:
+            # Set container as current for Inject() to use
+            from zenith.core.container import set_current_container
+
+            set_current_container(self.container)
+
             # Start DI container
             await self.container.startup()
 

@@ -1,22 +1,82 @@
 # Architecture Decisions
 
-<!--
-## [YYYY-MM-DD] [Title]
+## 2025-11-24 Library vs Custom Implementation Strategy
 
 **Context:**
-[Problem statement and constraints]
+Architecture review identified multiple areas where custom implementations exist. Need clear policy on when to use libraries vs custom code.
 
 **Decision:**
-[The decision made]
+Use libraries for: routing, OpenAPI generation, rate limiting, structured logging.
+Keep custom for: service layer, middleware wrappers, response optimization.
+
+**Libraries to Use (not reinvent):**
+
+| Component | Use Library | Not Custom |
+|-----------|------------|------------|
+| Routing | Starlette Router | RadixTree (deleted) |
+| OpenAPI | Consider fastapi.openapi.utils | Current custom impl |
+| Rate limiting | Consider slowapi/limits | Current custom impl |
+| DI Container | Consider dependency-injector | Current multi-system |
+| Structured logging | structlog (already dep) | Raw logging calls |
+
+**Keep Custom (justified):**
+
+| Component | Reason |
+|-----------|--------|
+| Service base class | Specific DI pattern for business logic |
+| Response optimization | orjson wrapper, specific caching needs |
+| Middleware wrappers | Thin wrappers with Zenith-specific defaults |
+| Session management | Dirty tracking, auto-persistence features |
 
 **Rationale:**
-[Why this decision was made]
+- 60+ Starlette imports already - we're a layer on top, not a replacement
+- Custom routing (O(k) RadixTree) adds maintenance burden for microsecond gains
+- Focus effort on differentiating features (DX, service layer, zero-config)
 
 **Consequences:**
-[Pros, cons, and side effects]
--->
+- Deleted `zenith/core/routing/radix.py` and `radix_router.py`
+- Future: consolidate DI systems, adopt structlog throughout
+
+---
+
+## 2025-11-24 Routing Engine
+
+**Context:**
+Implemented custom RadixTree router for O(k) path matching vs Starlette's O(n).
+
+**Decision:**
+Reverted to Starlette Router. Deleted custom implementation.
+
+**Rationale:**
+1. Starlette's compiled regex is already fast (microseconds)
+2. O(k) vs O(n) only matters at 100s+ routes
+3. Still wrapped Starlette catch-all anyway (worst of both worlds)
+4. Maintenance burden not justified for marginal gains
+5. Deep Starlette dependency throughout (60+ imports)
+
+**Consequences:**
+- Simpler codebase, less custom code
+- Starlette handles edge cases and security
+- Future: benchmark if needed at scale, reconsider then
+
+---
+
+## 2025-11-24 Known Architecture Issues (To Address)
+
+**Critical (Before 1.0):**
+1. **Multiple DI systems**: Container + ServiceRegistry + Inject() globals - consolidate
+2. **OpenAPI generation**: Custom impl untested against spec - consider fastapi approach
+3. **Logging**: Raw logging scattered - adopt structlog comprehensively
+
+**Moderate (Before 2.0):**
+1. Session security audit against OWASP
+2. Request tracing (OpenTelemetry by default)
+3. Middleware ordering documentation
+
+---
 
 ## 2025-10-01 Password Hashing
+
 **Context:**
 Need secure password hashing defaults.
 

@@ -5,17 +5,12 @@ Handles Context, Auth, File, and other dependency injection patterns
 with clean separation from routing logic.
 """
 
-import asyncio
 from typing import Any
 
 from starlette.requests import Request
 
 from ..scoped import RequestScoped
 from .dependencies import AuthDependency, FileDependency, InjectDependency
-
-# Global singleton registry for services
-_service_instances: dict[type, Any] = {}
-_service_lock = asyncio.Lock()
 
 
 class DependencyResolver:
@@ -58,74 +53,20 @@ class DependencyResolver:
         """
         Resolve a Service dependency with constructor injection.
 
-        Uses DIContainer's _create_instance for automatic dependency resolution.
+        Uses DIContainer.get_or_create_service() as single source of truth.
         """
         # Use the specified service class, or infer from parameter type
         service_class = dependency.service_class or param_type
 
-        # Check if service is already created (singleton pattern)
-        if service_class in _service_instances:
-            instance = _service_instances[service_class]
-            # Inject request context (services are singletons but request changes)
-            from zenith.core.service import Service
+        # Use container's centralized service management (single source of truth)
+        if app and hasattr(app, "container"):
+            return await app.container.get_or_create_service(service_class, request)
 
-            if isinstance(instance, Service) and request:
-                instance._inject_request(request)
-            return instance
-
-        # Create new instance with thread-safe lock
-        async with _service_lock:
-            # Double-check pattern - another request might have created it
-            if service_class in _service_instances:
-                instance = _service_instances[service_class]
-                from zenith.core.service import Service
-
-                if isinstance(instance, Service) and request:
-                    instance._inject_request(request)
-                return instance
-
-            # Try to get from registered contexts first (for backward compatibility)
-            if app and hasattr(app, "contexts"):
-                try:
-                    instance = await app.contexts.get_by_type(service_class)
-                    _service_instances[service_class] = instance
-                    # Inject request context
-                    from zenith.core.service import Service
-
-                    if isinstance(instance, Service) and request:
-                        instance._inject_request(request)
-                    return instance
-                except (KeyError, AttributeError):
-                    pass  # Not registered, create directly
-
-            # Use DIContainer's injection for constructor dependencies
-            if app and hasattr(app, "container"):
-                try:
-                    instance = app.container._create_instance(service_class)
-                except KeyError:
-                    # If dependency resolution fails, try without args (backward compat)
-                    instance = service_class()
-            else:
-                # No container available, instantiate without dependencies
-                instance = service_class()
-
-            # Inject framework internals for Service instances
-            from zenith.core.service import Service
-
-            if isinstance(instance, Service):
-                if app and hasattr(app, "container"):
-                    instance._inject_container(app.container)
-                # Inject request context
-                if request:
-                    instance._inject_request(request)
-
-            # Initialize if it has an async initialize method
-            if hasattr(instance, "initialize") and callable(instance.initialize):
-                await instance.initialize()
-
-            # Store singleton
-            _service_instances[service_class] = instance
-            return instance
+        # Fallback: create instance directly (for testing or standalone use)
+        instance = service_class()
+        if hasattr(instance, "initialize") and callable(instance.initialize):
+            await instance.initialize()
+        return instance
 
     async def _resolve_auth(self, dependency: AuthDependency, request: Request) -> Any:
         """Resolve an Auth dependency (current user)."""

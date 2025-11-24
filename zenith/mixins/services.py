@@ -162,11 +162,5 @@ class ServicesMixin:
         self.mount_static(path, directory, **config)
 
     def include_router(self, router: Router, prefix: str = "") -> None:
-        """Include a router with optional prefix."""
-        if prefix:
-            router.prefix = prefix + router.prefix
-
-        # Set app reference for dependency injection
-        router._app = self.app
-
-        self.routers.append(router)
+        """Include a router by merging its routes into the main app router."""
+        self._app_router.include_router(router, prefix=prefix)

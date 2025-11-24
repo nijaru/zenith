@@ -409,62 +409,43 @@ class Service:
 
 
 class ServiceRegistry:
-    """Registry for managing application services with dependency injection."""
+    """
+    Registry for managing named application services.
 
-    __slots__ = ("_service_classes", "_services", "container")
+    This is a thin naming wrapper around DIContainer.
+    Name → Type mapping is maintained here, but instance management
+    is delegated to DIContainer (single source of truth).
+    """
+
+    __slots__ = ("_service_classes", "container")
 
     def __init__(self, container: DIContainer):
         self.container = container
-        self._services: dict[str, Service] = {}
         self._service_classes: dict[str, type[Service]] = {}
 
     def register(self, name: str, service_class: type[Service]) -> None:
-        """Register a service class."""
+        """Register a service class by name."""
         self._service_classes[name] = service_class
 
     async def get(self, name: str) -> Service:
-        """Get or create a service instance with dependency injection."""
-        if name not in self._services:
-            if name not in self._service_classes:
-                raise KeyError(f"Service not registered: {name}")
+        """Get or create a service instance by name."""
+        if name not in self._service_classes:
+            raise KeyError(f"Service not registered: {name}")
 
-            service_class = self._service_classes[name]
-
-            # Use DIContainer's injection for constructor DI
-            service = self.container._create_instance(service_class)
-
-            # Inject framework internals
-            if isinstance(service, Service):
-                service._inject_container(self.container)
-
-            # Initialize
-            await service.initialize()
-            self._services[name] = service
-
-        return self._services[name]
+        service_class = self._service_classes[name]
+        # Delegate to container (single source of truth)
+        return await self.container.get_or_create_service(service_class)
 
     async def get_by_type(self, service_class: type[Service]) -> Service:
         """Get or create a service instance by class type."""
-        # Find the service name by class type
-        service_name = None
-        for name, registered_class in self._service_classes.items():
-            if registered_class == service_class:
-                service_name = name
-                break
-
-        if service_name is None:
-            # Try to use the class name as the service name
-            service_name = service_class.__name__
-            if service_name not in self._service_classes:
-                raise KeyError(f"Service not registered: {service_class.__name__}")
-
-        return await self.get(service_name)
+        # Delegate directly to container
+        return await self.container.get_or_create_service(service_class)
 
     async def shutdown_all(self) -> None:
-        """Shutdown all services."""
-        for service in self._services.values():
-            await service.shutdown()
-        self._services.clear()
+        """Shutdown all services managed by the container."""
+        for service in self.container._service_instances.values():
+            if isinstance(service, Service):
+                await service.shutdown()
 
     def list_services(self) -> list[str]:
         """List all registered service names."""

@@ -155,6 +155,13 @@ class SessionManager:
     - Automatic session expiration
     - Security features (secure cookies, CSRF protection)
     - Session regeneration
+
+    OWASP Session Security Compliance:
+    - Session IDs: 256-bit entropy via secrets.token_urlsafe(32)
+    - Cookie security: HttpOnly=True, Secure=True, SameSite=Lax by default
+    - Session fixation: Use regenerate_session_id() after authentication
+    - Expiration: Configurable max_age with server-side validation
+    - Signing: HMAC-SHA256 for cookie sessions with timing-safe comparison
     """
 
     def __init__(

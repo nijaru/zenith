@@ -19,7 +19,7 @@ from zenith.testing.service import TestDatabase, test_database
 
 # Pytest event loop fixture for async tests
 @pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+def event_loop() -> Generator[asyncio.AbstractEventLoop]:
     """
     Create event loop for async tests.
 
@@ -31,7 +31,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 
 @pytest.fixture
-async def test_database_fixture() -> AsyncGenerator[TestDatabase, None]:
+async def test_database_fixture() -> AsyncGenerator[TestDatabase]:
     """
     Pytest fixture for test database with automatic cleanup.
 
@@ -80,7 +80,7 @@ def test_app() -> Zenith:
 
 
 @pytest.fixture
-async def test_client(test_app: Zenith) -> AsyncGenerator[TestClient, None]:
+async def test_client(test_app: Zenith) -> AsyncGenerator[TestClient]:
     """
     Pytest fixture for TestClient with automatic setup/teardown.
 
@@ -132,7 +132,7 @@ def auth_manager() -> TestAuthManager:
 @pytest.fixture
 async def authenticated_client(
     test_app: Zenith, auth_manager: TestAuthManager
-) -> AsyncGenerator[TestClient, None]:
+) -> AsyncGenerator[TestClient]:
     """
     Pytest fixture for authenticated test client.
 

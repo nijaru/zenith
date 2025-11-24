@@ -4,6 +4,10 @@ Tests for OpenAPI specification generator.
 Tests caching functionality, spec generation, and performance optimizations.
 """
 
+from datetime import date, datetime
+from enum import Enum
+from uuid import UUID
+
 from pydantic import BaseModel
 
 from zenith.core.routing import Router
@@ -24,6 +28,14 @@ class UserCreateModel(BaseModel):
 
     name: str
     email: str
+
+
+class UserStatus(Enum):
+    """Test enum for OpenAPI schema generation."""
+
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    PENDING = "pending"
 
 
 class TestOpenAPIGenerator:
@@ -407,3 +419,292 @@ class TestOpenAPICachePerformance:
 
         # Should be significantly less than unbounded growth (would be 60 without management)
         assert len(generator._spec_cache) < 60
+
+
+class TestRouteSpecFields:
+    """Test suite for RouteSpec field support in OpenAPI generation."""
+
+    def test_include_in_schema_false(self):
+        """Test that routes with include_in_schema=False are excluded."""
+        router = Router()
+
+        async def hidden_handler():
+            return {"secret": True}
+
+        async def visible_handler():
+            return {"visible": True}
+
+        router.routes = [
+            RouteSpec("/hidden", hidden_handler, ["GET"], include_in_schema=False),
+            RouteSpec("/visible", visible_handler, ["GET"], include_in_schema=True),
+        ]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        assert "/hidden" not in spec["paths"]
+        assert "/visible" in spec["paths"]
+
+    def test_tags_field(self):
+        """Test that tags from RouteSpec are included in operation."""
+        router = Router()
+
+        async def get_users():
+            return []
+
+        router.routes = [
+            RouteSpec("/users", get_users, ["GET"], tags=["users", "admin"])
+        ]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        operation = spec["paths"]["/users"]["get"]
+        assert operation["tags"] == ["users", "admin"]
+
+    def test_status_code_field(self):
+        """Test that status_code from RouteSpec is used."""
+        router = Router()
+
+        async def create_user():
+            return {"created": True}
+
+        router.routes = [RouteSpec("/users", create_user, ["POST"], status_code=201)]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        responses = spec["paths"]["/users"]["post"]["responses"]
+        assert "201" in responses
+        # 200 should not be present as the success response
+        assert "200" not in responses or responses.get("200", {}).get("description") == "Successful Response"
+
+    def test_response_description_field(self):
+        """Test that response_description from RouteSpec is used."""
+        router = Router()
+
+        async def get_users():
+            return []
+
+        router.routes = [
+            RouteSpec(
+                "/users",
+                get_users,
+                ["GET"],
+                response_description="List of all users",
+            )
+        ]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        response = spec["paths"]["/users"]["get"]["responses"]["200"]
+        assert response["description"] == "List of all users"
+
+    def test_summary_field(self):
+        """Test that summary from RouteSpec takes precedence over docstring."""
+        router = Router()
+
+        async def get_users():
+            """This should be overridden."""
+            return []
+
+        router.routes = [
+            RouteSpec("/users", get_users, ["GET"], summary="Get All Users")
+        ]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        operation = spec["paths"]["/users"]["get"]
+        assert operation["summary"] == "Get All Users"
+
+    def test_description_field(self):
+        """Test that description from RouteSpec takes precedence over docstring."""
+        router = Router()
+
+        async def get_users():
+            """This description should be overridden."""
+            return []
+
+        router.routes = [
+            RouteSpec(
+                "/users",
+                get_users,
+                ["GET"],
+                description="Retrieves all users from the database.",
+            )
+        ]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        operation = spec["paths"]["/users"]["get"]
+        assert operation["description"] == "Retrieves all users from the database."
+
+    def test_response_model_field(self):
+        """Test that response_model from RouteSpec overrides return type."""
+        router = Router()
+
+        async def get_user() -> dict:  # Return type is dict
+            return {}
+
+        router.routes = [
+            RouteSpec(
+                "/users/{id}",
+                get_user,
+                ["GET"],
+                response_model=UserModel,  # But we want UserModel schema
+            )
+        ]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        response_schema = spec["paths"]["/users/{id}"]["get"]["responses"]["200"][
+            "content"
+        ]["application/json"]["schema"]
+        assert response_schema == {"$ref": "#/components/schemas/UserModel"}
+        assert "UserModel" in spec["components"]["schemas"]
+
+
+class TestTypeInference:
+    """Test suite for improved type inference in OpenAPI generation."""
+
+    def test_datetime_type(self):
+        """Test datetime type inference."""
+        router = Router()
+
+        async def get_timestamp(created_at: datetime):
+            return {"timestamp": created_at}
+
+        router.routes = [RouteSpec("/timestamp", get_timestamp, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        params = spec["paths"]["/timestamp"]["get"]["parameters"]
+        created_param = next(p for p in params if p["name"] == "created_at")
+        assert created_param["schema"]["type"] == "string"
+        assert created_param["schema"]["format"] == "date-time"
+
+    def test_date_type(self):
+        """Test date type inference."""
+        router = Router()
+
+        async def get_date(birth_date: date):
+            return {"date": birth_date}
+
+        router.routes = [RouteSpec("/date", get_date, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        params = spec["paths"]["/date"]["get"]["parameters"]
+        date_param = next(p for p in params if p["name"] == "birth_date")
+        assert date_param["schema"]["type"] == "string"
+        assert date_param["schema"]["format"] == "date"
+
+    def test_uuid_type(self):
+        """Test UUID type inference."""
+        router = Router()
+
+        async def get_by_uuid(user_id: UUID):
+            return {"id": user_id}
+
+        router.routes = [RouteSpec("/users/{user_id}", get_by_uuid, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        params = spec["paths"]["/users/{user_id}"]["get"]["parameters"]
+        uuid_param = next(p for p in params if p["name"] == "user_id")
+        assert uuid_param["schema"]["type"] == "string"
+        assert uuid_param["schema"]["format"] == "uuid"
+
+    def test_enum_type(self):
+        """Test Enum type inference."""
+        router = Router()
+
+        async def filter_by_status(status: UserStatus):
+            return {"status": status}
+
+        router.routes = [RouteSpec("/users/filter", filter_by_status, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        params = spec["paths"]["/users/filter"]["get"]["parameters"]
+        status_param = next(p for p in params if p["name"] == "status")
+        assert status_param["schema"]["type"] == "string"
+        assert status_param["schema"]["enum"] == ["active", "inactive", "pending"]
+
+    def test_list_with_type_param(self):
+        """Test List[T] type inference."""
+        router = Router()
+
+        async def get_users() -> list[UserModel]:
+            return []
+
+        router.routes = [RouteSpec("/users", get_users, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        response_schema = spec["paths"]["/users"]["get"]["responses"]["200"]["content"][
+            "application/json"
+        ]["schema"]
+        assert response_schema["type"] == "array"
+        assert response_schema["items"] == {"$ref": "#/components/schemas/UserModel"}
+
+    def test_dict_with_type_params(self):
+        """Test Dict[K, V] type inference."""
+        router = Router()
+
+        async def get_config() -> dict[str, int]:
+            return {}
+
+        router.routes = [RouteSpec("/config", get_config, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        response_schema = spec["paths"]["/config"]["get"]["responses"]["200"]["content"][
+            "application/json"
+        ]["schema"]
+        assert response_schema["type"] == "object"
+        assert response_schema["additionalProperties"] == {"type": "integer"}
+
+    def test_optional_type(self):
+        """Test Optional[T] / T | None type inference."""
+        router = Router()
+
+        async def search(query: str | None = None):
+            return {"query": query}
+
+        router.routes = [RouteSpec("/search", search, ["GET"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        params = spec["paths"]["/search"]["get"]["parameters"]
+        query_param = next(p for p in params if p["name"] == "query")
+        assert query_param["schema"]["type"] == "string"
+        assert query_param["schema"]["nullable"] is True
+
+    def test_bytes_type(self):
+        """Test bytes type inference."""
+        router = Router()
+
+        async def upload(data: bytes):
+            return {"size": len(data)}
+
+        router.routes = [RouteSpec("/upload", upload, ["POST"])]
+
+        generator = OpenAPIGenerator()
+        spec = generator.generate_spec([router])
+
+        params = spec["paths"]["/upload"]["post"]["parameters"]
+        data_param = next(p for p in params if p["name"] == "data")
+        assert data_param["schema"]["type"] == "string"
+        assert data_param["schema"]["format"] == "binary"

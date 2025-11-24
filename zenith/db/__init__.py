@@ -136,7 +136,7 @@ class Database:
     @asynccontextmanager
     async def session(
         self, scope: dict | None = None
-    ) -> AsyncGenerator[AsyncSession, None]:
+    ) -> AsyncGenerator[AsyncSession]:
         """
         Create a database session with automatic request-scoped reuse.
 
@@ -172,7 +172,7 @@ class Database:
     @asynccontextmanager
     async def request_scoped_session(
         self, scope: dict
-    ) -> AsyncGenerator[AsyncSession, None]:
+    ) -> AsyncGenerator[AsyncSession]:
         """
         Create a request-scoped database session for web requests.
 
@@ -208,7 +208,7 @@ class Database:
                 await session.close()
 
     @asynccontextmanager
-    async def transaction(self) -> AsyncGenerator[AsyncSession, None]:
+    async def transaction(self) -> AsyncGenerator[AsyncSession]:
         """
         Create a database transaction.
 
