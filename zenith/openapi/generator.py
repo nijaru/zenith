@@ -77,7 +77,9 @@ class OpenAPIGenerator:
                     route_spec.description or "",
                     route_spec.response_description,
                     ",".join(route_spec.tags) if route_spec.tags else "",
-                    route_spec.response_model.__name__ if route_spec.response_model else "",
+                    route_spec.response_model.__name__
+                    if route_spec.response_model
+                    else "",
                 ]
                 route_sigs.append(":".join(sig_parts))
 
@@ -147,8 +149,8 @@ class OpenAPIGenerator:
 
             # Use RouteSpec fields with docstring fallback
             summary = route_spec.summary or self._get_operation_summary(handler, method)
-            description = (
-                route_spec.description or self._get_operation_description(handler)
+            description = route_spec.description or self._get_operation_description(
+                handler
             )
 
             # Determine response type: RouteSpec.response_model > return type hint
@@ -300,7 +302,12 @@ class OpenAPIGenerator:
                         }
                     },
                 }
-            elif return_type is dict or self._is_dict_type(return_type) or return_type is list or self._is_list_type(return_type):
+            elif (
+                return_type is dict
+                or self._is_dict_type(return_type)
+                or return_type is list
+                or self._is_list_type(return_type)
+            ):
                 responses[status_key] = {
                     "description": response_description,
                     "content": {

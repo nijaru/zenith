@@ -477,7 +477,10 @@ class TestRouteSpecFields:
         responses = spec["paths"]["/users"]["post"]["responses"]
         assert "201" in responses
         # 200 should not be present as the success response
-        assert "200" not in responses or responses.get("200", {}).get("description") == "Successful Response"
+        assert (
+            "200" not in responses
+            or responses.get("200", {}).get("description") == "Successful Response"
+        )
 
     def test_response_description_field(self):
         """Test that response_description from RouteSpec is used."""
@@ -669,9 +672,9 @@ class TestTypeInference:
         generator = OpenAPIGenerator()
         spec = generator.generate_spec([router])
 
-        response_schema = spec["paths"]["/config"]["get"]["responses"]["200"]["content"][
-            "application/json"
-        ]["schema"]
+        response_schema = spec["paths"]["/config"]["get"]["responses"]["200"][
+            "content"
+        ]["application/json"]["schema"]
         assert response_schema["type"] == "object"
         assert response_schema["additionalProperties"] == {"type": "integer"}
 

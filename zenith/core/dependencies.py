@@ -324,6 +324,7 @@ def Inject[T](service_type: type[T] | None = None) -> Any:
     Note: Services should be stateless or thread-safe as they're shared across requests.
     """
     if service_type is None:
+
         async def auto_resolve_service():
             raise NotImplementedError(
                 "Auto-resolution requires type hints. Use Inject(ServiceClass) explicitly."
