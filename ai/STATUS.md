@@ -51,7 +51,10 @@ bf8c47b fix: suppress SQLAlchemy GC warnings in tests and update changelog date
 **Completed:**
 - Phase 1: DI Consolidation ✅
 - Phase 2: OpenAPI Completeness ✅
-- Phase 3: Structured Logging ✅
+- Phase 3: Structured Logging (structlog) ✅
+- Phase 4: Performance (orjson, uvloop, msgspec) ✅
+- Phase 5: Observability (OpenTelemetry via `add_tracing()`) ✅
 
-**Future (Post 1.0):**
-- Request tracing (OpenTelemetry)
+**Next:**
+- slowapi for rate limiting (optional - custom impl works)
+- Database query tracing
