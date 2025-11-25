@@ -31,6 +31,10 @@ def cleanup_sqlalchemy_on_exit():
     """Ensure SQLAlchemy engines are disposed at session end."""
     yield
     # Force garbage collection to clean up before interpreter shutdown
-    import gc
+    # Skip on Python 3.14 due to segfault in greenlet GC interaction
+    import sys
 
-    gc.collect()
+    if sys.version_info < (3, 14):
+        import gc
+
+        gc.collect()
