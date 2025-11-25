@@ -2358,6 +2358,7 @@ benchmark = [
 ]
 dev = [
     { name = "aiosqlite" },
+    { name = "fastapi" },
     { name = "httpx" },
     { name = "pip-audit" },
     { name = "pytest-asyncio" },
@@ -2420,6 +2421,7 @@ benchmark = [
 ]
 dev = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
+    { name = "fastapi", specifier = ">=0.117.1" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "pip-audit", specifier = ">=2.9.0" },
     { name = "pytest-asyncio", specifier = ">=1.1.0" },

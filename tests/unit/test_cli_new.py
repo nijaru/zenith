@@ -500,15 +500,19 @@ class TestTestingModeIntegration:
         assert "RateLimitMiddleware" not in middleware_classes
 
     def test_testing_mode_preserves_other_middleware(self):
-        """Test that testing mode only disables rate limiting, not other middleware."""
+        """Test that testing mode preserves essential middleware."""
         from zenith import Zenith
 
-        app = Zenith(testing=True)
+        # In production mode with testing, should have security headers but no rate limiting
+        app = Zenith(production=True, testing=True)
         middleware_classes = [m.cls.__name__ for m in app.middleware]
 
-        # Should still have other essential middleware
-        assert "SecurityHeadersMiddleware" in middleware_classes
-        assert "RequestLoggingMiddleware" in middleware_classes
+        # Should still have essential middleware
+        assert "ExceptionHandlerMiddleware" in middleware_classes
+        assert "RequestIDMiddleware" in middleware_classes  # Production mode includes this
+        assert "SecurityHeadersMiddleware" in middleware_classes  # Production mode
+        # Rate limiting should be disabled in testing mode
+        assert "RateLimitMiddleware" not in middleware_classes
 
 
 class TestCLIProjectGeneration:

@@ -94,6 +94,9 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin, HTTPClient
         description: str | None = None,
         # Testing mode to disable problematic middleware for test suites
         testing: bool | None = None,
+        # Production mode: enables security headers, rate limiting, compression
+        # None = auto-detect from ZENITH_ENV, True/False = explicit override
+        production: bool | None = None,
     ):
         # Apply performance optimizations if enabled
         if enable_optimizations:
@@ -162,6 +165,14 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin, HTTPClient
         else:
             self.config._debug_explicitly_set = False
 
+        # Determine production mode (affects middleware defaults)
+        # None = auto-detect, True/False = explicit override
+        if production is not None:
+            self.production = production
+        else:
+            # Auto-detect: production/staging environments enable production middleware
+            self.production = self.environment in ("production", "staging")
+
         # Create core application (after environment is detected)
         self.app = Application(self.config)
 
@@ -189,52 +200,61 @@ class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin, HTTPClient
         self._starlette_app = None
 
     def _add_essential_middleware(self) -> None:
-        """Add essential middleware with performance-optimized defaults."""
-        # Use performance-optimized middleware configuration by default
-        from zenith.middleware import (
-            CompressionMiddleware,
-            ExceptionHandlerMiddleware,
-            RateLimitMiddleware,
-            RequestIDMiddleware,
-            RequestLoggingMiddleware,
-            ResponseCacheMiddleware,
-            SecurityHeadersMiddleware,
-        )
+        """Add middleware based on environment.
 
-        # 1. Exception handling (always first)
+        Minimal defaults for fast development, full stack for production.
+        Use `production=True` or `ZENITH_ENV=production` to enable all middleware.
+        """
+        from zenith.middleware import ExceptionHandlerMiddleware
+
+        # === ALWAYS ENABLED (essential, minimal like FastAPI) ===
+        # 1. Exception handling only
         self.add_middleware(ExceptionHandlerMiddleware, debug=self.config.debug)
 
-        # 2. Request ID tracking (early for all subsequent middleware/handlers)
-        self.add_middleware(RequestIDMiddleware)
-
-        # 3. Database session reuse (automatic 15-25% DB performance improvement)
-        self.add_middleware(self._DatabaseSessionMiddleware, database=self.app.database)
-
-        # Apply performance-optimized middleware stack in order:
-        # (fastest middleware first, most expensive last for maximum performance)
-
-        # 4. Security headers (fast header additions)
-        self.add_middleware(SecurityHeadersMiddleware)
-
-        # 5. Response caching (significant performance boost for read-heavy APIs)
-        if not self.config.debug:  # Skip caching in debug mode for development
-            self.add_middleware(ResponseCacheMiddleware)
-
-        # 6. Rate limiting (fast memory/Redis operations) - Skip in testing mode
-        if not self.testing:
-            from zenith.middleware.rate_limit import RateLimit
-
-            self.add_middleware(
+        # === PRODUCTION MODE (full middleware stack) ===
+        if self.production:
+            from zenith.middleware import (
+                CompressionMiddleware,
                 RateLimitMiddleware,
-                default_limits=[RateLimit(requests=100, window=60, per="ip")],
+                RequestIDMiddleware,
+                ResponseCacheMiddleware,
+                SecurityHeadersMiddleware,
             )
 
-        # 7. Minimal logging
-        if self.config.debug:
-            self.add_middleware(RequestLoggingMiddleware)
+            # 2. Request ID tracking (useful for distributed tracing)
+            self.add_middleware(RequestIDMiddleware)
 
-        # 8. Compression last (most expensive)
-        self.add_middleware(CompressionMiddleware)
+            # 3. Database session reuse (15-25% DB performance improvement)
+            self.add_middleware(
+                self._DatabaseSessionMiddleware, database=self.app.database
+            )
+
+            # 4. Security headers
+            self.add_middleware(SecurityHeadersMiddleware)
+
+            # 5. Response caching (skip in debug mode)
+            if not self.config.debug:
+                self.add_middleware(ResponseCacheMiddleware)
+
+            # 6. Rate limiting (skip in testing mode)
+            if not self.testing:
+                from zenith.middleware.rate_limit import RateLimit
+
+                self.add_middleware(
+                    RateLimitMiddleware,
+                    default_limits=[RateLimit(requests=100, window=60, per="ip")],
+                )
+
+            # 7. Compression (most expensive, last)
+            self.add_middleware(CompressionMiddleware)
+
+            self.logger.info("Production middleware enabled")
+
+        # === DEBUG MODE EXTRAS ===
+        if self.config.debug:
+            from zenith.middleware import RequestLoggingMiddleware
+
+            self.add_middleware(RequestLoggingMiddleware)
 
     def _setup_contexts(self) -> None:
         """Auto-register common contexts."""

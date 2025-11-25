@@ -5,13 +5,19 @@ Handles response formatting, content negotiation, template rendering,
 and other response-related concerns.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
 
 from zenith.web.responses import OptimizedJSONResponse
+
+if TYPE_CHECKING:
+    from zenith.core.routing.specs import RouteSpec
+
+# Import RouteSpec at module level to avoid per-request import
+from zenith.core.routing.specs import RouteSpec as _RouteSpec
 
 
 class ResponseProcessor:
@@ -29,11 +35,9 @@ class ResponseProcessor:
         self, result: Any, request: Request, route_spec, background_tasks=None
     ) -> Response:
         """Process handler result into appropriate Response."""
-        from zenith.core.routing.specs import RouteSpec
-
-        # Get handler from route spec
+        # Get handler from route spec (use module-level import)
         handler = (
-            route_spec.handler if isinstance(route_spec, RouteSpec) else route_spec
+            route_spec.handler if isinstance(route_spec, _RouteSpec) else route_spec
         )
 
         # If already a Response, add background tasks if needed
@@ -43,7 +47,7 @@ class ResponseProcessor:
             return result
 
         # Check if route has a specific response_class configured
-        if isinstance(route_spec, RouteSpec) and route_spec.response_class:
+        if isinstance(route_spec, _RouteSpec) and route_spec.response_class:
             # Use the specified response class with background tasks
             response = route_spec.response_class(result)
             if background_tasks:

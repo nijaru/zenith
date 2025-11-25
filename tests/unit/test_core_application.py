@@ -34,8 +34,8 @@ class TestZenithApplication:
         assert hasattr(app, "config")
         assert hasattr(app, "app")  # Core application
         assert hasattr(app, "routers")
-        # Zenith now auto-adds essential middleware for production readiness
-        assert len(app.middleware) >= 6  # Auto-added optimized middleware
+        # Development mode: minimal middleware (ExceptionHandler, RequestID, RequestLogging)
+        assert len(app.middleware) >= 2  # Minimal auto-added middleware
         assert len(app.routers) >= 1  # Has global router
 
     def test_application_with_custom_config(self):
@@ -110,7 +110,8 @@ class TestZenithApplication:
 
     def test_security_headers_integration(self):
         """Test security headers middleware integration."""
-        app = Zenith(debug=True)
+        # Use production mode to have SecurityHeaders by default
+        app = Zenith(debug=True, production=True)
 
         # Get initial middleware count
         initial_count = len(app.middleware)

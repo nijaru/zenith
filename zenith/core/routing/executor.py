@@ -8,6 +8,8 @@ parameter injection, and error handling.
 from __future__ import annotations
 
 import inspect
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any, get_type_hints
 
 from pydantic import BaseModel, ValidationError
@@ -17,11 +19,33 @@ from starlette.responses import Response
 from zenith.exceptions import ValidationException
 from zenith.web.responses import OptimizedJSONResponse
 
+# Import dependency types at module level (not per-request)
+from .dependencies import AuthDependency, FileDependency, InjectDependency
 from .dependency_resolver import DependencyResolver
 from .response_processor import ResponseProcessor
 from .specs import RouteSpec
 
 _POST_METHODS = frozenset(["POST", "PUT", "PATCH"])
+_DEPENDENCY_TYPES = (AuthDependency, InjectDependency, FileDependency)
+
+# Pre-check JSON decoder at module load (not per-request)
+try:
+    import orjson
+
+    _json_loads = orjson.loads
+except ImportError:
+    import json
+
+    _json_loads = json.loads
+
+
+@dataclass(slots=True)
+class _CachedHandlerInfo:
+    """Cached handler metadata to avoid per-request introspection."""
+
+    signature: inspect.Signature
+    type_hints: dict[str, Any]
+    parameters: dict[str, inspect.Parameter]
 
 
 class RouteExecutor:
@@ -39,6 +63,23 @@ class RouteExecutor:
     def __init__(self):
         self.dependency_resolver = DependencyResolver()
         self.response_processor = ResponseProcessor()
+        # Cache handler metadata to avoid per-request introspection
+        self._handler_cache: dict[Callable, _CachedHandlerInfo] = {}
+
+    def _get_handler_info(self, handler: Callable) -> _CachedHandlerInfo:
+        """Get cached handler info or create it."""
+        if handler not in self._handler_cache:
+            sig = inspect.signature(handler)
+            try:
+                hints = get_type_hints(handler)
+            except Exception:
+                hints = {}
+            self._handler_cache[handler] = _CachedHandlerInfo(
+                signature=sig,
+                type_hints=hints,
+                parameters=dict(sig.parameters),
+            )
+        return self._handler_cache[handler]
 
     async def execute_route(
         self, request: Request, route_spec: RouteSpec, app
@@ -117,12 +158,12 @@ class RouteExecutor:
         self, request: Request, handler, app
     ) -> dict[str, Any]:
         """Resolve all arguments needed for the handler."""
-        sig = inspect.signature(handler)
-        type_hints = get_type_hints(handler)
+        # Use cached handler info instead of per-request introspection
+        info = self._get_handler_info(handler)
         kwargs = {}
 
-        for param_name, param in sig.parameters.items():
-            param_type = type_hints.get(param_name, param.annotation)
+        for param_name, param in info.parameters.items():
+            param_type = info.type_hints.get(param_name, param.annotation)
 
             # Direct request injection
             if param_name == "request":
@@ -147,17 +188,8 @@ class RouteExecutor:
 
             # Dependency injection (Context, Auth, File, etc.)
             if param.default != inspect.Parameter.empty:
-                from .dependencies import (
-                    AuthDependency,
-                    FileDependency,
-                    InjectDependency,
-                )
-
-                # Check if this is a dependency marker
-                is_dependency = isinstance(
-                    param.default,
-                    (AuthDependency, InjectDependency, FileDependency),
-                )
+                # Check if this is a dependency marker (using module-level imports)
+                is_dependency = isinstance(param.default, _DEPENDENCY_TYPES)
 
                 # Also check for Depends objects (from FastAPI or our mock)
                 is_depends = (
@@ -254,21 +286,9 @@ class RouteExecutor:
         """Parse JSON body from request with proper error handling."""
         body_bytes = await request.body()
         try:
-            try:
-                import orjson
-
-                return orjson.loads(body_bytes)
-            except ImportError:
-                import json
-
-                try:
-                    body_str = body_bytes.decode("utf-8", errors="strict")
-                    return json.loads(body_str)
-                except UnicodeDecodeError as e:
-                    raise ValidationException(
-                        f"Invalid UTF-8 encoding in request body: {e!s}"
-                    ) from e
+            # Use pre-checked decoder (orjson or json, determined at module load)
+            return _json_loads(body_bytes)
         except Exception as e:
-            if hasattr(e, "__class__") and e.__class__.__name__ == "JSONDecodeError":
+            if "JSONDecodeError" in type(e).__name__ or "decode" in str(type(e)).lower():
                 raise ValidationException(f"Invalid JSON in request body: {e!s}") from e
             raise ValidationException(f"Failed to parse request body: {e!s}") from e

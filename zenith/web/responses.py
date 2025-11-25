@@ -4,8 +4,11 @@ Response utilities for Zenith framework.
 Provides convenient response helpers for common web application needs.
 """
 
+from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Literal
+from uuid import UUID
 
 from starlette.responses import (
     FileResponse,
@@ -19,7 +22,7 @@ from starlette.responses import (
 
 from zenith.core.json_encoder import _json_dumps
 
-# High-performance JSON handling
+# High-performance JSON handling (checked once at module load)
 try:
     import orjson
 
@@ -38,11 +41,7 @@ class OptimizedJSONResponse(Response):
 
     def _json_default(self, obj):
         """Custom JSON encoder for non-standard types."""
-        from datetime import date, datetime
-        from decimal import Decimal
-        from pathlib import Path
-        from uuid import UUID
-
+        # Types imported at module level for performance
         if isinstance(obj, Path):
             return str(obj)
         elif isinstance(obj, (datetime, date)):
@@ -58,8 +57,7 @@ class OptimizedJSONResponse(Response):
 
     def _make_serializable(self, obj):
         """Recursively make object JSON serializable."""
-        from pathlib import Path
-
+        # Path imported at module level for performance
         if isinstance(obj, dict):
             return {k: self._make_serializable(v) for k, v in obj.items()}
         elif isinstance(obj, list):

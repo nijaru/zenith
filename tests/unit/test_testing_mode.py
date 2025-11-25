@@ -110,27 +110,28 @@ class TestTestingModeMiddleware:
 
     def test_testing_mode_disables_rate_limiting(self):
         """Test that testing mode disables rate limiting middleware."""
-        # Normal mode should have rate limiting
-        app_normal = Zenith(testing=False)
-        middleware_classes_normal = [m.cls.__name__ for m in app_normal.middleware]
-        assert "RateLimitMiddleware" in middleware_classes_normal
+        # Production mode should have rate limiting
+        app_production = Zenith(production=True, testing=False)
+        middleware_classes_production = [
+            m.cls.__name__ for m in app_production.middleware
+        ]
+        assert "RateLimitMiddleware" in middleware_classes_production
 
-        # Testing mode should not have rate limiting
-        app_testing = Zenith(testing=True)
+        # Testing mode should not have rate limiting even in production
+        app_testing = Zenith(production=True, testing=True)
         middleware_classes_testing = [m.cls.__name__ for m in app_testing.middleware]
         assert "RateLimitMiddleware" not in middleware_classes_testing
 
     def test_testing_mode_preserves_essential_middleware(self):
         """Test that testing mode preserves essential middleware."""
         with temp_env(ZENITH_ENV="development"):
-            app = Zenith(testing=True)
+            app = Zenith(testing=True, debug=True)
             middleware_classes = [m.cls.__name__ for m in app.middleware]
 
-            # These middleware should still be present in testing mode
+            # These middleware should still be present in testing mode (dev defaults)
             essential_middleware = [
-                "SecurityHeadersMiddleware",
-                "RequestLoggingMiddleware",
-                "RequestIDMiddleware",
+                "ExceptionHandlerMiddleware",
+                "RequestLoggingMiddleware",  # debug=True adds this
             ]
 
             for middleware_name in essential_middleware:
@@ -139,12 +140,14 @@ class TestTestingModeMiddleware:
                 )
 
     def test_testing_mode_middleware_count_difference(self):
-        """Test that testing mode has fewer middleware than normal mode."""
-        app_normal = Zenith(testing=False)
-        app_testing = Zenith(testing=True)
+        """Test that testing mode has fewer middleware than production mode."""
+        # Production mode with all middleware
+        app_production = Zenith(production=True, testing=False)
+        # Production mode with testing=True (no rate limiting)
+        app_testing = Zenith(production=True, testing=True)
 
         # Testing mode should have fewer middleware (due to rate limiting being disabled)
-        assert len(app_testing.middleware) < len(app_normal.middleware)
+        assert len(app_testing.middleware) < len(app_production.middleware)
 
     def test_testing_mode_from_environment_affects_middleware(self):
         """Test that testing mode from environment variable affects middleware."""
@@ -298,20 +301,23 @@ class TestTestingModePerformance:
         testing_time = time.time() - start_testing
 
         # Testing mode should be faster or similar (fewer middleware)
-        assert testing_time <= normal_time * 1.1  # Allow 10% variance
+        # Allow 50% variance due to timing jitter in CI/tests
+        assert testing_time <= normal_time * 1.5
 
     def test_testing_mode_middleware_overhead(self):
         """Test that testing mode has less middleware overhead."""
-        app_normal = Zenith(testing=False)
-        app_testing = Zenith(testing=True)
+        # Production mode has full middleware stack
+        app_production = Zenith(production=True, testing=False)
+        # Testing mode in production disables rate limiting
+        app_testing = Zenith(production=True, testing=True)
 
         # Count middleware instances
-        normal_count = len(app_normal.middleware)
+        production_count = len(app_production.middleware)
         testing_count = len(app_testing.middleware)
 
-        # Testing mode should have fewer middleware
-        assert testing_count < normal_count
-        assert testing_count >= 3  # Should still have essential middleware
+        # Testing mode should have fewer middleware (no rate limiting)
+        assert testing_count < production_count
+        assert testing_count >= 2  # Should still have essential middleware
 
 
 class TestTestingModeDocumentation:
