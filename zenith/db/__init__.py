@@ -256,6 +256,40 @@ class Database:
         except Exception:
             return False
 
+    def enable_tracing(
+        self,
+        slow_threshold_ms: float = 100.0,
+        log_all_queries: bool = False,
+        collect_stats: bool = True,
+    ) -> "QueryTracer":
+        """
+        Enable query tracing with slow query logging.
+
+        Args:
+            slow_threshold_ms: Threshold for slow query warnings (default 100ms)
+            log_all_queries: Log all queries, not just slow ones
+            collect_stats: Collect query statistics
+
+        Returns:
+            QueryTracer instance
+
+        Example:
+            db = Database("postgresql+asyncpg://...")
+            tracer = db.enable_tracing(slow_threshold_ms=50)
+
+            # Later, get stats
+            stats = tracer.get_stats()
+        """
+        from .tracing import QueryTracer
+
+        tracer = QueryTracer(
+            slow_threshold_ms=slow_threshold_ms,
+            log_all_queries=log_all_queries,
+            collect_stats=collect_stats,
+        )
+        tracer.attach(self.engine)
+        return tracer
+
 
 # Import migration system
 from .migrations import MigrationManager, create_migration_manager  # noqa: E402
@@ -273,6 +307,16 @@ from .sqlmodel import (  # noqa: E402
     create_repository,
 )
 
+# Import query tracing
+from .tracing import (  # noqa: E402
+    QueryStats,
+    QueryTracer,
+    disable_query_tracing,
+    enable_query_tracing,
+    get_query_stats,
+    reset_query_stats,
+)
+
 # Export commonly used components
 __all__ = [
     "AsyncSession",
@@ -282,6 +326,8 @@ __all__ = [
     "MigrationManager",
     "Model",
     "QueryBuilder",
+    "QueryStats",
+    "QueryTracer",
     "Relationship",
     # SQLModel components
     "SQLModel",
@@ -291,4 +337,8 @@ __all__ = [
     "create_async_engine",
     "create_migration_manager",
     "create_repository",
+    "disable_query_tracing",
+    "enable_query_tracing",
+    "get_query_stats",
+    "reset_query_stats",
 ]
