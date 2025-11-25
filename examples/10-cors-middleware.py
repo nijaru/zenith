@@ -44,7 +44,7 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
 
-    print("🌐 CORS-enabled API running at http://localhost:8004")
+    print("[*] CORS-enabled API running at http://localhost:8004")
     print("Test from browser console:")
     print(
         "  fetch('http://localhost:8004/api/data').then(r => r.json()).then(console.log)"

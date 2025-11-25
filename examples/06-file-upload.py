@@ -230,7 +230,7 @@ async def health() -> dict:
 if __name__ == "__main__":
     import uvicorn
 
-    print("📁 Enhanced File Upload Example")
+    print("[*] Enhanced File Upload Example")
     print("Upload directory:", UPLOAD_DIR.absolute())
     print("\nEndpoints:")
     print("  POST /upload/modern - Modern enhanced upload (recommended)")

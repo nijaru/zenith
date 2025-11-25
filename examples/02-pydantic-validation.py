@@ -1,5 +1,5 @@
 """
-🔍 Pydantic Validation - Type-Safe Request and Response Models
+[*] Pydantic Validation - Type-Safe Request and Response Models
 
 This example demonstrates:
 - Pydantic models for request validation
@@ -178,11 +178,11 @@ async def health():
 
 
 if __name__ == "__main__":
-    print("🔍 Starting Pydantic Validation Example")
-    print("📍 Server will start at: http://localhost:8002")
-    print("📖 Interactive docs at: http://localhost:8002/docs")
+    print("[*] Starting Pydantic Validation Example")
+    print("Server will start at: http://localhost:8002")
+    print("Interactive docs at: http://localhost:8002/docs")
     print()
-    print("🧪 Try these requests:")
+    print("[*] Try these requests:")
     print('   POST /users {"name": "Alice", "email": "alice@example.com", "age": 25}')
     print(
         '   POST /users {"name": "", "email": "invalid", "age": -5}  # Will fail validation'

@@ -1,5 +1,5 @@
 """
-🧪 Zenith Testing Patterns - Comprehensive Testing Guide
+[*] Zenith Testing Patterns - Comprehensive Testing Guide
 
 This example demonstrates all testing patterns and utilities available in Zenith,
 including API testing, business logic testing, authentication testing, and
@@ -162,7 +162,7 @@ app = Zenith()
 async def root():
     """Public endpoint for basic testing."""
     return {
-        "message": "🧪 Testing Patterns Demo",
+        "message": "[*] Testing Patterns Demo",
         "timestamp": datetime.utcnow().isoformat(),
         "endpoints": {
             "GET /users/{user_id}": "Get user (protected)",
@@ -647,56 +647,56 @@ class TestFactories:
 
 async def run_demo_tests():
     """Run a subset of tests for demo purposes."""
-    print("🧪 Running Zenith Testing Patterns Demo\n")
+    print("[*] Running Zenith Testing Patterns Demo\n")
 
     # 1. Business Logic Testing Demo
-    print("📋 Business Logic Testing:")
+    print("[*] Business Logic Testing:")
     async with TestService(UserService) as users:
         user_data = UserCreate(email="demo@example.com", name="Demo User")
         user = await users.create_user(user_data)
-        print(f"   ✅ Created user: {user.name} ({user.email})")
+        print(f"   Created user: {user.name} ({user.email})")
 
         retrieved = await users.get_user(user.id)
-        print(f"   ✅ Retrieved user: {retrieved.name}")
+        print(f"   Retrieved user: {retrieved.name}")
 
         count = await users.get_user_count()
-        print(f"   ✅ Total users: {count}")
+        print(f"   Total users: {count}")
 
     # 2. API Testing Demo
-    print("\n🌐 API Endpoint Testing:")
+    print("\n[*] API Endpoint Testing:")
     async with TestClient(app) as client:
         # Test public endpoint
         response = await client.get("/")
-        print(f"   ✅ Public endpoint: {response.status_code}")
+        print(f"   Public endpoint: {response.status_code}")
 
         # Test protected endpoint without auth
         response = await client.get("/users/1")
-        print(f"   ✅ Protected without auth: {response.status_code} (Unauthorized)")
+        print(f"   Protected without auth: {response.status_code} (Unauthorized)")
 
         # Test with authentication
         client.set_auth_token("demo@example.com", role="admin")
         response = await client.get("/admin/users")
-        print(f"   ✅ Admin endpoint with auth: {response.status_code}")
+        print(f"   Admin endpoint with auth: {response.status_code}")
 
     # 3. Performance Testing Demo
-    print("\n⚡ Performance Testing:")
+    print("\n[*] Performance Testing:")
     async with TestClient(app) as client:
         start_time = time.time()
         response = await client.get("/")
         duration = time.time() - start_time
-        print(f"   ✅ Response time: {duration:.3f}s")
+        print(f"   Response time: {duration:.3f}s")
 
         # Test slow endpoint
         start_time = time.time()
         response = await client.post("/api/slow", json={"delay": 0.2})
         duration = time.time() - start_time
-        print(f"   ✅ Slow endpoint: {duration:.3f}s (expected ~0.2s)")
+        print(f"   Slow endpoint: {duration:.3f}s (expected ~0.2s)")
 
     print("\n✨ Demo completed! Run with pytest for full test suite.")
 
 
 if __name__ == "__main__":
-    print("🧪 Zenith Testing Patterns Example")
+    print("[*] Zenith Testing Patterns Example")
     print("=" * 50)
     print("This example demonstrates comprehensive testing patterns.")
     print("Run as: python examples/13-testing-patterns.py (demo mode)")

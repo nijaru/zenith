@@ -1,5 +1,5 @@
 """
-🌐 Full-Stack SPA Example - Zenith + Frontend Framework
+[*] Full-Stack SPA Example - Zenith + Frontend Framework
 
 This example demonstrates how to use Zenith as both an API server and static file
 server for modern frontend frameworks (React, Vue, SolidJS, Svelte, Angular).
@@ -259,7 +259,7 @@ def setup_frontend_serving():
             and any(Path(dir_path).iterdir())
         ):
             frontend_dir = dir_path
-            print(f"📁 Found frontend files: {dir_path} ({description})")
+            print(f"[*] Found frontend files: {dir_path} ({description})")
             break
 
     if frontend_dir:
@@ -268,9 +268,9 @@ def setup_frontend_serving():
 
         # Mount the SPA with client-side routing support (new clean API)
         app.spa(frontend_dir, max_age=cache_time)
-        print(f"🌐 SPA serving: / -> {frontend_dir}")
+        print(f"[*] SPA serving: / -> {frontend_dir}")
         print(
-            f"⚡ Cache policy: {cache_time}s ({'development' if app.config.debug else 'production'})"
+            f"[*] Cache policy: {cache_time}s ({'development' if app.config.debug else 'production'})"
         )
     else:
         # No frontend found, serve a simple HTML page
@@ -292,7 +292,7 @@ def setup_frontend_serving():
                 </style>
             </head>
             <body>
-                <h1>🚀 Zenith Full-Stack Application</h1>
+                <h1>Zenith Full-Stack Application</h1>
                 <p>Your Zenith API is running! Build your frontend and place it in one of these directories:</p>
                 <ul>
                     <li><code>frontend/dist/</code> - SolidJS, Vue</li>
@@ -314,7 +314,7 @@ def setup_frontend_serving():
                     <p>PATCH /api/tasks/1 - Update task</p>
 
                     <p><strong>Documentation:</strong></p>
-                    <p><a href="/docs">📖 API Documentation</a></p>
+                    <p><a href="/docs">API Documentation</a></p>
                 </div>
 
                 <h2>Frontend Examples</h2>
@@ -364,7 +364,7 @@ def setup_static_assets():
 # ============================================================================
 
 if __name__ == "__main__":
-    print("🌐 Starting Zenith Full-Stack Application")
+    print("[*] Starting Zenith Full-Stack Application")
     print("=" * 50)
 
     # Configure frontend and static asset serving
@@ -372,19 +372,19 @@ if __name__ == "__main__":
     setup_static_assets()
 
     # Show configuration
-    print(f"🔧 Environment: {'Development' if app.config.debug else 'Production'}")
-    print("📍 Server: http://localhost:8017")
-    print("📖 API Docs: http://localhost:8017/docs")
+    print(f"[*] Environment: {'Development' if app.config.debug else 'Production'}")
+    print("Server: http://localhost:8017")
+    print("API Docs: http://localhost:8017/docs")
     print("🏥 Health: http://localhost:8017/api/health")
 
-    print("\n💡 Frontend Framework Support:")
-    print("   • SolidJS: Place build output in frontend/dist/")
-    print("   • React: Place build output in frontend/build/")
-    print("   • Vue: Place build output in frontend/dist/")
-    print("   • Svelte: Place build output in build/")
-    print("   • Angular: Place build output in dist/app-name/")
+    print("\n[*] Frontend Framework Support:")
+    print("    - SolidJS: Place build output in frontend/dist/")
+    print("    - React: Place build output in frontend/build/")
+    print("    - Vue: Place build output in frontend/dist/")
+    print("    - Svelte: Place build output in build/")
+    print("    - Angular: Place build output in dist/app-name/")
 
-    print("\n🚀 Starting server...")
+    print("\nStarting server...")
 
     app.run(
         host="127.0.0.1",

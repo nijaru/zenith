@@ -21,7 +21,7 @@ from zenith.db import (
     ZenithModel as Model,
 )  # Enhanced model with where/find/create methods
 
-# 🎯 Zero-config setup - just works!
+# [*] Zero-config setup - just works!
 app = Zenith()
 
 # ============================================================================
@@ -210,9 +210,9 @@ app.include_router(api_v1)
 
 if __name__ == "__main__":
     print("🏗️ Starting Modern Database Patterns Example")
-    print("📍 Server will start at: http://localhost:8003")
+    print("Server will start at: http://localhost:8003")
     print()
-    print("🧪 Try these Modern requests:")
+    print("[*] Try these Modern requests:")
     print("   GET /api/v1/products")
     print("   GET /api/v1/products?category=Electronics")
     print(
@@ -222,16 +222,16 @@ if __name__ == "__main__":
     print("   GET /api/v1/orders")
     print("   GET /api/v1/products/1")
     print()
-    print("💡 Modern DX Features:")
-    print("   • Enhanced Model with database operations")
-    print("   • Product.where(category='Electronics').order_by('-created_at').all()")
-    print("   • Product.find_or_404(id) - automatic 404 handling")
-    print("   • Product.create(**data) - no session management")
-    print("   • No session management - ZenithModel handles it automatically")
-    print("   • Zero-config setup with intelligent defaults")
-    print("   • Router grouping for API organization")
+    print("[*] Modern DX Features:")
+    print("    - Enhanced Model with database operations")
+    print("    - Product.where(category='Electronics').order_by('-created_at').all()")
+    print("    - Product.find_or_404(id) - automatic 404 handling")
+    print("    - Product.create(**data) - no session management")
+    print("    - No session management - ZenithModel handles it automatically")
+    print("    - Zero-config setup with intelligent defaults")
+    print("    - Router grouping for API organization")
     print()
-    print("📝 To add sample data, POST to /api/v1/products with:")
+    print("[*] To add sample data, POST to /api/v1/products with:")
     print("   ", SAMPLE_PRODUCTS[0])
     print()
 

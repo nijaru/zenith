@@ -1,5 +1,5 @@
 """
-🔄 Advanced Background Processing - Redis-Powered Job Queues
+[*] Advanced Background Processing - Redis-Powered Job Queues
 
 This example demonstrates sophisticated background job processing:
 - Redis-backed job queues with persistence
@@ -74,7 +74,7 @@ async def process_image(image_url: str, sizes: list[str]) -> dict:
     for size in sizes:
         await asyncio.sleep(0.5)  # Simulate processing
         results[size] = f"{image_url}_{size}.jpg"
-        print(f"   ✅ Generated {size} version")
+        print(f"   Generated {size} version")
 
     return {"processed": results}
 
@@ -92,7 +92,7 @@ async def cleanup_old_sessions():
 @schedule(every=timedelta(hours=1))  # Every hour
 async def generate_reports():
     """Scheduled job to generate reports."""
-    print(f"📊 Generating reports at {datetime.utcnow()}")
+    print(f"[*] Generating reports at {datetime.utcnow()}")
     # Report generation logic here
     reports = ["daily_summary", "user_stats", "performance_metrics"]
     print(f"   Generated {len(reports)} reports")
@@ -226,8 +226,8 @@ async def root() -> dict:
 
 async def run_worker():
     """Run the background worker process."""
-    print("🚀 Starting Zenith job worker...")
-    print("📡 Connecting to Redis...")
+    print("Starting Zenith job worker...")
+    print("[*] Connecting to Redis...")
 
     # Create worker with the global job manager's queue
     worker = Worker(
@@ -235,7 +235,7 @@ async def run_worker():
         concurrency=4,  # Process up to 4 jobs concurrently
     )
 
-    print("✅ Worker ready, waiting for jobs...")
+    print("Worker ready, waiting for jobs...")
     print("   Registered jobs:", list(job_manager.jobs.keys()))
     print("   Press Ctrl+C to stop")
 
@@ -243,7 +243,7 @@ async def run_worker():
         # Start the worker - it will process jobs from the queue
         await worker.run()
     except KeyboardInterrupt:
-        print("\n👋 Shutting down worker...")
+        print("\nShutting down worker...")
 
 
 # ============================================================================
@@ -255,16 +255,16 @@ async def run_scheduler():
     """Run the job scheduler for recurring tasks."""
     from zenith.jobs.scheduler import get_scheduler
 
-    print("⏰ Starting Zenith job scheduler...")
+    print("[*] Starting Zenith job scheduler...")
     scheduler = get_scheduler()
 
-    print("✅ Scheduler ready, managing recurring jobs...")
+    print("Scheduler ready, managing recurring jobs...")
     print("   Press Ctrl+C to stop")
 
     try:
         await scheduler.run()
     except KeyboardInterrupt:
-        print("\n👋 Shutting down scheduler...")
+        print("\nShutting down scheduler...")
 
 
 # ============================================================================
@@ -294,9 +294,9 @@ if __name__ == "__main__":
         # Run as API server
         import uvicorn
 
-        print("🚀 Starting Zenith Jobs API")
-        print("📍 API available at: http://localhost:8000")
-        print("📖 Docs at: http://localhost:8000/docs")
+        print("Starting Zenith Jobs API")
+        print("API available at: http://localhost:8000")
+        print("Docs at: http://localhost:8000/docs")
         print("\n⚠️  Make sure Redis is running and start workers separately!")
         print("\nWorker commands:")
         print("  python examples/16-background-jobs.py worker")

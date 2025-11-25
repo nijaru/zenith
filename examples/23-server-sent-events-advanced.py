@@ -10,13 +10,13 @@ This example demonstrates comprehensive SSE functionality including:
 - Error handling and recovery
 
 Key features demonstrated:
-✅ Basic SSE streaming
-✅ Multi-channel subscriptions
-✅ Real-time performance metrics
-✅ Backpressure handling
-✅ Error recovery
-✅ Live dashboard updates
-✅ WebSocket alternative patterns
+Basic SSE streaming
+Multi-channel subscriptions
+Real-time performance metrics
+Backpressure handling
+Error recovery
+Live dashboard updates
+WebSocket alternative patterns
 """
 
 import asyncio
@@ -688,8 +688,8 @@ async def demo_page():
 @app.on_startup
 async def startup():
     """Initialize demo data and background tasks."""
-    print("🚀 Zenith SSE Demo Starting...")
-    print("📊 Initializing demo data...")
+    print("Zenith SSE Demo Starting...")
+    print("[*] Initializing demo data...")
 
     # Add some initial notifications
     initial_notifications = [
@@ -731,33 +731,33 @@ async def startup():
     ]
     chat_messages.extend(initial_messages)
 
-    print("✅ SSE Demo ready!")
+    print("SSE Demo ready!")
     print()
-    print("🔗 Available endpoints:")
-    print("   📍 Basic Stream: /events/basic")
-    print("   📊 Dashboard: /events/dashboard")
+    print("Available endpoints:")
+    print("   Basic Stream: /events/basic")
+    print("   [*] Dashboard: /events/dashboard")
     print("   🔔 Notifications: /events/notifications")
-    print("   💬 Chat: /events/chat")
-    print("   📈 Monitoring: /events/monitoring")
+    print("   [*] Chat: /events/chat")
+    print("   [*] Monitoring: /events/monitoring")
     print("   📺 Channels: /events/channel/{news|sports|stocks}")
-    print("   ⚡ Performance: /events/performance")
+    print("   [*] Performance: /events/performance")
     print("   🚨 Error Demo: /events/error-demo")
     print()
-    print("🎮 Control endpoints:")
+    print("[*] Control endpoints:")
     print("   POST /trigger/notification - Create notification")
     print("   POST /trigger/chat - Send chat message")
     print("   POST /trigger/load - Simulate high load")
     print("   POST /trigger/dashboard - Update dashboard")
     print()
-    print("📈 Monitoring:")
+    print("[*] Monitoring:")
     print("   GET /stats - SSE statistics")
     print("   GET /demo - HTML test client")
 
 
 if __name__ == "__main__":
     print("🌟 Starting Zenith SSE Demo Server")
-    print("🔗 Demo page: http://localhost:8020/demo")
-    print("📊 Statistics: http://localhost:8020/stats")
+    print("Demo page: http://localhost:8020/demo")
+    print("[*] Statistics: http://localhost:8020/stats")
     print()
 
     import uvicorn

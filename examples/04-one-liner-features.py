@@ -20,7 +20,7 @@ db_path = example_dir / "oneliner_example.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-demo-only-32-chars-long")
 
-# 🚀 Create app and add features in just 4 lines!
+# Create app and add features in just 4 lines!
 app = Zenith()
 app.add_auth()  # Adds JWT auth + /auth/login endpoint
 app.add_admin()  # Adds admin dashboard at /admin
@@ -34,8 +34,8 @@ async def home():
     return {
         "message": "One-liner Features Demo",
         "features_added": [
-            "🔐 Authentication - POST /auth/login",
-            "⚡ Admin Dashboard - GET /admin",
+            "[*] Authentication - POST /auth/login",
+            "[*] Admin Dashboard - GET /admin",
             "📚 API Documentation - GET /docs",
         ],
         "try_these": [
@@ -58,15 +58,15 @@ async def protected_route():
 
 
 if __name__ == "__main__":
-    print("🚀 Starting One-liner Features Demo")
-    print("📍 Server will start at: http://localhost:8017")
+    print("Starting One-liner Features Demo")
+    print("Server will start at: http://localhost:8017")
     print()
     print("✨ Features added in just 3 lines of code:")
     print("   app.add_auth()   - JWT authentication")
     print("   app.add_admin()  - Admin dashboard")
     print("   app.add_api()    - API documentation")
     print()
-    print("🔗 Try these endpoints:")
+    print("Try these endpoints:")
     print("   GET /            - Homepage with feature overview")
     print("   POST /auth/login - Login (any username/password works)")
     print("   GET /admin       - Admin dashboard")

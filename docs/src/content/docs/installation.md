@@ -46,7 +46,7 @@ Zenith bundles commonly needed dependencies so you can start building immediatel
 
 ## Requirements
 
-- **Python 3.12-3.13**
+- **Python 3.12-3.14**
 - **pip** or **uv** package manager
 - **PostgreSQL** or **SQLite** for database (optional)
 - **Redis** for caching and background tasks (optional)
@@ -259,7 +259,7 @@ zen serve --workers 4
 ## Troubleshooting
 
 ### Import Errors
-- Ensure Python 3.12-3.13 is being used
+- Ensure Python 3.12-3.14 is being used
 - Check virtual environment is activated
 - Reinstall: `pip install --force-reinstall zenithweb`
 

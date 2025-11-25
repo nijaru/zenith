@@ -237,13 +237,13 @@ if __name__ == "__main__":
     import uvicorn
 
     print("🌊 Starting Server-Sent Events Demo")
-    print("📍 Open http://localhost:8000 in your browser")
-    print("🔄 The page will auto-connect to the event stream")
-    print("\n💡 Features demonstrated:")
-    print("   • Real-time event streaming")
-    print("   • Multiple event types")
-    print("   • Automatic reconnection in browser")
-    print("   • Built-in backpressure handling")
-    print("   • Clean async generator pattern")
+    print("Open http://localhost:8000 in your browser")
+    print("[*] The page will auto-connect to the event stream")
+    print("\n[*] Features demonstrated:")
+    print("    - Real-time event streaming")
+    print("    - Multiple event types")
+    print("    - Automatic reconnection in browser")
+    print("    - Built-in backpressure handling")
+    print("    - Clean async generator pattern")
 
     uvicorn.run(app, host="0.0.0.0", port=8000)

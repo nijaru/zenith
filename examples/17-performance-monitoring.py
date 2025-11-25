@@ -1,5 +1,5 @@
 """
-📊 Zenith Performance Monitoring - Complete Observability Stack
+[*] Zenith Performance Monitoring - Complete Observability Stack
 
 This example demonstrates comprehensive performance monitoring, health checks,
 metrics collection, and profiling capabilities for production applications.
@@ -431,7 +431,7 @@ async def expensive_operation(request: ExpensiveRequest):
     metrics.gauge("last_expensive_operation_duration", duration)
 
     return {
-        "message": "✅ Expensive operation completed",
+        "message": "Expensive operation completed",
         "result": result,
         "performance_notes": {
             "cached": "Result cached for 5 minutes",
@@ -519,16 +519,16 @@ async def setup_monitoring():
     metrics.gauge("application_startup_timestamp", app.startup_time)
     metrics.counter("application_starts")
 
-    print("📊 Performance monitoring initialized")
+    print("[*] Performance monitoring initialized")
     print(f"🏥 Health checks: {len(health_manager.checks)} configured")
-    print("📈 Metrics collection active")
-    print("⚡ Performance profiling enabled")
+    print("[*] Metrics collection active")
+    print("[*] Performance profiling enabled")
 
 
 @app.on_shutdown
 async def cleanup_monitoring():
     """Clean up monitoring resources."""
-    print("📊 Performance monitoring shutdown")
+    print("[*] Performance monitoring shutdown")
 
     # Final metrics
     uptime = time.time() - app.startup_time
@@ -543,7 +543,7 @@ async def cleanup_monitoring():
 # ============================================================================
 
 MONITORING_CONFIG = """
-📊 MONITORING CONFIGURATION GUIDE
+[*] MONITORING CONFIGURATION GUIDE
 
 🏥 Health Checks:
    - GET /health - Basic liveness probe
@@ -551,19 +551,19 @@ MONITORING_CONFIG = """
    - Configure timeouts and criticality levels
    - Use for K8s liveness/readiness probes
 
-📈 Metrics Collection:
+[*] Metrics Collection:
    - GET /metrics - Prometheus-compatible export
    - Automatic request metrics (count, duration, errors)
    - Custom business metrics with labels
    - System resource monitoring
 
-⚡ Performance Optimization:
+[*] Performance Optimization:
    - @cached decorator for expensive operations
    - Smart cache key generation
    - TTL-based cache expiration
    - Cache hit rate monitoring
 
-🔍 Profiling & Debugging:
+[*] Profiling & Debugging:
    - Function-level performance profiling
    - Request correlation and tracking
    - Resource usage monitoring
@@ -581,7 +581,7 @@ print(MONITORING_CONFIG)
 
 
 if __name__ == "__main__":
-    print("📊 Starting Zenith Performance Monitoring Demo")
+    print("[*] Starting Zenith Performance Monitoring Demo")
     print("Visit: http://localhost:8002")
     print("Try /health, /metrics, and /performance endpoints!")
     print("\n" + MONITORING_CONFIG)

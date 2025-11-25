@@ -1,5 +1,5 @@
 """
-🛤️  Basic Routing - Path Parameters and Query Strings
+[*] Basic Routing - Path Parameters and Query Strings
 
 This example demonstrates:
 - Path parameters with type hints
@@ -78,9 +78,9 @@ async def health():
 
 
 if __name__ == "__main__":
-    print("🛤️  Starting Basic Routing Example")
-    print("📍 Server will start at: http://localhost:8001")
-    print("🔗 Try these endpoints:")
+    print("[*] Starting Basic Routing Example")
+    print("Server will start at: http://localhost:8001")
+    print("Try these endpoints:")
     print("   GET /users/123")
     print("   GET /search?q=python&limit=5")
     print("   POST /users/1/posts (with title & content)")

@@ -119,7 +119,7 @@ async def chat_home():
     </style>
 </head>
 <body>
-    <h1>🚀 Zenith WebSocket Chat</h1>
+    <h1>Zenith WebSocket Chat</h1>
 
     <div>
         <input type="text" id="nameInput" placeholder="Your name" value="User">
@@ -280,7 +280,7 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
 
-    print("🚀 WebSocket Chat Server")
+    print("WebSocket Chat Server")
     print("Open your browser to: http://localhost:8007")
     print("API endpoints:")
     print("  GET /api/rooms - List active rooms")

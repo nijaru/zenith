@@ -28,7 +28,7 @@ example_dir = Path(__file__).resolve().parent
 db_path = example_dir / "modern_dx_example.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 
-# 🚀 Zero-config application setup
+# Zero-config application setup
 # This automatically detects environment and configures:
 # - Database (SQLite for development)
 # - CORS (permissive for dev, secure for prod)
@@ -37,7 +37,7 @@ os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
 app = Zenith()
 
 
-# 📋 Modern Models with Enhanced Model
+# [*] Modern Models with Enhanced Model
 class User(Model, table=True):
     """User model with Modern convenience methods."""
 
@@ -59,7 +59,7 @@ class Post(Model, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
 
-# 🎯 Routes with Enhanced DX
+# [*] Routes with Enhanced DX
 
 
 @app.get("/")
@@ -201,15 +201,15 @@ async def setup_database():
     # Create tables
     await db.create_all()
 
-    print("✅ Database tables created successfully")
-    print("🎯 Modern DX patterns are ready to use!")
-    print("📝 Try the endpoints to see Enhanced Model in action")
+    print("Database tables created successfully")
+    print("[*] Modern DX patterns are ready to use!")
+    print("[*] Try the endpoints to see Enhanced Model in action")
 
 
 if __name__ == "__main__":
-    print("🚀 Starting Modern DX Example")
-    print("📍 Server will start at: http://localhost:8016")
-    print("🔗 Try these endpoints:")
+    print("Starting Modern DX Example")
+    print("Server will start at: http://localhost:8016")
+    print("Try these endpoints:")
     print("   GET /           - Framework info and available endpoints")
     print("   GET /users      - List active users (Clean queries)")
     print('   POST /users     - Create user (JSON: {"name": "...", "email": "..."})')
@@ -217,9 +217,9 @@ if __name__ == "__main__":
     print("   GET /posts      - List published posts")
     print('   POST /posts     - Create post (JSON: {"title": "...", "content": "..."})')
     print("   GET /stats      - Database statistics")
-    print("📖 Interactive docs: http://localhost:8016/docs")
+    print("Interactive docs: http://localhost:8016/docs")
     print()
-    print("🎨 DX Improvements showcased:")
+    print("DX Improvements showcased:")
     print("   ✨ Zero-config setup - app = Zenith() just works")
     print("   ✨ Modern models - User.where(active=True).limit(10)")
     print("   ✨ No session management - ZenithModel handles it automatically")

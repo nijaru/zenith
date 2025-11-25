@@ -1,5 +1,5 @@
 """
-🛡️ Zenith Security Middleware - Complete Production Security Stack
+[*] Zenith Security Middleware - Complete Production Security Stack
 
 This example demonstrates a comprehensive security configuration for production
 applications, including all security headers, CSRF protection, compression,
@@ -199,7 +199,7 @@ async def security_overview():
     security_info = get_security_info()
 
     return {
-        "message": "🛡️ Welcome to Zenith Security Middleware Demo",
+        "message": "[*] Welcome to Zenith Security Middleware Demo",
         "security": security_info.model_dump(),
         "timestamp": datetime.utcnow().isoformat(),
         "endpoints": {
@@ -219,7 +219,7 @@ async def view_security_headers():
     headers_info = describe_security_headers()
 
     return {
-        "message": "🔍 Security Headers Information",
+        "message": "[*] Security Headers Information",
         "headers_applied": headers_info.headers,
         "descriptions": headers_info.description,
         "note": "These headers are automatically applied to all responses",
@@ -237,7 +237,7 @@ async def view_security_headers():
 async def request_metrics():
     """Show request correlation and basic metrics."""
     return {
-        "message": "📊 Request Metrics & Correlation",
+        "message": "[*] Request Metrics & Correlation",
         "timestamp": datetime.utcnow().isoformat(),
         "features": {
             "request_id": "Every request gets unique X-Request-ID header",
@@ -264,7 +264,7 @@ async def request_metrics():
 async def secure_page():
     """CSRF-protected page - provides token for subsequent requests."""
     return {
-        "message": "🔒 Secure Page - CSRF Protection Active",
+        "message": "[*] Secure Page - CSRF Protection Active",
         "csrf_info": {
             "token_location": "Check 'csrf_token' cookie in browser",
             "header_name": "X-CSRF-Token",
@@ -287,13 +287,13 @@ async def secure_page():
 async def secure_api(data: SecureData):
     """CSRF-protected API endpoint."""
     return {
-        "message": "✅ Secure API Request Successful!",
+        "message": "Secure API Request Successful!",
         "received_data": data.model_dump(),
         "security_checks": {
-            "csrf_validated": "✅ CSRF token validated",
-            "headers_applied": "✅ Security headers added",
-            "request_logged": "✅ Request logged with correlation ID",
-            "response_compressed": "✅ Response will be compressed if eligible",
+            "csrf_validated": "CSRF token validated",
+            "headers_applied": "Security headers added",
+            "request_logged": "Request logged with correlation ID",
+            "response_compressed": "Response will be compressed if eligible",
         },
         "timestamp": datetime.utcnow().isoformat(),
     }
@@ -327,38 +327,38 @@ def get_csrf_error_info():
 PRODUCTION_CHECKLIST = """
 🏭 PRODUCTION SECURITY CHECKLIST
 
-✅ Security Headers:
+Security Headers:
    - HSTS with preload enabled
    - CSP configured for your specific needs
    - X-Frame-Options set to DENY
    - X-Content-Type-Options: nosniff
 
-✅ CSRF Protection:
+CSRF Protection:
    - Enabled for state-changing operations
    - Secure token generation
    - Proper token validation
 
-✅ HTTPS Configuration:
+HTTPS Configuration:
    - Force HTTPS in production (force_https=True)
    - Secure cookies (secure=True)
    - HSTS headers configured
 
-✅ Compression:
+Compression:
    - Enabled for appropriate content types
    - Configured compression thresholds
    - Monitoring compression ratios
 
-✅ Request Tracking:
+Request Tracking:
    - Unique request IDs for correlation
    - Comprehensive request logging
    - Structured log format
 
-🔧 Environment Variables:
+[*] Environment Variables:
    - SECRET_KEY: Strong random key for CSRF
    - HTTPS_ENABLED: Enable HTTPS enforcement
    - SECURITY_LEVEL: Development/staging/production
 
-📊 Monitoring:
+[*] Monitoring:
    - CSP violation reports
    - CSRF token failures
    - Security header compliance
@@ -369,7 +369,7 @@ print(PRODUCTION_CHECKLIST)
 
 
 if __name__ == "__main__":
-    print("🛡️ Starting Zenith Security Middleware Demo")
+    print("[*] Starting Zenith Security Middleware Demo")
     print("Visit: http://localhost:8001")
     print("Try the different endpoints to see security features in action!")
     print("\n" + PRODUCTION_CHECKLIST)

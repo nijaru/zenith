@@ -42,15 +42,15 @@ async def send_email(to: str, subject: str, body: str):
             "sent_at": datetime.now().isoformat(),
         }
     )
-    print(f"✅ Email sent to {to}")
+    print(f"Email sent to {to}")
 
 
 @background_task
 async def process_analytics(event: str, data: dict):
     """Process analytics event in background."""
-    print(f"📊 Processing analytics: {event}")
+    print(f"[*] Processing analytics: {event}")
     await asyncio.sleep(1)  # Simulate processing
-    print(f"✅ Analytics processed: {event}")
+    print(f"Analytics processed: {event}")
 
 
 @background_task
@@ -58,7 +58,7 @@ def cleanup_temp_files(pattern: str):
     """Clean up temporary files (sync task)."""
     print(f"🗑️ Cleaning up files matching: {pattern}")
     # In real app, would delete files here
-    print("✅ Cleanup completed")
+    print("Cleanup completed")
 
 
 # Routes
@@ -141,7 +141,7 @@ async def health() -> dict:
 if __name__ == "__main__":
     import uvicorn
 
-    print("🚀 Background Tasks Example")
+    print("Background Tasks Example")
     print("Try these endpoints:")
     print("  POST /register - Register user and send email in background")
     print("  POST /send-newsletter - Send newsletter to multiple users")

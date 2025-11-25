@@ -747,7 +747,7 @@ async def test_user_creation():
 
         # Step 4: Verify security was applied
         assert user.password_hash != "securepassword123"  # Must be hashed
-        assert user.password_hash.startswith("$2b$")  # bcrypt format
+        assert user.password_hash.startswith("$argon2")  # Argon2 format
 
         # Step 5: Verify side effects (if needed)
         # In real test, you might check:

@@ -223,8 +223,8 @@ async def test_rate_limits():
 
 
 if __name__ == "__main__":
-    print("🚦 Starting Rate Limiting Example")
-    print("📝 Available endpoints:")
+    print("[*] Starting Rate Limiting Example")
+    print("[*] Available endpoints:")
     print("  GET  /               - Root (exempt)")
     print("  GET  /health         - Health check (exempt)")
     print("  POST /login          - Login (default limits)")
@@ -233,12 +233,12 @@ if __name__ == "__main__":
     print("  GET  /protected/user-data - Protected (20/min per user)")
     print("  GET  /test-limits    - Testing endpoint")
     print()
-    print("🧪 Test rate limits:")
+    print("[*] Test rate limits:")
     print("  1. Make 11+ requests to /public within 1 minute")
     print("  2. Make 6+ requests to /api/data within 1 minute")
     print("  3. Login and make 21+ requests to /protected/user-data within 1 minute")
     print()
-    print("🔑 Test accounts:")
+    print("[*] Test accounts:")
     print("  user@example.com / password123")
     print("  premium@example.com / premium123")
     print()

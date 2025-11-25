@@ -85,14 +85,14 @@ async def startup():
     """Create database tables on startup."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    print("✅ Database tables created")
+    print("Database tables created")
 
 
 @app.on_shutdown
 async def shutdown():
     """Clean up database connections on shutdown."""
     await engine.dispose()
-    print("✅ Database connections closed")
+    print("Database connections closed")
 
 
 @app.get("/users", response_model=list[User])
@@ -176,18 +176,18 @@ async def test_concurrent_requests():
             assert r.status_code == 200, f"Failed: {r.text}"
             assert len(r.json()) == 5, "Should have 5 users"
 
-        print("✅ Concurrent request test passed!")
+        print("Concurrent request test passed!")
 
 
 if __name__ == "__main__":
-    print("🚀 Starting Async Database Example with Request-Scoped Sessions")
-    print("📍 Server will start at: http://localhost:8016")
-    print("\n📖 This example demonstrates:")
-    print("   • Request-scoped database sessions")
-    print("   • Proper async context isolation")
-    print("   • No event loop binding issues")
-    print("   • Safe concurrent request handling")
-    print("\n🔗 Try these endpoints:")
+    print("Starting Async Database Example with Request-Scoped Sessions")
+    print("Server will start at: http://localhost:8016")
+    print("\nThis example demonstrates:")
+    print("    - Request-scoped database sessions")
+    print("    - Proper async context isolation")
+    print("    - No event loop binding issues")
+    print("    - Safe concurrent request handling")
+    print("\nTry these endpoints:")
     print("   GET  /users           - List all users")
     print("   POST /users           - Create a user")
     print("   GET  /users/{id}      - Get specific user")
