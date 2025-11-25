@@ -2,42 +2,32 @@
 
 | Metric | Value | Updated |
 |--------|-------|---------|
-| Version | v0.0.12 (live on PyPI) | 2025-11-24 |
+| Version | v0.0.13 (live on PyPI) | 2025-11-25 |
 | Python | 3.12-3.14 | 2025-11-24 |
-| Test Coverage | 100% passing (884 tests) | 2025-11-24 |
-| Build Status | Passing (all Python versions) | 2025-11-24 |
-| Current Focus | Post-release | 2025-11-24 |
+| Test Coverage | 100% passing (899 tests) | 2025-11-25 |
+| Build Status | Passing (all Python versions) | 2025-11-25 |
+| Current Focus | Post-release | 2025-11-25 |
 
-## Session Summary (2025-11-24)
+## Session Summary (2025-11-25)
 
-**Code Review & Cleanup:**
-- Reviewed v0.0.12 architecture changes (DI, OpenAPI, logging, race condition fix)
-- Removed 34K lines of stale code (docs/zenith/, docs/tests/, review artifacts)
-- Fixed SQLAlchemy GC warnings in tests (pytest filterwarnings + conftest.py)
-- Updated Astro docs dependencies (5.14→5.16) for security
+**v0.0.13 Release - Performance Optimizations:**
+- ~35% faster than FastAPI (~37,000 req/s vs ~27,000 req/s)
+- Handler metadata caching (signatures, type hints) - avoid per-request introspection
+- Module-level JSON decoder selection (orjson/json checked once at import)
+- Module-level dependency type imports
+- New `production=True` flag for sensible middleware defaults
+- Testing mode (`testing=True` or `ZENITH_ENV=test`) disables rate limiting
 
-**Documentation Updates:**
-- Python version: 3.12-3.13 → 3.12-3.14
-- Password hashing: bcrypt → Argon2 (matches v0.0.11+ API)
-- Fixed deprecated `DB` → `Session` imports
-- Rewrote concepts/authentication.mdx PasswordConfig section to match actual API
-- Removed emojis from all 24 examples
+**Optimization Philosophy:**
+- Reverted complex parameter lookup table (~150 lines) - same performance, more complexity
+- Kept simple, effective optimizations (handler caching, module-level imports)
+- Result: Same performance with less code (294 vs ~380 lines)
 
-**CI Fixes:**
-- Fixed Python 3.14 greenlet/mock segfault (skip websocket tests + gc.collect)
-- Regenerated docs/package-lock.json for npm ci
-- Added continue-on-error for Python 3.14 interpreter shutdown segfault
-
-**Commits this session:**
+**Commits:**
 ```
-301393e ci: allow Python 3.14 test job to continue on greenlet shutdown segfault
-9ef42bc fix(tests): skip gc.collect on Python 3.14 to avoid greenlet segfault
-9665e00 fix(tests): skip websocket tests on Python 3.14 due to greenlet/mock segfault
-50b6010 fix(docs): regenerate package-lock.json for npm ci
-42341ed docs: update all docs to match current v0.0.12 API
-81ce1b4 docs: update docs and examples for v0.0.12
-542c7db chore: clean up repository for v0.0.12 release
-bf8c47b fix: suppress SQLAlchemy GC warnings in tests and update changelog date
+cd4ff90 fix: remove unused TYPE_CHECKING import in response_processor
+f71bd72 style: fix ruff formatting
+801683b feat: bump version to 0.0.13 and add benchmark files
 ```
 
 ## What Worked
@@ -45,17 +35,18 @@ bf8c47b fix: suppress SQLAlchemy GC warnings in tests and update changelog date
 - Zero-config `Zenith()` auto-detection
 - DI consolidation (single source of truth)
 - Argon2 password hashing via pwdlib
+- Handler metadata caching for performance
 
 ## Architecture (Stable)
 
 **Completed:**
-- Phase 1: DI Consolidation ✅
-- Phase 2: OpenAPI Completeness ✅
-- Phase 3: Structured Logging (structlog) ✅
-- Phase 4: Performance (orjson, uvloop, msgspec) ✅
-- Phase 5: Observability (OpenTelemetry via `add_tracing()`) ✅
-- Phase 6: Database observability (query tracing, slow query logging) ✅
-- Phase 7: HTTP client pooling, Brotli compression, WebSocket middleware ✅
+- Phase 1: DI Consolidation
+- Phase 2: OpenAPI Completeness
+- Phase 3: Structured Logging (structlog)
+- Phase 4: Performance (orjson, uvloop, msgspec, handler caching)
+- Phase 5: Observability (OpenTelemetry via `add_tracing()`)
+- Phase 6: Database observability (query tracing, slow query logging)
+- Phase 7: HTTP client pooling, Brotli compression, WebSocket middleware
 
 **Next:**
 - GraphQL improvements (if needed)
