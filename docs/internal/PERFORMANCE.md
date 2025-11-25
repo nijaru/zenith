@@ -467,7 +467,7 @@ def cached_json_response(content_hash: int) -> bytes:
 
 ## 📊 Performance Benchmarking Standards
 
-### Current Performance Targets (v0.0.11)
+### Current Performance Targets (v0.0.13)
 
 **Bare Framework:**
 - Simple endpoints: **≥13,000 req/s** (Current: 13,074 req/s - routing optimization)
@@ -532,7 +532,7 @@ SECRET_KEY=test-secret-key-that-is-long-enough-for-testing uv run python benchma
 | Object Pooling | 15-25% GC reduction | 🔴 Complex | 🔄 **Future** |
 
 ### Implementation Results
-- **Routing optimization (v0.0.11)**: 24-69% improvement (eliminated closure overhead)
+- **Routing optimization (v0.0.11-v0.0.13)**: 24-69% improvement (eliminated closure overhead, handler caching)
   - Simple endpoints: 7,743 req/s → 13,074 req/s (+69%)
   - JSON endpoints: 9,917 req/s → 12,274 req/s (+24%)
   - With middleware: 7,044 req/s → 8,781 req/s (+25%)

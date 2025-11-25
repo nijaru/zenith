@@ -27,7 +27,7 @@
 
 ## Key Information Summary
 
-### Current Framework State (v0.0.11)
+### Current Framework State (v0.0.13)
 - ✅ 899 tests passing (Python 3.12, 3.13, 3.14)
 - ✅ ~12,000 req/s JSON endpoints, ~9,000 req/s with middleware
 - ✅ Zero-config setup working

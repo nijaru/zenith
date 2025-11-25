@@ -22,7 +22,7 @@ async def hello_world():
     return {
         "message": "Hello, World!",
         "framework": "Zenith",
-        "version": "0.0.12",
+        "version": "0.0.13",
         "docs": "/docs",
     }
 

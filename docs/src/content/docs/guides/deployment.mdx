@@ -45,6 +45,45 @@ export ENVIRONMENT="production"
 docker build -t my-app . && docker run -p 8000:8000 my-app
 ```
 
+## Production Mode
+
+<Aside type="tip">
+  **New in v0.0.13**: Use `production=True` to enable all production middleware automatically.
+</Aside>
+
+Zenith has two modes for middleware configuration:
+
+```python
+from zenith import Zenith
+
+# Development (default) - minimal middleware for fast iteration
+app = Zenith()
+
+# Production - full middleware stack enabled
+app = Zenith(production=True)
+```
+
+**Production mode enables:**
+- Request ID tracking (distributed tracing)
+- Database session reuse (15-25% DB performance improvement)
+- Security headers (HSTS, CSP, X-Frame-Options)
+- Response caching
+- Rate limiting
+- Gzip/Brotli compression
+
+**Auto-detection**: If `production` is not set, Zenith auto-detects based on `ZENITH_ENV`:
+- `ZENITH_ENV=production` or `ZENITH_ENV=staging` → production mode
+- `ZENITH_ENV=test` → testing mode (rate limiting disabled)
+- Otherwise → development mode
+
+```python
+# Explicit testing mode (disables rate limiting)
+app = Zenith(testing=True)
+
+# Or via environment variable
+# export ZENITH_ENV=test
+```
+
 ## Docker Containerization
 
 ### Dockerfile Template
