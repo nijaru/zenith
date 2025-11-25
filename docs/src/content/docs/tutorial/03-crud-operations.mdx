@@ -123,7 +123,7 @@ async def create_user(email: str, password: str, full_name: str):
     # - Transaction rollback on failure
     user = await User.create(
         email=email,
-        password=password,  # Automatically hashed with bcrypt
+        password=password,  # Automatically hashed with Argon2
         full_name=full_name
     )
     return {"user": user.model_dump()}  # Built-in serialization

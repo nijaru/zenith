@@ -249,7 +249,7 @@ class AuthService(Service):
             email=user_data.email,
             username=user_data.username,
             full_name=user_data.full_name,
-            # hash_password() uses bcrypt for secure password storage
+            # hash_password() uses Argon2 for secure password storage
             # Never store plaintext passwords!
             password_hash=hash_password(user_data.password)
         )

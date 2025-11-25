@@ -13,7 +13,7 @@ Zenith provides integrated database integration with async SQLAlchemy, automatic
 
 ```python
 from zenith import Zenith
-from zenith.core import DB  # ✨ Magic dependency injection shortcut
+from zenith import Session  # Database session dependency
 from zenith.db import ZenithModel  # Enhanced model with built-in methods
 from sqlmodel import Field
 from typing import Optional
@@ -427,12 +427,12 @@ class Comment(TimestampMixin, table=True):
 ### Dependency Injection
 
 ```python
-from zenith import Depends
-from zenith.core import DB
+from zenith import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 @app.get("/users")
 async def list_users(session: AsyncSession = Session):
-    # Use ZenithModel for intuitive queries
+    # Use ZenithModel for intuitive queries (no session needed!)
     users = await User.all()
     return users
 ```

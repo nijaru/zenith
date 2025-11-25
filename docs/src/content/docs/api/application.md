@@ -554,7 +554,7 @@ app = Zenith(lifespan=lifespan)
 ```python
 from zenith import Zenith
 from zenith.db import ZenithModel
-from zenith.core import Auth, DB, Inject
+from zenith import Auth, Session, Inject
 from sqlmodel import Field
 from datetime import datetime
 

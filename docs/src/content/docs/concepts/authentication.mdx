@@ -206,59 +206,32 @@ jwt_config = JWTConfig(
 ### Hashing Passwords (Never Store Plain Text!)
 
 ```python
-from zenith.auth.password import (
-    hash_password,
-    verify_password,
-    PasswordConfig
-)
+from zenith.auth.password import hash_password, verify_password
 
-# Configure password requirements and hashing
-password_config = PasswordConfig(
-    # BCRYPT WORK FACTOR (cost parameter)
-    bcrypt_rounds=12,  # 2^12 iterations
-    # Higher = more secure but slower
-    # 10 = ~10ms (development)
-    # 12 = ~250ms (production)
-    # 14 = ~1s (high security)
-    # Adjust based on your server capacity
-
-    # PASSWORD COMPLEXITY REQUIREMENTS
-    min_length=8,           # Minimum characters
-    require_uppercase=True, # Must have A-Z
-    require_lowercase=True, # Must have a-z
-    require_digits=True,    # Must have 0-9
-    require_special=True,   # Must have !@#$%^&* etc.
-
-    # Additional options
-    max_length=128,         # Prevent DoS with huge passwords
-    banned_passwords=[      # Common passwords to reject
-        "password", "12345678", "qwerty"
-    ]
-)
-
-# HASHING - One way transformation
-hashed = hash_password("SecurePass123!", config=password_config)
-# Result: $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY.hsHL8jjF3DRM
-#         ^^^^  ^^ ^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-#         alg  cost      salt                    hash
+# HASHING - One way transformation using Argon2
+hashed = hash_password("SecurePass123!")
+# Result: $argon2id$v=19$m=65536,t=3,p=4$...
+#         ^^^^^^^^^ Argon2id algorithm (most secure)
+#         Memory-hard: resistant to GPU/ASIC attacks
 
 # VERIFICATION - Compare plain text with hash
 is_valid = verify_password("SecurePass123!", hashed)
 # Returns: True if password matches, False otherwise
 
 # Important: verify_password is constant-time to prevent timing attacks
+# Also handles automatic hash upgrades when algorithm parameters change
 
 # Example: Registration flow
 @app.post("/register")
 async def register(email: str, password: str):
-    # Validate password strength first
-    if len(password) < password_config.min_length:
-        raise HTTPException(400, "Password too short")
+    # Validate password strength
+    if len(password) < 8:
+        raise HTTPException(400, "Password must be at least 8 characters")
 
-    # Hash before storing
+    # Hash before storing (uses Argon2 automatically)
     user = User(
         email=email,
-        password_hash=hash_password(password, password_config)
+        password_hash=hash_password(password)
     )
     await user.save()
 
