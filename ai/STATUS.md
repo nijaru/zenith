@@ -2,51 +2,44 @@
 
 | Metric | Value | Updated |
 |--------|-------|---------|
-| Version | v0.0.13 (live on PyPI) | 2025-11-25 |
+| Version | v0.0.13 (live on PyPI + GitHub) | 2025-11-25 |
 | Python | 3.12-3.14 | 2025-11-24 |
 | Test Coverage | 100% passing (899 tests) | 2025-11-25 |
 | Build Status | Passing (all Python versions) | 2025-11-25 |
-| Current Focus | Post-release | 2025-11-25 |
+| Current Focus | Documentation updates | 2025-11-25 |
 
 ## Session Summary (2025-11-25)
 
-**v0.0.13 Release - Performance Optimizations:**
-- ~35% faster than FastAPI (~37,000 req/s vs ~27,000 req/s)
-- Handler metadata caching (signatures, type hints) - avoid per-request introspection
-- Module-level JSON decoder selection (orjson/json checked once at import)
-- Module-level dependency type imports
-- New `production=True` flag for sensible middleware defaults
-- Testing mode (`testing=True` or `ZENITH_ENV=test`) disables rate limiting
+**v0.0.13 Released:**
+- ~37,000 req/s performance
+- Handler metadata caching, module-level imports
+- `production=True` flag for middleware defaults
+- `testing=True` disables rate limiting
 
-**Optimization Philosophy:**
-- Reverted complex parameter lookup table (~150 lines) - same performance, more complexity
-- Kept simple, effective optimizations (handler caching, module-level imports)
-- Result: Same performance with less code (294 vs ~380 lines)
-
-**Commits:**
-```
-cd4ff90 fix: remove unused TYPE_CHECKING import in response_processor
-f71bd72 style: fix ruff formatting
-801683b feat: bump version to 0.0.13 and add benchmark files
-```
+**Documentation Updates:**
+- Updated performance numbers (12k → 37k req/s) across website
+- Removed FastAPI comparisons from marketing copy
+- Added production flag documentation to deployment guide
+- Fixed missing HTTPException import in quick-start
+- Removed version-specific language from examples (v0.0.3 → generic)
 
 ## What Worked
-- Service Architecture with `Inject()` for DI
-- Zero-config `Zenith()` auto-detection
-- DI consolidation (single source of truth)
-- Argon2 password hashing via pwdlib
 - Handler metadata caching for performance
+- Simple optimizations over complex ones (reverted parameter lookup table)
+- `production=True` flag for middleware defaults
+
+## Known Issues
+
+**Tutorials use deprecated patterns (8400+ lines):**
+- `bcrypt` → should be `argon2` (pwdlib)
+- `Depends(get_db)` → should be `Session`
+- `Depends(get_current_user)` → should be `Auth`
+
+This is a significant rewrite task for future sessions.
 
 ## Architecture (Stable)
 
-**Completed:**
-- Phase 1: DI Consolidation
-- Phase 2: OpenAPI Completeness
-- Phase 3: Structured Logging (structlog)
-- Phase 4: Performance (orjson, uvloop, msgspec, handler caching)
-- Phase 5: Observability (OpenTelemetry via `add_tracing()`)
-- Phase 6: Database observability (query tracing, slow query logging)
-- Phase 7: HTTP client pooling, Brotli compression, WebSocket middleware
-
-**Next:**
-- GraphQL improvements (if needed)
+All phases complete. Next potential work:
+- Tutorial documentation rewrite
+- GraphQL improvements
+- Custom radix router (larger project)

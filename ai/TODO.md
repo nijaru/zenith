@@ -1,17 +1,12 @@
 # Active Tasks
 
+## Documentation (High Priority)
+- [ ] Rewrite tutorials to use modern patterns (Auth, Session, Inject, pwdlib) - ~8400 lines across 7 files
+
 ## Backlog
 - [ ] GraphQL improvements
-- [ ] Custom radix router (replace Starlette's regex routing) - larger project
+- [ ] Custom radix router (replace Starlette's regex routing)
 
-## Potential Minor Optimizations
-- [ ] Module-level imports in dependency_resolver.py (low impact)
-- [ ] Add `__slots__` to DependencyResolver/ResponseProcessor (low impact)
-
-## Completed (v0.0.13)
-- [x] Handler metadata caching (signatures, type hints)
-- [x] Module-level JSON decoder selection
-- [x] Module-level dependency type imports
-- [x] Production mode middleware defaults
-- [x] Testing mode disables rate limiting
-- [x] v0.0.13 released (GitHub + PyPI)
+## Minor Optimizations (Low Priority)
+- [ ] Module-level imports in dependency_resolver.py
+- [ ] Add `__slots__` to DependencyResolver/ResponseProcessor
