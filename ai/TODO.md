@@ -1,10 +1,7 @@
 # Active Tasks
 
 ## Backlog
-- [ ] WebSocket middleware support (auth, logging)
 - [ ] GraphQL improvements
-- [ ] Brotli compression middleware
-- [ ] httpx AsyncClient pooling in lifespan
 
 ## Already Implemented
 - [x] orjson responses (`OptimizedJSONResponse` in `zenith/web/responses.py`)
@@ -12,10 +9,15 @@
 - [x] OpenTelemetry (`add_tracing()` in `zenith/app.py`)
 - [x] Database query tracing (`zenith/db/tracing.py` - QueryTracer, slow query logging)
 - [x] Rate limiting (custom impl is comprehensive, slowapi not needed)
+- [x] httpx AsyncClient pooling (`zenith/http/client.py`)
+- [x] Brotli compression (`zenith/middleware/compression.py`)
+- [x] WebSocket auth & logging middleware (`zenith/middleware/websocket.py`)
 - [x] msgspec (in dependencies)
 - [x] uvloop (in dependencies)
 
 ## Recently Completed
-- [x] Database query tracing with slow query logging
+- [x] WebSocket middleware (auth, logging)
+- [x] Brotli compression support
+- [x] httpx AsyncClient pooling
+- [x] Database query tracing
 - [x] v0.0.12 published to PyPI
-- [x] CI fixed (Python 3.14 greenlet segfault workaround)
