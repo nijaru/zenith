@@ -2,53 +2,47 @@
 
 | Metric | Value | Updated |
 |--------|-------|---------|
-| Version | v0.0.12 (released) | 2025-11-24 |
+| Version | v0.0.12 (ready for PyPI) | 2025-11-24 |
 | Python | 3.12-3.14 | 2025-11-24 |
-| Test Coverage | 100% passing (930 tests) | 2025-11-24 |
+| Test Coverage | 100% passing (883 tests) | 2025-11-24 |
 | Build Status | Passing (all Python versions) | 2025-11-24 |
 | Current Focus | Ready for PyPI publish | 2025-11-24 |
 
+## Session Summary (2025-11-24)
+
+**Code Review & Cleanup:**
+- Reviewed v0.0.12 architecture changes (DI, OpenAPI, logging, race condition fix)
+- Removed 34K lines of stale code (docs/zenith/, docs/tests/, review artifacts)
+- Fixed SQLAlchemy GC warnings in tests (pytest filterwarnings + conftest.py)
+- Updated Astro docs dependencies (5.14→5.16) for security
+
+**Documentation Updates:**
+- Python version: 3.12-3.13 → 3.12-3.14
+- Password hashing: bcrypt → Argon2 (matches v0.0.11+ API)
+- Fixed deprecated `DB` → `Session` imports
+- Rewrote concepts/authentication.mdx PasswordConfig section to match actual API
+- Removed emojis from all 24 examples
+
+**Commits this session:**
+```
+42341ed docs: update all docs to match current v0.0.12 API
+81ce1b4 docs: update docs and examples for v0.0.12
+542c7db chore: clean up repository for v0.0.12 release
+bf8c47b fix: suppress SQLAlchemy GC warnings in tests and update changelog date
+```
+
 ## What Worked
-- **Service Architecture**: `Service` classes with `Inject()` work well for separation of concerns.
-- **Zero-Config**: `Zenith()` auto-detection is successful.
-- **Performance**: Async architecture with connection pooling is meeting targets.
-- **Starlette Foundation**: Deep integration works well - Zenith is a high-level API layer.
-- **DI Consolidation**: Single source of truth (DIContainer) - cleaner architecture.
+- Service Architecture with `Inject()` for DI
+- Zero-config `Zenith()` auto-detection
+- DI consolidation (single source of truth)
+- Argon2 password hashing via pwdlib
 
-## What Didn't Work
-- **Custom RadixRouter**: Reverted. Maintenance burden not justified.
-- **Multiple DI caches**: Had 4 separate `_service_instances` dicts - consolidated.
+## Architecture (Stable)
 
-## Completed Improvements
+**Completed:**
+- Phase 1: DI Consolidation ✅
+- Phase 2: OpenAPI Completeness ✅
+- Phase 3: Structured Logging ✅
 
-**Phase 1: DI Consolidation** ✅
-- Single `_service_instances` dict in DIContainer
-- `Inject()` and `DependencyResolver` delegate to container
-- `ServiceRegistry` is thin naming wrapper
-- Async lock for thread-safe singleton creation
-
-**Phase 2: OpenAPI Completeness** ✅
-- RouteSpec fields now used: `include_in_schema`, `tags`, `status_code`, `summary`, `description`, `response_description`, `response_model`
-- Improved type inference: `datetime`, `date`, `time`, `UUID`, `Enum`, `bytes`, `Decimal`, `Path`
-- Generic type support: `List[T]`, `Dict[K,V]`, `Optional[T]`, `T | None`, `Union`, `tuple`, `set`
-- Fixed cache key to include all RouteSpec fields that affect output
-
-## Architecture Issues Remaining
-
-**Phase 3: Structured Logging** ✅
-- Created `zenith/logging.py` with structlog integration
-- `get_logger()` - returns bound structlog logger
-- `configure_logging()` - centralized configuration (auto-detects JSON vs console)
-- `bind_context()` / `clear_context()` - request-scoped context binding
-- `LoggingMiddleware` - auto-binds request_id, method, path, client_ip
-- Exported in main package for easy access
-
-**Critical (Before 1.0):**
-1. ~~Multiple DI systems~~ ✅ Fixed
-2. ~~OpenAPI generation~~ ✅ Fixed
-3. ~~Logging~~ ✅ Fixed
-
-**Moderate (Before 2.0):**
-1. ~~Session security audit~~ ✅ OWASP compliance documented
-2. ~~Middleware ordering~~ ✅ Documented in Zenith class docstring
-3. Request tracing (OpenTelemetry) - Future
+**Future (Post 1.0):**
+- Request tracing (OpenTelemetry)
