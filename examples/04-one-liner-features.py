@@ -1,7 +1,7 @@
 """
-One-liner Features Example - Showcasing v0.0.3 Convenience Methods
+One-liner Features Example
 
-This example demonstrates the new one-liner convenience methods:
+This example demonstrates Zenith's one-liner convenience methods:
 - app.add_auth() - JWT authentication in one line
 - app.add_admin() - Admin interface in one line
 - app.add_api() - API documentation in one line
