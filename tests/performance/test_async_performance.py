@@ -270,7 +270,9 @@ class TestAsyncPerformance:
         assert len(sync_results) == 1000
         # Context switching with asyncio.sleep(0) is very expensive
         # This is expected behavior - async has overhead for very lightweight operations
-        assert async_elapsed < 0.2  # Should complete in reasonable time (relaxed for CI variance)
+        assert (
+            async_elapsed < 0.2
+        )  # Should complete in reasonable time (relaxed for CI variance)
 
 
 class TestBackgroundTaskIntegration:

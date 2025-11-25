@@ -289,6 +289,9 @@ class RouteExecutor:
             # Use pre-checked decoder (orjson or json, determined at module load)
             return _json_loads(body_bytes)
         except Exception as e:
-            if "JSONDecodeError" in type(e).__name__ or "decode" in str(type(e)).lower():
+            if (
+                "JSONDecodeError" in type(e).__name__
+                or "decode" in str(type(e)).lower()
+            ):
                 raise ValidationException(f"Invalid JSON in request body: {e!s}") from e
             raise ValidationException(f"Failed to parse request body: {e!s}") from e

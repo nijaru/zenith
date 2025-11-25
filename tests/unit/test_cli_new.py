@@ -509,7 +509,9 @@ class TestTestingModeIntegration:
 
         # Should still have essential middleware
         assert "ExceptionHandlerMiddleware" in middleware_classes
-        assert "RequestIDMiddleware" in middleware_classes  # Production mode includes this
+        assert (
+            "RequestIDMiddleware" in middleware_classes
+        )  # Production mode includes this
         assert "SecurityHeadersMiddleware" in middleware_classes  # Production mode
         # Rate limiting should be disabled in testing mode
         assert "RateLimitMiddleware" not in middleware_classes
