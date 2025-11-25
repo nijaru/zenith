@@ -61,7 +61,7 @@ async_session_maker = async_sessionmaker(
 
 
 # Session factory for request-scoped injection
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+async def get_db() -> AsyncGenerator[AsyncSession]:
     """
     Create a new database session for each request.
 

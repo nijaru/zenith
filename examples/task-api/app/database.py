@@ -28,7 +28,7 @@ async def init_db():
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_session() -> AsyncGenerator[AsyncSession]:
     """
     Get database session.
 
