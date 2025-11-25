@@ -1,8 +1,11 @@
 """
 Response compression middleware for reducing bandwidth usage.
 
-Provides gzip and deflate compression for responses based on client
+Provides gzip, deflate, and Brotli compression for responses based on client
 Accept-Encoding headers and configurable content types.
+
+Brotli typically achieves 15-20% better compression than gzip.
+Install with: pip install zenith[compression]
 """
 
 import gzip
@@ -10,6 +13,14 @@ import zlib
 from io import BytesIO
 
 from starlette.types import ASGIApp, Receive, Scope, Send
+
+# Optional Brotli support
+try:
+    import brotli
+
+    HAS_BROTLI = True
+except ImportError:
+    HAS_BROTLI = False
 
 
 class CompressionConfig:
@@ -106,8 +117,12 @@ class CompressionMiddleware:
         accept_encoding_bytes = headers.get(b"accept-encoding", b"")
         accept_encoding = accept_encoding_bytes.decode("latin-1")
 
-        # Skip if client doesn't support compression
-        if not ("gzip" in accept_encoding or "deflate" in accept_encoding):
+        # Skip if client doesn't support any compression
+        supports_br = HAS_BROTLI and "br" in accept_encoding
+        supports_gzip = "gzip" in accept_encoding
+        supports_deflate = "deflate" in accept_encoding
+
+        if not (supports_br or supports_gzip or supports_deflate):
             await self.app(scope, receive, send)
             return
 
@@ -214,11 +229,14 @@ class CompressionMiddleware:
             )
             return
 
-        # Choose compression algorithm
+        # Choose compression algorithm (prefer brotli > gzip > deflate)
         compressed_body = None
         encoding = None
 
-        if "gzip" in accept_encoding:
+        if HAS_BROTLI and "br" in accept_encoding:
+            compressed_body = self._brotli_compress(body)
+            encoding = "br"
+        elif "gzip" in accept_encoding:
             compressed_body = self._gzip_compress(body)
             encoding = "gzip"
         elif "deflate" in accept_encoding:
@@ -274,6 +292,14 @@ class CompressionMiddleware:
     def _deflate_compress(self, data: bytes) -> bytes:
         """Compress data using deflate."""
         return zlib.compress(data)
+
+    def _brotli_compress(self, data: bytes) -> bytes:
+        """Compress data using Brotli (15-20% better than gzip)."""
+        if not HAS_BROTLI:
+            return data
+        # Quality 4 is a good balance of speed and compression ratio
+        # Quality 11 is max compression but slow
+        return brotli.compress(data, quality=4)
 
 
 def create_compression_middleware(
