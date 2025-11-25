@@ -63,9 +63,16 @@ jobs:
         DATABASE_URL: postgresql://zenith:zenith@localhost:5432/zenith_test
         SECRET_KEY: test-secret-key-for-ci-testing
       run: |
-        pytest tests/ -v --cov=zenith --cov-report=xml --cov-report=term -m "not performance"
+        # Skip coverage on Python 3.14 due to coverage.py + greenlet incompatibility
+        # See: https://github.com/nedbat/coveragepy/issues/2064
+        if [[ "${{ matrix.python-version }}" == "3.14" ]]; then
+          pytest tests/ -v -m "not performance"
+        else
+          pytest tests/ -v --cov=zenith --cov-report=xml --cov-report=term -m "not performance"
+        fi
     
     - name: Upload coverage to Codecov
+      if: matrix.python-version != '3.14'
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
