@@ -391,7 +391,7 @@ class TestUserService:
         assert user.name == "John Doe"
         # Password should be hashed, not plain text
         assert user.password_hash != "SecurePass123"
-        assert user.password_hash.startswith("$2b$")
+        assert user.password_hash.startswith("$argon2id$")
 
     async def test_create_user_duplicate_email(self, service, session):
         """Test that duplicate emails are rejected."""

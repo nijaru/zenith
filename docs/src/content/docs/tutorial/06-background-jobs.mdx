@@ -771,13 +771,15 @@ Update your API endpoints to use background tasks:
 # In app/main.py
 
 from app.tasks import send_welcome_email, process_file_upload
-from zenith import BackgroundTasks, UploadFile, File
+from zenith import BackgroundTasks, UploadFile, File, Session, Auth
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models import User
 
 @app.post("/auth/register")
 async def register(
     user_data: UserCreate,
     background_tasks: BackgroundTasks,
-    session = Depends(get_session)
+    session: AsyncSession = Session
 ):
     """Register user with background email."""
     service = UserService(session)
@@ -792,8 +794,8 @@ async def register(
 async def import_tasks(
     project_id: int,
     file: UploadFile = File(...),
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """
     Import tasks from CSV file.
@@ -933,7 +935,7 @@ Add monitoring to your API:
 ```python
 @app.get("/admin/jobs/stats")
 async def get_job_stats(
-    current_user = Depends(require_admin)
+    current_user: User = Auth  # Requires admin role check in route logic
 ):
     """Get background job statistics."""
     from celery import states
@@ -958,7 +960,7 @@ async def get_job_stats(
 @app.post("/admin/jobs/retry/{task_id}")
 async def retry_failed_task(
     task_id: str,
-    current_user = Depends(require_admin)
+    current_user: User = Auth  # Requires admin role check in route logic
 ):
     """Retry a failed task."""
     from celery.result import AsyncResult

@@ -365,7 +365,7 @@ class User(ZenithModel, table=True):
     )
 
     # Authentication
-    password_hash: str = Field(description="Bcrypt password hash")
+    password_hash: str = Field(description="Argon2 password hash")
 
     # Timestamps - ZenithModel can auto-manage these
     created_at: datetime = Field(
@@ -916,8 +916,8 @@ async def seed_database(session: AsyncSession = Session):
         full_name="Alice Johnson",
         password_hash="hashed_password_here"  # In reality, hash properly!
     )
-    db.add(user)
-    await db.commit()
+    session.add(user)
+    await session.commit()
 
     # Create a project
     project = Project(
@@ -925,8 +925,8 @@ async def seed_database(session: AsyncSession = Session):
         description="Complete the Zenith tutorial",
         owner_id=user.id
     )
-    db.add(project)
-    await db.commit()
+    session.add(project)
+    await session.commit()
 
     # Create some tasks
     tasks = [
@@ -951,9 +951,9 @@ async def seed_database(session: AsyncSession = Session):
     ]
 
     for task in tasks:
-        db.add(task)
+        session.add(task)
 
-    await db.commit()
+    await session.commit()
 
     return {
         "message": "Database seeded successfully",
@@ -989,7 +989,7 @@ async def list_tasks(
     if status:
         query = query.where(Task.status == status)
 
-    tasks = await db.exec(query)
+    tasks = await session.exec(query)
     return tasks.all()
 ```
 
@@ -1049,21 +1049,21 @@ Here are common query patterns you'll use:
 from sqlmodel import select, and_, or_
 
 # Get user with all their projects
-user = await db.exec(
+user = await session.exec(
     select(User)
     .where(User.id == 1)
     .options(selectinload(User.projects))
 )
 
 # Get tasks assigned to a user
-tasks = await db.exec(
+tasks = await session.exec(
     select(Task)
     .where(Task.assignee_id == user.id)
     .where(Task.status != "done")
 )
 
 # Complex query: Get overdue tasks in active projects
-overdue_tasks = await db.exec(
+overdue_tasks = await session.exec(
     select(Task)
     .join(Project)
     .where(
@@ -1078,7 +1078,7 @@ overdue_tasks = await db.exec(
 # Count tasks per project
 from sqlmodel import func
 
-task_counts = await db.exec(
+task_counts = await session.exec(
     select(
         Project.name,
         func.count(Task.id).label("task_count")

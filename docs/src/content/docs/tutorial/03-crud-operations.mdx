@@ -32,11 +32,11 @@ Let's explore Zenith's approach to CRUD operations:
 <Card title="ZenithModel - Clean and Type-Safe" icon="up-caret">
 ```python
 # Creating a user - so many manual steps!
-from passlib.context import CryptContext
+from pwdlib import PasswordHash
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_hasher = PasswordHash.recommended()  # Uses Argon2 by default
 
 @app.post("/users")
 async def create_user(
@@ -46,7 +46,7 @@ async def create_user(
     db: AsyncSession = Depends(get_db)  # Manual dependency injection
 ):
     # Manual password hashing
-    hashed_password = pwd_context.hash(password)
+    hashed_password = pwd_hasher.hash(password)
 
     # Manual existence check
     stmt = select(User).where(User.email == email)
@@ -482,12 +482,11 @@ TaskFlow API - Main application with CRUD operations.
 """
 
 from typing import Optional
-from zenith import Zenith
+from zenith import Zenith, Session, Auth
 from zenith.responses import JSONResponse
-from app.database import get_session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.users import UserService
-from app.models import UserCreate, UserUpdate, UserResponse
-from app.auth import get_current_user
+from app.models import User, UserCreate, UserUpdate, UserResponse
 from app.exceptions import APIException
 
 app = Zenith(
@@ -513,7 +512,7 @@ async def api_exception_handler(request, exc: APIException):
 @app.post("/users", response_model=UserResponse, status_code=201)
 async def create_user(
     user_data: UserCreate,
-    session = Depends(get_session)
+    session: AsyncSession = Session
 ):
     """
     Register a new user.
@@ -535,7 +534,7 @@ async def list_users(
     skip: int = Query(0, ge=0, description="Number of users to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Max users to return"),
     search: Optional[str] = Query(None, description="Search in name/email"),
-    session = Depends(get_session)
+    session: AsyncSession = Session
 ):
     """
     List all users with pagination.
@@ -557,7 +556,7 @@ async def list_users(
 @app.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int = Path(..., ge=1, description="User ID"),
-    session = Depends(get_session)
+    session: AsyncSession = Session
 ):
     """
     Get a specific user by ID.
@@ -573,8 +572,8 @@ async def get_user(
 async def update_user(
     user_id: int = Path(..., ge=1),
     user_update: UserUpdate,
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """
     Update user profile.
@@ -599,8 +598,8 @@ async def update_user(
 @app.delete("/users/{user_id}", status_code=204)
 async def delete_user(
     user_id: int = Path(..., ge=1),
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """
     Delete (deactivate) a user account.
@@ -1024,8 +1023,8 @@ Update `app/main.py` to add the remaining routes:
 @app.post("/projects", response_model=ProjectResponse, status_code=201)
 async def create_project(
     project_data: ProjectCreate,
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """Create a new project."""
     service = ProjectService(session)
@@ -1038,8 +1037,8 @@ async def list_projects(
     include_archived: bool = Query(False, description="Include archived"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """List projects with filters."""
     service = ProjectService(session)
@@ -1060,7 +1059,7 @@ async def list_projects(
 @app.get("/projects/{project_id}/stats")
 async def get_project_stats(
     project_id: int,
-    session = Depends(get_session)
+    session: AsyncSession = Session
 ):
     """Get project statistics."""
     service = ProjectService(session)
@@ -1072,8 +1071,8 @@ async def get_project_stats(
 @app.post("/tasks", response_model=TaskResponse, status_code=201)
 async def create_task(
     task_data: TaskCreate,
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """Create a new task."""
     service = TaskService(session)
@@ -1087,7 +1086,7 @@ async def list_tasks(
     status: Optional[str] = Query(None, enum=["pending", "completed", "overdue"]),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    session = Depends(get_session)
+    session: AsyncSession = Session
 ):
     """List tasks with multiple filters."""
     service = TaskService(session)
@@ -1108,8 +1107,8 @@ async def list_tasks(
 async def update_task(
     task_id: int,
     task_update: TaskUpdate,
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """Update a task."""
     service = TaskService(session)
@@ -1120,8 +1119,8 @@ async def update_task(
 async def bulk_update_tasks(
     task_ids: List[int] = Body(..., description="List of task IDs"),
     update_data: dict = Body(..., description="Fields to update"),
-    current_user = Depends(get_current_user),
-    session = Depends(get_session)
+    current_user: User = Auth,
+    session: AsyncSession = Session
 ):
     """
     Update multiple tasks at once.
