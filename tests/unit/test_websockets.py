@@ -1,11 +1,19 @@
 """Tests for WebSocket functionality."""
 
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from starlette.websockets import WebSocketDisconnect
 
 from zenith.web.websockets import WebSocket, WebSocketManager
+
+# Skip on Python 3.14 due to segfault in greenlet/mock interaction during GC
+# See: https://github.com/python-greenlet/greenlet/issues/391
+pytestmark = pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="Python 3.14 segfaults in mock/greenlet GC interaction",
+)
 
 
 class TestWebSocket:
