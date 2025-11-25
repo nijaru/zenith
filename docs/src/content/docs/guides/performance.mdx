@@ -34,14 +34,13 @@ Master performance optimization in Zenith with profiling, caching, database opti
 ### Zenith Performance Characteristics
 
 <Aside type="tip">
-  Zenith achieves **12,000+ requests/second** on JSON endpoints with optimized middleware stack.
+  Zenith achieves **37,000+ requests/second** on JSON endpoints (~35% faster than FastAPI).
 </Aside>
 
 ```python
 # Performance baseline (measured on M3 Max, Python 3.13)
-# - Simple endpoints: 13,074 req/s (+69% from routing optimization)
-# - JSON endpoints: 12,274 req/s (+24% from routing optimization)
-# - With full middleware: 8,781 req/s (72% retention)
+# - Simple endpoints: ~37,000 req/s (v0.0.13 with handler caching)
+# - With full middleware: ~9,000 req/s (production mode)
 # - Memory usage: <100MB for 1000 concurrent requests
 # - Startup time: <100ms
 ```

@@ -50,7 +50,7 @@ This creates:
 Create a file called `blog.py`:
 
 ```python
-from zenith import Zenith
+from zenith import Zenith, HTTPException
 from zenith.db import ZenithModel
 from zenith import Auth
 from sqlmodel import Field
@@ -354,6 +354,14 @@ async def search_posts(q: str):
 - Security middleware included
 - Performance monitoring built-in
 - Scalable async architecture
+
+<Aside type="tip">
+  **For production deployment**, use `production=True` to enable the full middleware stack:
+  ```python
+  app = Zenith(production=True)
+  ```
+  This enables security headers, rate limiting, compression, and request tracking automatically.
+</Aside>
 
 ## Learn More
 
