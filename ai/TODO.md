@@ -2,6 +2,8 @@
 
 ## High Priority
 - [ ] Add request tracing support (OpenTelemetry)
+- [ ] orjson responses (2-3x faster JSON, ~10 lines)
+- [ ] structlog for structured logging
 
 ## Moderate
 - [ ] Consider replacing custom rate limiting with slowapi
@@ -10,6 +12,10 @@
 ## Backlog
 - [ ] WebSocket middleware support (auth, logging)
 - [ ] GraphQL improvements
+- [ ] Brotli compression middleware
+- [ ] httpx AsyncClient pooling in lifespan
+- [ ] msgspec for high-throughput validation (alternative to Pydantic)
+- [ ] uvloop event loop (Linux, 2-4x faster)
 
 ## Recently Completed
 - [x] v0.0.12 published to PyPI
