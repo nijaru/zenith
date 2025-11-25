@@ -5,19 +5,15 @@ Handles response formatting, content negotiation, template rendering,
 and other response-related concerns.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import Response
 
-from zenith.web.responses import OptimizedJSONResponse
-
-if TYPE_CHECKING:
-    from zenith.core.routing.specs import RouteSpec
-
 # Import RouteSpec at module level to avoid per-request import
 from zenith.core.routing.specs import RouteSpec as _RouteSpec
+from zenith.web.responses import OptimizedJSONResponse
 
 
 class ResponseProcessor:
