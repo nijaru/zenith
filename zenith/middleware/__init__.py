@@ -73,6 +73,10 @@ from .security import (
     sanitize_html_input,
     validate_url,
 )
+from .websocket import (
+    WebSocketAuthMiddleware,
+    WebSocketLoggingMiddleware,
+)
 
 __all__ = [
     "AuthenticationMiddleware",
@@ -103,6 +107,8 @@ __all__ = [
     "SecurityHeadersMiddleware",
     "StructuredFormatter",
     "TrustedProxyMiddleware",
+    "WebSocketAuthMiddleware",
+    "WebSocketLoggingMiddleware",
     "cache_control_headers",
     "constant_time_compare",
     "create_cache_middleware",

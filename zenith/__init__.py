@@ -173,6 +173,14 @@ from zenith.middleware import (
     RequestLoggingMiddleware,
     SecurityHeadersMiddleware,
 )
+
+# ============================================================================
+# WEBSOCKETS & REAL-TIME
+# ============================================================================
+from zenith.middleware.websocket import (
+    WebSocketAuthMiddleware,
+    WebSocketLoggingMiddleware,
+)
 from zenith.pagination import (
     CursorPagination,
     Paginate,
@@ -213,10 +221,6 @@ from zenith.web.sse import (
 
 # Static file serving
 from zenith.web.static import serve_css_js, serve_images, serve_spa_files
-
-# ============================================================================
-# WEBSOCKETS & REAL-TIME
-# ============================================================================
 from zenith.web.websockets import WebSocket, WebSocketDisconnect, WebSocketManager
 
 # ============================================================================
@@ -314,7 +318,9 @@ __all__ = [
     "ValidationException",
     # WebSockets
     "WebSocket",
+    "WebSocketAuthMiddleware",
     "WebSocketDisconnect",
+    "WebSocketLoggingMiddleware",
     "WebSocketManager",
     # Core Framework
     "Zenith",
