@@ -138,6 +138,16 @@ from zenith.exceptions import (
 )
 
 # ============================================================================
+# HTTP CLIENT
+# ============================================================================
+from zenith.http.client import (
+    close_client,
+    get_client,
+    http_client,
+    init_client,
+)
+
+# ============================================================================
 # LOGGING
 # ============================================================================
 from zenith.logging import (
@@ -319,6 +329,7 @@ __all__ = [
     # High-level Decorators
     "cache",
     "clear_context",
+    "close_client",
     "configure_for_development",
     "configure_for_production",
     "configure_logging",
@@ -327,7 +338,10 @@ __all__ = [
     "create_sse_response",
     "error_response",
     "forbidden",
+    "get_client",
     "get_logger",
+    "http_client",
+    "init_client",
     "internal_error",
     "json_response",
     "not_found",

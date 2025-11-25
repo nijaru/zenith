@@ -19,10 +19,11 @@ from uvicorn import run
 from zenith.core.application import Application
 from zenith.core.config import Config
 from zenith.core.routing import Router
+from zenith.http.client import HTTPClientMixin
 from zenith.mixins import DocsMixin, MiddlewareMixin, RoutingMixin, ServicesMixin
 
 
-class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin):
+class Zenith(MiddlewareMixin, RoutingMixin, DocsMixin, ServicesMixin, HTTPClientMixin):
     """
     Main Zenith application class.
 
