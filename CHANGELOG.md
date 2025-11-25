@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.12] - 2025-10-21
+## [0.0.12] - 2025-11-24
 
 ### Changed
 - **Marketing messaging** - Updated performance claims to use vague, industry-standard language

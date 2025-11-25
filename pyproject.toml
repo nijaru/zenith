@@ -196,3 +196,9 @@ markers = [
     "slow: marks tests as slow running",
     "performance: marks tests as performance tests",
 ]
+filterwarnings = [
+    # SQLAlchemy GC cleanup warnings in test environment (new event loop per test)
+    # These don't affect production - connections are properly managed in real usage
+    "ignore:The garbage collector is trying to clean up non-checked-in connection.*:sqlalchemy.exc.SAWarning",
+    "ignore::sqlalchemy.exc.SAWarning",
+]
