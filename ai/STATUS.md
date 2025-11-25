@@ -2,11 +2,11 @@
 
 | Metric | Value | Updated |
 |--------|-------|---------|
-| Version | v0.0.12 | 2025-11-24 |
+| Version | v0.0.12 (released) | 2025-11-24 |
 | Python | 3.12-3.14 | 2025-11-24 |
 | Test Coverage | 100% passing (930 tests) | 2025-11-24 |
-| Build Status | Passing | 2025-11-24 |
-| Current Focus | Architecture Improvements | 2025-11-24 |
+| Build Status | Passing (all Python versions) | 2025-11-24 |
+| Current Focus | Ready for PyPI publish | 2025-11-24 |
 
 ## What Worked
 - **Service Architecture**: `Service` classes with `Inject()` work well for separation of concerns.
