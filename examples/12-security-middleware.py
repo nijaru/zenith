@@ -107,8 +107,6 @@ security_config = SecurityConfig(
     frame_options="DENY",
     # Content type protection
     content_type_nosniff=True,
-    # XSS protection
-    xss_protection="1; mode=block",
     # Referrer policy
     referrer_policy="strict-origin-when-cross-origin",
     # Permissions policy (modern browsers)
