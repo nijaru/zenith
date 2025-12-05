@@ -22,6 +22,9 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 logger = logging.getLogger("zenith.middleware.rate_limit")
 
+# Default trusted proxy IPs - only trust X-Forwarded-For from these
+DEFAULT_TRUSTED_PROXIES = frozenset(["127.0.0.1", "::1", "localhost"])
+
 
 @dataclass(slots=True)
 class RateLimit:
@@ -217,12 +220,10 @@ class RateLimitConfig:
         self.storage = storage or MemoryRateLimitStorage()
         self.exempt_paths = exempt_paths if exempt_paths is not None else []
         self.exempt_ips = exempt_ips if exempt_ips is not None else []
-        # Trusted proxy IPs - only trust X-Forwarded-For from these
-        # Default: loopback addresses (local proxies like nginx)
         self.trusted_proxies = (
             trusted_proxies
             if trusted_proxies is not None
-            else ["127.0.0.1", "::1", "localhost"]
+            else list(DEFAULT_TRUSTED_PROXIES)
         )
         self.error_message = error_message
         self.include_headers = include_headers
@@ -275,11 +276,10 @@ class RateLimitMiddleware:
             self.storage = storage or MemoryRateLimitStorage()
             self.exempt_paths = set(exempt_paths) if exempt_paths is not None else set()
             self.exempt_ips = set(exempt_ips) if exempt_ips is not None else set()
-            # Trusted proxy IPs - only trust X-Forwarded-For from these
             self.trusted_proxies = (
                 set(trusted_proxies)
                 if trusted_proxies is not None
-                else {"127.0.0.1", "::1", "localhost"}
+                else set(DEFAULT_TRUSTED_PROXIES)
             )
             self.error_message = error_message
             self.include_headers = include_headers

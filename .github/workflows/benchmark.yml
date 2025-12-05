@@ -2,13 +2,7 @@ name: Performance Benchmarks
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "zenith/**"
-      - "benchmarks/**"
-      - ".github/workflows/benchmark.yml"
-  pull_request:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
