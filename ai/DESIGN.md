@@ -56,13 +56,47 @@ Modern Python web framework for building APIs with minimal boilerplate, high per
 4. Handler returns → ResponseProcessor formats JSON/HTML
 5. Response → Middleware stack (reverse) → Client
 
-## Proposed: AI Module (zenith.ai)
+## AI Module Architecture (zenith.ai)
 
-| Component    | Purpose                               | Priority |
-| ------------ | ------------------------------------- | -------- |
-| stream_llm() | SSE wrapper for LLM responses         | HIGH     |
-| ToolRouter   | Auto-generate OpenAI function schemas | HIGH     |
-| MCPServer    | Model Context Protocol server         | MEDIUM   |
-| A2AHandler   | Agent-to-agent protocol               | LOW      |
+```
+zenith/ai/
+├── __init__.py          # Public API: stream_llm, tool, ToolRouter
+├── streaming.py         # stream_llm(), StreamingLLMResponse
+├── tools.py             # @tool decorator, ToolRouter, schema generation
+├── mcp/
+│   ├── server.py        # MCPServer mixin
+│   ├── transport.py     # Stdio + HTTP/SSE transports
+│   └── resources.py     # MCP resource protocol
+└── a2a/                 # Future: Agent2Agent protocol
+    └── handler.py
+```
 
-→ Details: ai/research/2025-12-code-review.md (Section 5)
+### Feature Prioritization
+
+| Phase | Feature           | Purpose                                    | Status  |
+| ----- | ----------------- | ------------------------------------------ | ------- |
+| 1     | `stream_llm()`    | SSE wrapper for LLM token streaming        | Planned |
+| 1     | `@tool` decorator | Auto-generate OpenAI function schemas      | Planned |
+| 1     | `ToolRouter`      | HTTP endpoints with schema generation      | Planned |
+| 2     | `MCPServer`       | Model Context Protocol server (stdio+HTTP) | Planned |
+| 3     | Pydantic AI       | Native integration examples                | Planned |
+| 4     | `A2AHandler`      | Google's agent-to-agent protocol           | Future  |
+
+### Agent Framework Support
+
+| Framework         | Integration Approach                            |
+| ----------------- | ----------------------------------------------- |
+| Pydantic AI       | Primary target - same Pydantic philosophy       |
+| OpenAI Agents SDK | Export tool schemas in their format             |
+| LangGraph         | HTTP endpoints for agent state                  |
+| CrewAI            | Deployment target (Zenith serves CrewAI agents) |
+
+### Protocol Support
+
+| Protocol     | Status                                        |
+| ------------ | --------------------------------------------- |
+| OpenAI Tools | HIGH - de facto standard for function calling |
+| MCP          | HIGH - adopted by OpenAI, Google, Microsoft   |
+| A2A          | MEDIUM - newer but 50+ enterprise partners    |
+
+→ Details: ai/research/2025-12-ai-strategy.md
