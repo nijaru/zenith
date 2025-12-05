@@ -118,6 +118,15 @@ tracing = [
     "opentelemetry-distro>=0.59b0",  # Distributed tracing (experimental)
     "opentelemetry-instrumentation-fastapi>=0.59b0",
 ]
+# AI/Agent features (optional - Zenith works great without these)
+ai = [
+    "openai>=1.0.0",  # OpenAI SDK for LLM streaming
+    "anthropic>=0.40.0",  # Anthropic SDK
+    "httpx-sse>=0.4.0",  # SSE client for streaming
+]
+mcp = [
+    "mcp>=1.0.0",  # Model Context Protocol SDK
+]
 
 [project.scripts]
 zen = "zenith.cli:main"

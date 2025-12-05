@@ -6,7 +6,9 @@
 Code review revealed Zenith has feature parity with FastAPI but no clear differentiator. AI agent frameworks (LangChain, CrewAI, OpenAI Agents SDK) are exploding in 2025. No Python web framework is purpose-built for AI agents.
 
 **Decision:**
-Pivot Zenith to be "The Python framework for AI-powered APIs" while remaining general-purpose.
+Add optional AI features to Zenith while keeping it a general-purpose FastAPI alternative.
+
+**Key Principle:** Zenith is a web framework first. AI features are optional extras via `pip install zenith[ai]`.
 
 **Key Features to Add:**
 
@@ -28,15 +30,16 @@ Pivot Zenith to be "The Python framework for AI-powered APIs" while remaining ge
 
 | Pro                          | Con                       |
 | ---------------------------- | ------------------------- |
-| Clear market position        | Narrower initial audience |
-| Leverages existing SSE/async | New features to maintain  |
-| Growing AI market            | Fast-moving standards     |
+| Clear market position        | New features to maintain  |
+| Leverages existing SSE/async | Fast-moving standards     |
+| Growing AI market            | Must stay general-purpose |
 
 **Consequences:**
 
-- Add `zenith.ai` module
-- Update marketing: "AI-powered APIs"
-- Prioritize: security fixes → AI features → OAuth2
+- Add `zenith/ai/` module with lazy imports
+- Optional deps: `zenith[ai]`, `zenith[mcp]`
+- Core framework remains lightweight (no AI deps by default)
+- Marketing: "Modern Python web framework" first, AI features second
 
 ---
 

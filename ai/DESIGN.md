@@ -56,19 +56,44 @@ Modern Python web framework for building APIs with minimal boilerplate, high per
 4. Handler returns → ResponseProcessor formats JSON/HTML
 5. Response → Middleware stack (reverse) → Client
 
-## AI Module Architecture (zenith.ai)
+## AI Module Architecture (zenith.ai) - OPTIONAL
+
+**Philosophy:** Zenith is a general-purpose web framework first. AI features are optional extras.
+
+### Installation
+
+```bash
+pip install zenith          # Core framework (no AI deps)
+pip install zenith[ai]      # + openai, anthropic, httpx-sse
+pip install zenith[mcp]     # + mcp SDK
+pip install zenith[all]     # Everything
+```
+
+### Module Structure
 
 ```
 zenith/ai/
-├── __init__.py          # Public API: stream_llm, tool, ToolRouter
+├── __init__.py          # Lazy imports, graceful failure if deps missing
 ├── streaming.py         # stream_llm(), StreamingLLMResponse
 ├── tools.py             # @tool decorator, ToolRouter, schema generation
 ├── mcp/
 │   ├── server.py        # MCPServer mixin
-│   ├── transport.py     # Stdio + HTTP/SSE transports
-│   └── resources.py     # MCP resource protocol
-└── a2a/                 # Future: Agent2Agent protocol
-    └── handler.py
+│   └── transport.py     # Stdio + HTTP/SSE transports
+└── _deps.py             # Dependency checks, helpful error messages
+```
+
+### Import Pattern
+
+```python
+# Core framework - always works
+from zenith import Zenith, get, post, Session, Auth
+
+# AI features - optional, fails gracefully
+try:
+    from zenith.ai import stream_llm, tool
+except ImportError:
+    # pip install zenith[ai] for AI features
+    pass
 ```
 
 ### Feature Prioritization
