@@ -30,19 +30,20 @@ Modern Python web framework for building APIs with minimal boilerplate, high per
 
 ## Components
 
-| Component        | Purpose                           | Status                       |
-| ---------------- | --------------------------------- | ---------------------------- |
-| Core Application | ASGI lifecycle, mixin composition | Stable                       |
-| Routing          | Route registration, execution, DI | Stable                       |
-| Middleware       | Auth, CORS, CSRF, rate limiting   | Needs security fixes         |
-| Services         | DI container, service base class  | Stable (needs consolidation) |
-| Database         | Async SQLAlchemy, ZenithModel ORM | Stable                       |
-| Sessions         | Cookie/Redis session management   | Stable                       |
-| WebSockets       | Connection manager, broadcast     | Stable                       |
-| SSE              | Streaming with backpressure       | Has bugs (see TODO)          |
-| Jobs             | Background tasks, Redis queue     | Stable                       |
-| Monitoring       | Health checks, Prometheus metrics | Incomplete                   |
-| OpenAPI          | Auto-generation, Swagger/ReDoc    | Stable                       |
+| Component        | Purpose                           | Status                     |
+| ---------------- | --------------------------------- | -------------------------- |
+| Core Application | ASGI lifecycle, mixin composition | Stable                     |
+| Routing          | Route registration, execution, DI | Stable                     |
+| Middleware       | Auth, CORS, CSRF, rate limiting   | Stable (v0.0.14 hardened)  |
+| Services         | DI container, service base class  | Stable (consolidate later) |
+| Database         | Async SQLAlchemy, ZenithModel ORM | Stable                     |
+| Sessions         | Cookie/Redis session management   | Stable                     |
+| WebSockets       | Connection manager, broadcast     | Stable                     |
+| SSE              | Streaming with backpressure       | Stable                     |
+| Jobs             | Background tasks, Redis queue     | Stable                     |
+| Monitoring       | Health checks, Prometheus metrics | Incomplete                 |
+| OpenAPI          | Auto-generation, Swagger/ReDoc    | Stable                     |
+| AI Module        | LLM streaming, tools, MCP         | Planned (zenith.ai)        |
 
 ## Key Design Decisions
 
