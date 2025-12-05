@@ -12,6 +12,7 @@
 - Handler metadata caching (40% perf boost)
 - `production=True` for middleware defaults
 - Simple optimizations over complex (reverted radix router)
+- Security fixes: all 7 critical issues fixed (S1-S5, C1, C8)
 
 ## What Didn't Work
 
@@ -20,18 +21,21 @@
 
 ## Active Work
 
-**Phase 1:** Security fixes (5 vulnerabilities, 3 code issues)
-**Phase 2:** AI module (`zenith.ai` - LLM streaming, tool calling)
+**Next:** AI module (`zenith.ai` - optional extras)
 
-→ Details: ai/research/2025-12-code-review.md
+- `stream_llm()` - SSE wrapper for LLM tokens
+- `@tool` decorator - auto-generate function schemas
+- MCP server support
+
+→ Details: ai/research/2025-12-ai-strategy.md
 
 ## Blockers
 
-None. Strategic pivot decided: AI-optimized framework (see DECISIONS.md)
+None.
 
-## Recent Learnings (2025-12-04)
+## Recent Decisions (2025-12-04)
 
-- Package upgrades: redis 7.x, pytest 9.x, starlette 0.50 - all tests pass
-- Security audit identified 5 HIGH vulnerabilities (CSRF, rate limiting, auth)
-- Feature gaps vs FastAPI: OAuth2/OIDC, API versioning
-- AI opportunity: LLM streaming, MCP support, tool calling patterns
+- **AI as optional:** `pip install zenith[ai]` - framework-first, AI-second
+- **Stay Python:** Bun acquisition is about distribution, not language shift
+- **Protocol priorities:** OpenAI Tools (HIGH), MCP (HIGH), A2A (MEDIUM)
+- **Primary integration:** Pydantic AI (same philosophy)
