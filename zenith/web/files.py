@@ -14,6 +14,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from starlette.datastructures import UploadFile
 from starlette.requests import Request
 
+# Security: Limit file extension length to prevent attacks
+MAX_EXTENSION_LENGTH = 10
+
 
 class FileUploadConfig(BaseModel):
     """Configuration for file uploads."""
@@ -203,8 +206,8 @@ class FileUploader:
                     else ""
                 )
                 safe_ext = "".join(c for c in ext if c in safe_chars)[
-                    :10
-                ]  # limit ext length
+                    :MAX_EXTENSION_LENGTH
+                ]
                 return (
                     f"{uuid.uuid4().hex}.{safe_ext}"
                     if safe_ext
@@ -219,7 +222,9 @@ class FileUploader:
             safe_chars = (
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
             )
-            safe_ext = "".join(c for c in ext.lstrip(".") if c in safe_chars)[:10]
+            safe_ext = "".join(c for c in ext.lstrip(".") if c in safe_chars)[
+                :MAX_EXTENSION_LENGTH
+            ]
             return (
                 f"{uuid.uuid4().hex}.{safe_ext}" if safe_ext else f"{uuid.uuid4().hex}"
             )

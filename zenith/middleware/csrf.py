@@ -32,7 +32,7 @@ class CSRFConfig:
         header_name: str = "X-CSRF-Token",
         cookie_name: str = "csrf_token",
         cookie_secure: bool = True,
-        cookie_httponly: bool = True,  # Secure default: prevent JS access
+        cookie_httponly: bool = True,
         cookie_samesite: str = "Lax",
         max_age_seconds: int = 3600,  # 1 hour
         exempt_methods: set[str] | None = None,
@@ -78,7 +78,7 @@ class CSRFMiddleware:
         header_name: str = "X-CSRF-Token",
         cookie_name: str = "csrf_token",
         cookie_secure: bool = True,
-        cookie_httponly: bool = True,  # Secure default: prevent JS access
+        cookie_httponly: bool = True,
         cookie_samesite: str = "Lax",
         max_age_seconds: int = 3600,  # 1 hour
         exempt_methods: set[str] | None = None,
@@ -200,21 +200,9 @@ class CSRFMiddleware:
 
         return False
 
-    def _get_client_info(self, request: Request) -> tuple[str, str]:
-        """Get client user agent and IP address."""
-        user_agent = request.headers.get("User-Agent", "")
-
-        # Get real IP (considering proxies)
-        remote_addr = request.headers.get("X-Forwarded-For", "")
-        if remote_addr:
-            remote_addr = remote_addr.split(",")[0].strip()
-        else:
-            remote_addr = request.headers.get("X-Real-IP", "")
-
-        if not remote_addr and request.client:
-            remote_addr = request.client.host
-
-        return user_agent, remote_addr or "unknown"
+    def _get_user_agent(self, request: Request) -> str:
+        """Get client user agent for CSRF token binding."""
+        return request.headers.get("User-Agent", "")
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """ASGI3 interface implementation with CSRF protection."""
@@ -229,8 +217,8 @@ class CSRFMiddleware:
             await self._handle_exempt_request(request, scope, receive, send)
             return
 
-        # Get client information
-        user_agent, remote_addr = self._get_client_info(request)
+        # Get user agent for token validation
+        user_agent = self._get_user_agent(request)
 
         # Get existing token from cookie
         existing_token = request.cookies.get(self.cookie_name)
@@ -250,7 +238,7 @@ class CSRFMiddleware:
 
         # Process request with CSRF cookie handling
         await self._handle_protected_request(
-            request, scope, receive, send, existing_token, user_agent, remote_addr
+            request, scope, receive, send, existing_token, user_agent
         )
 
     async def _handle_exempt_request(
@@ -258,7 +246,7 @@ class CSRFMiddleware:
     ) -> None:
         """Handle exempt requests with CSRF cookie setting."""
         await self._handle_request_with_csrf_cookie(
-            request, scope, receive, send, None, None, None
+            request, scope, receive, send, None, None
         )
 
     async def _handle_protected_request(
@@ -269,11 +257,10 @@ class CSRFMiddleware:
         send: Send,
         existing_token: str | None,
         user_agent: str,
-        remote_addr: str,
     ) -> None:
         """Handle protected requests with CSRF validation and cookie setting."""
         await self._handle_request_with_csrf_cookie(
-            request, scope, receive, send, existing_token, user_agent, remote_addr
+            request, scope, receive, send, existing_token, user_agent
         )
 
     async def _handle_request_with_csrf_cookie(
@@ -284,11 +271,10 @@ class CSRFMiddleware:
         send: Send,
         existing_token: str | None,
         user_agent: str | None,
-        remote_addr: str | None,
     ) -> None:
         """Handle request and set CSRF cookie on response."""
-        if user_agent is None or remote_addr is None:
-            user_agent, remote_addr = self._get_client_info(request)
+        if user_agent is None:
+            user_agent = self._get_user_agent(request)
 
         # Determine if we need a new token
         new_token = None
@@ -363,11 +349,10 @@ class CSRFMiddleware:
         response: Response,
         existing_token: str | None = None,
         user_agent: str | None = None,
-        remote_addr: str | None = None,
     ) -> Response:
         """Set CSRF token cookie on response (deprecated - handled in ASGI wrapper)."""
-        if user_agent is None or remote_addr is None:
-            user_agent, remote_addr = self._get_client_info(request)
+        if user_agent is None:
+            user_agent = self._get_user_agent(request)
 
         # Generate new token if needed
         if not existing_token or not self._validate_token(existing_token, user_agent):

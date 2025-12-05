@@ -550,23 +550,32 @@ class RateLimitMiddleware:
 
     # ASGI-specific helper methods
     def _get_client_ip_asgi(self, scope: Scope) -> str:
-        """Extract client IP address from ASGI scope."""
-        headers = dict(scope.get("headers", []))
+        """Extract client IP address from ASGI scope.
 
-        # Check X-Forwarded-For header first (for proxies)
-        forwarded_for_bytes = headers.get(b"x-forwarded-for")
-        if forwarded_for_bytes:
-            forwarded_for = forwarded_for_bytes.decode("latin-1")
-            return forwarded_for.split(",")[0].strip()
-
-        # Check X-Real-IP header
-        real_ip_bytes = headers.get(b"x-real-ip")
-        if real_ip_bytes:
-            return real_ip_bytes.decode("latin-1").strip()
-
-        # Fall back to client host from scope
+        Security: Only trusts X-Forwarded-For/X-Real-IP headers when the
+        direct connection is from a trusted proxy.
+        """
+        # Get the direct connection IP
         client = scope.get("client")
-        return client[0] if client else "unknown"
+        direct_ip = client[0] if client else "unknown"
+
+        # Only trust proxy headers if request comes from a trusted proxy
+        if direct_ip in self.trusted_proxies:
+            headers = dict(scope.get("headers", []))
+
+            # Check X-Forwarded-For header (for proxies)
+            forwarded_for_bytes = headers.get(b"x-forwarded-for")
+            if forwarded_for_bytes:
+                forwarded_for = forwarded_for_bytes.decode("latin-1")
+                return forwarded_for.split(",")[0].strip()
+
+            # Check X-Real-IP header
+            real_ip_bytes = headers.get(b"x-real-ip")
+            if real_ip_bytes:
+                return real_ip_bytes.decode("latin-1").strip()
+
+        # Fall back to direct connection IP
+        return direct_ip
 
     def _get_user_id_asgi(self, scope: Scope) -> str | None:
         """Extract user ID from ASGI scope (if authenticated)."""
