@@ -13,6 +13,7 @@
 - `production=True` for middleware defaults
 - Simple optimizations over complex (reverted radix router)
 - Security fixes: all 7 critical issues fixed (S1-S5, C1, C8)
+- Code review fixes: trusted proxy ASGI, dead code removal, constants
 
 ## What Didn't Work
 
