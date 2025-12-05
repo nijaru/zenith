@@ -32,7 +32,7 @@ class CSRFConfig:
         header_name: str = "X-CSRF-Token",
         cookie_name: str = "csrf_token",
         cookie_secure: bool = True,
-        cookie_httponly: bool = False,
+        cookie_httponly: bool = True,  # Secure default: prevent JS access
         cookie_samesite: str = "Lax",
         max_age_seconds: int = 3600,  # 1 hour
         exempt_methods: set[str] | None = None,
@@ -78,7 +78,7 @@ class CSRFMiddleware:
         header_name: str = "X-CSRF-Token",
         cookie_name: str = "csrf_token",
         cookie_secure: bool = True,
-        cookie_httponly: bool = False,
+        cookie_httponly: bool = True,  # Secure default: prevent JS access
         cookie_samesite: str = "Lax",
         max_age_seconds: int = 3600,  # 1 hour
         exempt_methods: set[str] | None = None,
@@ -137,26 +137,27 @@ class CSRFMiddleware:
             self.exempt_paths = exempt_paths or set()
             self.require_token = require_token
 
-    def _generate_token(self, user_agent: str = "", remote_addr: str = "") -> str:
+    def _generate_token(self, user_agent: str = "") -> str:
         """
         Generate a CSRF token.
 
         Token format: timestamp:random:signature
+        Note: IP address intentionally NOT included - tokens should remain valid
+        when users change networks (mobile to WiFi, VPN, etc.)
         """
         timestamp = str(int(time.time()))
         random_part = secrets.token_urlsafe(16)
 
-        # Create signature based on timestamp, random part, user agent, and IP
-        message = f"{timestamp}:{random_part}:{user_agent}:{remote_addr}"
+        # Create signature based on timestamp, random part, and user agent
+        # IP intentionally excluded to avoid token invalidation on network change
+        message = f"{timestamp}:{random_part}:{user_agent}"
         signature = hmac.new(
             self.secret_key, message.encode(), hashlib.sha256
         ).hexdigest()
 
         return f"{timestamp}:{random_part}:{signature}"
 
-    def _validate_token(
-        self, token: str, user_agent: str = "", remote_addr: str = ""
-    ) -> bool:
+    def _validate_token(self, token: str, user_agent: str = "") -> bool:
         """Validate a CSRF token."""
         try:
             timestamp_str, random_part, signature = token.split(":", 2)
@@ -168,8 +169,8 @@ class CSRFMiddleware:
         if time.time() - timestamp > self.max_age_seconds:
             return False
 
-        # Verify signature
-        message = f"{timestamp_str}:{random_part}:{user_agent}:{remote_addr}"
+        # Verify signature (IP intentionally excluded)
+        message = f"{timestamp_str}:{random_part}:{user_agent}"
         expected_signature = hmac.new(
             self.secret_key, message.encode(), hashlib.sha256
         ).hexdigest()
@@ -243,7 +244,7 @@ class CSRFMiddleware:
                 await self._send_csrf_error(send, "CSRF token missing")
                 return
 
-            if not self._validate_token(submitted_token, user_agent, remote_addr):
+            if not self._validate_token(submitted_token, user_agent):
                 await self._send_csrf_error(send, "CSRF token invalid or expired")
                 return
 
@@ -291,10 +292,8 @@ class CSRFMiddleware:
 
         # Determine if we need a new token
         new_token = None
-        if not existing_token or not self._validate_token(
-            existing_token, user_agent, remote_addr
-        ):
-            new_token = self._generate_token(user_agent, remote_addr)
+        if not existing_token or not self._validate_token(existing_token, user_agent):
+            new_token = self._generate_token(user_agent)
 
         async def send_wrapper(message):
             if message["type"] == "http.response.start" and new_token:
@@ -371,10 +370,8 @@ class CSRFMiddleware:
             user_agent, remote_addr = self._get_client_info(request)
 
         # Generate new token if needed
-        if not existing_token or not self._validate_token(
-            existing_token, user_agent, remote_addr
-        ):
-            new_token = self._generate_token(user_agent, remote_addr)
+        if not existing_token or not self._validate_token(existing_token, user_agent):
+            new_token = self._generate_token(user_agent)
 
             response.set_cookie(
                 self.cookie_name,

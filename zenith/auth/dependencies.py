@@ -79,7 +79,18 @@ def require_scopes(*scopes: str):
 
     def dependency(request: Request) -> dict[str, Any]:
         user = require_auth(request)
-        require_scopes(request, list(scopes))
+
+        # Check scopes directly (avoid importing middleware to prevent circular import)
+        user_scopes = user.get("scopes", [])
+        missing_scopes = [scope for scope in scopes if scope not in user_scopes]
+
+        if missing_scopes:
+            from zenith.exceptions import AuthorizationException
+
+            raise AuthorizationException(
+                f"Access denied. Missing scopes: {', '.join(missing_scopes)}"
+            )
+
         return user
 
     return dependency

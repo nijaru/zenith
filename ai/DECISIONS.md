@@ -1,5 +1,45 @@
 # Architecture Decisions
 
+## 2025-12-04 Strategic Pivot: AI-Agent Optimized Framework
+
+**Context:**
+Code review revealed Zenith has feature parity with FastAPI but no clear differentiator. AI agent frameworks (LangChain, CrewAI, OpenAI Agents SDK) are exploding in 2025. No Python web framework is purpose-built for AI agents.
+
+**Decision:**
+Pivot Zenith to be "The Python framework for AI-powered APIs" while remaining general-purpose.
+
+**Key Features to Add:**
+
+| Feature        | Purpose                                              | Priority |
+| -------------- | ---------------------------------------------------- | -------- |
+| `stream_llm()` | SSE wrapper for LLM token streaming                  | HIGH     |
+| `ToolRouter`   | Auto-generate OpenAI function schemas from endpoints | HIGH     |
+| `MCPServer`    | Model Context Protocol server for Claude             | MEDIUM   |
+| A2A Protocol   | Google's agent-to-agent communication                | LOW      |
+
+**Rationale:**
+
+- Zenith already has SSE streaming (just needs LLM helper)
+- Async-first architecture aligns with agent patterns
+- High performance (37k req/s) benefits multi-call agents
+- No competitor owns this space
+
+**Tradeoffs:**
+
+| Pro                          | Con                       |
+| ---------------------------- | ------------------------- |
+| Clear market position        | Narrower initial audience |
+| Leverages existing SSE/async | New features to maintain  |
+| Growing AI market            | Fast-moving standards     |
+
+**Consequences:**
+
+- Add `zenith.ai` module
+- Update marketing: "AI-powered APIs"
+- Prioritize: security fixes → AI features → OAuth2
+
+---
+
 ## 2025-11-24 Library vs Custom Implementation Strategy
 
 **Context:**
@@ -11,29 +51,31 @@ Keep custom for: service layer, middleware wrappers, response optimization.
 
 **Libraries to Use (not reinvent):**
 
-| Component | Use Library | Not Custom |
-|-----------|------------|------------|
-| Routing | Starlette Router | RadixTree (deleted) |
-| OpenAPI | Consider fastapi.openapi.utils | Current custom impl |
-| Rate limiting | Consider slowapi/limits | Current custom impl |
-| DI Container | Consider dependency-injector | Current multi-system |
-| Structured logging | structlog (already dep) | Raw logging calls |
+| Component          | Use Library                    | Not Custom           |
+| ------------------ | ------------------------------ | -------------------- |
+| Routing            | Starlette Router               | RadixTree (deleted)  |
+| OpenAPI            | Consider fastapi.openapi.utils | Current custom impl  |
+| Rate limiting      | Consider slowapi/limits        | Current custom impl  |
+| DI Container       | Consider dependency-injector   | Current multi-system |
+| Structured logging | structlog (already dep)        | Raw logging calls    |
 
 **Keep Custom (justified):**
 
-| Component | Reason |
-|-----------|--------|
-| Service base class | Specific DI pattern for business logic |
-| Response optimization | orjson wrapper, specific caching needs |
-| Middleware wrappers | Thin wrappers with Zenith-specific defaults |
-| Session management | Dirty tracking, auto-persistence features |
+| Component             | Reason                                      |
+| --------------------- | ------------------------------------------- |
+| Service base class    | Specific DI pattern for business logic      |
+| Response optimization | orjson wrapper, specific caching needs      |
+| Middleware wrappers   | Thin wrappers with Zenith-specific defaults |
+| Session management    | Dirty tracking, auto-persistence features   |
 
 **Rationale:**
+
 - 60+ Starlette imports already - we're a layer on top, not a replacement
 - Custom routing (O(k) RadixTree) adds maintenance burden for microsecond gains
 - Focus effort on differentiating features (DX, service layer, zero-config)
 
 **Consequences:**
+
 - Deleted `zenith/core/routing/radix.py` and `radix_router.py`
 - Future: consolidate DI systems, adopt structlog throughout
 
@@ -48,6 +90,7 @@ Implemented custom RadixTree router for O(k) path matching vs Starlette's O(n).
 Reverted to Starlette Router. Deleted custom implementation.
 
 **Rationale:**
+
 1. Starlette's compiled regex is already fast (microseconds)
 2. O(k) vs O(n) only matters at 100s+ routes
 3. Still wrapped Starlette catch-all anyway (worst of both worlds)
@@ -55,6 +98,7 @@ Reverted to Starlette Router. Deleted custom implementation.
 5. Deep Starlette dependency throughout (60+ imports)
 
 **Consequences:**
+
 - Simpler codebase, less custom code
 - Starlette handles edge cases and security
 - Future: benchmark if needed at scale, reconsider then
@@ -64,11 +108,13 @@ Reverted to Starlette Router. Deleted custom implementation.
 ## 2025-11-24 Known Architecture Issues (To Address)
 
 **Critical (Before 1.0):**
+
 1. **Multiple DI systems**: Container + ServiceRegistry + Inject() globals - consolidate
 2. **OpenAPI generation**: Custom impl untested against spec - consider fastapi approach
 3. **Logging**: Raw logging scattered - adopt structlog comprehensively
 
 **Moderate (Before 2.0):**
+
 1. Session security audit against OWASP
 2. Request tracing (OpenTelemetry by default)
 3. Middleware ordering documentation

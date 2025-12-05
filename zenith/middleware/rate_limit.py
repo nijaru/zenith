@@ -206,6 +206,7 @@ class RateLimitConfig:
         storage: RateLimitStorage | None = None,
         exempt_paths: list[str] | None = None,
         exempt_ips: list[str] | None = None,
+        trusted_proxies: list[str] | None = None,
         error_message: str = "Rate limit exceeded",
         include_headers: bool = True,
     ):
@@ -216,6 +217,13 @@ class RateLimitConfig:
         self.storage = storage or MemoryRateLimitStorage()
         self.exempt_paths = exempt_paths if exempt_paths is not None else []
         self.exempt_ips = exempt_ips if exempt_ips is not None else []
+        # Trusted proxy IPs - only trust X-Forwarded-For from these
+        # Default: loopback addresses (local proxies like nginx)
+        self.trusted_proxies = (
+            trusted_proxies
+            if trusted_proxies is not None
+            else ["127.0.0.1", "::1", "localhost"]
+        )
         self.error_message = error_message
         self.include_headers = include_headers
 
@@ -243,6 +251,7 @@ class RateLimitMiddleware:
         storage: RateLimitStorage | None = None,
         exempt_paths: list[str] | None = None,
         exempt_ips: list[str] | None = None,
+        trusted_proxies: list[str] | None = None,
         error_message: str = "Rate limit exceeded",
         include_headers: bool = True,
     ):
@@ -254,6 +263,7 @@ class RateLimitMiddleware:
             self.storage = config.storage
             self.exempt_paths = set(config.exempt_paths)
             self.exempt_ips = set(config.exempt_ips)
+            self.trusted_proxies = set(config.trusted_proxies)
             self.error_message = config.error_message
             self.include_headers = config.include_headers
         else:
@@ -265,6 +275,12 @@ class RateLimitMiddleware:
             self.storage = storage or MemoryRateLimitStorage()
             self.exempt_paths = set(exempt_paths) if exempt_paths is not None else set()
             self.exempt_ips = set(exempt_ips) if exempt_ips is not None else set()
+            # Trusted proxy IPs - only trust X-Forwarded-For from these
+            self.trusted_proxies = (
+                set(trusted_proxies)
+                if trusted_proxies is not None
+                else {"127.0.0.1", "::1", "localhost"}
+            )
             self.error_message = error_message
             self.include_headers = include_headers
 
@@ -281,19 +297,30 @@ class RateLimitMiddleware:
         logger.info(f"Added custom rate limits for {path}: {limits}")
 
     def _get_client_ip(self, request: Request) -> str:
-        """Extract client IP address from request."""
-        # Check X-Forwarded-For header first (for proxies)
-        forwarded_for = request.headers.get("X-Forwarded-For")
-        if forwarded_for:
-            return forwarded_for.split(",")[0].strip()
+        """Extract client IP address from request.
 
-        # Check X-Real-IP header
-        real_ip = request.headers.get("X-Real-IP")
-        if real_ip:
-            return real_ip.strip()
+        Security: Only trusts X-Forwarded-For/X-Real-IP headers when the
+        direct connection is from a trusted proxy. This prevents attackers
+        from spoofing their IP by setting these headers directly.
+        """
+        # Get the direct connection IP
+        direct_ip = request.client.host if request.client else "unknown"
 
-        # Fall back to client host
-        return request.client.host if request.client else "unknown"
+        # Only trust proxy headers if request comes from a trusted proxy
+        if direct_ip in self.trusted_proxies:
+            # Check X-Forwarded-For header (for proxies)
+            forwarded_for = request.headers.get("X-Forwarded-For")
+            if forwarded_for:
+                # Take the first (leftmost) IP - the original client
+                return forwarded_for.split(",")[0].strip()
+
+            # Check X-Real-IP header
+            real_ip = request.headers.get("X-Real-IP")
+            if real_ip:
+                return real_ip.strip()
+
+        # Fall back to direct connection IP
+        return direct_ip
 
     def _get_user_id(self, request: Request) -> str | None:
         """Extract user ID from request (if authenticated)."""

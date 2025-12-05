@@ -175,14 +175,14 @@ class RouteExecutor:
             path_params = request.path_params or request.scope.get("path_params", {})
             if param_name in path_params:
                 kwargs[param_name] = self._convert_path_param(
-                    path_params[param_name], param_type
+                    path_params[param_name], param_type, param_name
                 )
                 continue
 
             # Query parameters
             if param_name in request.query_params:
                 kwargs[param_name] = self._convert_query_param(
-                    request.query_params[param_name], param_type
+                    request.query_params[param_name], param_type, param_name
                 )
                 continue
 
@@ -264,23 +264,41 @@ class RouteExecutor:
 
         return kwargs
 
-    def _convert_path_param(self, value: str, param_type: type) -> Any:
-        """Convert path parameter to the expected type."""
-        if param_type is int:
-            return int(value)
-        elif param_type is float:
-            return float(value)
-        return value
+    def _convert_path_param(self, value: str, param_type: type, param_name: str) -> Any:
+        """Convert path parameter to the expected type.
 
-    def _convert_query_param(self, value: str, param_type: type) -> Any:
-        """Convert query parameter to the expected type."""
-        if param_type is int:
-            return int(value)
-        elif param_type is float:
-            return float(value)
-        elif param_type is bool:
-            return value.lower() in ("true", "1", "yes")
-        return value
+        Raises ValidationException for invalid values (returns 400, not 500).
+        """
+        try:
+            if param_type is int:
+                return int(value)
+            elif param_type is float:
+                return float(value)
+            return value
+        except (ValueError, TypeError) as e:
+            raise ValidationException(
+                f"Invalid path parameter '{param_name}': expected {param_type.__name__}, got '{value}'"
+            ) from e
+
+    def _convert_query_param(
+        self, value: str, param_type: type, param_name: str
+    ) -> Any:
+        """Convert query parameter to the expected type.
+
+        Raises ValidationException for invalid values (returns 400, not 500).
+        """
+        try:
+            if param_type is int:
+                return int(value)
+            elif param_type is float:
+                return float(value)
+            elif param_type is bool:
+                return value.lower() in ("true", "1", "yes")
+            return value
+        except (ValueError, TypeError) as e:
+            raise ValidationException(
+                f"Invalid query parameter '{param_name}': expected {param_type.__name__}, got '{value}'"
+            ) from e
 
     async def _parse_json_body(self, request: Request) -> dict:
         """Parse JSON body from request with proper error handling."""

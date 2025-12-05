@@ -20,13 +20,14 @@
 
 ## Active Work
 
-Security fixes from code review (5 vulnerabilities). Evaluating AI-agent integration focus.
+**Phase 1:** Security fixes (5 vulnerabilities, 3 code issues)
+**Phase 2:** AI module (`zenith.ai` - LLM streaming, tool calling)
 
 → Details: ai/research/2025-12-code-review.md
 
 ## Blockers
 
-None. Strategic decision pending: focus on AI-agent ecosystem integration?
+None. Strategic pivot decided: AI-optimized framework (see DECISIONS.md)
 
 ## Recent Learnings (2025-12-04)
 

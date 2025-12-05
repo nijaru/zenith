@@ -132,20 +132,11 @@ def get_current_user(request: Request, required: bool = True) -> dict[str, Any] 
 
     # If authentication is required but not provided
     if required:
-        auth_error = getattr(request.state, "auth_error", None)
+        # Use generic error message to prevent enumeration attacks
+        # Don't reveal whether token was missing vs invalid
+        from zenith.exceptions import AuthenticationException
 
-        if auth_error:
-            # Invalid/expired token
-            from zenith.exceptions import AuthenticationException
-
-            raise AuthenticationException(f"Authentication failed: {auth_error}")
-        else:
-            # No token provided
-            from zenith.exceptions import AuthenticationException
-
-            raise AuthenticationException(
-                "Authentication required. Provide a valid Bearer token."
-            )
+        raise AuthenticationException("Unauthorized")
 
     return None
 

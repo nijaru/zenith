@@ -177,20 +177,52 @@ class FileUploader:
         return True
 
     def generate_filename(self, original_filename: str) -> str:
-        """Generate a safe filename for storage."""
+        """Generate a safe filename for storage.
+
+        Security: Prevents directory traversal attacks by:
+        1. Extracting only the filename component (no path separators)
+        2. Filtering to safe characters only
+        3. Rejecting any remaining traversal patterns (.. or leading .)
+        """
         if self.config.preserve_filename:
-            # Sanitize the original filename
+            # Sanitize the original filename - extract only the name component
             filename = Path(original_filename).name
+
             # Remove potentially dangerous characters
             safe_chars = (
                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_"
             )
             filename = "".join(c for c in filename if c in safe_chars)
-            return filename or f"{uuid.uuid4().hex}.bin"
+
+            # Security: Reject directory traversal patterns and hidden files
+            if not filename or filename.startswith(".") or ".." in filename:
+                # Fall back to UUID if filename is suspicious
+                ext = (
+                    Path(original_filename).suffix.lstrip(".")
+                    if original_filename
+                    else ""
+                )
+                safe_ext = "".join(c for c in ext if c in safe_chars)[
+                    :10
+                ]  # limit ext length
+                return (
+                    f"{uuid.uuid4().hex}.{safe_ext}"
+                    if safe_ext
+                    else f"{uuid.uuid4().hex}.bin"
+                )
+
+            return filename
         else:
             # Generate UUID-based filename with original extension
             ext = Path(original_filename).suffix if original_filename else ""
-            return f"{uuid.uuid4().hex}{ext}"
+            # Sanitize extension too
+            safe_chars = (
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            )
+            safe_ext = "".join(c for c in ext.lstrip(".") if c in safe_chars)[:10]
+            return (
+                f"{uuid.uuid4().hex}.{safe_ext}" if safe_ext else f"{uuid.uuid4().hex}"
+            )
 
     def get_upload_path(self, filename: str) -> Path:
         """Get the full path where file should be stored."""
